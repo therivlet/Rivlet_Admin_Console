@@ -6,6 +6,7 @@ import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
 import { AuthProvider, useAuth } from '@/lib/authContext';
 import { RivletWatermark } from '@/components/brand/RivletLogo';
+import RivletLoader from '@/components/brand/RivletLoader';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -30,33 +31,25 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [user, isLoading, isLoginPage, router]);
 
-  // Loading Splash Screen
+  // Loading Splash Screen (renders centered on refresh, initial load, and auth sync)
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#07080c] flex flex-col items-center justify-center space-y-4">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#cda052] to-[#8c672b] flex items-center justify-center shadow-glow font-serif font-bold text-black text-2xl tracking-wider animate-pulse">
-          R
-        </div>
-        <div className="text-center space-y-1">
-          <div className="text-xs font-bold text-white tracking-[0.2em] font-serif uppercase">
-            RIVLET
-          </div>
-          <div className="text-[10px] text-[#717a8f]">
-            Authenticating with Supabase Cloud...
-          </div>
-        </div>
-      </div>
+      <RivletLoader 
+        fullscreen={true}
+        message="Authenticating with Supabase Cloud..."
+        subMessage="Master Operations Console • Tirupur Production Hub"
+      />
     );
   }
 
   // Not logged in and not on login page: show brief redirect screen
   if (!user && !isLoginPage) {
     return (
-      <div className="min-h-screen bg-[#07080c] flex items-center justify-center">
-        <div className="text-xs text-[#717a8f] animate-pulse">
-          Redirecting to secure login...
-        </div>
-      </div>
+      <RivletLoader 
+        fullscreen={true}
+        message="Redirecting to secure login..."
+        subMessage="Rivlet Brand Operations & Vault Access"
+      />
     );
   }
 
