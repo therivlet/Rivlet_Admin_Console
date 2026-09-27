@@ -288,3 +288,12 @@ export function formatPercent(val: number): string {
   if (!Number.isFinite(val)) return '0.0%';
   return `${val.toFixed(1)}%`;
 }
+
+export function calculateAllScenarios(inputs: PricingInputs): Record<ScenarioKey, CalculationResult> {
+  return {
+    low: calculateScenario(inputs, 'low'),
+    mid: calculateScenario(inputs, 'mid'),
+    high: calculateScenario(inputs, 'high'),
+  };
+}
+

@@ -28,6 +28,7 @@ import {
   formatPercent 
 } from '@/lib/pricingEngine';
 import { useAdminStore } from '@/lib/store';
+import CostingExportModal from './CostingExportModal';
 
 interface CostingCalculatorProps {
   initialSheet?: CostingSheet;
@@ -39,6 +40,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
   const [inputs, setInputs] = useState<PricingInputs>(initialSheet?.inputs || defaultPricingInputs);
   const [activeScenario, setActiveScenario] = useState<ScenarioKey>('mid');
   const [savedSuccessAlert, setSavedSuccessAlert] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Accordion section states
   const [showFormula, setShowFormula] = useState(true);
@@ -188,21 +190,21 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
           </div>
 
           <button
-            onClick={handlePrint}
-            className="p-2 rounded-lg bg-[#161a26] border border-[#262c3e] text-[#8e97ae] hover:text-white text-xs flex items-center gap-1.5"
-            title="Print or Save PDF"
+            onClick={() => setIsExportModalOpen(true)}
+            className="p-2 rounded-lg bg-[#161a26] border border-[#262c3e] text-[#8e97ae] hover:text-[#cda052] text-xs flex items-center gap-1.5 transition-colors"
+            title="Print or Save PDF Spec Sheet"
           >
-            <Printer className="w-3.5 h-3.5" />
+            <Printer className="w-3.5 h-3.5 text-[#cda052]" />
             <span className="hidden sm:inline">Print / PDF</span>
           </button>
 
           <button
-            onClick={handleExportCsv}
-            className="p-2 rounded-lg bg-[#161a26] border border-[#262c3e] text-[#8e97ae] hover:text-white text-xs flex items-center gap-1.5"
-            title="Export CSV"
+            onClick={() => setIsExportModalOpen(true)}
+            className="p-2 rounded-lg bg-[#161a26] border border-[#262c3e] text-[#8e97ae] hover:text-[#cda052] text-xs flex items-center gap-1.5 transition-colors"
+            title="Open Export Suite & Multi-Scenario CSV"
           >
-            <Download className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Export CSV</span>
+            <Download className="w-3.5 h-3.5 text-[#cda052]" />
+            <span className="hidden sm:inline">Export Suite</span>
           </button>
 
           <button
@@ -1249,6 +1251,15 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
           )}
         </div>
       </div>
+
+      {/* Export & Spec Sheet Modal */}
+      <CostingExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        inputs={inputs}
+        activeScenario={activeScenario}
+        allScenarios={allResults}
+      />
     </div>
   );
 }
