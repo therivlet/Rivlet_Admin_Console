@@ -11,8 +11,14 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isLoginPage = pathname === '/login';
+
+  // Close mobile drawer upon route navigation
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (!isLoading) {
@@ -58,8 +64,6 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   if (isLoginPage) {
     return <main className="min-h-screen bg-[#07080c]">{children}</main>;
   }
-
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Authenticated admin layout
   return (
