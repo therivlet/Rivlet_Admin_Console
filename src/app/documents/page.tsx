@@ -12,13 +12,17 @@ import {
   Eye, 
   Trash2, 
   Plus, 
-  AlertTriangle,
-  FileCheck,
-  Building,
-  X
+  AlertTriangle, 
+  FileCheck, 
+  Building, 
+  X,
+  ExternalLink,
+  CheckCircle2,
+  Maximize2
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { DocumentItem } from '@/lib/types';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 export default function DocumentsPage() {
   const { documents, addDocument, deleteDocument } = useAdminStore();
@@ -28,13 +32,14 @@ export default function DocumentsPage() {
 
   // New Document Modal State
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [newTitle, setNewTitle] = useState('');
   const [newDocType, setNewDocType] = useState<DocumentItem['documentType']>('Certificate');
   const [newVendor, setNewVendor] = useState('');
   const [newExpiry, setNewExpiry] = useState('');
-  const [newFormat, setNewFormat] = useState<DocumentItem['fileFormat']>('pdf');
   const [newTags, setNewTags] = useState('');
-  const [newFileName, setNewFileName] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadStatusMsg, setUploadStatusMsg] = useState('');
 
   const filtered = documents.filter((doc) => {
     const matchesSearch =
@@ -47,28 +52,96 @@ export default function DocumentsPage() {
     return matchesSearch && matchesType;
   });
 
-  const handleCreateDocument = () => {
+  // Handle file selection from local device
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      if (!newTitle) {
+        // Auto-generate title from filename
+        const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+        setNewTitle(cleanName);
+      }
+    }
+  };
+
+  const handleCreateDocument = async () => {
     if (!newTitle.trim()) return;
 
-    addDocument({
+    setIsUploading(true);
+    setUploadStatusMsg('Preparing document...');
+
+    let fileUrl = '#';
+    let fileSizeBytes = selectedFile ? selectedFile.size : 1500000;
+    let fileFormat: DocumentItem['fileFormat'] = 'pdf';
+
+    if (selectedFile) {
+      const ext = selectedFile.name.split('.').pop()?.toLowerCase();
+      if (ext === 'docx' || ext === 'doc') fileFormat = 'docx';
+      else if (ext === 'xlsx' || ext === 'xls') fileFormat = 'xlsx';
+      else if (ext === 'png' || ext === 'jpg' || ext === 'jpeg') fileFormat = 'image';
+      else fileFormat = 'pdf';
+
+      // 1. Upload to Supabase Storage if configured
+      if (isSupabaseConfigured && supabase) {
+        try {
+          setUploadStatusMsg('Uploading file to Supabase Cloud Storage...');
+          const safeName = `${Date.now()}_${selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+          const filePath = `documents/${safeName}`;
+
+          const { data, error } = await supabase.storage
+            .from('vault-files')
+            .upload(filePath, selectedFile, {
+              cacheControl: '3600',
+              upsert: true,
+            });
+
+          if (!error && data) {
+            const { data: urlData } = supabase.storage
+              .from('vault-files')
+              .getPublicUrl(filePath);
+            fileUrl = urlData.publicUrl;
+          } else {
+            console.warn('Storage upload notice (using fallback URL):', error?.message);
+            fileUrl = URL.createObjectURL(selectedFile);
+          }
+        } catch (err) {
+          console.error('Upload error:', err);
+          fileUrl = URL.createObjectURL(selectedFile);
+        }
+      } else {
+        fileUrl = URL.createObjectURL(selectedFile);
+      }
+    }
+
+    setUploadStatusMsg('Saving metadata to database...');
+
+    await addDocument({
       title: newTitle,
       documentType: newDocType,
-      fileName: newFileName || `${newTitle.replace(/[^a-z0-9]/gi, '_')}.${newFormat}`,
-      fileUrl: '#',
-      fileSizeBytes: 2100000,
-      fileFormat: newFormat,
+      fileName: selectedFile ? selectedFile.name : `${newTitle.replace(/[^a-z0-9]/gi, '_')}.${fileFormat}`,
+      fileUrl,
+      fileSizeBytes,
+      fileFormat,
       expiryDate: newExpiry || undefined,
       status: 'Active',
       tags: newTags.split(',').map((t) => t.trim()).filter(Boolean),
       associatedVendor: newVendor || undefined,
     });
 
+    setIsUploading(false);
     setIsUploadModalOpen(false);
+    setSelectedFile(null);
     setNewTitle('');
     setNewVendor('');
     setNewExpiry('');
     setNewTags('');
-    setNewFileName('');
+  };
+
+  const handleDelete = async (doc: DocumentItem) => {
+    if (confirm(`Remove document record "${doc.title}"?`)) {
+      deleteDocument(doc.id);
+    }
   };
 
   const getFormatBadge = (fmt: string) => {
@@ -81,7 +154,7 @@ export default function DocumentsPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-6 max-w-7xl mx-auto space-y-6 animate-fade-in text-white">
       {/* Top Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#1c2233] pb-5">
         <div>
@@ -90,21 +163,21 @@ export default function DocumentsPage() {
               Document & Certificate Vault
             </h1>
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-[rgba(205,160,82,0.15)] text-[#cda052] border border-[rgba(205,160,82,0.3)] font-semibold">
-              PDF, Word & Compliance Hub
+              Cloud Storage & Compliance Hub
             </span>
           </div>
           <p className="text-xs text-[#7c859c]">
-            Secure repository for GOTS/OEKO-TEX certificates, factory audit reports, vendor contracts, and tech packs.
+            Secure cloud repository for GOTS/OEKO-TEX certificates, factory audit reports, vendor agreements, and apparel tech packs.
           </p>
         </div>
 
         {/* Action Button */}
         <button
           onClick={() => setIsUploadModalOpen(true)}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow transition-all"
         >
           <Upload className="w-3.5 h-3.5 stroke-[2.5]" />
-          <span>Upload Document</span>
+          <span>Upload Document to Cloud</span>
         </button>
       </div>
 
@@ -112,7 +185,7 @@ export default function DocumentsPage() {
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#11141e] p-3 rounded-xl border border-[#1e2436]">
         {/* Type Filter */}
         <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
-          {['All', 'Certificate', 'Tech Pack', 'Legal & Contract', 'Audit Report'].map((type) => (
+          {['All', 'Certificate', 'Tech Pack', 'Legal & Contract', 'Audit Report', 'Specification'].map((type) => (
             <button
               key={type}
               onClick={() => setSelectedType(type)}
@@ -134,137 +207,194 @@ export default function DocumentsPage() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search documents, mills, certs..."
+            placeholder="Search certificates, mills, tech packs..."
             className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#0a0c13] border border-[#212739] text-xs text-white placeholder-[#5c6478] outline-none focus:border-[#cda052]"
           />
         </div>
       </div>
 
-      {/* Documents Grid / Table */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map((doc) => (
-          <div
-            key={doc.id}
-            className="bg-[#111420] border border-[#1e2436] rounded-xl p-4 hover:border-[#cda052]/50 transition-all flex flex-col justify-between"
+      {/* Documents Grid */}
+      {filtered.length === 0 ? (
+        <div className="py-16 text-center border border-dashed border-[#1f2638] rounded-xl bg-[#0d1017]">
+          <FileText className="w-8 h-8 text-[#4a5266] mx-auto mb-2" />
+          <h3 className="text-sm font-semibold text-white mb-1">No documents found</h3>
+          <p className="text-xs text-[#717a90] max-w-sm mx-auto mb-4">
+            Upload your GOTS organic certificates, OEKO-TEX compliance reports, or vendor contracts to store them in your Supabase vault.
+          </p>
+          <button
+            onClick={() => setIsUploadModalOpen(true)}
+            className="px-3.5 py-1.5 rounded-lg bg-[#161a26] border border-[#262c3e] text-xs font-semibold text-[#cda052] hover:bg-[#1f2536]"
           >
-            <div>
-              {/* Header tags */}
-              <div className="flex items-center justify-between mb-2">
-                <span className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded border font-semibold ${getFormatBadge(doc.fileFormat)}`}>
-                  {doc.fileFormat.toUpperCase()}
-                </span>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-950/70 text-emerald-400 border border-emerald-800/40">
-                  {doc.status}
-                </span>
+            Upload First Document
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map((doc) => (
+            <div
+              key={doc.id}
+              className="bg-[#111420] border border-[#1e2436] rounded-xl p-4 hover:border-[#cda052]/50 transition-all flex flex-col justify-between"
+            >
+              <div>
+                {/* Header tags */}
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded border font-semibold ${getFormatBadge(doc.fileFormat)}`}>
+                    {doc.fileFormat.toUpperCase()}
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-950/70 text-emerald-400 border border-emerald-800/40">
+                    {doc.status}
+                  </span>
+                </div>
+
+                {/* Title & Vendor */}
+                <h3 
+                  onClick={() => setPreviewDoc(doc)}
+                  className="text-sm font-semibold text-white hover:text-[#cda052] cursor-pointer mb-1 line-clamp-2"
+                >
+                  {doc.title}
+                </h3>
+
+                {doc.associatedVendor && (
+                  <div className="flex items-center gap-1.5 text-xs text-[#8c94a9] mb-2">
+                    <Building className="w-3 h-3 text-[#555d72]" />
+                    <span>{doc.associatedVendor}</span>
+                  </div>
+                )}
+
+                {/* Tags */}
+                <div className="flex flex-wrap gap-1 my-3">
+                  {doc.tags.map((tag, idx) => (
+                    <span key={idx} className="text-[9px] px-1.5 py-0.5 rounded bg-[#161a26] text-[#8e97af] border border-[#23293c]">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
               </div>
 
-              {/* Title & Vendor */}
-              <h3 
-                onClick={() => setPreviewDoc(doc)}
-                className="text-sm font-semibold text-white hover:text-[#cda052] cursor-pointer mb-1 line-clamp-2"
-              >
-                {doc.title}
-              </h3>
-
-              {doc.associatedVendor && (
-                <div className="flex items-center gap-1.5 text-xs text-[#8c94a9] mb-2">
-                  <Building className="w-3 h-3 text-[#555d72]" />
-                  <span>{doc.associatedVendor}</span>
+              {/* Footer */}
+              <div className="pt-3 border-t border-[#1a1f2e] flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1 text-[10px] text-[#6b7489]">
+                  <Calendar className="w-3 h-3 text-[#555d72]" />
+                  <span>Expires: {doc.expiryDate || 'Permanent'}</span>
                 </div>
-              )}
 
-              {/* Tags */}
-              <div className="flex flex-wrap gap-1 my-3">
-                {doc.tags.map((tag, idx) => (
-                  <span key={idx} className="text-[9px] px-1.5 py-0.5 rounded bg-[#161a26] text-[#8e97af] border border-[#23293c]">
-                    #{tag}
-                  </span>
-                ))}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setPreviewDoc(doc)}
+                    className="p-1.5 rounded-lg bg-[#161a26] border border-[#262c3e] text-[#8e97ae] hover:text-[#cda052]"
+                    title="View Document"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(doc)}
+                    className="p-1.5 rounded-lg bg-[#161a26] border border-[#262c3e] text-[#8e97ae] hover:text-rose-400"
+                    title="Delete Document"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
+          ))}
+        </div>
+      )}
 
-            {/* Footer */}
-            <div className="pt-3 border-t border-[#1a1f2e] flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1 text-[10px] text-[#6b7489]">
-                <Calendar className="w-3 h-3 text-[#555d72]" />
-                <span>Expires: {doc.expiryDate || 'Perpetual'}</span>
+      {/* In-App Document Preview Modal */}
+      {previewDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-4xl h-[85vh] bg-[#0e111a] border border-[#242b3d] rounded-xl flex flex-col shadow-2xl relative overflow-hidden">
+            {/* Modal Topbar */}
+            <div className="px-5 py-3.5 bg-[#121622] border-b border-[#1f2638] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-[rgba(205,160,82,0.15)] text-[#cda052]">
+                  <FileCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white truncate max-w-md">{previewDoc.title}</h3>
+                  <div className="flex items-center gap-2 text-[10px] text-[#717a90]">
+                    <span>{previewDoc.fileName}</span>
+                    <span>•</span>
+                    <span>{(previewDoc.fileSizeBytes / 1024 / 1024).toFixed(2)} MB</span>
+                    <span>•</span>
+                    <span className="text-[#cda052] uppercase font-mono">{previewDoc.fileFormat}</span>
+                  </div>
+                </div>
               </div>
 
               <div className="flex items-center gap-2">
+                {previewDoc.fileUrl && previewDoc.fileUrl !== '#' && (
+                  <a
+                    href={previewDoc.fileUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    download={previewDoc.fileName}
+                    className="px-3 py-1.5 rounded-lg bg-[#cda052] text-black font-bold text-xs flex items-center gap-1.5 hover:brightness-110"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Download</span>
+                  </a>
+                )}
                 <button
-                  onClick={() => setPreviewDoc(doc)}
-                  className="p-1.5 rounded-lg bg-[#161a26] border border-[#262c3e] text-[#8e97ae] hover:text-[#cda052]"
-                  title="Preview Document Details"
+                  onClick={() => setPreviewDoc(null)}
+                  className="p-1.5 text-[#717a90] hover:text-white rounded-lg hover:bg-[#1a1f2e]"
                 >
-                  <Eye className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => {
-                    if (confirm(`Remove document record "${doc.title}"?`)) {
-                      deleteDocument(doc.id);
-                    }
-                  }}
-                  className="p-1.5 rounded-lg bg-[#161a26] border border-[#262c3e] text-[#8e97ae] hover:text-rose-400"
-                  title="Delete Document"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
 
-      {/* Preview Modal */}
-      {previewDoc && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-2xl bg-[#0e111a] border border-[#242b3d] rounded-xl p-6 shadow-2xl relative space-y-4">
-            <button
-              onClick={() => setPreviewDoc(null)}
-              className="absolute top-4 right-4 text-[#697288] hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            {/* Document Content View */}
+            <div className="flex-1 bg-[#090b12] p-4 flex flex-col overflow-hidden">
+              {previewDoc.fileFormat === 'pdf' && previewDoc.fileUrl && previewDoc.fileUrl !== '#' ? (
+                <iframe
+                  src={previewDoc.fileUrl}
+                  title={previewDoc.title}
+                  className="w-full h-full rounded-lg border border-[#1f2638] bg-white"
+                />
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-8 space-y-4">
+                  <div className="w-16 h-16 rounded-2xl bg-[#141824] border border-[#242c40] flex items-center justify-center text-[#cda052] shadow-inner">
+                    <FileText className="w-8 h-8" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-base font-bold text-white">{previewDoc.title}</h4>
+                    <p className="text-xs text-[#717a90]">
+                      {previewDoc.documentType} • Associated with {previewDoc.associatedVendor || 'Rivlet HQ'}
+                    </p>
+                  </div>
 
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-lg bg-[rgba(205,160,82,0.15)] text-[#cda052]">
-                <FileCheck className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-white">{previewDoc.title}</h3>
-                <span className="text-xs text-[#7d879d]">{previewDoc.fileName} • {(previewDoc.fileSizeBytes / 1024 / 1024).toFixed(1)} MB</span>
-              </div>
-            </div>
+                  <div className="bg-[#121622] p-4 rounded-xl border border-[#1f2638] max-w-md w-full space-y-2 text-xs">
+                    <div className="flex justify-between text-[#858d9f]">
+                      <span>Document Status:</span>
+                      <span className="text-emerald-400 font-semibold">{previewDoc.status}</span>
+                    </div>
+                    <div className="flex justify-between text-[#858d9f]">
+                      <span>Compliance Expiry:</span>
+                      <span className="text-[#cda052] font-mono">{previewDoc.expiryDate || 'Permanent Scope'}</span>
+                    </div>
+                    <div className="flex justify-between text-[#858d9f]">
+                      <span>Cloud Bucket:</span>
+                      <span className="text-white font-mono">vault-files</span>
+                    </div>
+                  </div>
 
-            <div className="bg-[#090b12] p-4 rounded-lg border border-[#1e2436] space-y-2 text-xs">
-              <div className="flex justify-between text-[#858d9f]">
-                <span>Document Type:</span>
-                <span className="text-white font-medium">{previewDoc.documentType}</span>
-              </div>
-              <div className="flex justify-between text-[#858d9f]">
-                <span>Associated Mill / Vendor:</span>
-                <span className="text-white font-medium">{previewDoc.associatedVendor || 'Internal Rivlet HQ'}</span>
-              </div>
-              <div className="flex justify-between text-[#858d9f]">
-                <span>Validity / Expiration:</span>
-                <span className="text-[#cda052] font-medium">{previewDoc.expiryDate || 'No Expiry (Permanent Record)'}</span>
-              </div>
-              <div className="flex justify-between text-[#858d9f]">
-                <span>Status:</span>
-                <span className="text-emerald-400 font-semibold">{previewDoc.status}</span>
-              </div>
-            </div>
-
-            <div className="p-4 bg-[#141824] rounded-lg border border-[#22293d] text-center text-xs text-[#7e889f]">
-              <p className="mb-3">
-                This document is indexed in the Rivlet Document Vault. In production with Supabase Storage connected, full PDF rendering and direct downloading are streamed from your secure bucket.
-              </p>
-              <button
-                onClick={() => alert(`Simulated downloading: ${previewDoc.fileName}`)}
-                className="px-4 py-2 rounded-lg bg-[#cda052] text-black font-semibold text-xs inline-flex items-center gap-2 hover:brightness-110"
-              >
-                <Download className="w-4 h-4" /> Download File Record
-              </button>
+                  {previewDoc.fileUrl && previewDoc.fileUrl !== '#' ? (
+                    <a
+                      href={previewDoc.fileUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-4 py-2 rounded-lg bg-[#cda052] text-black font-semibold text-xs inline-flex items-center gap-1.5 hover:brightness-110"
+                    >
+                      <Download className="w-4 h-4" /> Download / Open Document
+                    </a>
+                  ) : (
+                    <div className="text-[11px] text-[#636c82]">
+                      Sample document metadata record. Upload your actual file using "Upload Document to Cloud".
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -272,7 +402,7 @@ export default function DocumentsPage() {
 
       {/* Upload Modal */}
       {isUploadModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fade-in">
           <div className="w-full max-w-lg bg-[#0e111a] border border-[#242b3d] rounded-xl p-6 shadow-2xl relative space-y-4">
             <button
               onClick={() => setIsUploadModalOpen(false)}
@@ -281,16 +411,41 @@ export default function DocumentsPage() {
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="text-base font-bold text-white">Upload New Document to Vault</h3>
+            <div>
+              <h3 className="text-base font-bold text-white">Upload Document to Supabase Vault</h3>
+              <p className="text-xs text-[#717a90]">
+                Files are stored securely in your Supabase Storage bucket and indexed in PostgreSQL.
+              </p>
+            </div>
+
+            {/* Drag & Drop / File Input Box */}
+            <label className="border-2 border-dashed border-[#242c40] hover:border-[#cda052]/50 bg-[#090b12] rounded-xl p-5 flex flex-col items-center justify-center cursor-pointer transition-colors block">
+              <Upload className="w-8 h-8 text-[#cda052] mb-2" />
+              <span className="text-xs font-semibold text-white">
+                {selectedFile ? selectedFile.name : 'Click to select a file from your computer'}
+              </span>
+              <span className="text-[10px] text-[#636c82] mt-1">
+                {selectedFile
+                  ? `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB • Ready to upload`
+                  : 'Supports PDF (.pdf), Word (.docx), Excel (.xlsx), and Images'}
+              </span>
+              <input
+                type="file"
+                accept=".pdf,.docx,.doc,.xlsx,.xls,.png,.jpg,.jpeg"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </label>
 
             <div className="space-y-3 text-xs">
               <div>
                 <label className="block text-[#7b859b] font-medium mb-1">Document Title</label>
                 <input
                   type="text"
+                  required
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="e.g. Tirupur Fabric Mill Scope Certificate 2026"
+                  placeholder="e.g. Tirupur Fabric Mill GOTS Scope Certificate 2026"
                   className="w-full px-3 py-2 rounded bg-[#090b12] border border-[#22283a] text-white outline-none focus:border-[#cda052]"
                 />
               </div>
@@ -312,29 +467,15 @@ export default function DocumentsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-[#7b859b] font-medium mb-1">File Format</label>
-                  <select
-                    value={newFormat}
-                    onChange={(e) => setNewFormat(e.target.value as any)}
+                  <label className="block text-[#7b859b] font-medium mb-1">Associated Vendor / Mill</label>
+                  <input
+                    type="text"
+                    value={newVendor}
+                    onChange={(e) => setNewVendor(e.target.value)}
+                    placeholder="e.g. Southern Eco Mills Ltd"
                     className="w-full px-3 py-2 rounded bg-[#090b12] border border-[#22283a] text-white outline-none"
-                  >
-                    <option value="pdf">PDF (.pdf)</option>
-                    <option value="docx">Word (.docx)</option>
-                    <option value="xlsx">Excel (.xlsx)</option>
-                    <option value="image">Image (.png/.jpg)</option>
-                  </select>
+                  />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-[#7b859b] font-medium mb-1">Associated Vendor / Mill</label>
-                <input
-                  type="text"
-                  value={newVendor}
-                  onChange={(e) => setNewVendor(e.target.value)}
-                  placeholder="e.g. Southern Eco Mills Ltd"
-                  className="w-full px-3 py-2 rounded bg-[#090b12] border border-[#22283a] text-white outline-none"
-                />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -345,8 +486,7 @@ export default function DocumentsPage() {
                     value={newExpiry}
                     onChange={(e) => setNewExpiry(e.target.value)}
                     className="w-full px-3 py-2 rounded bg-[#090b12] border border-[#22283a] text-white outline-none"
-                  >
-                  </input>
+                  />
                 </div>
 
                 <div>
@@ -362,18 +502,27 @@ export default function DocumentsPage() {
               </div>
             </div>
 
+            {uploadStatusMsg && (
+              <div className="text-[11px] text-[#cda052] animate-pulse">
+                {uploadStatusMsg}
+              </div>
+            )}
+
             <div className="pt-3 border-t border-[#1c2233] flex justify-end gap-2">
               <button
+                type="button"
                 onClick={() => setIsUploadModalOpen(false)}
                 className="px-4 py-2 rounded-lg bg-[#141824] border border-[#22283a] text-xs text-[#8e97ae]"
               >
                 Cancel
               </button>
               <button
+                type="button"
+                disabled={isUploading || !newTitle}
                 onClick={handleCreateDocument}
-                className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow"
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow disabled:opacity-50"
               >
-                Save to Vault
+                {isUploading ? 'Uploading to Supabase...' : 'Save to Vault'}
               </button>
             </div>
           </div>
