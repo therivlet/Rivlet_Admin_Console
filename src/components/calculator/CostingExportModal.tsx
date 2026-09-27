@@ -219,10 +219,10 @@ GST Invoice: Applicable HSN Code with GST Tax Invoice.`;
         {/* Toolbar: Mode Selection & Action Buttons */}
         <div className="p-3 sm:p-4 bg-[#090b12] border-b border-[#191f30] flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-shrink-0">
           {/* Mode Switcher */}
-          <div className="flex items-center bg-[#131724] p-1 rounded-xl border border-[#22293d]">
+          <div className="flex items-center bg-[#131724] p-1 rounded-xl border border-[#22293d] overflow-x-auto max-w-full">
             <button
               onClick={() => setExportMode('commercial')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 whitespace-nowrap ${
                 exportMode === 'commercial'
                   ? 'bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold shadow-glow'
                   : 'text-[#848d9f] hover:text-white'
@@ -234,7 +234,7 @@ GST Invoice: Applicable HSN Code with GST Tax Invoice.`;
 
             <button
               onClick={() => setExportMode('vendor')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 whitespace-nowrap ${
                 exportMode === 'vendor'
                   ? 'bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold shadow-glow'
                   : 'text-[#848d9f] hover:text-white'
@@ -246,7 +246,7 @@ GST Invoice: Applicable HSN Code with GST Tax Invoice.`;
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={handleCopySummary}
               className="px-3 py-1.5 rounded-lg bg-[#141824] hover:bg-[#1c2233] border border-[#22293d] text-xs text-[#a3adbf] hover:text-white flex items-center gap-1.5 transition-colors"
@@ -356,7 +356,7 @@ GST Invoice: Applicable HSN Code with GST Tax Invoice.`;
                     1. 3-Scenario Range Matrix (Unit-Level Unit Economics)
                   </h4>
                   <div className="border border-[#1d2437] rounded-lg overflow-x-auto print:border-gray-300">
-                    <table className="w-full text-xs text-left">
+                    <table className="w-full text-xs text-left min-w-[500px]">
                       <thead className="bg-[#121623] border-b border-[#1d2437] text-[#8690a6] print:bg-gray-100 print:text-black print:border-gray-300">
                         <tr>
                           <th className="py-2.5 px-3 font-semibold">Financial Metric</th>
@@ -498,8 +498,8 @@ GST Invoice: Applicable HSN Code with GST Tax Invoice.`;
                   <h4 className="text-xs uppercase font-mono tracking-wider text-[#cda052] font-semibold mb-2 print:text-amber-800">
                     Manufacturing Cost Breakdown (Target Unit FOB)
                   </h4>
-                  <div className="border border-[#1d2437] rounded-lg overflow-hidden print:border-gray-300">
-                    <table className="w-full text-xs text-left">
+                  <div className="border border-[#1d2437] rounded-lg overflow-x-auto print:border-gray-300">
+                    <table className="w-full text-xs text-left min-w-[500px]">
                       <thead className="bg-[#121623] border-b border-[#1d2437] text-[#8690a6] print:bg-gray-100 print:text-black print:border-gray-300">
                         <tr>
                           <th className="py-2.5 px-3 font-semibold">Component / Specification</th>

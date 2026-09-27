@@ -270,13 +270,13 @@ export default function BOMSpecifierModal({
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-[#6e778d]">Garment Name:</span>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <span className="text-xs text-[#6e778d] flex-shrink-0">Garment Name:</span>
             <input
               type="text"
               value={garmentType}
               onChange={(e) => setGarmentType(e.target.value)}
-              className="px-2.5 py-1 rounded bg-[#07090f] border border-[#20273c] text-xs text-white outline-none focus:border-[#cda052] w-48 sm:w-64"
+              className="px-2.5 py-1 rounded bg-[#07090f] border border-[#20273c] text-xs text-white outline-none focus:border-[#cda052] flex-1 sm:w-64"
             />
           </div>
         </div>

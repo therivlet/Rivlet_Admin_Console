@@ -154,7 +154,7 @@ export default function DocumentsPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 animate-fade-in text-white">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 animate-fade-in text-white">
       {/* Top Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#1c2233] pb-5">
         <div>
@@ -302,22 +302,22 @@ export default function DocumentsPage() {
 
       {/* In-App Document Preview Modal */}
       {previewDoc && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-4xl h-[85vh] bg-[#0e111a] border border-[#242b3d] rounded-xl flex flex-col shadow-2xl relative overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-4xl h-[92vh] sm:h-[85vh] bg-[#0e111a] border border-[#242b3d] rounded-xl flex flex-col shadow-2xl relative overflow-hidden">
             {/* Modal Topbar */}
-            <div className="px-5 py-3.5 bg-[#121622] border-b border-[#1f2638] flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-[rgba(205,160,82,0.15)] text-[#cda052]">
-                  <FileCheck className="w-5 h-5" />
+            <div className="px-4 sm:px-5 py-3 bg-[#121622] border-b border-[#1f2638] flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                <div className="p-1.5 sm:p-2 rounded-lg bg-[rgba(205,160,82,0.15)] text-[#cda052] flex-shrink-0">
+                  <FileCheck className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
-                <div>
-                  <h3 className="text-sm font-bold text-white truncate max-w-md">{previewDoc.title}</h3>
-                  <div className="flex items-center gap-2 text-[10px] text-[#717a90]">
-                    <span>{previewDoc.fileName}</span>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold text-white truncate max-w-[160px] sm:max-w-md">{previewDoc.title}</h3>
+                  <div className="flex items-center gap-2 text-[10px] text-[#717a90] truncate">
+                    <span className="truncate">{previewDoc.fileName}</span>
                     <span>•</span>
-                    <span>{(previewDoc.fileSizeBytes / 1024 / 1024).toFixed(2)} MB</span>
+                    <span className="flex-shrink-0">{(previewDoc.fileSizeBytes / 1024 / 1024).toFixed(2)} MB</span>
                     <span>•</span>
-                    <span className="text-[#cda052] uppercase font-mono">{previewDoc.fileFormat}</span>
+                    <span className="text-[#cda052] uppercase font-mono flex-shrink-0">{previewDoc.fileFormat}</span>
                   </div>
                 </div>
               </div>

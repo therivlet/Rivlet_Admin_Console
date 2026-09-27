@@ -46,7 +46,7 @@ export default function CalculatorPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 animate-fade-in">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 animate-fade-in">
       {/* Top Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#1c2233] pb-5">
         <div>
@@ -64,7 +64,7 @@ export default function CalculatorPage() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center bg-[#111420] p-1 rounded-xl border border-[#20273a]">
+        <div className="flex items-center bg-[#111420] p-1 rounded-xl border border-[#20273a] overflow-x-auto max-w-full">
           <button
             onClick={() => setActiveTab('studio')}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${

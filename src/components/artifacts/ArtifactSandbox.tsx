@@ -13,7 +13,8 @@ import {
   Code, 
   ExternalLink,
   Sparkles,
-  ArrowUpRight
+  ArrowUpRight,
+  X
 } from 'lucide-react';
 import { ArtifactItem } from '@/lib/types';
 
@@ -22,13 +23,15 @@ interface ArtifactSandboxProps {
   onEdit?: () => void;
   onTogglePromote?: () => void;
   seamlessMode?: boolean; // When true, fits seamlessly inside a dedicated page view without extra chrome
+  onClose?: () => void;
 }
 
 export default function ArtifactSandbox({ 
   artifact, 
   onEdit, 
   onTogglePromote,
-  seamlessMode = false 
+  seamlessMode = false,
+  onClose,
 }: ArtifactSandboxProps) {
   const [viewport, setViewport] = useState<'desktop' | 'laptop' | 'tablet' | 'mobile'>('desktop');
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -59,20 +62,20 @@ export default function ArtifactSandbox({
   return (
     <div className={`flex flex-col ${isFullscreen ? 'fixed inset-0 z-50 bg-[#090b10]' : 'h-full w-full'}`}>
       {/* Sandbox Control Bar */}
-      <div className="flex-shrink-0 h-13 px-4 py-2.5 bg-[#0f121a] border-b border-[#1e2332] flex items-center justify-between gap-3">
+      <div className="flex-shrink-0 min-h-[52px] px-3 sm:px-4 py-2 bg-[#0f121a] border-b border-[#1e2332] flex items-center justify-between gap-2 sm:gap-3">
         {/* Left: Info */}
-        <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
           <div className="p-1 rounded bg-[rgba(205,160,82,0.12)] text-[#cda052] flex-shrink-0">
             <Sparkles className="w-3.5 h-3.5" />
           </div>
           <div className="truncate">
-            <div className="flex items-center gap-2">
-              <h2 className="text-xs font-semibold text-white truncate">{artifact.title}</h2>
-              <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#1e2434] text-[#8e97ae] font-mono">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <h2 className="text-xs font-semibold text-white truncate max-w-[120px] sm:max-w-[200px] md:max-w-xs">{artifact.title}</h2>
+              <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#1e2434] text-[#8e97ae] font-mono flex-shrink-0">
                 v{artifact.version}
               </span>
               {artifact.isPromoted && (
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-950/70 text-emerald-400 border border-emerald-800/40">
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-950/70 text-emerald-400 border border-emerald-800/40 hidden sm:inline flex-shrink-0">
                   Promoted Page
                 </span>
               )}
@@ -81,7 +84,7 @@ export default function ArtifactSandbox({
         </div>
 
         {/* Center: Viewport switchers (hidden in mobile) */}
-        <div className="hidden md:flex items-center gap-1 bg-[#141722] p-1 rounded-lg border border-[#212638]">
+        <div className="hidden lg:flex items-center gap-1 bg-[#141722] p-1 rounded-lg border border-[#212638] flex-shrink-0">
           <button
             onClick={() => setViewport('desktop')}
             className={`p-1.5 rounded text-xs transition-colors ${
@@ -121,18 +124,18 @@ export default function ArtifactSandbox({
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
           {onTogglePromote && (
             <button
               onClick={onTogglePromote}
-              className={`text-xs px-2.5 py-1.5 rounded-lg border font-medium transition-all flex items-center gap-1.5 ${
+              className={`text-xs px-2 sm:px-2.5 py-1.5 rounded-lg border font-medium transition-all flex items-center gap-1 sm:gap-1.5 ${
                 artifact.isPromoted
                   ? 'bg-amber-950/40 text-amber-300 border-amber-800/40 hover:bg-amber-900/50'
                   : 'bg-[rgba(205,160,82,0.12)] text-[#e8ca78] border-[#cda052]/40 hover:bg-[rgba(205,160,82,0.2)]'
               }`}
             >
               <ArrowUpRight className="w-3.5 h-3.5" />
-              <span>{artifact.isPromoted ? 'Unpin Page' : 'Promote to Page'}</span>
+              <span className="hidden sm:inline">{artifact.isPromoted ? 'Unpin Page' : 'Promote to Page'}</span>
             </button>
           )}
 
@@ -143,7 +146,7 @@ export default function ArtifactSandbox({
               title="Edit / Clean Artifact Code"
             >
               <Code className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Clean & Edit</span>
+              <span className="hidden md:inline">Clean & Edit</span>
             </button>
           )}
 
@@ -157,7 +160,7 @@ export default function ArtifactSandbox({
 
           <button
             onClick={handleDownload}
-            className="p-1.5 rounded-lg bg-[#171b26] border border-[#262c3e] text-[#9fa7ba] hover:text-white"
+            className="p-1.5 rounded-lg bg-[#171b26] border border-[#262c3e] text-[#9fa7ba] hover:text-white hidden xs:flex"
             title="Download HTML"
           >
             <Download className="w-3.5 h-3.5" />
@@ -170,6 +173,16 @@ export default function ArtifactSandbox({
           >
             {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
           </button>
+
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg bg-[#1f2537] hover:bg-rose-950/70 border border-[#2e374e] hover:border-rose-700/60 text-[#a2adbf] hover:text-rose-300 transition-colors ml-0.5"
+              title="Close Sandbox"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
 

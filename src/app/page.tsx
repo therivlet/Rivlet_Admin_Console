@@ -35,7 +35,7 @@ export default function DashboardOverviewPage() {
     : '0';
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-8 animate-fade-in">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-8 animate-fade-in">
       {/* Top Welcome & Executive Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#1c2233] pb-6">
         <div>
@@ -54,7 +54,7 @@ export default function DashboardOverviewPage() {
         </div>
 
         {/* Global Quick Action Buttons */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
           <button
             onClick={() => setIsCmdOpen(true)}
             className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#141824] border border-[#232a3d] text-xs text-[#8f98af] hover:text-white hover:border-[#cda052]/50 transition-colors shadow-sm"

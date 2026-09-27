@@ -83,7 +83,7 @@ export default function KnowledgeBasePage() {
   );
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
       {/* Top Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#1c2233] pb-5">
         <div>
@@ -102,7 +102,7 @@ export default function KnowledgeBasePage() {
 
         <button
           onClick={handleNewArticle}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow self-start sm:self-auto flex-shrink-0"
         >
           <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
           <span>New SOP / Article</span>
