@@ -8,9 +8,12 @@ import {
   Tag, 
   ShieldAlert, 
   FileUp,
-  Calculator
+  Calculator,
+  LogOut,
+  User
 } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/lib/authContext';
 
 interface TopbarProps {
   onOpenCommand?: () => void;
@@ -18,6 +21,7 @@ interface TopbarProps {
 }
 
 export default function Topbar({ onOpenCommand, onNewArtifact }: TopbarProps) {
+  const { user } = useAuth();
   const triggerCommand = () => {
     if (onOpenCommand) {
       onOpenCommand();
@@ -71,9 +75,15 @@ export default function Topbar({ onOpenCommand, onNewArtifact }: TopbarProps) {
           </Link>
         )}
 
-        {/* User Monogram */}
-        <div className="w-8 h-8 rounded-full bg-[#1b202f] border border-[#2c344a] flex items-center justify-center text-xs font-semibold text-[#cda052]">
-          HA
+        {/* User Monogram & Logout */}
+        <div className="flex items-center gap-2">
+          <Link
+            href="/login"
+            className="w-8 h-8 rounded-full bg-[#1b202f] border border-[#2c344a] flex items-center justify-center text-xs font-semibold text-[#cda052] hover:border-[#cda052] transition-colors"
+            title={user ? `${user.name} (${user.email})` : 'Sign In'}
+          >
+            {user?.name?.[0]?.toUpperCase() || 'R'}
+          </Link>
         </div>
       </div>
     </header>

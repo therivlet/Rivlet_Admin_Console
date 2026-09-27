@@ -13,14 +13,18 @@ import {
   ChevronRight,
   Database,
   ExternalLink,
-  ShieldCheck
+  ShieldCheck,
+  LogOut,
+  User
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { isSupabaseConfigured } from '@/lib/supabase';
+import { useAuth } from '@/lib/authContext';
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { artifacts } = useAdminStore();
+  const { user, signOut } = useAuth();
 
   const promotedTools = artifacts.filter(a => a.isPromoted && a.status === 'promoted');
 
@@ -144,6 +148,25 @@ export default function Sidebar() {
             <ShieldCheck className="w-3 h-3" />
             Protected
           </span>
+        </div>
+
+        {/* User Session */}
+        <div className="pt-2 mt-2 border-t border-[#1a1f2c] flex items-center justify-between">
+          <div className="flex items-center gap-2 truncate">
+            <div className="w-5 h-5 rounded-full bg-[#1b202e] text-[#cda052] flex items-center justify-center text-[10px] font-bold border border-[#2b3346]">
+              {user?.name?.[0]?.toUpperCase() || 'R'}
+            </div>
+            <span className="text-[11px] text-[#cfd5e4] truncate font-medium">
+              {user?.name || 'Rivlet Admin'}
+            </span>
+          </div>
+          <button
+            onClick={() => signOut()}
+            className="text-[#646c80] hover:text-rose-400 p-1 rounded transition-colors"
+            title="Sign Out"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
     </aside>
