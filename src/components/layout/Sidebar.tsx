@@ -71,7 +71,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
       {/* Main Navigation */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
         <div>
-          <div className="px-3 mb-2 text-[10px] font-semibold tracking-wider text-[#636b80] uppercase">
+          <div className="px-3 mb-2 text-[11px] font-semibold tracking-wider text-[#94a3b8] uppercase">
             Core Modules
           </div>
           <nav className="space-y-1">
@@ -83,18 +83,18 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                   key={item.href}
                   href={item.href}
                   onClick={handleLinkClick}
-                  className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-all ${
+                  className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-xs transition-all ${
                     isActive
                       ? 'bg-gradient-to-r from-[rgba(205,160,82,0.18)] to-transparent text-[#e6c875] border-l-2 border-[#cda052] font-semibold'
-                      : 'text-[#9fa6b8] hover:text-white hover:bg-[#141722]'
+                      : 'text-[#cbd5e1] hover:text-white hover:bg-[#141724]'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-[#cda052]' : 'text-[#70788d]'}`} />
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-[#cda052]' : 'text-[#8895ad]'}`} />
                     <span>{item.label}</span>
                   </div>
                   {item.badge !== undefined && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#1b202e] text-[#8e97ae] border border-[#262c3e]">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#182030] text-[#94a3b8] border border-[#263148] font-mono">
                       {item.badge}
                     </span>
                   )}
@@ -107,11 +107,11 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
         {/* Promoted Claude Artifacts (First-class Custom Pages) */}
         <div>
           <div className="px-3 mb-2 flex items-center justify-between">
-            <span className="text-[10px] font-semibold tracking-wider text-[#636b80] uppercase flex items-center gap-1.5">
+            <span className="text-[11px] font-semibold tracking-wider text-[#94a3b8] uppercase flex items-center gap-1.5">
               <Sparkles className="w-3 h-3 text-[#cda052]" />
               Promoted Claude Tools
             </span>
-            <span className="text-[9px] px-1.5 py-0.5 rounded bg-[rgba(205,160,82,0.1)] text-[#cda052] border border-[rgba(205,160,82,0.2)]">
+            <span className="text-[9px] px-1.5 py-0.5 rounded bg-[rgba(205,160,82,0.12)] text-[#cda052] border border-[rgba(205,160,82,0.25)] font-semibold font-mono">
               {promotedTools.length} Live
             </span>
           </div>
@@ -119,11 +119,11 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
           <div className="space-y-1">
             {promotedTools.length === 0 ? (
               <div className="px-3 py-3 rounded-lg border border-dashed border-[#1f2638] text-center">
-                <p className="text-[11px] text-[#616a7f]">No tools promoted yet.</p>
+                <p className="text-xs text-[#94a3b8]">No tools promoted yet.</p>
                 <Link
                   href="/artifacts"
                   onClick={handleLinkClick}
-                  className="text-[10px] text-[#cda052] hover:underline mt-1 inline-block font-medium"
+                  className="text-xs text-[#cda052] hover:underline mt-1 inline-block font-semibold"
                 >
                   Review inbox →
                 </Link>
@@ -141,12 +141,12 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                     onClick={handleLinkClick}
                     className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors group ${
                       isActive
-                        ? 'bg-[rgba(205,160,82,0.12)] text-[#e6c875] border-l-2 border-[#cda052] font-medium'
-                        : 'text-[#8c94a8] hover:text-white hover:bg-[#121622]'
+                        ? 'bg-[rgba(205,160,82,0.14)] text-[#e6c875] border-l-2 border-[#cda052] font-semibold'
+                        : 'text-[#cbd5e1] hover:text-white hover:bg-[#141724]'
                     }`}
                   >
                     <span className="truncate max-w-[170px]">{tool.title}</span>
-                    <ChevronRight className="w-3 h-3 text-[#495166] group-hover:text-[#cda052] transition-colors flex-shrink-0" />
+                    <ChevronRight className="w-3 h-3 text-[#5f6c85] group-hover:text-[#cda052] transition-colors flex-shrink-0" />
                   </Link>
                 );
               })
@@ -157,46 +157,46 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
 
       {/* Footer Info / Backend Status */}
       <div className="p-3.5 border-t border-[#1a1f2c] bg-[#07080d] text-[11px]">
-        <div className="flex items-center justify-between text-[#858d9f] mb-1.5">
-          <span className="flex items-center gap-1.5">
+        <div className="flex items-center justify-between text-[#cbd5e1] mb-1.5">
+          <span className="flex items-center gap-1.5 font-medium">
             <Database className="w-3.5 h-3.5 text-[#cda052]" />
             Backend Sync
           </span>
-          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40">
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-950/70 text-emerald-300 border border-emerald-800/50 font-mono">
             {isSupabaseConfigured ? 'Supabase Live' : 'Local / Offline'}
           </span>
         </div>
-        <div className="flex items-center justify-between text-[#5f677a] text-[10px]">
-          <span>Security Level: High</span>
-          <span className="flex items-center gap-1 text-emerald-400">
+        <div className="flex items-center justify-between text-[#94a3b8] text-[10px]">
+          <span>Security Protocol</span>
+          <span className="flex items-center gap-1 text-emerald-400 font-medium">
             <ShieldCheck className="w-3 h-3" />
             Protected
           </span>
         </div>
 
         {/* User Session Profile Link */}
-        <div className="pt-2 mt-2 border-t border-[#171b26] flex items-center justify-between">
+        <div className="pt-2.5 mt-2.5 border-t border-[#182030] flex items-center justify-between">
           <Link
             href="/profile"
             onClick={handleLinkClick}
-            className="flex items-center gap-2 truncate group hover:opacity-85 transition-opacity"
+            className="flex items-center gap-2 truncate group hover:opacity-90 transition-opacity"
             title="Open Profile & Settings"
           >
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#cda052] to-[#8c672b] text-black flex items-center justify-center text-[10px] font-bold shadow-glow">
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#cda052] to-[#8c672b] text-black flex items-center justify-center text-xs font-bold shadow-glow flex-shrink-0">
               {user?.name?.[0]?.toUpperCase() || 'R'}
             </div>
             <div className="truncate text-left">
-              <span className="text-[11px] text-[#cfd5e4] group-hover:text-[#cda052] truncate font-medium block">
+              <span className="text-xs text-[#f1f5f9] group-hover:text-[#cda052] truncate font-semibold block">
                 {user?.name || 'Rivlet Admin'}
               </span>
-              <span className="text-[9px] text-[#6b7489] block -mt-0.5">
+              <span className="text-[10px] text-[#94a3b8] block -mt-0.5">
                 Profile & Settings
               </span>
             </div>
           </Link>
           <button
             onClick={() => signOut()}
-            className="text-[#646c80] hover:text-rose-400 p-1 rounded transition-colors"
+            className="text-[#94a3b8] hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-950/30 transition-colors"
             title="Sign Out"
           >
             <LogOut className="w-3.5 h-3.5" />

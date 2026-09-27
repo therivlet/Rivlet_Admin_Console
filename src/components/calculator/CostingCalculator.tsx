@@ -279,94 +279,94 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
         </div>
       </div>
 
-      {/* Main KPI Grid (16 Key Metrics) */}
+      {/* Main KPI Grid (12 Key Metrics) */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
         {/* KPI 1: Actual Customer Price */}
-        <div className="bg-[#111420] border border-[#1e2436] p-3.5 rounded-xl">
-          <div className="text-[10px] text-[#717a90] uppercase font-semibold">Customer Price</div>
-          <div className="text-lg font-bold text-white mt-1 font-mono">{formatMoney(currentResult.customerPrice, curr)}</div>
-          <div className="text-[10px] text-[#555d72] mt-0.5">After {formatPercent(currentResult.discount * 100)} discount</div>
+        <div className="bg-[#0e121b] border border-[#1e2638] hover:border-[#2a364f] p-3.5 rounded-xl transition-colors shadow-sm">
+          <div className="text-[11px] text-[#94a3b8] uppercase font-semibold tracking-wider">Customer Price</div>
+          <div className="text-lg font-bold text-white mt-1 font-mono tabular-nums">{formatMoney(currentResult.customerPrice, curr)}</div>
+          <div className="text-[11px] text-[#cbd5e1] mt-0.5">After {formatPercent(currentResult.discount * 100)} discount</div>
         </div>
 
         {/* KPI 2: Output GST */}
-        <div className="bg-[#111420] border border-[#1e2436] p-3.5 rounded-xl">
-          <div className="text-[10px] text-[#717a90] uppercase font-semibold">Output GST Rate</div>
-          <div className="text-lg font-bold text-[#cda052] mt-1 font-mono">{currentResult.outputRate}%</div>
-          <div className="text-[10px] text-[#555d72] mt-0.5">Amount: {formatMoney(currentResult.outputGst, curr)}</div>
+        <div className="bg-[#0e121b] border border-[#1e2638] hover:border-[#2a364f] p-3.5 rounded-xl transition-colors shadow-sm">
+          <div className="text-[11px] text-[#94a3b8] uppercase font-semibold tracking-wider">Output GST Rate</div>
+          <div className="text-lg font-bold text-[#cda052] mt-1 font-mono tabular-nums">{currentResult.outputRate}%</div>
+          <div className="text-[11px] text-[#cbd5e1] mt-0.5">Amount: {formatMoney(currentResult.outputGst, curr)}</div>
         </div>
 
         {/* KPI 3: Net Sales */}
-        <div className="bg-[#111420] border border-[#1e2436] p-3.5 rounded-xl">
-          <div className="text-[10px] text-[#717a90] uppercase font-semibold">Net Sales (ex GST)</div>
-          <div className="text-lg font-bold text-white mt-1 font-mono">{formatMoney(currentResult.netSales, curr)}</div>
-          <div className="text-[10px] text-[#555d72] mt-0.5">Revenue to cover costs</div>
+        <div className="bg-[#0e121b] border border-[#1e2638] hover:border-[#2a364f] p-3.5 rounded-xl transition-colors shadow-sm">
+          <div className="text-[11px] text-[#94a3b8] uppercase font-semibold tracking-wider">Net Sales (ex GST)</div>
+          <div className="text-lg font-bold text-white mt-1 font-mono tabular-nums">{formatMoney(currentResult.netSales, curr)}</div>
+          <div className="text-[11px] text-[#cbd5e1] mt-0.5">Revenue to cover costs</div>
         </div>
 
         {/* KPI 4: Landed Product Cost */}
-        <div className="bg-[#111420] border border-[#1e2436] p-3.5 rounded-xl">
-          <div className="text-[10px] text-[#717a90] uppercase font-semibold">Landed Cost / Unit</div>
-          <div className="text-lg font-bold text-amber-400 mt-1 font-mono">{formatMoney(currentResult.baseProductCost, curr)}</div>
-          <div className="text-[10px] text-[#555d72] mt-0.5">Mfg, logistics & QC</div>
+        <div className="bg-[#0e121b] border border-[#1e2638] hover:border-[#2a364f] p-3.5 rounded-xl transition-colors shadow-sm">
+          <div className="text-[11px] text-[#94a3b8] uppercase font-semibold tracking-wider">Landed Cost / Unit</div>
+          <div className="text-lg font-bold text-amber-300 mt-1 font-mono tabular-nums">{formatMoney(currentResult.baseProductCost, curr)}</div>
+          <div className="text-[11px] text-[#cbd5e1] mt-0.5">Mfg, logistics & QC</div>
         </div>
 
         {/* KPI 5: Gross Margin */}
-        <div className="bg-[#111420] border border-[#1e2436] p-3.5 rounded-xl">
-          <div className="text-[10px] text-[#717a90] uppercase font-semibold">Gross Margin</div>
-          <div className="text-lg font-bold text-emerald-400 mt-1 font-mono">{formatPercent(currentResult.grossMargin * 100)}</div>
-          <div className="text-[10px] text-[#555d72] mt-0.5">{formatMoney(currentResult.grossProfit, curr)} / piece</div>
+        <div className="bg-[#0e121b] border border-[#1e2638] hover:border-[#2a364f] p-3.5 rounded-xl transition-colors shadow-sm">
+          <div className="text-[11px] text-[#94a3b8] uppercase font-semibold tracking-wider">Gross Margin</div>
+          <div className="text-lg font-bold text-emerald-400 mt-1 font-mono tabular-nums">{formatPercent(currentResult.grossMargin * 100)}</div>
+          <div className="text-[11px] text-[#cbd5e1] mt-0.5">{formatMoney(currentResult.grossProfit, curr)} / piece</div>
         </div>
 
         {/* KPI 6: Overhead Allocation */}
-        <div className="bg-[#111420] border border-[#1e2436] p-3.5 rounded-xl">
-          <div className="text-[10px] text-[#717a90] uppercase font-semibold">Overhead / Unit</div>
-          <div className="text-lg font-bold text-white mt-1 font-mono">{formatMoney(currentResult.overheadPerUnit, curr)}</div>
-          <div className="text-[10px] text-[#555d72] mt-0.5">On {currentResult.units.toLocaleString()} annual units</div>
+        <div className="bg-[#0e121b] border border-[#1e2638] hover:border-[#2a364f] p-3.5 rounded-xl transition-colors shadow-sm">
+          <div className="text-[11px] text-[#94a3b8] uppercase font-semibold tracking-wider">Overhead / Unit</div>
+          <div className="text-lg font-bold text-white mt-1 font-mono tabular-nums">{formatMoney(currentResult.overheadPerUnit, curr)}</div>
+          <div className="text-[11px] text-[#cbd5e1] mt-0.5">On {currentResult.units.toLocaleString()} annual units</div>
         </div>
 
         {/* KPI 7: Variable Order Cost */}
-        <div className="bg-[#111420] border border-[#1e2436] p-3.5 rounded-xl">
-          <div className="text-[10px] text-[#717a90] uppercase font-semibold">Variable Order Cost</div>
-          <div className="text-lg font-bold text-white mt-1 font-mono">{formatMoney(currentResult.fixedOrder + currentResult.salesRateCost, curr)}</div>
-          <div className="text-[10px] text-[#555d72] mt-0.5">CAC, returns & shipping</div>
+        <div className="bg-[#0e121b] border border-[#1e2638] hover:border-[#2a364f] p-3.5 rounded-xl transition-colors shadow-sm">
+          <div className="text-[11px] text-[#94a3b8] uppercase font-semibold tracking-wider">Variable Order Cost</div>
+          <div className="text-lg font-bold text-white mt-1 font-mono tabular-nums">{formatMoney(currentResult.fixedOrder + currentResult.salesRateCost, curr)}</div>
+          <div className="text-[11px] text-[#cbd5e1] mt-0.5">CAC, returns & shipping</div>
         </div>
 
-        {/* KPI 8: Contribution Profit (Major) */}
-        <div className="bg-gradient-to-br from-[#1c1810] to-[#121520] border border-[#cda052]/50 p-3.5 rounded-xl shadow-glow/10">
-          <div className="text-[10px] text-[#cda052] uppercase font-bold">Contribution Profit</div>
-          <div className="text-xl font-bold text-white mt-1 font-mono">{formatMoney(currentResult.contributionProfit, curr)}</div>
-          <div className="text-[10px] text-emerald-400 mt-0.5 font-semibold">Margin: {formatPercent(currentResult.contributionMargin * 100)}</div>
+        {/* KPI 8: Contribution Profit (Major Highlight) */}
+        <div className="bg-gradient-to-br from-[#1c1810] to-[#121624] border border-[#cda052]/60 p-3.5 rounded-xl shadow-glow">
+          <div className="text-[11px] text-[#cda052] uppercase font-bold tracking-wider">Contribution Profit</div>
+          <div className="text-xl font-bold text-white mt-1 font-mono tabular-nums">{formatMoney(currentResult.contributionProfit, curr)}</div>
+          <div className="text-[11px] text-emerald-300 mt-0.5 font-semibold">Margin: {formatPercent(currentResult.contributionMargin * 100)}</div>
         </div>
 
         {/* KPI 9: Break-Even MRP */}
-        <div className="bg-[#111420] border border-[#1e2436] p-3.5 rounded-xl">
-          <div className="text-[10px] text-[#717a90] uppercase font-semibold">Break-Even MRP</div>
-          <div className="text-lg font-bold text-white mt-1 font-mono">
+        <div className="bg-[#0e121b] border border-[#1e2638] hover:border-[#2a364f] p-3.5 rounded-xl transition-colors shadow-sm">
+          <div className="text-[11px] text-[#94a3b8] uppercase font-semibold tracking-wider">Break-Even MRP</div>
+          <div className="text-lg font-bold text-white mt-1 font-mono tabular-nums">
             {Number.isFinite(currentResult.breakEvenMrp) ? formatMoney(currentResult.breakEvenMrp, curr) : 'Unachievable'}
           </div>
-          <div className="text-[10px] text-[#555d72] mt-0.5">At 0% margin</div>
+          <div className="text-[11px] text-[#cbd5e1] mt-0.5">At 0% margin</div>
         </div>
 
         {/* KPI 10: Target MRP */}
-        <div className="bg-[#111420] border border-[#1e2436] p-3.5 rounded-xl">
-          <div className="text-[10px] text-[#717a90] uppercase font-semibold">Target MRP ({inputs.targetMargin}%)</div>
-          <div className="text-lg font-bold text-[#cda052] mt-1 font-mono">
+        <div className="bg-[#0e121b] border border-[#1e2638] hover:border-[#2a364f] p-3.5 rounded-xl transition-colors shadow-sm">
+          <div className="text-[11px] text-[#94a3b8] uppercase font-semibold tracking-wider">Target MRP ({inputs.targetMargin}%)</div>
+          <div className="text-lg font-bold text-[#cda052] mt-1 font-mono tabular-nums">
             {Number.isFinite(currentResult.targetMrp) ? formatMoney(currentResult.targetMrp, curr) : 'Unachievable'}
           </div>
-          <div className="text-[10px] text-[#555d72] mt-0.5">For {inputs.targetMargin}% target margin</div>
+          <div className="text-[11px] text-[#cbd5e1] mt-0.5">For {inputs.targetMargin}% target margin</div>
         </div>
 
         {/* KPI 11: Max Factory Cost */}
-        <div className="bg-[#111420] border border-[#1e2436] p-3.5 rounded-xl">
-          <div className="text-[10px] text-[#717a90] uppercase font-semibold">Max Factory Cost</div>
-          <div className="text-lg font-bold text-white mt-1 font-mono">{formatMoney(currentResult.maximumFactoryCost, curr)}</div>
-          <div className="text-[10px] text-[#555d72] mt-0.5">Ceiling at current MRP</div>
+        <div className="bg-[#0e121b] border border-[#1e2638] hover:border-[#2a364f] p-3.5 rounded-xl transition-colors shadow-sm">
+          <div className="text-[11px] text-[#94a3b8] uppercase font-semibold tracking-wider">Max Factory Cost</div>
+          <div className="text-lg font-bold text-white mt-1 font-mono tabular-nums">{formatMoney(currentResult.maximumFactoryCost, curr)}</div>
+          <div className="text-[11px] text-[#cbd5e1] mt-0.5">Ceiling at current MRP</div>
         </div>
 
         {/* KPI 12: Annual Contribution */}
-        <div className="bg-[#111420] border border-[#1e2436] p-3.5 rounded-xl">
-          <div className="text-[10px] text-[#717a90] uppercase font-semibold">Annual Contribution</div>
-          <div className="text-lg font-bold text-emerald-400 mt-1 font-mono">{formatMoney(currentResult.annualContribution, curr)}</div>
-          <div className="text-[10px] text-[#555d72] mt-0.5">Total brand profit pool</div>
+        <div className="bg-[#0e121b] border border-[#1e2638] hover:border-[#2a364f] p-3.5 rounded-xl transition-colors shadow-sm">
+          <div className="text-[11px] text-[#94a3b8] uppercase font-semibold tracking-wider">Annual Contribution</div>
+          <div className="text-lg font-bold text-emerald-400 mt-1 font-mono tabular-nums">{formatMoney(currentResult.annualContribution, curr)}</div>
+          <div className="text-[11px] text-[#cbd5e1] mt-0.5">Total brand profit pool</div>
         </div>
       </div>
 
@@ -384,7 +384,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
 
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div>
-              <label className="text-[10px] uppercase font-semibold text-[#666f85] block mb-1">
+              <label className="text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider block mb-1">
                 Product Name
               </label>
               <input
@@ -396,7 +396,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
             </div>
 
             <div>
-              <label className="text-[10px] uppercase font-semibold text-[#666f85] block mb-1">
+              <label className="text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider block mb-1">
                 Product Code / SKU
               </label>
               <input
@@ -408,7 +408,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
             </div>
 
             <div>
-              <label className="text-[10px] uppercase font-semibold text-[#666f85] block mb-1">
+              <label className="text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider block mb-1">
                 Listed MRP (GST Included)
               </label>
               <div className="relative">
@@ -423,7 +423,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
             </div>
 
             <div>
-              <label className="text-[10px] uppercase font-semibold text-[#666f85] block mb-1">
+              <label className="text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider block mb-1">
                 Target Contribution Margin %
               </label>
               <div className="relative">
@@ -695,7 +695,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-[10px] uppercase font-semibold text-[#666f85]">
+                <label className="text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider">
                   Factory Invoice Cost
                 </label>
                 <button
@@ -724,7 +724,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
             </div>
 
             <div>
-              <label className="text-[10px] uppercase font-semibold text-[#666f85] block mb-1">
+              <label className="text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider block mb-1">
                 Dev & Sampling Allocation
               </label>
               <div className="relative">
@@ -739,7 +739,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
             </div>
 
             <div>
-              <label className="text-[10px] uppercase font-semibold text-[#666f85] block mb-1">
+              <label className="text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider block mb-1">
                 Domestic Inbound Logistics
               </label>
               <div className="relative">
@@ -754,7 +754,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
             </div>
 
             <div>
-              <label className="text-[10px] uppercase font-semibold text-[#666f85] block mb-1">
+              <label className="text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider block mb-1">
                 Quality Control (QC)
               </label>
               <div className="relative">
@@ -769,7 +769,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
             </div>
 
             <div>
-              <label className="text-[10px] uppercase font-semibold text-[#666f85] block mb-1">
+              <label className="text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider block mb-1">
                 Packaging (Polybag, Mailer)
               </label>
               <div className="relative">
@@ -784,7 +784,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
             </div>
 
             <div>
-              <label className="text-[10px] uppercase font-semibold text-[#666f85] block mb-1">
+              <label className="text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider block mb-1">
                 Tags, Labels & Barcodes
               </label>
               <div className="relative">
@@ -799,7 +799,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
             </div>
 
             <div>
-              <label className="text-[10px] uppercase font-semibold text-[#666f85] block mb-1">
+              <label className="text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider block mb-1">
                 Brand / Creative Allocation
               </label>
               <div className="relative">
@@ -814,7 +814,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
             </div>
 
             <div>
-              <label className="text-[10px] uppercase font-semibold text-[#666f85] block mb-1">
+              <label className="text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider block mb-1">
                 Warehouse Receiving
               </label>
               <div className="relative">
@@ -829,7 +829,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
             </div>
 
             <div>
-              <label className="text-[10px] uppercase font-semibold text-[#666f85] block mb-1">
+              <label className="text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider block mb-1">
                 Pick & Pack (3PL)
               </label>
               <div className="relative">
@@ -844,7 +844,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
             </div>
 
             <div>
-              <label className="text-[10px] uppercase font-semibold text-[#666f85] block mb-1">
+              <label className="text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider block mb-1">
                 Inventory Loss / Damage
               </label>
               <div className="relative">

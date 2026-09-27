@@ -158,15 +158,15 @@ export default function DocumentsPage() {
       {/* Top Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#1c2233] pb-5">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-xl font-bold text-white tracking-wide font-serif">
+          <div className="flex items-center gap-2 mb-1.5">
+            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight font-serif">
               Document & Certificate Vault
             </h1>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[rgba(205,160,82,0.15)] text-[#cda052] border border-[rgba(205,160,82,0.3)] font-semibold">
+            <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-[rgba(205,160,82,0.15)] text-[#cda052] border border-[rgba(205,160,82,0.3)] font-semibold font-mono">
               Cloud Storage & Compliance Hub
             </span>
           </div>
-          <p className="text-xs text-[#7c859c]">
+          <p className="text-xs sm:text-sm text-[#cbd5e1] leading-relaxed max-w-2xl">
             Secure cloud repository for GOTS/OEKO-TEX certificates, factory audit reports, vendor agreements, and apparel tech packs.
           </p>
         </div>
@@ -174,7 +174,7 @@ export default function DocumentsPage() {
         {/* Action Button */}
         <button
           onClick={() => setIsUploadModalOpen(true)}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow transition-all"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow transition-all"
         >
           <Upload className="w-3.5 h-3.5 stroke-[2.5]" />
           <span>Upload Document to Cloud</span>
@@ -182,17 +182,17 @@ export default function DocumentsPage() {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#11141e] p-3 rounded-xl border border-[#1e2436]">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#0e121b] p-3 rounded-xl border border-[#1e2638] shadow-md">
         {/* Type Filter */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
           {['All', 'Certificate', 'Tech Pack', 'Legal & Contract', 'Audit Report', 'Specification'].map((type) => (
             <button
               key={type}
               onClick={() => setSelectedType(type)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
                 selectedType === type
-                  ? 'bg-[#1e2436] text-[#cda052] font-semibold'
-                  : 'text-[#7e879e] hover:text-white'
+                  ? 'bg-[#1b2234] text-[#cda052] font-semibold border border-[#2e3b56]'
+                  : 'text-[#94a3b8] hover:text-white'
               }`}
             >
               {type}
@@ -201,29 +201,29 @@ export default function DocumentsPage() {
         </div>
 
         {/* Search */}
-        <div className="relative min-w-[240px]">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#687186]" />
+        <div className="relative min-w-[260px]">
+          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search certificates, mills, tech packs..."
-            className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#0a0c13] border border-[#212739] text-xs text-white placeholder-[#5c6478] outline-none focus:border-[#cda052]"
+            className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#080b12] border border-[#222b3e] text-xs text-white placeholder-[#94a3b8] outline-none focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40 transition-colors"
           />
         </div>
       </div>
 
       {/* Documents Grid */}
       {filtered.length === 0 ? (
-        <div className="py-16 text-center border border-dashed border-[#1f2638] rounded-xl bg-[#0d1017]">
+        <div className="py-16 text-center border border-dashed border-[#1f2638] rounded-xl bg-[#080b12]">
           <FileText className="w-8 h-8 text-[#4a5266] mx-auto mb-2" />
           <h3 className="text-sm font-semibold text-white mb-1">No documents found</h3>
-          <p className="text-xs text-[#717a90] max-w-sm mx-auto mb-4">
+          <p className="text-xs text-[#94a3b8] max-w-sm mx-auto mb-4">
             Upload your GOTS organic certificates, OEKO-TEX compliance reports, or vendor contracts to store them in your Supabase vault.
           </p>
           <button
             onClick={() => setIsUploadModalOpen(true)}
-            className="px-3.5 py-1.5 rounded-lg bg-[#161a26] border border-[#262c3e] text-xs font-semibold text-[#cda052] hover:bg-[#1f2536]"
+            className="px-4 py-2 rounded-lg bg-[#151a28] border border-[#263148] text-xs font-semibold text-[#cda052] hover:bg-[#1a2236] transition-colors"
           >
             Upload First Document
           </button>
@@ -233,15 +233,15 @@ export default function DocumentsPage() {
           {filtered.map((doc) => (
             <div
               key={doc.id}
-              className="bg-[#111420] border border-[#1e2436] rounded-xl p-4 hover:border-[#cda052]/50 transition-all flex flex-col justify-between"
+              className="bg-[#0e121b] border border-[#1e2638] rounded-xl p-4 sm:p-5 hover:border-[#cda052]/50 transition-all flex flex-col justify-between shadow-md"
             >
               <div>
                 {/* Header tags */}
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-2.5">
                   <span className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded border font-semibold ${getFormatBadge(doc.fileFormat)}`}>
                     {doc.fileFormat.toUpperCase()}
                   </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-950/70 text-emerald-400 border border-emerald-800/40">
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-950/70 text-emerald-300 border border-emerald-800/40 font-mono font-medium">
                     {doc.status}
                   </span>
                 </div>
@@ -249,22 +249,22 @@ export default function DocumentsPage() {
                 {/* Title & Vendor */}
                 <h3 
                   onClick={() => setPreviewDoc(doc)}
-                  className="text-sm font-semibold text-white hover:text-[#cda052] cursor-pointer mb-1 line-clamp-2"
+                  className="text-sm font-semibold text-white hover:text-[#cda052] cursor-pointer mb-1.5 line-clamp-2 transition-colors"
                 >
                   {doc.title}
                 </h3>
 
                 {doc.associatedVendor && (
-                  <div className="flex items-center gap-1.5 text-xs text-[#8c94a9] mb-2">
-                    <Building className="w-3 h-3 text-[#555d72]" />
+                  <div className="flex items-center gap-1.5 text-xs text-[#94a3b8] mb-2.5">
+                    <Building className="w-3.5 h-3.5 text-[#64748b]" />
                     <span>{doc.associatedVendor}</span>
                   </div>
                 )}
 
                 {/* Tags */}
-                <div className="flex flex-wrap gap-1 my-3">
+                <div className="flex flex-wrap gap-1.5 my-3">
                   {doc.tags.map((tag, idx) => (
-                    <span key={idx} className="text-[9px] px-1.5 py-0.5 rounded bg-[#161a26] text-[#8e97af] border border-[#23293c]">
+                    <span key={idx} className="text-[10px] px-2 py-0.5 rounded-md bg-[#131722] text-[#cbd5e1] font-medium border border-[#222b3e]">
                       #{tag}
                     </span>
                   ))}
@@ -272,23 +272,23 @@ export default function DocumentsPage() {
               </div>
 
               {/* Footer */}
-              <div className="pt-3 border-t border-[#1a1f2e] flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1 text-[10px] text-[#6b7489]">
-                  <Calendar className="w-3 h-3 text-[#555d72]" />
+              <div className="pt-3.5 border-t border-[#1a2133] flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1.5 text-xs text-[#94a3b8] font-mono">
+                  <Calendar className="w-3.5 h-3.5 text-[#64748b]" />
                   <span>Expires: {doc.expiryDate || 'Permanent'}</span>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setPreviewDoc(doc)}
-                    className="p-1.5 rounded-lg bg-[#161a26] border border-[#262c3e] text-[#8e97ae] hover:text-[#cda052]"
+                    className="p-1.5 rounded-lg bg-[#151a28] border border-[#263148] text-[#cbd5e1] hover:text-[#cda052] hover:bg-[#1a2236] transition-colors"
                     title="View Document"
                   >
                     <Eye className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => handleDelete(doc)}
-                    className="p-1.5 rounded-lg bg-[#161a26] border border-[#262c3e] text-[#8e97ae] hover:text-rose-400"
+                    className="p-1.5 rounded-lg bg-[#151a28] border border-[#263148] text-[#cbd5e1] hover:text-rose-400 hover:border-rose-900/60 hover:bg-rose-950/30 transition-colors"
                     title="Delete Document"
                   >
                     <Trash2 className="w-3.5 h-3.5" />

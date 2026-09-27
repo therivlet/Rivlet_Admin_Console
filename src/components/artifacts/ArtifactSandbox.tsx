@@ -60,22 +60,22 @@ export default function ArtifactSandbox({
   const reloadIframe = () => setKey(prev => prev + 1);
 
   return (
-    <div className={`flex flex-col ${isFullscreen ? 'fixed inset-0 z-50 bg-[#090b10]' : 'h-full w-full'}`}>
+    <div className={`flex flex-col ${isFullscreen ? 'fixed inset-0 z-50 bg-[#07090e]' : 'h-full w-full'}`}>
       {/* Sandbox Control Bar */}
-      <div className="flex-shrink-0 min-h-[52px] px-3 sm:px-4 py-2 bg-[#0f121a] border-b border-[#1e2332] flex items-center justify-between gap-2 sm:gap-3">
+      <div className="flex-shrink-0 min-h-[52px] px-3 sm:px-4 py-2 bg-[#0e121b] border-b border-[#1e2638] flex items-center justify-between gap-2 sm:gap-3">
         {/* Left: Info */}
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="p-1 rounded bg-[rgba(205,160,82,0.12)] text-[#cda052] flex-shrink-0">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="p-1.5 rounded-lg bg-[rgba(205,160,82,0.15)] text-[#e6c875] border border-[rgba(205,160,82,0.3)] flex-shrink-0">
             <Sparkles className="w-3.5 h-3.5" />
           </div>
           <div className="truncate">
             <div className="flex items-center gap-1.5 sm:gap-2">
-              <h2 className="text-xs font-semibold text-white truncate max-w-[120px] sm:max-w-[200px] md:max-w-xs">{artifact.title}</h2>
-              <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#1e2434] text-[#8e97ae] font-mono flex-shrink-0">
+              <h2 className="text-xs sm:text-sm font-semibold text-white truncate max-w-[120px] sm:max-w-[200px] md:max-w-xs">{artifact.title}</h2>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-[#141824] text-[#cbd5e1] border border-[#263147] font-mono flex-shrink-0 font-medium">
                 v{artifact.version}
               </span>
               {artifact.isPromoted && (
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-950/70 text-emerald-400 border border-emerald-800/40 hidden sm:inline flex-shrink-0">
+                <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 hidden sm:inline flex-shrink-0 font-medium">
                   Promoted Page
                 </span>
               )}
@@ -84,11 +84,11 @@ export default function ArtifactSandbox({
         </div>
 
         {/* Center: Viewport switchers (hidden in mobile) */}
-        <div className="hidden lg:flex items-center gap-1 bg-[#141722] p-1 rounded-lg border border-[#212638] flex-shrink-0">
+        <div className="hidden lg:flex items-center gap-1 bg-[#141824] p-1 rounded-lg border border-[#263147] flex-shrink-0">
           <button
             onClick={() => setViewport('desktop')}
             className={`p-1.5 rounded text-xs transition-colors ${
-              viewport === 'desktop' ? 'bg-[#22283a] text-[#cda052]' : 'text-[#747c91] hover:text-white'
+              viewport === 'desktop' ? 'bg-[#222a3d] text-[#e6c875] shadow-sm' : 'text-[#94a3b8] hover:text-white'
             }`}
             title="Desktop View (100%)"
           >
@@ -97,7 +97,7 @@ export default function ArtifactSandbox({
           <button
             onClick={() => setViewport('laptop')}
             className={`p-1.5 rounded text-xs transition-colors ${
-              viewport === 'laptop' ? 'bg-[#22283a] text-[#cda052]' : 'text-[#747c91] hover:text-white'
+              viewport === 'laptop' ? 'bg-[#222a3d] text-[#e6c875] shadow-sm' : 'text-[#94a3b8] hover:text-white'
             }`}
             title="Laptop View (1280px)"
           >
@@ -106,7 +106,7 @@ export default function ArtifactSandbox({
           <button
             onClick={() => setViewport('tablet')}
             className={`p-1.5 rounded text-xs transition-colors ${
-              viewport === 'tablet' ? 'bg-[#22283a] text-[#cda052]' : 'text-[#747c91] hover:text-white'
+              viewport === 'tablet' ? 'bg-[#222a3d] text-[#e6c875] shadow-sm' : 'text-[#94a3b8] hover:text-white'
             }`}
             title="Tablet View (768px)"
           >
@@ -115,7 +115,7 @@ export default function ArtifactSandbox({
           <button
             onClick={() => setViewport('mobile')}
             className={`p-1.5 rounded text-xs transition-colors ${
-              viewport === 'mobile' ? 'bg-[#22283a] text-[#cda052]' : 'text-[#747c91] hover:text-white'
+              viewport === 'mobile' ? 'bg-[#222a3d] text-[#e6c875] shadow-sm' : 'text-[#94a3b8] hover:text-white'
             }`}
             title="Mobile View (375px)"
           >
@@ -128,10 +128,10 @@ export default function ArtifactSandbox({
           {onTogglePromote && (
             <button
               onClick={onTogglePromote}
-              className={`text-xs px-2 sm:px-2.5 py-1.5 rounded-lg border font-medium transition-all flex items-center gap-1 sm:gap-1.5 ${
+              className={`text-xs px-2.5 sm:px-3 py-1.5 rounded-lg border font-semibold transition-all flex items-center gap-1 sm:gap-1.5 ${
                 artifact.isPromoted
-                  ? 'bg-amber-950/40 text-amber-300 border-amber-800/40 hover:bg-amber-900/50'
-                  : 'bg-[rgba(205,160,82,0.12)] text-[#e8ca78] border-[#cda052]/40 hover:bg-[rgba(205,160,82,0.2)]'
+                  ? 'bg-amber-950/60 text-amber-200 border-amber-800/60 hover:bg-amber-900/60'
+                  : 'bg-[rgba(205,160,82,0.15)] text-[#e6c875] border-[#cda052]/50 hover:bg-[rgba(205,160,82,0.25)]'
               }`}
             >
               <ArrowUpRight className="w-3.5 h-3.5" />
@@ -142,17 +142,17 @@ export default function ArtifactSandbox({
           {onEdit && (
             <button
               onClick={onEdit}
-              className="p-1.5 rounded-lg bg-[#171b26] border border-[#262c3e] text-[#9fa7ba] hover:text-white hover:border-[#cda052]/50 text-xs flex items-center gap-1"
+              className="p-1.5 px-2.5 rounded-lg bg-[#141824] border border-[#263147] text-[#cbd5e1] hover:text-white hover:border-[#cda052]/50 text-xs flex items-center gap-1.5 transition-colors font-medium"
               title="Edit / Clean Artifact Code"
             >
-              <Code className="w-3.5 h-3.5" />
+              <Code className="w-3.5 h-3.5 text-[#cda052]" />
               <span className="hidden md:inline">Clean & Edit</span>
             </button>
           )}
 
           <button
             onClick={reloadIframe}
-            className="p-1.5 rounded-lg bg-[#171b26] border border-[#262c3e] text-[#9fa7ba] hover:text-white"
+            className="p-1.5 rounded-lg bg-[#141824] border border-[#263147] text-[#94a3b8] hover:text-white transition-colors"
             title="Reload Sandbox"
           >
             <RotateCw className="w-3.5 h-3.5" />
@@ -160,7 +160,7 @@ export default function ArtifactSandbox({
 
           <button
             onClick={handleDownload}
-            className="p-1.5 rounded-lg bg-[#171b26] border border-[#262c3e] text-[#9fa7ba] hover:text-white hidden xs:flex"
+            className="p-1.5 rounded-lg bg-[#141824] border border-[#263147] text-[#94a3b8] hover:text-white transition-colors hidden xs:flex"
             title="Download HTML"
           >
             <Download className="w-3.5 h-3.5" />
@@ -168,7 +168,7 @@ export default function ArtifactSandbox({
 
           <button
             onClick={() => setIsFullscreen(!isFullscreen)}
-            className="p-1.5 rounded-lg bg-[#171b26] border border-[#262c3e] text-[#9fa7ba] hover:text-white"
+            className="p-1.5 rounded-lg bg-[#141824] border border-[#263147] text-[#94a3b8] hover:text-white transition-colors"
             title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen View'}
           >
             {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
@@ -177,7 +177,7 @@ export default function ArtifactSandbox({
           {onClose && (
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg bg-[#1f2537] hover:bg-rose-950/70 border border-[#2e374e] hover:border-rose-700/60 text-[#a2adbf] hover:text-rose-300 transition-colors ml-0.5"
+              className="p-1.5 rounded-lg bg-[#141824] hover:bg-rose-950/70 border border-[#263147] hover:border-rose-700/60 text-[#cbd5e1] hover:text-rose-200 transition-colors ml-0.5"
               title="Close Sandbox"
             >
               <X className="w-3.5 h-3.5" />

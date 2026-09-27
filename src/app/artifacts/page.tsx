@@ -88,24 +88,24 @@ export default function ArtifactsPage() {
       {/* Top Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#1c2233] pb-5">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-xl font-bold text-white tracking-wide font-serif">
+          <div className="flex items-center gap-2 mb-1.5">
+            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight font-serif">
               Claude HTML Artifact Vault
             </h1>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[rgba(205,160,82,0.15)] text-[#cda052] border border-[rgba(205,160,82,0.3)] font-semibold">
+            <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-[rgba(205,160,82,0.15)] text-[#cda052] border border-[rgba(205,160,82,0.3)] font-semibold font-mono">
               Curate & Promote Pipeline
             </span>
           </div>
-          <p className="text-xs text-[#7c859c]">
-            Review, sanitize unwanted data, and promote high-value Claude artifacts into native admin portal pages.
+          <p className="text-xs sm:text-sm text-[#cbd5e1] leading-relaxed max-w-2xl">
+            Review, sanitize boilerplate, and promote high-value Claude artifacts into native admin portal pages with dedicated URLs.
           </p>
         </div>
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
           {/* File Upload Hidden Input */}
-          <label className="cursor-pointer flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#141824] border border-[#232a3d] text-xs font-semibold text-[#8f98af] hover:text-white hover:border-[#cda052]/50 transition-colors">
-            <Upload className="w-3.5 h-3.5" />
+          <label className="cursor-pointer flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#121623] border border-[#232d42] text-xs font-semibold text-[#cbd5e1] hover:text-white hover:border-[#cda052]/60 transition-all shadow-sm">
+            <Upload className="w-3.5 h-3.5 text-[#cda052]" />
             <span>Upload .html File</span>
             <input
               type="file"
@@ -120,7 +120,7 @@ export default function ArtifactsPage() {
               setEditingArtifact(null);
               setIsEditorOpen(true);
             }}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow transition-all"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow transition-all"
           >
             <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
             <span>Paste / New Artifact</span>
@@ -129,25 +129,25 @@ export default function ArtifactsPage() {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#11141e] p-3 rounded-xl border border-[#1e2436]">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#0e121b] p-3 rounded-xl border border-[#1e2638] shadow-md">
         {/* Status Tabs */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
           <button
             onClick={() => setSelectedStatus('All')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
               selectedStatus === 'All'
-                ? 'bg-[#1e2436] text-[#cda052] font-semibold'
-                : 'text-[#7e879e] hover:text-white'
+                ? 'bg-[#1b2234] text-[#cda052] font-semibold border border-[#2e3b56]'
+                : 'text-[#94a3b8] hover:text-white'
             }`}
           >
             All Artifacts ({artifacts.length})
           </button>
           <button
             onClick={() => setSelectedStatus('promoted')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap ${
               selectedStatus === 'promoted'
-                ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 font-semibold'
-                : 'text-[#7e879e] hover:text-white'
+                ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-700/50 font-semibold'
+                : 'text-[#94a3b8] hover:text-white'
             }`}
           >
             <CheckCircle2 className="w-3 h-3 text-emerald-400" />
@@ -155,26 +155,26 @@ export default function ArtifactsPage() {
           </button>
           <button
             onClick={() => setSelectedStatus('inbox')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap ${
               selectedStatus === 'inbox'
-                ? 'bg-[#1e2436] text-white font-semibold'
-                : 'text-[#7e879e] hover:text-white'
+                ? 'bg-[#1b2234] text-white font-semibold border border-[#2e3b56]'
+                : 'text-[#94a3b8] hover:text-white'
             }`}
           >
-            <Inbox className="w-3 h-3 text-[#7e879e]" />
-            <span>Staging / Review ({artifacts.length - promotedCount})</span>
+            <Inbox className="w-3 h-3 text-[#94a3b8]" />
+            <span>Staging ({artifacts.length - promotedCount})</span>
           </button>
         </div>
 
         {/* Search Input */}
-        <div className="relative min-w-[240px]">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#687186]" />
+        <div className="relative min-w-[260px]">
+          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by title, tag or category..."
-            className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#0a0c13] border border-[#212739] text-xs text-white placeholder-[#5c6478] outline-none focus:border-[#cda052]"
+            placeholder="Search by title, tag, or category..."
+            className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#080b12] border border-[#222b3e] text-xs text-white placeholder-[#94a3b8] outline-none focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40 transition-colors"
           />
         </div>
       </div>
