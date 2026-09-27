@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   X, 
   Layers, 
@@ -48,23 +48,7 @@ export default function BOMSpecifierModal({
   const [notes, setNotes] = useState<string>('');
   const [appliedAlert, setAppliedAlert] = useState(false);
 
-  // Initialize or load preset
-  useEffect(() => {
-    if (initialBOM) {
-      setGarmentType(initialBOM.garmentType || 'Custom Garment Spec');
-      setFabricItems(initialBOM.fabricItems || []);
-      setTrimItems(initialBOM.trimItems || []);
-      setStitchingLabor(initialBOM.stitchingLabor || 0);
-      setWashFinishCost(initialBOM.washFinishCost || 0);
-      setNotes(initialBOM.notes || '');
-    } else {
-      loadPreset('hoodie');
-    }
-  }, [initialBOM, isOpen]);
-
-  if (!isOpen) return null;
-
-  const loadPreset = (key: string) => {
+  const loadPreset = useCallback((key: string) => {
     setSelectedPreset(key);
     const preset = bomPresets[key];
     if (preset) {
@@ -75,7 +59,22 @@ export default function BOMSpecifierModal({
       setWashFinishCost(preset.washFinishCost);
       setNotes(preset.notes || '');
     }
-  };
+  }, []);
+
+  // Initialize or load preset
+  useEffect(() => {
+    if (!isOpen) return;
+    if (initialBOM) {
+      setGarmentType(initialBOM.garmentType || 'Custom Garment Spec');
+      setFabricItems(initialBOM.fabricItems || []);
+      setTrimItems(initialBOM.trimItems || []);
+      setStitchingLabor(initialBOM.stitchingLabor || 0);
+      setWashFinishCost(initialBOM.washFinishCost || 0);
+      setNotes(initialBOM.notes || '');
+    } else {
+      loadPreset('hoodie');
+    }
+  }, [initialBOM, isOpen, loadPreset]);
 
   // Calculations
   const fabricTotal = fabricItems.reduce((acc, item) => acc + (Number(item.totalCost) || 0), 0);
@@ -196,6 +195,8 @@ export default function BOMSpecifierModal({
       onClose();
     }, 1200);
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto">
