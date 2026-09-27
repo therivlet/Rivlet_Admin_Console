@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
 import { AuthProvider, useAuth } from '@/lib/authContext';
+import { RivletWatermark } from '@/components/brand/RivletLogo';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -58,14 +59,24 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     return <main className="min-h-screen bg-[#07080c]">{children}</main>;
   }
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   // Authenticated admin layout
   return (
-    <div className="flex w-full min-h-screen">
-      <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0">
-        <Topbar />
-        <main className="flex-1 overflow-y-auto">{children}</main>
+    <div className="flex w-full min-h-screen bg-[#07090e] text-[#e0e3eb] relative overflow-x-hidden">
+      <Sidebar 
+        mobileOpen={mobileMenuOpen} 
+        onCloseMobile={() => setMobileMenuOpen(false)} 
+      />
+      <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
+        <Topbar 
+          onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)} 
+        />
+        <main className="flex-1 relative z-10">{children}</main>
       </div>
+
+      {/* Subtle luxury brand watermark in background */}
+      <RivletWatermark />
     </div>
   );
 }
@@ -79,3 +90,4 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     </AuthProvider>
   );
 }
+

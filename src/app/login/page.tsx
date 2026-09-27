@@ -16,6 +16,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { useAuth } from '@/lib/authContext';
+import RivletLogo, { RivletWatermark } from '@/components/brand/RivletLogo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -88,21 +89,20 @@ export default function LoginPage() {
       {/* Background Ambient Glows */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-[rgba(205,160,82,0.06)] rounded-full blur-[140px] pointer-events-none" />
       <div className="absolute bottom-10 right-10 w-96 h-96 bg-[rgba(14,128,108,0.04)] rounded-full blur-[120px] pointer-events-none" />
+      <RivletWatermark />
 
       {/* Login Card */}
       <div className="w-full max-w-md bg-[#0f121b] border border-[#23293d] rounded-2xl p-8 shadow-2xl relative z-10 space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#cda052] to-[#8c672b] flex items-center justify-center shadow-glow font-serif font-bold text-black text-2xl mx-auto tracking-wider mb-3">
-            R
+          <div className="flex justify-center mb-3">
+            <RivletLogo variant="gold" size="lg" />
           </div>
-          <h1 className="text-xl font-bold text-white tracking-[0.2em] font-serif uppercase">
-            RIVLET
-          </h1>
           <p className="text-xs text-[#808a9f]">
             Operations Console & Confidential Brand Vault
           </p>
         </div>
+
 
         {/* Mode Switcher */}
         {mode !== 'forgot' && (

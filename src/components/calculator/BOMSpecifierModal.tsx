@@ -201,21 +201,21 @@ export default function BOMSpecifierModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto">
       <div className="w-full max-w-5xl bg-[#090b12] border border-[#20273a] rounded-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
         {/* Modal Header */}
-        <div className="p-4 sm:p-5 border-b border-[#1c2336] bg-[#0e121d] flex items-center justify-between gap-4 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#cda052] to-[#8a6828] flex items-center justify-center text-black shadow-glow">
+        <div className="p-4 sm:p-5 border-b border-[#1c2336] bg-[#0e121d] flex items-center justify-between gap-3 sm:gap-4 flex-shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#cda052] to-[#8a6828] flex items-center justify-center text-black shadow-glow flex-shrink-0">
               <Scissors className="w-4 h-4" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-white font-serif tracking-wide">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <h3 className="text-sm sm:text-base font-bold text-white font-serif tracking-wide truncate">
                   Technical Bill of Materials (BOM) & Trim Specifier
                 </h3>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-[rgba(205,160,82,0.15)] text-[#cda052] border border-[rgba(205,160,82,0.3)] font-semibold">
-                  Garment Architecture
+                <span className="text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full bg-[rgba(205,160,82,0.15)] text-[#cda052] border border-[rgba(205,160,82,0.3)] font-semibold flex-shrink-0">
+                  Architecture
                 </span>
               </div>
-              <p className="text-xs text-[#7d869d]">
+              <p className="text-[11px] sm:text-xs text-[#7d869d] truncate">
                 Itemize fabric blends, GSM, consumption rates, CMT labor, and luxury hardware trims.
               </p>
             </div>
@@ -223,7 +223,7 @@ export default function BOMSpecifierModal({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#858e9f] hover:text-white hover:bg-[#181d2a] transition-colors"
+            className="p-1.5 rounded-lg text-[#858e9f] hover:text-white hover:bg-[#181d2a] transition-colors flex-shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
@@ -301,8 +301,8 @@ export default function BOMSpecifierModal({
               </button>
             </div>
 
-            <div className="border border-[#1d2437] rounded-xl overflow-hidden bg-[#0c0f18]">
-              <table className="w-full text-xs text-left">
+            <div className="border border-[#1d2437] rounded-xl overflow-x-auto bg-[#0c0f18]">
+              <table className="w-full text-xs text-left min-w-[620px]">
                 <thead className="bg-[#121623] border-b border-[#1d2437] text-[#8690a6]">
                   <tr>
                     <th className="py-2.5 px-3 font-semibold">Fabric Layer & Composition</th>
@@ -456,8 +456,8 @@ export default function BOMSpecifierModal({
               </button>
             </div>
 
-            <div className="border border-[#1d2437] rounded-xl overflow-hidden bg-[#0c0f18]">
-              <table className="w-full text-xs text-left">
+            <div className="border border-[#1d2437] rounded-xl overflow-x-auto bg-[#0c0f18]">
+              <table className="w-full text-xs text-left min-w-[620px]">
                 <thead className="bg-[#121623] border-b border-[#1d2437] text-[#8690a6]">
                   <tr>
                     <th className="py-2.5 px-3 font-semibold">Trim / Hardware Component</th>
