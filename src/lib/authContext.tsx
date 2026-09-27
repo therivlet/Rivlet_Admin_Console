@@ -39,8 +39,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
+    const startTime = Date.now();
+    const MIN_LOAD_DELAY = 850; // 850ms allows the luxury logo & shimmer beam to be smoothly appreciated
+
+    const completeLoading = () => {
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, MIN_LOAD_DELAY - elapsed);
+      setTimeout(() => {
+        setIsLoading(false);
+      }, remaining);
+    };
+
     if (!isSupabaseConfigured || !supabase) {
-      setIsLoading(false);
+      completeLoading();
       return;
     }
 
@@ -58,10 +69,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(null);
         setUser(null);
       }
-      setIsLoading(false);
+      completeLoading();
     }).catch(err => {
       console.error('Error fetching Supabase auth session:', err);
-      setIsLoading(false);
+      completeLoading();
     });
 
     // 2. Real-time auth state listener
@@ -78,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(null);
         setUser(null);
       }
-      setIsLoading(false);
+      completeLoading();
     });
 
     return () => subscription.unsubscribe();
@@ -96,9 +107,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password: pass,
     });
 
-    setIsLoading(false);
-
     if (error) {
+      setIsLoading(false);
       return { error: error.message };
     }
 
@@ -110,9 +120,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         name: data.user.user_metadata?.full_name || email.split('@')[0],
         role: 'owner',
       });
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 700);
       return {};
     }
 
+    setIsLoading(false);
     return { error: 'Failed to establish session. Please verify your credentials.' };
   };
 
@@ -133,14 +147,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
     });
 
-    setIsLoading(false);
-
     if (error) {
+      setIsLoading(false);
       return { error: error.message };
     }
 
     // Check if email confirmation is required by Supabase
     if (data.user && !data.session) {
+      setIsLoading(false);
       return { 
         confirmationRequired: true,
         message: 'Account created! Please check your email to confirm registration before logging in.',
@@ -157,17 +171,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
     }
 
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 700);
     return {};
   };
 
   // Real Supabase Sign-Out
   const signOut = async () => {
+    setIsLoading(true);
     if (isSupabaseConfigured && supabase) {
       await supabase.auth.signOut();
     }
     setUser(null);
     setSession(null);
-    router.push('/login');
+    setTimeout(() => {
+      setIsLoading(false);
+      router.push('/login');
+    }, 600);
   };
 
   // Real Password Reset
