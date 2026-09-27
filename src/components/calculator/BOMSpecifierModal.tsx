@@ -224,6 +224,8 @@ export default function BOMSpecifierModal({
 
           <button
             onClick={onClose}
+            title="Close BOM Specifier"
+            aria-label="Close BOM Specifier"
             className="p-1.5 rounded-lg text-[#858e9f] hover:text-white hover:bg-[#181d2a] transition-colors flex-shrink-0"
           >
             <X className="w-5 h-5" />
@@ -236,6 +238,7 @@ export default function BOMSpecifierModal({
             <span className="text-xs text-[#717a90] font-medium mr-1">Apparel Presets:</span>
             <button
               onClick={() => loadPreset('hoodie')}
+              title="Load preset specs for 450 GSM French Terry Hoodie"
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 selectedPreset === 'hoodie'
                   ? 'bg-gradient-to-r from-[#cda052] to-[#b38536] text-black shadow-glow'
@@ -248,6 +251,7 @@ export default function BOMSpecifierModal({
 
             <button
               onClick={() => loadPreset('tshirt')}
+              title="Load preset specs for 280 GSM Heavy Boxy Tee"
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 selectedPreset === 'tshirt'
                   ? 'bg-gradient-to-r from-[#cda052] to-[#b38536] text-black shadow-glow'
@@ -260,6 +264,7 @@ export default function BOMSpecifierModal({
 
             <button
               onClick={() => loadPreset('sweatpants')}
+              title="Load preset specs for 400 GSM Heavy Sweatpants"
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 selectedPreset === 'sweatpants'
                   ? 'bg-gradient-to-r from-[#cda052] to-[#b38536] text-black shadow-glow'
@@ -295,6 +300,7 @@ export default function BOMSpecifierModal({
               </div>
               <button
                 onClick={addFabricRow}
+                title="Add a new fabric or ribbing line to the BOM"
                 className="px-2.5 py-1 rounded bg-[#131724] border border-[#22293d] hover:border-[#cda052]/50 text-xs text-[#cda052] flex items-center gap-1 transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -371,6 +377,7 @@ export default function BOMSpecifierModal({
                         {fabricItems.length > 1 && (
                           <button
                             onClick={() => removeFabricRow(item.id)}
+                            title="Remove fabric component"
                             className="p-1 text-[#626a7e] hover:text-rose-400 transition-colors"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -450,6 +457,7 @@ export default function BOMSpecifierModal({
               </div>
               <button
                 onClick={addTrimRow}
+                title="Add a new trim, zipper, or label component"
                 className="px-2.5 py-1 rounded bg-[#131724] border border-[#22293d] hover:border-[#cda052]/50 text-xs text-[#cda052] flex items-center gap-1 transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -524,6 +532,7 @@ export default function BOMSpecifierModal({
                       <td className="py-2 px-2 text-center">
                         <button
                           onClick={() => removeTrimRow(item.id)}
+                          title="Remove trim component"
                           className="p-1 text-[#626a7e] hover:text-rose-400 transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -575,6 +584,7 @@ export default function BOMSpecifierModal({
 
             <button
               onClick={onClose}
+              title="Discard changes and exit"
               className="px-4 py-2 rounded-lg bg-[#141824] hover:bg-[#1a2030] text-xs text-[#8c95ab] hover:text-white border border-[#20273a] transition-colors"
             >
               Cancel
@@ -582,6 +592,7 @@ export default function BOMSpecifierModal({
 
             <button
               onClick={handleApply}
+              title="Apply itemized BOM factory cost directly to the active costing sheet"
               className="flex items-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow transition-all"
             >
               <Check className="w-4 h-4" />

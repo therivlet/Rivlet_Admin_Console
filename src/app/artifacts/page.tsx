@@ -104,7 +104,10 @@ export default function ArtifactsPage() {
         {/* Action Buttons */}
         <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
           {/* File Upload Hidden Input */}
-          <label className="cursor-pointer flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#121623] border border-[#232d42] text-xs font-semibold text-[#cbd5e1] hover:text-white hover:border-[#cda052]/60 transition-all shadow-sm">
+          <label 
+            title="Import a raw HTML artifact file downloaded from Claude"
+            className="cursor-pointer flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#121623] border border-[#232d42] text-xs font-semibold text-[#cbd5e1] hover:text-white hover:border-[#cda052]/60 transition-all shadow-sm"
+          >
             <Upload className="w-3.5 h-3.5 text-[#cda052]" />
             <span>Upload .html File</span>
             <input
@@ -120,6 +123,7 @@ export default function ArtifactsPage() {
               setEditingArtifact(null);
               setIsEditorOpen(true);
             }}
+            title="Create a new Claude artifact by pasting HTML code"
             className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow transition-all"
           >
             <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -134,6 +138,7 @@ export default function ArtifactsPage() {
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
           <button
             onClick={() => setSelectedStatus('All')}
+            title="Show all Claude artifacts in vault"
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
               selectedStatus === 'All'
                 ? 'bg-[#1b2234] text-[#cda052] font-semibold border border-[#2e3b56]'
@@ -144,6 +149,7 @@ export default function ArtifactsPage() {
           </button>
           <button
             onClick={() => setSelectedStatus('promoted')}
+            title="Filter by artifacts promoted as first-class portal pages"
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap ${
               selectedStatus === 'promoted'
                 ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-700/50 font-semibold'
@@ -155,6 +161,7 @@ export default function ArtifactsPage() {
           </button>
           <button
             onClick={() => setSelectedStatus('inbox')}
+            title="Filter by artifacts in staging inbox"
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap ${
               selectedStatus === 'inbox'
                 ? 'bg-[#1b2234] text-white font-semibold border border-[#2e3b56]'

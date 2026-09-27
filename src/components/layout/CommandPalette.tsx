@@ -25,14 +25,13 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
   const { artifacts, costingSheets, documents, kbArticles } = useAdminStore();
 
   useEffect(() => {
+    if (isOpen) {
+      setQuery('');
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        if (isOpen) onClose();
-        else {
-          // Trigger open
-        }
-      }
       if (e.key === 'Escape' && isOpen) {
         onClose();
       }
@@ -79,25 +78,29 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+    <div 
+      className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-black/80 backdrop-blur-md animate-fade-in"
+      onClick={onClose}
+    >
       <div 
-        className="w-full max-w-2xl bg-[#0f121a] border border-[#262c3e] rounded-xl shadow-2xl overflow-hidden"
+        className="w-full max-w-2xl bg-[#0e121b] border border-[#263147] rounded-2xl shadow-2xl overflow-hidden ring-1 ring-[#cda052]/20"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input Bar */}
-        <div className="relative border-b border-[#202636] p-4 flex items-center gap-3">
-          <Search className="w-5 h-5 text-[#cda052]" />
+        <div className="relative border-b border-[#1e2638] p-4 flex items-center gap-3 bg-[#0a0d14]">
+          <Search className="w-5 h-5 text-[#cda052] flex-shrink-0" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Type to search artifacts, SKUs, documents, SOPs..."
-            className="w-full bg-transparent text-sm text-white placeholder-[#687084] outline-none font-medium"
+            placeholder="Type to search artifacts, costing sheets, documents, SOPs..."
+            className="w-full bg-transparent text-sm text-white placeholder-[#64748b] outline-none font-medium"
             autoFocus
           />
           <button 
             onClick={onClose}
-            className="p-1 rounded hover:bg-[#1a1f2c] text-[#71798d] hover:text-white"
+            className="p-1.5 rounded-lg hover:bg-[#141824] text-[#94a3b8] hover:text-white transition-colors"
+            title="Close Search (Esc)"
           >
             <X className="w-4 h-4" />
           </button>

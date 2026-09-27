@@ -102,6 +102,7 @@ export default function KnowledgeBasePage() {
 
         <button
           onClick={handleNewArticle}
+          title="Create a new SOP or confidential operational guide"
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow self-start sm:self-auto flex-shrink-0 transition-transform active:scale-[0.98]"
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />
@@ -194,6 +195,7 @@ export default function KnowledgeBasePage() {
                   {isEditing ? (
                     <button
                       onClick={handleSaveArticle}
+                      title="Save SOP revisions to database"
                       className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow"
                     >
                       <Save className="w-3.5 h-3.5" />
@@ -202,6 +204,7 @@ export default function KnowledgeBasePage() {
                   ) : (
                     <button
                       onClick={() => handleStartEdit(currentArticle)}
+                      title="Edit standard operating procedure content and metadata"
                       className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#141824] border border-[#263147] text-xs font-semibold text-[#cbd5e1] hover:text-white hover:border-[#cda052]/50 transition-colors"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
@@ -216,7 +219,8 @@ export default function KnowledgeBasePage() {
                       }
                     }}
                     className="p-2 rounded-lg bg-[#141824] border border-[#263147] text-[#94a3b8] hover:text-rose-400 hover:border-rose-800/50 transition-colors"
-                    title="Delete Article"
+                    title="Delete SOP article from database"
+                    aria-label="Delete SOP article"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

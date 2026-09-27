@@ -27,15 +27,33 @@ export function useAdminStore() {
       const storedDocs = localStorage.getItem(STORAGE_KEYS.DOCUMENTS);
       const storedArticles = localStorage.getItem(STORAGE_KEYS.KB_ARTICLES);
 
-      setArtifacts(storedArtifacts ? JSON.parse(storedArtifacts) : initialArtifacts);
-      setCostingSheets(storedSheets ? JSON.parse(storedSheets) : initialCostingSheets);
-      setDocuments(storedDocs ? JSON.parse(storedDocs) : initialDocuments);
-      setKbArticles(storedArticles ? JSON.parse(storedArticles) : initialKBArticles);
+      // Load and sanitize artifacts (remove any prototyping test dummy artifacts)
+      let parsedArtifacts: ArtifactItem[] = storedArtifacts ? JSON.parse(storedArtifacts) : initialArtifacts;
+      parsedArtifacts = parsedArtifacts.filter(a => a.id !== 'art-001' && a.id !== 'art-002');
+      if (parsedArtifacts.length === 0) {
+        parsedArtifacts = initialArtifacts;
+      }
+      localStorage.setItem(STORAGE_KEYS.ARTIFACTS, JSON.stringify(parsedArtifacts));
+      setArtifacts(parsedArtifacts);
+
+      // Load costing sheets
+      const parsedSheets = storedSheets ? JSON.parse(storedSheets) : initialCostingSheets;
+      setCostingSheets(parsedSheets);
+
+      // Load and sanitize documents (purge mock testing files)
+      let parsedDocs: DocumentItem[] = storedDocs ? JSON.parse(storedDocs) : initialDocuments;
+      parsedDocs = parsedDocs.filter(d => !d.fileUrl?.includes('/mock-docs/') && !d.id?.startsWith('doc-00'));
+      localStorage.setItem(STORAGE_KEYS.DOCUMENTS, JSON.stringify(parsedDocs));
+      setDocuments(parsedDocs);
+
+      // Load KB articles
+      const parsedArticles = storedArticles ? JSON.parse(storedArticles) : initialKBArticles;
+      setKbArticles(parsedArticles);
     } catch (e) {
       console.error('Error loading admin store from localStorage:', e);
       setArtifacts(initialArtifacts);
       setCostingSheets(initialCostingSheets);
-      setDocuments(initialDocuments);
+      setDocuments([]);
       setKbArticles(initialKBArticles);
     } finally {
       setIsLoaded(true);

@@ -34,12 +34,12 @@ export default function ProfilePage() {
   const [fullName, setFullName] = useState(user?.name || 'Rivlet Executive');
   const [email] = useState(user?.email || 'admin@therivlet.com');
   const [roleTitle, setRoleTitle] = useState('Founder & Creative Director');
-  const [phoneNumber, setPhoneNumber] = useState('+91 98400 12345');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [department, setDepartment] = useState('Executive & Merchandising');
 
   // Brand Entity State
   const [legalEntity, setLegalEntity] = useState('Rivlet Luxury Apparel Co.');
-  const [gstin, setGstin] = useState('33AAACR1234F1Z5');
+  const [gstin, setGstin] = useState('');
   const [primaryHub, setPrimaryHub] = useState('Tirupur Apparel Complex, Tamil Nadu');
   const [warehouseLocation, setWarehouseLocation] = useState('Bangalore Logistics Hub, Karnataka');
   const [defaultCurrency, setDefaultCurrency] = useState('₹');
@@ -290,7 +290,8 @@ export default function ProfilePage() {
                 type="text"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-lg bg-[#07090e] border border-[#263147] text-white outline-none focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40 transition-colors"
+                placeholder="e.g. +91 98765 43210"
+                className="w-full px-3.5 py-2.5 rounded-lg bg-[#07090e] border border-[#263147] text-white placeholder-[#5a6478] outline-none focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40 transition-colors"
               />
             </div>
 
@@ -344,7 +345,8 @@ export default function ProfilePage() {
                 type="text"
                 value={gstin}
                 onChange={(e) => setGstin(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-lg bg-[#07090e] border border-[#263147] text-white font-mono outline-none focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40 transition-colors"
+                placeholder="e.g. 33AAAAA0000A1Z5"
+                className="w-full px-3.5 py-2.5 rounded-lg bg-[#07090e] border border-[#263147] text-white font-mono placeholder-[#5a6478] outline-none focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40 transition-colors"
               />
             </div>
 

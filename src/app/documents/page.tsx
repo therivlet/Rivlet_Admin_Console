@@ -174,6 +174,7 @@ export default function DocumentsPage() {
         {/* Action Button */}
         <button
           onClick={() => setIsUploadModalOpen(true)}
+          title="Upload GOTS, OEKO-TEX, or contract to vault"
           className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow transition-all"
         >
           <Upload className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -189,6 +190,7 @@ export default function DocumentsPage() {
             <button
               key={type}
               onClick={() => setSelectedType(type)}
+              title={`Filter documents by ${type}`}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
                 selectedType === type
                   ? 'bg-[#1b2234] text-[#cda052] font-semibold border border-[#2e3b56]'
@@ -223,6 +225,7 @@ export default function DocumentsPage() {
           </p>
           <button
             onClick={() => setIsUploadModalOpen(true)}
+            title="Upload GOTS, OEKO-TEX, or contract to vault"
             className="px-4 py-2 rounded-lg bg-[#151a28] border border-[#263148] text-xs font-semibold text-[#cda052] hover:bg-[#1a2236] transition-colors"
           >
             Upload First Document
@@ -282,14 +285,16 @@ export default function DocumentsPage() {
                   <button
                     onClick={() => setPreviewDoc(doc)}
                     className="p-1.5 rounded-lg bg-[#151a28] border border-[#263148] text-[#cbd5e1] hover:text-[#cda052] hover:bg-[#1a2236] transition-colors"
-                    title="View Document"
+                    title="Preview document in browser"
+                    aria-label="Preview document in browser"
                   >
                     <Eye className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => handleDelete(doc)}
                     className="p-1.5 rounded-lg bg-[#151a28] border border-[#263148] text-[#cbd5e1] hover:text-rose-400 hover:border-rose-900/60 hover:bg-rose-950/30 transition-colors"
-                    title="Delete Document"
+                    title="Delete document from vault"
+                    aria-label="Delete document from vault"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -337,7 +342,9 @@ export default function DocumentsPage() {
                 )}
                 <button
                   onClick={() => setPreviewDoc(null)}
-                  className="p-1.5 text-[#717a90] hover:text-white rounded-lg hover:bg-[#1a1f2e]"
+                  title="Close Preview"
+                  aria-label="Close Preview"
+                  className="p-1.5 text-[#717a90] hover:text-white rounded-lg hover:bg-[#1a1f2e] transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -512,7 +519,8 @@ export default function DocumentsPage() {
               <button
                 type="button"
                 onClick={() => setIsUploadModalOpen(false)}
-                className="px-4 py-2 rounded-lg bg-[#141824] border border-[#22283a] text-xs text-[#8e97ae]"
+                title="Discard and close upload dialog"
+                className="px-4 py-2 rounded-lg bg-[#141824] border border-[#22283a] text-xs text-[#8e97ae] hover:text-white transition-colors"
               >
                 Cancel
               </button>
@@ -520,7 +528,8 @@ export default function DocumentsPage() {
                 type="button"
                 disabled={isUploading || !newTitle}
                 onClick={handleCreateDocument}
-                className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow disabled:opacity-50"
+                title="Save and upload document to vault"
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow disabled:opacity-50 transition-all"
               >
                 {isUploading ? 'Uploading to Supabase...' : 'Save to Vault'}
               </button>

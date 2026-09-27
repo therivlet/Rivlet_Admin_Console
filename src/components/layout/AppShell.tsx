@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
+import CommandPalette from '@/components/layout/CommandPalette';
 import { AuthProvider, useAuth } from '@/lib/authContext';
 import { RivletWatermark } from '@/components/brand/RivletLogo';
 import RivletLoader from '@/components/brand/RivletLoader';
@@ -13,6 +14,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   const isLoginPage = pathname === '/login';
 
@@ -20,6 +22,48 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
+
+  // Global Cmd+K / Ctrl+K keyboard shortcut and custom event listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen((prev) => !prev);
+      }
+    };
+    const handleOpenCommand = () => setCommandPaletteOpen(true);
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('open-command-palette', handleOpenCommand);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('open-command-palette', handleOpenCommand);
+    };
+  }, []);
+
+  // Register PWA Service Worker for Chrome Desktop & Mobile installation
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .register('/sw.js')
+        .then((reg) => {
+          // Service worker active
+        })
+        .catch((err) => {
+          console.warn('[Rivlet PWA] SW registration notice:', err);
+        });
+    }
+
+    // Capture Chrome beforeinstallprompt event
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      (window as any).__rivletInstallPrompt = e;
+      window.dispatchEvent(new CustomEvent('rivlet-installable'));
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
 
   useEffect(() => {
     if (!isLoading) {
@@ -67,10 +111,17 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
       />
       <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
         <Topbar 
+          onOpenCommand={() => setCommandPaletteOpen(true)}
           onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)} 
         />
         <main className="flex-1 relative z-10">{children}</main>
       </div>
+
+      {/* Global Command Palette search modal */}
+      <CommandPalette 
+        isOpen={commandPaletteOpen} 
+        onClose={() => setCommandPaletteOpen(false)} 
+      />
 
       {/* Subtle luxury brand watermark in background */}
       <RivletWatermark />

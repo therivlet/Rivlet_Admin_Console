@@ -53,7 +53,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
     <aside className="w-72 lg:w-64 flex-shrink-0 bg-[#0a0c12] border-r border-[#1a1f2c] flex flex-col h-screen select-none z-50">
       {/* Brand Header */}
       <div className="p-4 sm:p-5 border-b border-[#1a1f2c] flex items-center justify-between">
-        <Link href="/" onClick={handleLinkClick} className="flex items-center gap-3 group">
+        <Link href="/" onClick={handleLinkClick} title="Rivlet Executive Command Center" className="flex items-center gap-3 group">
           <RivletLogo variant="gold" size="sm" />
         </Link>
 
@@ -61,6 +61,8 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
         {onCloseMobile && (
           <button
             onClick={onCloseMobile}
+            title="Close navigation drawer"
+            aria-label="Close navigation drawer"
             className="lg:hidden p-1.5 rounded-lg text-[#7c869d] hover:text-white hover:bg-[#161a26] transition-colors"
           >
             <X className="w-5 h-5" />
@@ -83,6 +85,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                   key={item.href}
                   href={item.href}
                   onClick={handleLinkClick}
+                  title={`Navigate to ${item.label}`}
                   className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-xs transition-all ${
                     isActive
                       ? 'bg-gradient-to-r from-[rgba(205,160,82,0.18)] to-transparent text-[#e6c875] border-l-2 border-[#cda052] font-semibold'
@@ -94,7 +97,10 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                     <span>{item.label}</span>
                   </div>
                   {item.badge !== undefined && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#182030] text-[#94a3b8] border border-[#263148] font-mono">
+                    <span 
+                      title={`${item.badge} active items`}
+                      className="text-[10px] px-2 py-0.5 rounded-full bg-[#182030] text-[#94a3b8] border border-[#263148] font-mono"
+                    >
                       {item.badge}
                     </span>
                   )}
@@ -111,7 +117,10 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
               <Sparkles className="w-3 h-3 text-[#cda052]" />
               Promoted Claude Tools
             </span>
-            <span className="text-[9px] px-1.5 py-0.5 rounded bg-[rgba(205,160,82,0.12)] text-[#cda052] border border-[rgba(205,160,82,0.25)] font-semibold font-mono">
+            <span 
+              title={`${promotedTools.length} promoted Claude tools active as pages`}
+              className="text-[9px] px-1.5 py-0.5 rounded bg-[rgba(205,160,82,0.12)] text-[#cda052] border border-[rgba(205,160,82,0.25)] font-semibold font-mono"
+            >
               {promotedTools.length} Live
             </span>
           </div>
@@ -123,6 +132,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                 <Link
                   href="/artifacts"
                   onClick={handleLinkClick}
+                  title="Go to Artifact Vault to review or promote Claude tools"
                   className="text-xs text-[#cda052] hover:underline mt-1 inline-block font-semibold"
                 >
                   Review inbox →
@@ -139,6 +149,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                     key={tool.id}
                     href={toolHref}
                     onClick={handleLinkClick}
+                    title={`Open ${tool.title}`}
                     className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors group ${
                       isActive
                         ? 'bg-[rgba(205,160,82,0.14)] text-[#e6c875] border-l-2 border-[#cda052] font-semibold'
@@ -157,7 +168,10 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
 
       {/* Footer Info / Backend Status */}
       <div className="p-3.5 border-t border-[#1a1f2c] bg-[#07080d] text-[11px]">
-        <div className="flex items-center justify-between text-[#cbd5e1] mb-1.5">
+        <div 
+          className="flex items-center justify-between text-[#cbd5e1] mb-1.5 cursor-help"
+          title={isSupabaseConfigured ? 'Synchronized with Supabase PostgreSQL and Storage' : 'Operating in local browser storage mode'}
+        >
           <span className="flex items-center gap-1.5 font-medium">
             <Database className="w-3.5 h-3.5 text-[#cda052]" />
             Backend Sync
@@ -166,7 +180,10 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
             {isSupabaseConfigured ? 'Supabase Live' : 'Local / Offline'}
           </span>
         </div>
-        <div className="flex items-center justify-between text-[#94a3b8] text-[10px]">
+        <div 
+          className="flex items-center justify-between text-[#94a3b8] text-[10px] cursor-help"
+          title="Protected with encrypted session tokens and Row Level Security"
+        >
           <span>Security Protocol</span>
           <span className="flex items-center gap-1 text-emerald-400 font-medium">
             <ShieldCheck className="w-3 h-3" />
@@ -197,7 +214,8 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
           <button
             onClick={() => signOut()}
             className="text-[#94a3b8] hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-950/30 transition-colors"
-            title="Sign Out"
+            title="Sign Out of Rivlet console"
+            aria-label="Sign Out"
           >
             <LogOut className="w-3.5 h-3.5" />
           </button>

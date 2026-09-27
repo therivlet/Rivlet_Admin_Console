@@ -20,11 +20,9 @@ import {
   DollarSign
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
-import CommandPalette from '@/components/layout/CommandPalette';
 
 export default function DashboardOverviewPage() {
   const { artifacts, costingSheets, documents, kbArticles } = useAdminStore();
-  const [isCmdOpen, setIsCmdOpen] = useState(false);
 
   const promotedTools = artifacts.filter((a) => a.isPromoted);
   const activeCerts = documents.filter((d) => d.status === 'Active');
@@ -56,7 +54,8 @@ export default function DashboardOverviewPage() {
         {/* Global Quick Action Buttons */}
         <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
           <button
-            onClick={() => setIsCmdOpen(true)}
+            onClick={() => window.dispatchEvent(new CustomEvent('open-command-palette'))}
+            title="Search platform (⌘K / Ctrl+K)"
             className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[#121623] border border-[#232d42] text-xs font-medium text-[#cbd5e1] hover:text-white hover:border-[#cda052]/60 transition-all shadow-sm"
           >
             <Search className="w-3.5 h-3.5 text-[#cda052]" />
@@ -66,6 +65,7 @@ export default function DashboardOverviewPage() {
 
           <Link
             href="/artifacts?action=new"
+            title="Create or import Claude Artifact"
             className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow transition-all"
           >
             <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -332,9 +332,6 @@ export default function DashboardOverviewPage() {
           </div>
         </div>
       </div>
-
-      {/* Global Command Palette */}
-      <CommandPalette isOpen={isCmdOpen} onClose={() => setIsCmdOpen(false)} />
     </div>
   );
 }

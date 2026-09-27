@@ -16,8 +16,25 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: 'Rivlet | Admin Operations & Artifact Knowledge Hub',
+  title: 'Rivlet | Executive Console & Brand Operations',
   description: 'Centralized admin platform for Rivlet clothing brand: Claude HTML artifact sandbox, apparel costing calculator, compliance document vault, and confidential SOPs.',
+  manifest: '/manifest.json',
+  icons: {
+    icon: '/favicon.png',
+    apple: '/brand/apple-touch-icon.png',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Rivlet Admin',
+  },
+};
+
+export const viewport = {
+  themeColor: '#07090e',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({

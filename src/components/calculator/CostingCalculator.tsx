@@ -193,6 +193,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
           <div className="flex items-center bg-[#171b28] p-1 rounded-lg border border-[#252c40]">
             <button
               onClick={() => updateField('currency', '₹')}
+              title="Set active pricing currency to Indian Rupee (₹)"
               className={`px-2.5 py-1 text-xs rounded font-semibold transition-colors ${
                 curr === '₹' ? 'bg-[#cda052] text-black' : 'text-[#848d9f] hover:text-white'
               }`}
@@ -201,6 +202,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
             </button>
             <button
               onClick={() => updateField('currency', '$')}
+              title="Set active pricing currency to US Dollar ($)"
               className={`px-2.5 py-1 text-xs rounded font-semibold transition-colors ${
                 curr === '$' ? 'bg-[#cda052] text-black' : 'text-[#848d9f] hover:text-white'
               }`}
@@ -229,6 +231,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
 
           <button
             onClick={handleSave}
+            title="Save active SKU calculation to archive & database"
             className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow transition-all"
           >
             <Save className="w-3.5 h-3.5" />
@@ -253,6 +256,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
               <button
                 key={sc}
                 onClick={() => setActiveScenario(sc)}
+                title={sc === 'low' ? 'Conservative Scenario (Low volume, higher CAC)' : sc === 'mid' ? 'Expected Baseline Scenario' : 'Upside Scenario (High volume, optimized scale)'}
                 className={`px-3 py-1.5 text-xs rounded font-semibold transition-all ${
                   activeScenario === sc
                     ? 'bg-gradient-to-r from-[#cda052] to-[#b38536] text-black shadow-glow'
@@ -446,6 +450,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
                 <button
                   type="button"
                   onClick={() => updateField('autoOutputTax', true)}
+                  title="Automatically apply 5% GST if price ≤ ₹2,500, or 18% if > ₹2,500 under Indian tax code"
                   className={`px-2 py-0.5 text-[11px] rounded transition-colors ${
                     inputs.autoOutputTax ? 'bg-[#cda052] text-black font-bold' : 'text-[#848d9f]'
                   }`}
@@ -455,6 +460,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
                 <button
                   type="button"
                   onClick={() => updateField('autoOutputTax', false)}
+                  title="Override automatic tax bracket with custom GST percentage"
                   className={`px-2 py-0.5 text-[11px] rounded transition-colors ${
                     !inputs.autoOutputTax ? 'bg-[#cda052] text-black font-bold' : 'text-[#848d9f]'
                   }`}
@@ -683,6 +689,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
               <button
                 type="button"
                 onClick={() => setIsBOMModalOpen(true)}
+                title="Open Technical BOM & Fabric Specifier to calculate exact yarn, GSM, and CMT costs"
                 className="px-2.5 py-1 rounded-lg bg-[rgba(205,160,82,0.15)] hover:bg-[rgba(205,160,82,0.25)] border border-[rgba(205,160,82,0.35)] text-xs text-[#cda052] font-semibold flex items-center gap-1.5 transition-colors shadow-glow"
               >
                 <Scissors className="w-3.5 h-3.5" />
@@ -701,6 +708,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
                 <button
                   type="button"
                   onClick={() => setIsBOMModalOpen(true)}
+                  title="Itemize factory cost via Technical BOM"
                   className="text-[10px] text-[#cda052] hover:underline flex items-center gap-0.5"
                 >
                   <Scissors className="w-2.5 h-2.5" />
@@ -1101,6 +1109,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
         <div className="bg-[#111420] border border-[#1e2436] rounded-xl overflow-hidden">
           <button
             onClick={() => setShowScenarios(!showScenarios)}
+            title="Expand or collapse three-scenario comparison table"
             className="w-full px-5 py-3.5 flex items-center justify-between text-xs font-bold text-white hover:bg-[#141824] transition-colors"
           >
             <span className="flex items-center gap-2">
@@ -1192,6 +1201,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
         <div className="bg-[#111420] border border-[#1e2436] rounded-xl overflow-hidden">
           <button
             onClick={() => setShowBreakdown(!showBreakdown)}
+            title="Expand or collapse complete unit cost deduction waterfall"
             className="w-full px-5 py-3.5 flex items-center justify-between text-xs font-bold text-white hover:bg-[#141824] transition-colors"
           >
             <span className="flex items-center gap-2">
@@ -1267,6 +1277,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
         <div className="bg-[#111420] border border-[#1e2436] rounded-xl overflow-hidden">
           <button
             onClick={() => setShowFormula(!showFormula)}
+            title="Expand or collapse mathematical formula audit trail"
             className="w-full px-5 py-3.5 flex items-center justify-between text-xs font-bold text-white hover:bg-[#141824] transition-colors"
           >
             <span className="flex items-center gap-2">
