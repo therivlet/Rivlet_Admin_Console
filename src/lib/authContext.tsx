@@ -3,174 +3,185 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase, isSupabaseConfigured } from './supabase';
 import { useRouter } from 'next/navigation';
+import { Session } from '@supabase/supabase-js';
 
 export interface AdminUser {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'owner';
+  role: 'owner' | 'admin';
 }
 
 interface AuthContextType {
   user: AdminUser | null;
+  session: Session | null;
   isLoading: boolean;
   signIn: (email: string, pass: string) => Promise<{ error?: string }>;
-  signUp: (email: string, pass: string) => Promise<{ error?: string }>;
+  signUp: (email: string, pass: string, name?: string) => Promise<{ error?: string; confirmationRequired?: boolean }>;
   signOut: () => Promise<void>;
-  loginAsDemoAdmin: () => void;
+  resetPassword: (email: string) => Promise<{ error?: string; message?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
+  session: null,
   isLoading: true,
   signIn: async () => ({}),
   signUp: async () => ({}),
   signOut: async () => {},
-  loginAsDemoAdmin: () => {},
+  resetPassword: async () => ({}),
 });
-
-const AUTH_STORAGE_KEY = 'rivlet_admin_user_session';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AdminUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    // 1. Check local session cache first
-    try {
-      const cached = localStorage.getItem(AUTH_STORAGE_KEY);
-      if (cached) {
-        setUser(JSON.parse(cached));
-      } else {
-        // Default to demo admin session on first boot so navigation isn't blocked
-        const defaultAdmin: AdminUser = {
-          id: 'admin-master',
-          email: 'admin@therivlet.com',
-          name: 'Rivlet Founder',
-          role: 'owner',
-        };
-        setUser(defaultAdmin);
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(defaultAdmin));
-      }
-    } catch (e) {
-      console.error('Error loading session cache', e);
-    } finally {
+    if (!isSupabaseConfigured || !supabase) {
       setIsLoading(false);
+      return;
     }
 
-    // 2. Supabase auth listener if configured
-    if (isSupabaseConfigured && supabase) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session?.user) {
-          const authUser: AdminUser = {
-            id: session.user.id,
-            email: session.user.email || 'admin@therivlet.com',
-            name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Rivlet Admin',
-            role: 'owner',
-          };
-          setUser(authUser);
-          localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authUser));
-        }
-      });
+    // 1. Fetch current active session from Supabase
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setSession(session);
+        setUser({
+          id: session.user.id,
+          email: session.user.email || '',
+          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Admin',
+          role: 'owner',
+        });
+      } else {
+        setSession(null);
+        setUser(null);
+      }
+      setIsLoading(false);
+    }).catch(err => {
+      console.error('Error fetching Supabase auth session:', err);
+      setIsLoading(false);
+    });
 
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        if (session?.user) {
-          const authUser: AdminUser = {
-            id: session.user.id,
-            email: session.user.email || 'admin@therivlet.com',
-            name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Rivlet Admin',
-            role: 'owner',
-          };
-          setUser(authUser);
-          localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authUser));
-        } else {
-          // Keep current user or null
-        }
-      });
+    // 2. Real-time auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+      if (newSession?.user) {
+        setSession(newSession);
+        setUser({
+          id: newSession.user.id,
+          email: newSession.user.email || '',
+          name: newSession.user.user_metadata?.full_name || newSession.user.email?.split('@')[0] || 'Admin',
+          role: 'owner',
+        });
+      } else {
+        setSession(null);
+        setUser(null);
+      }
+      setIsLoading(false);
+    });
 
-      return () => subscription.unsubscribe();
-    }
+    return () => subscription.unsubscribe();
   }, []);
 
+  // Real Supabase Sign-In
   const signIn = async (email: string, pass: string) => {
-    setIsLoading(true);
-    if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password: pass,
-      });
-
-      if (error) {
-        setIsLoading(false);
-        return { error: error.message };
-      }
-
-      if (data.user) {
-        const authUser: AdminUser = {
-          id: data.user.id,
-          email: data.user.email || email,
-          name: data.user.user_metadata?.full_name || email.split('@')[0],
-          role: 'owner',
-        };
-        setUser(authUser);
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authUser));
-        setIsLoading(false);
-        return {};
-      }
+    if (!isSupabaseConfigured || !supabase) {
+      return { error: 'Supabase backend is not configured in .env.local.' };
     }
 
-    // Local admin credentials fallback
-    const localUser: AdminUser = {
-      id: `admin-${Date.now()}`,
+    setIsLoading(true);
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
-      name: email.split('@')[0],
-      role: 'admin',
-    };
-    setUser(localUser);
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(localUser));
+      password: pass,
+    });
+
     setIsLoading(false);
+
+    if (error) {
+      return { error: error.message };
+    }
+
+    if (data.session && data.user) {
+      setSession(data.session);
+      setUser({
+        id: data.user.id,
+        email: data.user.email || email,
+        name: data.user.user_metadata?.full_name || email.split('@')[0],
+        role: 'owner',
+      });
+      return {};
+    }
+
+    return { error: 'Failed to establish session. Please verify your credentials.' };
+  };
+
+  // Real Supabase Sign-Up
+  const signUp = async (email: string, pass: string, name?: string) => {
+    if (!isSupabaseConfigured || !supabase) {
+      return { error: 'Supabase backend is not configured in .env.local.' };
+    }
+
+    setIsLoading(true);
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password: pass,
+      options: {
+        data: {
+          full_name: name || email.split('@')[0],
+        },
+      },
+    });
+
+    setIsLoading(false);
+
+    if (error) {
+      return { error: error.message };
+    }
+
+    // Check if email confirmation is required by Supabase
+    if (data.user && !data.session) {
+      return { 
+        confirmationRequired: true,
+        message: 'Account created! Please check your email to confirm registration before logging in.',
+      };
+    }
+
+    if (data.session && data.user) {
+      setSession(data.session);
+      setUser({
+        id: data.user.id,
+        email: data.user.email || email,
+        name: name || data.user.user_metadata?.full_name || email.split('@')[0],
+        role: 'owner',
+      });
+    }
+
     return {};
   };
 
-  const signUp = async (email: string, pass: string) => {
-    setIsLoading(true);
-    if (isSupabaseConfigured && supabase) {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password: pass,
-      });
-      if (error) {
-        setIsLoading(false);
-        return { error: error.message };
-      }
-    }
-    return signIn(email, pass);
-  };
-
+  // Real Supabase Sign-Out
   const signOut = async () => {
     if (isSupabaseConfigured && supabase) {
       await supabase.auth.signOut();
     }
     setUser(null);
-    localStorage.removeItem(AUTH_STORAGE_KEY);
+    setSession(null);
     router.push('/login');
   };
 
-  const loginAsDemoAdmin = () => {
-    const demo: AdminUser = {
-      id: 'demo-master',
-      email: 'admin@therivlet.com',
-      name: 'Rivlet Founder',
-      role: 'owner',
-    };
-    setUser(demo);
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(demo));
-    router.push('/');
+  // Real Password Reset
+  const resetPassword = async (email: string) => {
+    if (!isSupabaseConfigured || !supabase) {
+      return { error: 'Supabase is not configured.' };
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    if (error) return { error: error.message };
+    return { message: 'Password reset link sent to your email.' };
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, signIn, signUp, signOut, loginAsDemoAdmin }}>
+    <AuthContext.Provider value={{ user, session, isLoading, signIn, signUp, signOut, resetPassword }}>
       {children}
     </AuthContext.Provider>
   );
