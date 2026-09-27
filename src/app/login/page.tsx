@@ -85,35 +85,41 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#07080c] flex items-center justify-center p-4 relative overflow-hidden select-none">
+    <div className="min-h-screen min-h-[100dvh] w-full bg-[#07090e] flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-y-auto">
       {/* Background Ambient Glows */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-[rgba(205,160,82,0.06)] rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute bottom-10 right-10 w-96 h-96 bg-[rgba(14,128,108,0.04)] rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-[rgba(205,160,82,0.07)] rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute bottom-6 right-6 w-96 h-96 bg-[rgba(16,185,129,0.04)] rounded-full blur-[130px] pointer-events-none" />
       <RivletWatermark />
 
-      {/* Login Card */}
-      <div className="w-full max-w-md bg-[#0f121b] border border-[#23293d] rounded-2xl p-8 shadow-2xl relative z-10 space-y-6">
+      {/* Login Card (perfectly centered vertically & horizontally with my-auto) */}
+      <div className="w-full max-w-md bg-[#0e121b] border border-[#1e2638] rounded-2xl p-6 sm:p-8 shadow-2xl relative z-10 space-y-6 my-auto">
         {/* Brand Header */}
         <div className="text-center space-y-2">
           <div className="flex justify-center mb-3">
             <RivletLogo variant="gold" size="lg" />
           </div>
-          <p className="text-xs text-[#808a9f]">
-            Operations Console & Confidential Brand Vault
+          <h1 className="text-xl sm:text-2xl font-bold font-serif text-white tracking-wide">
+            {mode === 'signin' && 'Rivlet Executive Sign In'}
+            {mode === 'signup' && 'Create Admin Account'}
+            {mode === 'forgot' && 'Reset Console Password'}
+          </h1>
+          <p className="text-xs text-[#94a3b8] max-w-xs mx-auto leading-relaxed">
+            {mode === 'signin' && 'Secure administrative access to costing sheets, SOPs & brand vault.'}
+            {mode === 'signup' && 'Register your administrative credentials protected by Supabase.'}
+            {mode === 'forgot' && 'Enter your registered email address to receive password recovery instructions.'}
           </p>
         </div>
 
-
         {/* Mode Switcher */}
         {mode !== 'forgot' && (
-          <div className="flex bg-[#090b12] p-1 rounded-xl border border-[#1d2334]">
+          <div className="flex bg-[#07090e] p-1 rounded-xl border border-[#1e2638]">
             <button
               type="button"
               onClick={() => { setMode('signin'); setErrorMessage(''); setSuccessMessage(''); }}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+              className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all text-center ${
                 mode === 'signin'
-                  ? 'bg-[#1b2030] text-[#cda052] shadow-sm'
-                  : 'text-[#7e879f] hover:text-white'
+                  ? 'bg-[#141824] text-[#e6c875] border border-[#cda052]/50 shadow-sm ring-1 ring-[#cda052]/20'
+                  : 'text-[#94a3b8] hover:text-white'
               }`}
             >
               Sign In
@@ -121,10 +127,10 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => { setMode('signup'); setErrorMessage(''); setSuccessMessage(''); }}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+              className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all text-center ${
                 mode === 'signup'
-                  ? 'bg-[#1b2030] text-[#cda052] shadow-sm'
-                  : 'text-[#7e879f] hover:text-white'
+                  ? 'bg-[#141824] text-[#e6c875] border border-[#cda052]/50 shadow-sm ring-1 ring-[#cda052]/20'
+                  : 'text-[#94a3b8] hover:text-white'
               }`}
             >
               Create Account
@@ -134,14 +140,14 @@ export default function LoginPage() {
 
         {/* Feedback Messages */}
         {errorMessage && (
-          <div className="p-3 bg-rose-950/80 border border-rose-800/60 rounded-lg text-rose-300 text-xs flex items-center gap-2 animate-fade-in">
+          <div className="p-3 bg-rose-950/80 border border-rose-800/60 rounded-xl text-rose-300 text-xs flex items-center gap-2.5 animate-fade-in font-medium">
             <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
             <span>{errorMessage}</span>
           </div>
         )}
 
         {successMessage && (
-          <div className="p-3.5 bg-emerald-950/80 border border-emerald-700/60 rounded-lg text-emerald-300 text-xs flex items-center gap-2 animate-fade-in">
+          <div className="p-3.5 bg-emerald-950/80 border border-emerald-700/60 rounded-xl text-emerald-300 text-xs flex items-center gap-2.5 animate-fade-in font-medium">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
             <span>{successMessage}</span>
           </div>
@@ -151,36 +157,36 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           {mode === 'signup' && (
             <div>
-              <label className="block text-[10px] uppercase font-semibold text-[#666f85] mb-1.5">
+              <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">
                 Full Name
               </label>
-              <div className="relative">
-                <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#687287]" />
+              <div className="relative flex items-center">
+                <User className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8] pointer-events-none" />
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Harichandru"
-                  className="w-full pl-9 pr-3 py-2.5 rounded-lg bg-[#090b12] border border-[#21273a] text-white placeholder-[#555d72] outline-none focus:border-[#cda052] transition-colors"
+                  className="w-full pl-10 pr-3.5 py-2.5 rounded-lg bg-[#07090e] border border-[#263147] text-white placeholder-[#64748b] text-xs outline-none focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40 transition-colors"
                 />
               </div>
             </div>
           )}
 
           <div>
-            <label className="block text-[10px] uppercase font-semibold text-[#666f85] mb-1.5">
+            <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">
               Admin Email
             </label>
-            <div className="relative">
-              <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#687287]" />
+            <div className="relative flex items-center">
+              <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8] pointer-events-none" />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="your-email@therivlet.com"
-                className="w-full pl-9 pr-3 py-2.5 rounded-lg bg-[#090b12] border border-[#21273a] text-white placeholder-[#555d72] outline-none focus:border-[#cda052] transition-colors"
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-lg bg-[#07090e] border border-[#263147] text-white placeholder-[#64748b] text-xs outline-none focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40 transition-colors"
               />
             </div>
           </div>
@@ -188,33 +194,34 @@ export default function LoginPage() {
           {mode !== 'forgot' && (
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-[10px] uppercase font-semibold text-[#666f85]">
+                <label className="text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider">
                   Password
                 </label>
                 {mode === 'signin' && (
                   <button
                     type="button"
                     onClick={() => { setMode('forgot'); setErrorMessage(''); setSuccessMessage(''); }}
-                    className="text-[10px] text-[#cda052] hover:underline"
+                    className="text-[11px] text-[#e6c875] hover:text-white hover:underline transition-colors font-medium"
                   >
                     Forgot Password?
                   </button>
                 )}
               </div>
-              <div className="relative">
-                <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#687287]" />
+              <div className="relative flex items-center">
+                <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8] pointer-events-none" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full pl-9 pr-10 py-2.5 rounded-lg bg-[#090b12] border border-[#21273a] text-white placeholder-[#555d72] outline-none focus:border-[#cda052] transition-colors"
+                  className="w-full pl-10 pr-10 py-2.5 rounded-lg bg-[#07090e] border border-[#263147] text-white placeholder-[#64748b] text-xs outline-none focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40 transition-colors"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#687287] hover:text-white"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-[#94a3b8] hover:text-white transition-colors"
+                  title={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -225,7 +232,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-2.5 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-bold text-xs hover:brightness-110 shadow-glow transition-all flex items-center justify-center gap-1.5 mt-2 disabled:opacity-50"
+            className="w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-bold text-xs hover:brightness-110 shadow-glow transition-all active:scale-[0.98] flex items-center justify-center gap-2 mt-4 disabled:opacity-50"
           >
             <span>
               {isSubmitting
@@ -243,7 +250,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => { setMode('signin'); setErrorMessage(''); setSuccessMessage(''); }}
-              className="w-full py-2 text-xs text-[#8e97ae] hover:text-white flex items-center justify-center gap-1 transition-colors"
+              className="w-full py-2 text-xs text-[#94a3b8] hover:text-white flex items-center justify-center gap-1.5 transition-colors font-medium"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to Sign In</span>
@@ -252,8 +259,8 @@ export default function LoginPage() {
         </form>
 
         {/* Footer Security Badge */}
-        <div className="pt-2 text-center text-[10px] text-[#5f677c] flex items-center justify-center gap-1.5 border-t border-[#1a1f2e]">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+        <div className="pt-3 text-center text-[11px] text-[#94a3b8] flex items-center justify-center gap-1.5 border-t border-[#1e2638]">
+          <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
           <span>Real Supabase Cloud Authentication Active</span>
         </div>
       </div>

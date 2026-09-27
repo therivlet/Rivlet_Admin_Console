@@ -62,7 +62,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
   // Login page layout
   if (isLoginPage) {
-    return <main className="min-h-screen bg-[#07080c]">{children}</main>;
+    return <main className="min-h-screen min-h-[100dvh] w-full bg-[#07090e] flex flex-col">{children}</main>;
   }
 
   // Authenticated admin layout
