@@ -6,6 +6,7 @@ import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
 import CommandPalette from '@/components/layout/CommandPalette';
 import { AuthProvider, useAuth } from '@/lib/authContext';
+import { AdminStoreProvider } from '@/lib/store';
 import { RivletWatermark } from '@/components/brand/RivletLogo';
 import RivletLoader from '@/components/brand/RivletLoader';
 
@@ -132,9 +133,11 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
-      <AuthGuard>
-        {children}
-      </AuthGuard>
+      <AdminStoreProvider>
+        <AuthGuard>
+          {children}
+        </AuthGuard>
+      </AdminStoreProvider>
     </AuthProvider>
   );
 }

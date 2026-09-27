@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   User, 
   Mail, 
@@ -26,24 +26,40 @@ import RivletLogo from '@/components/brand/RivletLogo';
 import Link from 'next/link';
 
 export default function ProfilePage() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, updateProfile } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'profile' | 'brand' | 'security' | 'preferences'>('profile');
 
   // Personal Profile State
-  const [fullName, setFullName] = useState(user?.name || 'Rivlet Executive');
+  const [fullName, setFullName] = useState(user?.metadata?.full_name || user?.name || 'Rivlet Executive');
   const [email] = useState(user?.email || 'admin@therivlet.com');
-  const [roleTitle, setRoleTitle] = useState('Founder & Creative Director');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [department, setDepartment] = useState('Executive & Merchandising');
+  const [roleTitle, setRoleTitle] = useState(user?.metadata?.role_title || 'Founder & Creative Director');
+  const [phoneNumber, setPhoneNumber] = useState(user?.metadata?.phone_number || '');
+  const [department, setDepartment] = useState(user?.metadata?.department || 'Executive & Merchandising');
 
   // Brand Entity State
-  const [legalEntity, setLegalEntity] = useState('Rivlet Luxury Apparel Co.');
-  const [gstin, setGstin] = useState('');
-  const [primaryHub, setPrimaryHub] = useState('Tirupur Apparel Complex, Tamil Nadu');
-  const [warehouseLocation, setWarehouseLocation] = useState('Bangalore Logistics Hub, Karnataka');
-  const [defaultCurrency, setDefaultCurrency] = useState('₹');
-  const [defaultTargetMargin, setDefaultTargetMargin] = useState(25);
+  const [legalEntity, setLegalEntity] = useState(user?.metadata?.legal_entity || 'Rivlet Luxury Apparel Co.');
+  const [gstin, setGstin] = useState(user?.metadata?.gstin || '');
+  const [primaryHub, setPrimaryHub] = useState(user?.metadata?.primary_hub || 'Tirupur Apparel Complex, Tamil Nadu');
+  const [warehouseLocation, setWarehouseLocation] = useState(user?.metadata?.warehouse_location || 'Bangalore Logistics Hub, Karnataka');
+  const [defaultCurrency, setDefaultCurrency] = useState(user?.metadata?.default_currency || '₹');
+  const [defaultTargetMargin, setDefaultTargetMargin] = useState(user?.metadata?.default_target_margin ?? 25);
+
+  // Sync state when user session loads/updates from Supabase
+  useEffect(() => {
+    if (user?.metadata) {
+      if (user.metadata.full_name) setFullName(user.metadata.full_name);
+      if (user.metadata.role_title) setRoleTitle(user.metadata.role_title);
+      if (user.metadata.phone_number !== undefined) setPhoneNumber(user.metadata.phone_number);
+      if (user.metadata.department) setDepartment(user.metadata.department);
+      if (user.metadata.legal_entity) setLegalEntity(user.metadata.legal_entity);
+      if (user.metadata.gstin !== undefined) setGstin(user.metadata.gstin);
+      if (user.metadata.primary_hub) setPrimaryHub(user.metadata.primary_hub);
+      if (user.metadata.warehouse_location) setWarehouseLocation(user.metadata.warehouse_location);
+      if (user.metadata.default_currency) setDefaultCurrency(user.metadata.default_currency);
+      if (user.metadata.default_target_margin !== undefined) setDefaultTargetMargin(user.metadata.default_target_margin);
+    }
+  }, [user]);
 
   // Security / Password State
   const [newPassword, setNewPassword] = useState('');
@@ -51,13 +67,32 @@ export default function ProfilePage() {
   const [passwordStatusMsg, setPasswordStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
-  // Saved Alert
+  // Cloud Saving State
+  const [isSaving, setIsSaving] = useState(false);
   const [savedAlert, setSavedAlert] = useState(false);
 
-  // Save changes handler
-  const handleSaveProfile = () => {
-    setSavedAlert(true);
-    setTimeout(() => setSavedAlert(false), 3000);
+  // Save changes directly to Supabase cloud
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    const result = await updateProfile({
+      full_name: fullName,
+      role_title: roleTitle,
+      phone_number: phoneNumber,
+      department: department,
+      legal_entity: legalEntity,
+      gstin: gstin,
+      primary_hub: primaryHub,
+      warehouse_location: warehouseLocation,
+      default_currency: defaultCurrency,
+      default_target_margin: defaultTargetMargin,
+    });
+    setIsSaving(false);
+    if (!result.error) {
+      setSavedAlert(true);
+      setTimeout(() => setSavedAlert(false), 3500);
+    } else {
+      alert('Error syncing to Supabase: ' + result.error);
+    }
   };
 
   // Change password handler
@@ -309,10 +344,12 @@ export default function ProfilePage() {
           <div className="pt-4 border-t border-[#1e2638] flex justify-end">
             <button
               onClick={handleSaveProfile}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow transition-all active:scale-[0.98]"
+              disabled={isSaving}
+              title="Save personal profile details to Supabase Cloud"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow transition-all active:scale-[0.98] disabled:opacity-60"
             >
               <Save className="w-3.5 h-3.5" />
-              <span>Save Personal Information</span>
+              <span>{isSaving ? 'Syncing to Supabase...' : 'Save Personal Information'}</span>
             </button>
           </div>
         </div>
@@ -396,10 +433,12 @@ export default function ProfilePage() {
           <div className="pt-4 border-t border-[#1e2638] flex justify-end">
             <button
               onClick={handleSaveProfile}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow transition-all active:scale-[0.98]"
+              disabled={isSaving}
+              title="Save brand entity specifications to Supabase Cloud"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow transition-all active:scale-[0.98] disabled:opacity-60"
             >
               <Save className="w-3.5 h-3.5" />
-              <span>Save Brand Specifications</span>
+              <span>{isSaving ? 'Syncing to Supabase...' : 'Save Brand Specifications'}</span>
             </button>
           </div>
         </div>

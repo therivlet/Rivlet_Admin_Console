@@ -10,6 +10,7 @@ export interface AdminUser {
   email: string;
   name: string;
   role: 'owner' | 'admin';
+  metadata?: Record<string, any>;
 }
 
 interface AuthContextType {
@@ -20,6 +21,7 @@ interface AuthContextType {
   signUp: (email: string, pass: string, name?: string) => Promise<{ error?: string; confirmationRequired?: boolean }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error?: string; message?: string }>;
+  updateProfile: (metadata: Record<string, any>) => Promise<{ error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -30,6 +32,7 @@ const AuthContext = createContext<AuthContextType>({
   signUp: async () => ({}),
   signOut: async () => {},
   resetPassword: async () => ({}),
+  updateProfile: async () => ({}),
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -64,6 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: session.user.email || '',
           name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Admin',
           role: 'owner',
+          metadata: session.user.user_metadata || {},
         });
       } else {
         setSession(null);
@@ -84,6 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: newSession.user.email || '',
           name: newSession.user.user_metadata?.full_name || newSession.user.email?.split('@')[0] || 'Admin',
           role: 'owner',
+          metadata: newSession.user.user_metadata || {},
         });
       } else {
         setSession(null);
@@ -94,6 +99,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const updateProfile = async (metadata: Record<string, any>) => {
+    if (!isSupabaseConfigured || !supabase) {
+      return { error: 'Supabase backend is not configured in .env.local.' };
+    }
+
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        data: metadata,
+      });
+
+      if (error) {
+        return { error: error.message };
+      }
+
+      if (data.user) {
+        setUser({
+          id: data.user.id,
+          email: data.user.email || '',
+          name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'Admin',
+          role: 'owner',
+          metadata: data.user.user_metadata || {},
+        });
+      }
+      return {};
+    } catch (err: any) {
+      return { error: err.message || 'Failed to update profile on Supabase.' };
+    }
+  };
 
   // Real Supabase Sign-In
   const signIn = async (email: string, pass: string) => {
@@ -119,6 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: data.user.email || email,
         name: data.user.user_metadata?.full_name || email.split('@')[0],
         role: 'owner',
+        metadata: data.user.user_metadata || {},
       });
       setTimeout(() => {
         setIsLoading(false);
@@ -168,6 +203,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: data.user.email || email,
         name: name || data.user.user_metadata?.full_name || email.split('@')[0],
         role: 'owner',
+        metadata: data.user.user_metadata || {},
       });
     }
 
@@ -202,7 +238,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isLoading, signIn, signUp, signOut, resetPassword }}>
+    <AuthContext.Provider value={{ user, session, isLoading, signIn, signUp, signOut, resetPassword, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );
