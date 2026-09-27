@@ -18,9 +18,10 @@ import {
   ShieldCheck, 
   Layers,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Scissors
 } from 'lucide-react';
-import { PricingInputs, CalculationResult, ScenarioKey, CostingSheet } from '@/lib/types';
+import { PricingInputs, CalculationResult, ScenarioKey, CostingSheet, GarmentBOM } from '@/lib/types';
 import { 
   defaultPricingInputs, 
   calculateScenario, 
@@ -29,6 +30,7 @@ import {
 } from '@/lib/pricingEngine';
 import { useAdminStore } from '@/lib/store';
 import CostingExportModal from './CostingExportModal';
+import BOMSpecifierModal from './BOMSpecifierModal';
 
 interface CostingCalculatorProps {
   initialSheet?: CostingSheet;
@@ -41,6 +43,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
   const [activeScenario, setActiveScenario] = useState<ScenarioKey>('mid');
   const [savedSuccessAlert, setSavedSuccessAlert] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isBOMModalOpen, setIsBOMModalOpen] = useState(false);
 
   // Accordion section states
   const [showFormula, setShowFormula] = useState(true);
@@ -60,6 +63,23 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
   // Generic updater
   const updateField = <K extends keyof PricingInputs>(key: K, value: PricingInputs[K]) => {
     setInputs(prev => ({ ...prev, [key]: value }));
+  };
+
+  // BOM handler
+  const handleApplyBOM = (bom: GarmentBOM, rollup: {
+    factoryCost: number;
+    brandingCost: number;
+    packagingCost: number;
+    tagsCost: number;
+  }) => {
+    setInputs(prev => ({
+      ...prev,
+      factory: rollup.factoryCost,
+      branding: rollup.brandingCost,
+      packaging: rollup.packagingCost,
+      tags: rollup.tagsCost,
+      bom,
+    }));
   };
 
   const updateRange = (
@@ -659,14 +679,34 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
               <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
               3. Product, Factory & Inbound Supply Costs
             </h3>
-            <span className="text-[10px] text-[#717a90]">Step 3</span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsBOMModalOpen(true)}
+                className="px-2.5 py-1 rounded-lg bg-[rgba(205,160,82,0.15)] hover:bg-[rgba(205,160,82,0.25)] border border-[rgba(205,160,82,0.35)] text-xs text-[#cda052] font-semibold flex items-center gap-1.5 transition-colors shadow-glow"
+              >
+                <Scissors className="w-3.5 h-3.5" />
+                <span>Technical BOM & Fabric Specifier</span>
+              </button>
+              <span className="text-[10px] text-[#717a90]">Step 3</span>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
             <div>
-              <label className="text-[10px] uppercase font-semibold text-[#666f85] block mb-1">
-                Factory Invoice Cost
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[10px] uppercase font-semibold text-[#666f85]">
+                  Factory Invoice Cost
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsBOMModalOpen(true)}
+                  className="text-[10px] text-[#cda052] hover:underline flex items-center gap-0.5"
+                >
+                  <Scissors className="w-2.5 h-2.5" />
+                  <span>Itemize</span>
+                </button>
+              </div>
               <div className="relative">
                 <span className="absolute left-2.5 top-1.5 text-[#6c758a] font-bold">{curr}</span>
                 <input
@@ -676,6 +716,11 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
                   className="w-full pl-7 pr-2.5 py-1.5 rounded bg-[#090b12] border border-[#22283b] text-white font-bold"
                 />
               </div>
+              {inputs.bom && (
+                <span className="text-[10px] text-emerald-400 block mt-1 font-mono truncate" title={inputs.bom.garmentType}>
+                  ✓ {inputs.bom.garmentType.split('(')[0].trim()} BOM Active
+                </span>
+              )}
             </div>
 
             <div>
@@ -1259,6 +1304,15 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
         inputs={inputs}
         activeScenario={activeScenario}
         allScenarios={allResults}
+      />
+
+      {/* BOM Specifier Modal */}
+      <BOMSpecifierModal
+        isOpen={isBOMModalOpen}
+        onClose={() => setIsBOMModalOpen(false)}
+        currency={curr}
+        initialBOM={inputs.bom}
+        onApplyBOM={handleApplyBOM}
       />
     </div>
   );

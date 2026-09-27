@@ -89,7 +89,42 @@ export interface PricingInputs {
   professional: ScenarioRange;
   finance: ScenarioRange;
   brandAmort: ScenarioRange;
+
+  // Technical Garment Bill of Materials (BOM)
+  bom?: GarmentBOM;
 }
+
+export interface FabricBOMItem {
+  id: string;
+  name: string; // e.g. "Main Body French Terry", "2x2 Rib Knit"
+  material: string; // e.g. "100% Combed Compact Cotton"
+  weightGsm: number; // e.g. 450
+  consumption: number; // e.g. 0.85
+  unit: 'kg' | 'meters' | 'pieces';
+  ratePerUnit: number; // e.g. 680
+  totalCost: number;
+}
+
+export interface TrimBOMItem {
+  id: string;
+  name: string; // e.g. "Custom Laser Engraved Aglets", "High-Density Neck Label"
+  category: 'Trims & Hardware' | 'Labels & Packaging' | 'Labor & Finishing';
+  specification: string;
+  quantity: number;
+  ratePerUnit: number;
+  totalCost: number;
+}
+
+export interface GarmentBOM {
+  garmentType: string;
+  fabricItems: FabricBOMItem[];
+  trimItems: TrimBOMItem[];
+  stitchingLabor: number;
+  washFinishCost: number;
+  totalBOMCost: number;
+  notes?: string;
+}
+
 
 export interface CalculationResult {
   scenario: ScenarioKey;

@@ -99,12 +99,29 @@ export default function CostingExportModal({
       ['Pick, Pack & Fulfillment Handling', `${curr}${inputs.pickpack}`, 'Individual unit boxing'],
       ['Inventory Storage & Shrinkage', `${curr}${inputs.inventory}`, 'Holding reserve'],
       ['Total Landed Inbound Cost', `${curr}${currentResult.baseProductCost.toFixed(2)}`, 'All 10 manufacturing steps'],
+    ];
+
+    if (inputs.bom) {
+      lines.push(
+        [],
+        ['3.1 TECHNICAL BILL OF MATERIALS SPECIFICATION (BOM)'],
+        ['Garment Architecture', inputs.bom.garmentType],
+        ['Item Name', 'Specification / Blend', 'Weight (GSM)', 'Consumption / Qty', 'Rate', 'Total Cost'],
+        ...inputs.bom.fabricItems.map(f => [f.name, f.material, `${f.weightGsm} GSM`, `${f.consumption} ${f.unit}`, `${curr}${f.ratePerUnit}/${f.unit}`, `${curr}${f.totalCost.toFixed(2)}`]),
+        ['CMT Stitching Labor', 'Cut, make, flatlock & assembly', '-', '1 pc', `${curr}${inputs.bom.stitchingLabor}`, `${curr}${inputs.bom.stitchingLabor.toFixed(2)}`],
+        ['Specialty Dyeing & Soft Wash', 'Reactive dye, enzyme & silicone finish', '-', '1 pc', `${curr}${inputs.bom.washFinishCost}`, `${curr}${inputs.bom.washFinishCost.toFixed(2)}`],
+        ...inputs.bom.trimItems.map(t => [t.name, `${t.category}: ${t.specification}`, '-', `${t.quantity} pcs`, `${curr}${t.ratePerUnit}`, `${curr}${t.totalCost.toFixed(2)}`]),
+        ['Total Technical BOM Target', inputs.bom.notes || '', '', '', '', `${curr}${inputs.bom.totalBOMCost.toFixed(2)}`]
+      );
+    }
+
+    lines.push(
       [],
       ['4. TAXATION & GST INPUT TAX CREDIT (ITC)'],
       ['Factory Inbound GST Rate', `${currentResult.factoryRate}%`, currentResult.factoryRate === 5 ? 'Tier 1 Garment (<= 2500)' : 'Tier 2 Garment (> 2500)'],
       ['Factory GST Paid in Cash', `${curr}${currentResult.factoryGst.toFixed(2)}`, inputs.factoryGstRecoverable ? '100% Eligible as ITC Offset' : 'Non-recoverable cost'],
       ['Net Working Capital Outlay', `${curr}${currentResult.factoryCashOutlay.toFixed(2)}`, 'Immediate cash required at mill'],
-    ];
+    );
 
     const csvContent = '\uFEFF' + lines.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -491,41 +508,93 @@ GST Invoice: Applicable HSN Code with GST Tax Invoice.`;
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[#171d2c] print:divide-gray-200">
-                        <tr>
-                          <td className="py-2 px-3 text-white font-medium print:text-black">Cut, Make & Main Fabric (CMT)</td>
-                          <td className="py-2 px-3 text-[#798399] print:text-gray-600">450 GSM French Terry Cotton, preshrunk, bio-wash</td>
-                          <td className="py-2 px-3 text-right font-mono font-semibold text-white print:text-black">{curr}{inputs.factory.toFixed(2)}</td>
-                        </tr>
-                        <tr>
-                          <td className="py-2 px-3 text-white font-medium print:text-black">Pattern & Technical Sampling</td>
-                          <td className="py-2 px-3 text-[#798399] print:text-gray-600">Fit sample, grading S-XXL, shrinkage sign-off</td>
-                          <td className="py-2 px-3 text-right font-mono">{curr}{inputs.development.toFixed(2)}</td>
-                        </tr>
-                        <tr>
-                          <td className="py-2 px-3 text-white font-medium print:text-black">Rivlet Branding Trims & Aglets</td>
-                          <td className="py-2 px-3 text-[#798399] print:text-gray-600">Laser-engraved metal aglets, high-density neck label</td>
-                          <td className="py-2 px-3 text-right font-mono">{curr}{inputs.branding.toFixed(2)}</td>
-                        </tr>
-                        <tr>
-                          <td className="py-2 px-3 text-white font-medium print:text-black">Hangtags & Security Barcode Seals</td>
-                          <td className="py-2 px-3 text-[#798399] print:text-gray-600">600 GSM FSC certified matte card, wax seal cord</td>
-                          <td className="py-2 px-3 text-right font-mono">{curr}{inputs.tags.toFixed(2)}</td>
-                        </tr>
-                        <tr>
-                          <td className="py-2 px-3 text-white font-medium print:text-black">Individual Protective Packaging</td>
-                          <td className="py-2 px-3 text-[#798399] print:text-gray-600">Frosted zip-lock polybag with Rivlet insignia & ventilation</td>
-                          <td className="py-2 px-3 text-right font-mono">{curr}{inputs.packaging.toFixed(2)}</td>
-                        </tr>
-                        <tr>
-                          <td className="py-2 px-3 text-white font-medium print:text-black">Quality Assurance & AQL 2.5 Audit</td>
-                          <td className="py-2 px-3 text-[#798399] print:text-gray-600">Independent inline inspection & final random audit</td>
-                          <td className="py-2 px-3 text-right font-mono">{curr}{inputs.qc.toFixed(2)}</td>
-                        </tr>
-                        <tr>
-                          <td className="py-2 px-3 text-white font-medium print:text-black">Inbound Logistics to Hub</td>
-                          <td className="py-2 px-3 text-[#798399] print:text-gray-600">Palletized shipment to Rivlet Central Hub</td>
-                          <td className="py-2 px-3 text-right font-mono">{curr}{inputs.inbound.toFixed(2)}</td>
-                        </tr>
+                        {inputs.bom ? (
+                          <>
+                            {inputs.bom.fabricItems.map((fab) => (
+                              <tr key={fab.id}>
+                                <td className="py-2 px-3 text-white font-medium print:text-black">
+                                  {fab.name} ({fab.weightGsm} GSM)
+                                </td>
+                                <td className="py-2 px-3 text-[#798399] print:text-gray-600">
+                                  {fab.material} • {fab.consumption} {fab.unit} @ {curr}{fab.ratePerUnit}/{fab.unit}
+                                </td>
+                                <td className="py-2 px-3 text-right font-mono font-semibold text-white print:text-black">
+                                  {curr}{fab.totalCost.toFixed(2)}
+                                </td>
+                              </tr>
+                            ))}
+                            <tr>
+                              <td className="py-2 px-3 text-white font-medium print:text-black">Cut & Make Labor (CMT)</td>
+                              <td className="py-2 px-3 text-[#798399] print:text-gray-600">Skilled flatlock stitching, reinforced collar, twin-needle seaming</td>
+                              <td className="py-2 px-3 text-right font-mono font-semibold text-white print:text-black">
+                                {curr}{inputs.bom.stitchingLabor.toFixed(2)}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="py-2 px-3 text-white font-medium print:text-black">Dyeing & Specialty Wash Finish</td>
+                              <td className="py-2 px-3 text-[#798399] print:text-gray-600">Reactive piece dyeing & anti-pilling bio-wash</td>
+                              <td className="py-2 px-3 text-right font-mono font-semibold text-white print:text-black">
+                                {curr}{inputs.bom.washFinishCost.toFixed(2)}
+                              </td>
+                            </tr>
+                            {inputs.bom.trimItems.map((trm) => (
+                              <tr key={trm.id}>
+                                <td className="py-2 px-3 text-white font-medium print:text-black">{trm.name}</td>
+                                <td className="py-2 px-3 text-[#798399] print:text-gray-600">
+                                  {trm.specification} ({trm.quantity} pcs @ {curr}{trm.ratePerUnit})
+                                </td>
+                                <td className="py-2 px-3 text-right font-mono text-[#b0b8cb] print:text-black">
+                                  {curr}{trm.totalCost.toFixed(2)}
+                                </td>
+                              </tr>
+                            ))}
+                            <tr>
+                              <td className="py-2 px-3 text-white font-medium print:text-black">Inbound Logistics to Central Hub</td>
+                              <td className="py-2 px-3 text-[#798399] print:text-gray-600">Palletized bulk domestic freight</td>
+                              <td className="py-2 px-3 text-right font-mono text-[#b0b8cb] print:text-black">
+                                {curr}{inputs.inbound.toFixed(2)}
+                              </td>
+                            </tr>
+                          </>
+                        ) : (
+                          <>
+                            <tr>
+                              <td className="py-2 px-3 text-white font-medium print:text-black">Cut, Make & Main Fabric (CMT)</td>
+                              <td className="py-2 px-3 text-[#798399] print:text-gray-600">450 GSM French Terry Cotton, preshrunk, bio-wash</td>
+                              <td className="py-2 px-3 text-right font-mono font-semibold text-white print:text-black">{curr}{inputs.factory.toFixed(2)}</td>
+                            </tr>
+                            <tr>
+                              <td className="py-2 px-3 text-white font-medium print:text-black">Pattern & Technical Sampling</td>
+                              <td className="py-2 px-3 text-[#798399] print:text-gray-600">Fit sample, grading S-XXL, shrinkage sign-off</td>
+                              <td className="py-2 px-3 text-right font-mono">{curr}{inputs.development.toFixed(2)}</td>
+                            </tr>
+                            <tr>
+                              <td className="py-2 px-3 text-white font-medium print:text-black">Rivlet Branding Trims & Aglets</td>
+                              <td className="py-2 px-3 text-[#798399] print:text-gray-600">Laser-engraved metal aglets, high-density neck label</td>
+                              <td className="py-2 px-3 text-right font-mono">{curr}{inputs.branding.toFixed(2)}</td>
+                            </tr>
+                            <tr>
+                              <td className="py-2 px-3 text-white font-medium print:text-black">Hangtags & Security Barcode Seals</td>
+                              <td className="py-2 px-3 text-[#798399] print:text-gray-600">600 GSM FSC certified matte card, wax seal cord</td>
+                              <td className="py-2 px-3 text-right font-mono">{curr}{inputs.tags.toFixed(2)}</td>
+                            </tr>
+                            <tr>
+                              <td className="py-2 px-3 text-white font-medium print:text-black">Individual Protective Packaging</td>
+                              <td className="py-2 px-3 text-[#798399] print:text-gray-600">Frosted zip-lock polybag with Rivlet insignia & ventilation</td>
+                              <td className="py-2 px-3 text-right font-mono">{curr}{inputs.packaging.toFixed(2)}</td>
+                            </tr>
+                            <tr>
+                              <td className="py-2 px-3 text-white font-medium print:text-black">Quality Assurance & AQL 2.5 Audit</td>
+                              <td className="py-2 px-3 text-[#798399] print:text-gray-600">Independent inline inspection & final random audit</td>
+                              <td className="py-2 px-3 text-right font-mono">{curr}{inputs.qc.toFixed(2)}</td>
+                            </tr>
+                            <tr>
+                              <td className="py-2 px-3 text-white font-medium print:text-black">Inbound Logistics to Hub</td>
+                              <td className="py-2 px-3 text-[#798399] print:text-gray-600">Palletized shipment to Rivlet Central Hub</td>
+                              <td className="py-2 px-3 text-right font-mono">{curr}{inputs.inbound.toFixed(2)}</td>
+                            </tr>
+                          </>
+                        )}
                         <tr className="bg-[#121624] font-bold text-white border-t-2 border-[#232b3e] print:bg-gray-100 print:text-black print:border-gray-400">
                           <td className="py-2.5 px-3 text-[#cda052] print:text-amber-800" colSpan={2}>
                             Total Target Inbound Landed Cost per Garment
