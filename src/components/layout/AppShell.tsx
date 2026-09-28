@@ -105,17 +105,19 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
   // Authenticated admin layout
   return (
-    <div className="flex w-full min-h-screen bg-[#07090e] text-[#e0e3eb] relative overflow-x-hidden">
+    <div className="flex w-full h-screen h-[100dvh] bg-[#07090e] text-[#f1f5f9] overflow-hidden relative">
       <Sidebar 
         mobileOpen={mobileMenuOpen} 
         onCloseMobile={() => setMobileMenuOpen(false)} 
       />
-      <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
+      <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
         <Topbar 
           onOpenCommand={() => setCommandPaletteOpen(true)}
           onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)} 
         />
-        <main className="flex-1 relative z-10">{children}</main>
+        <main className="flex-1 overflow-y-auto overflow-x-hidden relative z-10 scroll-smooth">
+          {children}
+        </main>
       </div>
 
       {/* Global Command Palette search modal */}

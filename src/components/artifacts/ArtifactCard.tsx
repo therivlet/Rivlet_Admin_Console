@@ -104,8 +104,8 @@ export default function ArtifactCard({
         {/* Footer Actions */}
         <div className="pt-3.5 border-t border-[#1a2133] flex items-center justify-between text-xs">
           <div className="flex items-center gap-1.5 text-xs text-[#94a3b8] font-mono">
-            <Calendar className="w-3.5 h-3.5 text-[#64748b]" />
-            <span>{new Date(artifact.createdAt).toLocaleDateString()}</span>
+            <Calendar className="w-3.5 h-3.5 text-[#cda052]" />
+            <span>{artifact.expiryDate ? `Expires: ${artifact.expiryDate}` : new Date(artifact.createdAt).toLocaleDateString()}</span>
           </div>
 
           <div className="flex items-center gap-1.5">

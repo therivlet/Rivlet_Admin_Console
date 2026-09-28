@@ -50,7 +50,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
   };
 
   const sidebarContent = (
-    <aside className="w-72 lg:w-64 flex-shrink-0 bg-[#0a0c12] border-r border-[#1a1f2c] flex flex-col h-screen select-none z-50">
+    <aside className="w-72 lg:w-64 flex-shrink-0 bg-[#0a0c12] border-r border-[#1a1f2c] flex flex-col h-full select-none z-40">
       {/* Brand Header */}
       <div className="p-4 sm:p-5 border-b border-[#1a1f2c] flex items-center justify-between">
         <Link href="/" onClick={handleLinkClick} title="Rivlet Executive Command Center" className="flex items-center gap-3 group">
@@ -227,7 +227,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
   return (
     <>
       {/* Desktop Persistent Sidebar */}
-      <div className="hidden lg:flex flex-shrink-0 h-screen sticky top-0">
+      <div className="hidden lg:flex flex-shrink-0 h-full">
         {sidebarContent}
       </div>
 

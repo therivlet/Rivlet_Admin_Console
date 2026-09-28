@@ -27,6 +27,7 @@ interface AdminStoreContextType {
   saveCostingSheet: (sheet: CostingSheet) => Promise<void>;
   deleteCostingSheet: (id: string) => Promise<void>;
   addDocument: (doc: Omit<DocumentItem, 'id' | 'createdAt' | 'updatedAt'>) => Promise<DocumentItem>;
+  updateDocument: (id: string, updates: Partial<DocumentItem>) => Promise<void>;
   deleteDocument: (id: string) => Promise<void>;
   saveArticle: (article: KBArticle) => Promise<void>;
   deleteArticle: (id: string) => Promise<void>;
@@ -78,6 +79,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
             routeSlug: r.route_slug || r.id,
             status: r.status || 'inbox',
             isFavorite: Boolean(r.is_favorite),
+            expiryDate: r.expiry_date || undefined,
             createdAt: r.created_at || new Date().toISOString(),
             updatedAt: r.updated_at || new Date().toISOString(),
           }));
@@ -382,6 +384,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         if (updates.routeSlug !== undefined) payload.route_slug = updates.routeSlug;
         if (updates.status !== undefined) payload.status = updates.status;
         if (updates.isFavorite !== undefined) payload.is_favorite = updates.isFavorite;
+        if (updates.expiryDate !== undefined) payload.expiry_date = updates.expiryDate || null;
 
         await supabase.from('artifacts').update(payload).eq('id', id);
       } catch (e) {
@@ -503,6 +506,32 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     return newDoc;
   };
 
+  const updateDocument = async (id: string, updates: Partial<DocumentItem>) => {
+    const now = new Date().toISOString();
+    setDocuments((prev) =>
+      prev.map((doc) => (doc.id === id ? { ...doc, ...updates, updatedAt: now } : doc))
+    );
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const payload: Record<string, any> = { updated_at: now };
+        if (updates.title !== undefined) payload.title = updates.title;
+        if (updates.documentType !== undefined) payload.document_type = updates.documentType;
+        if (updates.fileName !== undefined) payload.file_name = updates.fileName;
+        if (updates.fileUrl !== undefined) payload.file_url = updates.fileUrl;
+        if (updates.fileFormat !== undefined) payload.file_format = updates.fileFormat;
+        if (updates.expiryDate !== undefined) payload.expiry_date = updates.expiryDate || null;
+        if (updates.status !== undefined) payload.status = updates.status;
+        if (updates.tags !== undefined) payload.tags = updates.tags;
+        if (updates.associatedVendor !== undefined) payload.associated_vendor = updates.associatedVendor || null;
+
+        await supabase.from('documents').update(payload).eq('id', id);
+      } catch (e) {
+        console.error('Failed to update document on Supabase:', e);
+      }
+    }
+  };
+
   const deleteDocument = async (id: string) => {
     setDocuments((prev) => prev.filter((d) => d.id !== id));
 
@@ -593,6 +622,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         saveCostingSheet,
         deleteCostingSheet,
         addDocument,
+        updateDocument,
         deleteDocument,
         saveArticle,
         deleteArticle,

@@ -63,42 +63,57 @@ export default function CalculatorPage() {
           </p>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex items-center bg-[#111420] p-1 rounded-xl border border-[#20273a] overflow-x-auto max-w-full">
-          <button
-            onClick={() => setActiveTab('studio')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
-              activeTab === 'studio'
-                ? 'bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold shadow-glow'
-                : 'text-[#848d9f] hover:text-white'
-            }`}
-          >
-            <Calculator className="w-3.5 h-3.5" />
-            <span>Pricing Studio</span>
-          </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Tab Navigation */}
+          <div className="flex items-center bg-[#111420] p-1 rounded-xl border border-[#20273a] overflow-x-auto max-w-full">
+            <button
+              onClick={() => setActiveTab('studio')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
+                activeTab === 'studio'
+                  ? 'bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold shadow-glow'
+                  : 'text-[#94a3b8] hover:text-white'
+              }`}
+            >
+              <Calculator className="w-3.5 h-3.5" />
+              <span>Pricing Studio</span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab('saved')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
-              activeTab === 'saved'
-                ? 'bg-[#1e2538] text-white font-semibold'
-                : 'text-[#848d9f] hover:text-white'
-            }`}
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-[#cda052]" />
-            <span>Saved Products ({costingSheets.length})</span>
-          </button>
+            <button
+              onClick={() => setActiveTab('saved')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
+                activeTab === 'saved'
+                  ? 'bg-[#1e2538] text-white font-semibold'
+                  : 'text-[#94a3b8] hover:text-white'
+              }`}
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-[#cda052]" />
+              <span>Saved Products ({costingSheets.length})</span>
+            </button>
 
+            <button
+              onClick={() => setActiveTab('raw-html')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
+                activeTab === 'raw-html'
+                  ? 'bg-[#1e2538] text-[#cda052] font-semibold'
+                  : 'text-[#94a3b8] hover:text-white'
+              }`}
+            >
+              <Code className="w-3.5 h-3.5" />
+              <span>Import Raw HTML</span>
+            </button>
+          </div>
+
+          {/* Quick New Product Action */}
           <button
-            onClick={() => setActiveTab('raw-html')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
-              activeTab === 'raw-html'
-                ? 'bg-[#1e2538] text-[#cda052] font-semibold'
-                : 'text-[#848d9f] hover:text-white'
-            }`}
+            onClick={() => {
+              setSelectedSheet(null);
+              setActiveTab('studio');
+            }}
+            title="Start fresh calculation for a brand new product style"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#182032] border border-[#2c3a56] text-[#cda052] hover:text-white hover:border-[#cda052] font-semibold text-xs transition-all shadow-sm"
           >
-            <Code className="w-3.5 h-3.5" />
-            <span>Import / Paste Raw HTML</span>
+            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+            <span>＋ New Calculation</span>
           </button>
         </div>
       </div>
@@ -125,25 +140,25 @@ export default function CalculatorPage() {
                     <span className="font-mono text-xs font-bold text-[#cda052] px-2 py-0.5 rounded bg-[rgba(205,160,82,0.1)] border border-[rgba(205,160,82,0.2)]">
                       {sheet.sku}
                     </span>
-                    <span className="text-[10px] text-[#717a90]">{new Date(sheet.updatedAt).toLocaleDateString()}</span>
+                    <span className="text-xs text-[#94a3b8] font-mono">{new Date(sheet.updatedAt).toLocaleDateString()}</span>
                   </div>
                   <h3 className="text-sm font-semibold text-white mb-1">{sheet.styleName}</h3>
-                  <div className="text-xs text-[#717a90] mb-3">
-                    MRP: <strong className="text-white">{sheet.currency}{sheet.mrp}</strong> • Target: {sheet.inputs.targetMargin}%
+                  <div className="text-xs text-[#cbd5e1] mb-3">
+                    MRP: <strong className="text-white font-mono">{sheet.currency}{sheet.mrp}</strong> • Target Margin: <span className="text-[#cda052] font-semibold">{sheet.inputs.targetMargin}%</span>
                   </div>
 
                   <div className="grid grid-cols-3 gap-2 bg-[#090b12] p-2.5 rounded-lg border border-[#1b2132] text-center text-xs mb-3">
                     <div>
-                      <div className="text-[9px] text-[#636c82] uppercase">Factory</div>
-                      <div className="font-bold text-white">{sheet.currency}{sheet.inputs.factory}</div>
+                      <div className="text-[10px] text-[#94a3b8] uppercase tracking-wider font-semibold">Factory</div>
+                      <div className="font-bold text-white font-mono">{sheet.currency}{sheet.inputs.factory}</div>
                     </div>
                     <div>
-                      <div className="text-[9px] text-[#636c82] uppercase">Units Plan</div>
-                      <div className="font-bold text-white">{sheet.inputs.units.mid.toLocaleString()}</div>
+                      <div className="text-[10px] text-[#94a3b8] uppercase tracking-wider font-semibold">Units Plan</div>
+                      <div className="font-bold text-white font-mono">{sheet.inputs.units.mid.toLocaleString()}</div>
                     </div>
                     <div>
-                      <div className="text-[9px] text-[#636c82] uppercase">Expected Margin</div>
-                      <div className="font-bold text-emerald-400">{sheet.expectedMargin.toFixed(1)}%</div>
+                      <div className="text-[10px] text-[#94a3b8] uppercase tracking-wider font-semibold">Margin</div>
+                      <div className="font-bold text-emerald-400 font-mono">{sheet.expectedMargin.toFixed(1)}%</div>
                     </div>
                   </div>
                 </div>
@@ -154,7 +169,7 @@ export default function CalculatorPage() {
                       setSelectedSheet(sheet);
                       setActiveTab('studio');
                     }}
-                    className="text-xs text-[#cda052] hover:underline font-semibold flex items-center gap-1"
+                    className="text-xs text-[#cda052] hover:text-white font-semibold flex items-center gap-1 transition-colors"
                   >
                     Open in Studio <ArrowRight className="w-3.5 h-3.5" />
                   </button>
@@ -164,7 +179,8 @@ export default function CalculatorPage() {
                         deleteCostingSheet(sheet.id);
                       }
                     }}
-                    className="text-xs text-[#555d72] hover:text-rose-400"
+                    className="text-xs text-[#94a3b8] hover:text-rose-400 px-2 py-1 rounded hover:bg-rose-950/30 transition-colors"
+                    title={`Delete calculation for ${sheet.sku}`}
                   >
                     Delete
                   </button>

@@ -13,6 +13,7 @@ export interface ArtifactItem {
   routeSlug?: string;  // e.g. "fabric-yield-estimator" -> /tools/fabric-yield-estimator
   status: ArtifactStatus;
   isFavorite?: boolean;
+  expiryDate?: string;
   createdAt: string;
   updatedAt: string;
 }

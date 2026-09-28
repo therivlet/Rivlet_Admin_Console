@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Calculator, 
   Sparkles, 
@@ -19,7 +19,8 @@ import {
   Layers,
   ChevronDown,
   ChevronUp,
-  Scissors
+  Scissors,
+  Plus
 } from 'lucide-react';
 import { PricingInputs, CalculationResult, ScenarioKey, CostingSheet, GarmentBOM } from '@/lib/types';
 import { 
@@ -35,15 +36,48 @@ import BOMSpecifierModal from './BOMSpecifierModal';
 interface CostingCalculatorProps {
   initialSheet?: CostingSheet;
   onSaveSuccess?: () => void;
+  onNewCalculation?: () => void;
 }
 
-export default function CostingCalculator({ initialSheet, onSaveSuccess }: CostingCalculatorProps) {
+export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCalculation }: CostingCalculatorProps) {
   const { saveCostingSheet } = useAdminStore();
+  const [currentSheetId, setCurrentSheetId] = useState<string | null>(initialSheet?.id || null);
   const [inputs, setInputs] = useState<PricingInputs>(initialSheet?.inputs || defaultPricingInputs);
   const [activeScenario, setActiveScenario] = useState<ScenarioKey>('mid');
   const [savedSuccessAlert, setSavedSuccessAlert] = useState(false);
+  const [newCalcAlert, setNewCalcAlert] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isBOMModalOpen, setIsBOMModalOpen] = useState(false);
+
+  // Sync inputs when initialSheet prop changes from parent
+  useEffect(() => {
+    if (initialSheet) {
+      setInputs(initialSheet.inputs);
+      setCurrentSheetId(initialSheet.id);
+    } else {
+      setInputs({
+        ...defaultPricingInputs,
+        productName: '',
+        productCode: `RIV-${Math.floor(1000 + Math.random() * 9000)}`,
+      });
+      setCurrentSheetId(null);
+    }
+  }, [initialSheet]);
+
+  const handleStartNewCalculation = () => {
+    setCurrentSheetId(null);
+    setInputs({
+      ...defaultPricingInputs,
+      productName: '',
+      productCode: `RIV-${Math.floor(1000 + Math.random() * 9000)}`,
+      mrp: 2999,
+      targetMargin: 25,
+    });
+    setActiveScenario('mid');
+    setNewCalcAlert(true);
+    setTimeout(() => setNewCalcAlert(false), 3500);
+    if (onNewCalculation) onNewCalculation();
+  };
 
   // Accordion section states
   const [showFormula, setShowFormula] = useState(true);
@@ -111,20 +145,22 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
 
   // Save handler
   const handleSave = () => {
+    const sheetId = currentSheetId || `cost-${Date.now()}`;
     const sheetData: CostingSheet = {
-      id: initialSheet?.id || `cost-${Date.now()}`,
+      id: sheetId,
       sku: inputs.productCode || 'RIV-SKU',
-      styleName: inputs.productName || 'Unnamed Product',
+      styleName: inputs.productName || 'New Product Style',
       currency: curr,
       mrp: inputs.mrp,
       expectedMargin: midResult.contributionMargin * 100,
       inputs,
       notes: `Target Margin: ${inputs.targetMargin}%, Mid Contribution Profit: ${formatMoney(midResult.contributionProfit, curr)}`,
-      createdAt: initialSheet?.createdAt || new Date().toISOString(),
+      createdAt: initialSheet && currentSheetId === initialSheet.id ? initialSheet.createdAt : new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
     saveCostingSheet(sheetData);
+    setCurrentSheetId(sheetId);
     setSavedSuccessAlert(true);
     setTimeout(() => setSavedSuccessAlert(false), 3500);
     if (onSaveSuccess) onSaveSuccess();
@@ -229,6 +265,16 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
             <span className="hidden sm:inline">Export Suite</span>
           </button>
 
+          {/* New Calculation Button */}
+          <button
+            onClick={handleStartNewCalculation}
+            title="Start a fresh calculation for a new product style"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#182032] border border-[#2b3956] text-[#cda052] hover:text-white hover:border-[#cda052] font-semibold text-xs transition-all shadow-sm"
+          >
+            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+            <span>New Calculation</span>
+          </button>
+
           <button
             onClick={handleSave}
             title="Save active SKU calculation to archive & database"
@@ -239,6 +285,13 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess }: Costi
           </button>
         </div>
       </div>
+
+      {newCalcAlert && (
+        <div className="p-3.5 bg-blue-950/80 border border-blue-700/60 rounded-lg text-blue-200 text-xs flex items-center gap-2 animate-fade-in shadow-md">
+          <Sparkles className="w-4 h-4 text-[#cda052] flex-shrink-0" />
+          <span>New product calculation started! Customize your parameters below and click <strong>Save Product Calculation</strong>.</span>
+        </div>
+      )}
 
       {savedSuccessAlert && (
         <div className="p-3.5 bg-emerald-950/80 border border-emerald-700/60 rounded-lg text-emerald-300 text-xs flex items-center gap-2 animate-fade-in">

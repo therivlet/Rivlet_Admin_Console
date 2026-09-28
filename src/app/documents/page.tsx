@@ -15,20 +15,37 @@ import {
   AlertTriangle, 
   FileCheck, 
   Building, 
-  X,
-  ExternalLink,
-  CheckCircle2,
-  Maximize2
+  X, 
+  ExternalLink, 
+  CheckCircle2, 
+  Maximize2,
+  Pencil,
+  Edit3,
+  Save,
+  FileSpreadsheet,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { DocumentItem } from '@/lib/types';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 export default function DocumentsPage() {
-  const { documents, addDocument, deleteDocument } = useAdminStore();
+  const { documents, addDocument, updateDocument, deleteDocument } = useAdminStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<string>('All');
   const [previewDoc, setPreviewDoc] = useState<DocumentItem | null>(null);
+  const [previewMode, setPreviewMode] = useState<'preview' | 'metadata'>('preview');
+
+  // Edit Document Modal State
+  const [editingDoc, setEditingDoc] = useState<DocumentItem | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDocType, setEditDocType] = useState<DocumentItem['documentType']>('Certificate');
+  const [editVendor, setEditVendor] = useState('');
+  const [editExpiry, setEditExpiry] = useState('');
+  const [editStatus, setEditStatus] = useState<DocumentItem['status']>('Active');
+  const [editTags, setEditTags] = useState('');
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [editSavedAlert, setEditSavedAlert] = useState(false);
 
   // New Document Modal State
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -51,6 +68,46 @@ export default function DocumentsPage() {
     const matchesType = selectedType === 'All' || doc.documentType === selectedType;
     return matchesSearch && matchesType;
   });
+
+  const handleOpenEdit = (doc: DocumentItem) => {
+    setEditingDoc(doc);
+    setEditTitle(doc.title);
+    setEditDocType(doc.documentType);
+    setEditVendor(doc.associatedVendor || '');
+    setEditExpiry(doc.expiryDate || '');
+    setEditStatus(doc.status);
+    setEditTags(doc.tags.join(', '));
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingDoc) return;
+    setIsSavingEdit(true);
+    await updateDocument(editingDoc.id, {
+      title: editTitle,
+      documentType: editDocType,
+      associatedVendor: editVendor || undefined,
+      expiryDate: editExpiry || undefined,
+      status: editStatus,
+      tags: editTags.split(',').map((t) => t.trim()).filter(Boolean),
+    });
+    setIsSavingEdit(false);
+    setEditSavedAlert(true);
+    if (previewDoc && previewDoc.id === editingDoc.id) {
+      setPreviewDoc({
+        ...previewDoc,
+        title: editTitle,
+        documentType: editDocType,
+        associatedVendor: editVendor || undefined,
+        expiryDate: editExpiry || undefined,
+        status: editStatus,
+        tags: editTags.split(',').map((t) => t.trim()).filter(Boolean),
+      });
+    }
+    setTimeout(() => {
+      setEditSavedAlert(false);
+      setEditingDoc(null);
+    }, 1200);
+  };
 
   // Handle file selection from local device
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -277,15 +334,26 @@ export default function DocumentsPage() {
               {/* Footer */}
               <div className="pt-3.5 border-t border-[#1a2133] flex items-center justify-between text-xs">
                 <div className="flex items-center gap-1.5 text-xs text-[#94a3b8] font-mono">
-                  <Calendar className="w-3.5 h-3.5 text-[#64748b]" />
+                  <Calendar className="w-3.5 h-3.5 text-[#cda052]" />
                   <span>Expires: {doc.expiryDate || 'Permanent'}</span>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <button
-                    onClick={() => setPreviewDoc(doc)}
-                    className="p-1.5 rounded-lg bg-[#151a28] border border-[#263148] text-[#cbd5e1] hover:text-[#cda052] hover:bg-[#1a2236] transition-colors"
-                    title="Preview document in browser"
+                    onClick={() => handleOpenEdit(doc)}
+                    className="p-1.5 rounded-lg bg-[#151a28] border border-[#263148] text-[#cbd5e1] hover:text-[#cda052] hover:border-[#cda052]/60 hover:bg-[#1a2236] transition-colors"
+                    title="Edit expiry date, title & metadata"
+                    aria-label="Edit document metadata"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setPreviewDoc(doc);
+                      setPreviewMode('preview');
+                    }}
+                    className="p-1.5 rounded-lg bg-[#151a28] border border-[#263148] text-[#cbd5e1] hover:text-[#cda052] hover:border-[#cda052]/60 hover:bg-[#1a2236] transition-colors"
+                    title="Preview / Read document"
                     aria-label="Preview document in browser"
                   >
                     <Eye className="w-3.5 h-3.5" />
@@ -305,107 +373,197 @@ export default function DocumentsPage() {
         </div>
       )}
 
-      {/* In-App Document Preview Modal */}
-      {previewDoc && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-4xl h-[92vh] sm:h-[85vh] bg-[#0e111a] border border-[#242b3d] rounded-xl flex flex-col shadow-2xl relative overflow-hidden">
-            {/* Modal Topbar */}
-            <div className="px-4 sm:px-5 py-3 bg-[#121622] border-b border-[#1f2638] flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                <div className="p-1.5 sm:p-2 rounded-lg bg-[rgba(205,160,82,0.15)] text-[#cda052] flex-shrink-0">
-                  <FileCheck className="w-4 h-4 sm:w-5 sm:h-5" />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="text-sm font-bold text-white truncate max-w-[160px] sm:max-w-md">{previewDoc.title}</h3>
-                  <div className="flex items-center gap-2 text-[10px] text-[#717a90] truncate">
-                    <span className="truncate">{previewDoc.fileName}</span>
-                    <span>•</span>
-                    <span className="flex-shrink-0">{(previewDoc.fileSizeBytes / 1024 / 1024).toFixed(2)} MB</span>
-                    <span>•</span>
-                    <span className="text-[#cda052] uppercase font-mono flex-shrink-0">{previewDoc.fileFormat}</span>
+      {/* In-App Document Preview & Read View Modal */}
+      {previewDoc && (() => {
+        const isImage = previewDoc.fileFormat === 'image' || /\.(png|jpg|jpeg|webp|svg)$/i.test(previewDoc.fileName) || (previewDoc.fileUrl && previewDoc.fileUrl.startsWith('data:image/'));
+        const isPdf = previewDoc.fileFormat === 'pdf' || /\.pdf$/i.test(previewDoc.fileName);
+        const isDocx = previewDoc.fileFormat === 'docx' || previewDoc.fileFormat === 'xlsx' || /\.(docx|doc|xlsx|xls)$/i.test(previewDoc.fileName);
+        const hasWebUrl = previewDoc.fileUrl && previewDoc.fileUrl !== '#' && previewDoc.fileUrl.startsWith('http');
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+            <div className="w-full max-w-4xl h-[92vh] sm:h-[86vh] bg-[#0e111a] border border-[#242b3d] rounded-2xl flex flex-col shadow-2xl relative overflow-hidden">
+              {/* Modal Topbar */}
+              <div className="px-4 sm:px-5 py-3 bg-[#121622] border-b border-[#1f2638] flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                  <div className="p-1.5 sm:p-2 rounded-lg bg-[rgba(205,160,82,0.15)] text-[#cda052] flex-shrink-0">
+                    <FileCheck className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-bold text-white truncate max-w-[160px] sm:max-w-md">{previewDoc.title}</h3>
+                    <div className="flex items-center gap-2 text-[11px] text-[#94a3b8] truncate">
+                      <span className="truncate">{previewDoc.fileName}</span>
+                      <span>•</span>
+                      <span className="flex-shrink-0">{(previewDoc.fileSizeBytes / 1024 / 1024).toFixed(2)} MB</span>
+                      <span>•</span>
+                      <span className="text-[#cda052] uppercase font-mono flex-shrink-0">{previewDoc.fileFormat}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-center gap-2">
-                {previewDoc.fileUrl && previewDoc.fileUrl !== '#' && (
-                  <a
-                    href={previewDoc.fileUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    download={previewDoc.fileName}
-                    className="px-3 py-1.5 rounded-lg bg-[#cda052] text-black font-bold text-xs flex items-center gap-1.5 hover:brightness-110"
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {/* View Mode Toggle */}
+                  <div className="hidden sm:flex items-center bg-[#090b12] p-0.5 rounded-lg border border-[#20273a]">
+                    <button
+                      onClick={() => setPreviewMode('preview')}
+                      className={`px-2.5 py-1 text-xs rounded font-medium transition-colors ${
+                        previewMode === 'preview' ? 'bg-[#1b2234] text-[#cda052] font-semibold' : 'text-[#94a3b8] hover:text-white'
+                      }`}
+                    >
+                      Viewer
+                    </button>
+                    <button
+                      onClick={() => setPreviewMode('metadata')}
+                      className={`px-2.5 py-1 text-xs rounded font-medium transition-colors ${
+                        previewMode === 'metadata' ? 'bg-[#1b2234] text-[#cda052] font-semibold' : 'text-[#94a3b8] hover:text-white'
+                      }`}
+                    >
+                      Read View
+                    </button>
+                  </div>
+
+                  {/* Edit Expiry Button */}
+                  <button
+                    onClick={() => handleOpenEdit(previewDoc)}
+                    className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#182032] border border-[#2c3a54] text-[#cda052] hover:text-white hover:border-[#cda052] text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                    title="Edit compliance expiry date and document specs"
                   >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Download</span>
-                  </a>
-                )}
-                <button
-                  onClick={() => setPreviewDoc(null)}
-                  title="Close Preview"
-                  aria-label="Close Preview"
-                  className="p-1.5 text-[#717a90] hover:text-white rounded-lg hover:bg-[#1a1f2e] transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
+                    <Pencil className="w-3.5 h-3.5" />
+                    <span className="hidden md:inline">Edit Expiry</span>
+                  </button>
 
-            {/* Document Content View */}
-            <div className="flex-1 bg-[#090b12] p-4 flex flex-col overflow-hidden">
-              {previewDoc.fileFormat === 'pdf' && previewDoc.fileUrl && previewDoc.fileUrl !== '#' ? (
-                <iframe
-                  src={previewDoc.fileUrl}
-                  title={previewDoc.title}
-                  className="w-full h-full rounded-lg border border-[#1f2638] bg-white"
-                />
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-8 space-y-4">
-                  <div className="w-16 h-16 rounded-2xl bg-[#141824] border border-[#242c40] flex items-center justify-center text-[#cda052] shadow-inner">
-                    <FileText className="w-8 h-8" />
-                  </div>
-                  <div className="space-y-1">
-                    <h4 className="text-base font-bold text-white">{previewDoc.title}</h4>
-                    <p className="text-xs text-[#717a90]">
-                      {previewDoc.documentType} • Associated with {previewDoc.associatedVendor || 'Rivlet HQ'}
-                    </p>
-                  </div>
-
-                  <div className="bg-[#121622] p-4 rounded-xl border border-[#1f2638] max-w-md w-full space-y-2 text-xs">
-                    <div className="flex justify-between text-[#858d9f]">
-                      <span>Document Status:</span>
-                      <span className="text-emerald-400 font-semibold">{previewDoc.status}</span>
-                    </div>
-                    <div className="flex justify-between text-[#858d9f]">
-                      <span>Compliance Expiry:</span>
-                      <span className="text-[#cda052] font-mono">{previewDoc.expiryDate || 'Permanent Scope'}</span>
-                    </div>
-                    <div className="flex justify-between text-[#858d9f]">
-                      <span>Cloud Bucket:</span>
-                      <span className="text-white font-mono">vault-files</span>
-                    </div>
-                  </div>
-
-                  {previewDoc.fileUrl && previewDoc.fileUrl !== '#' ? (
+                  {previewDoc.fileUrl && previewDoc.fileUrl !== '#' && (
                     <a
                       href={previewDoc.fileUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="px-4 py-2 rounded-lg bg-[#cda052] text-black font-semibold text-xs inline-flex items-center gap-1.5 hover:brightness-110"
+                      download={previewDoc.fileName}
+                      className="px-3 py-1.5 rounded-lg bg-[#cda052] text-black font-bold text-xs flex items-center gap-1.5 hover:brightness-110 shadow-sm"
                     >
-                      <Download className="w-4 h-4" /> Download / Open Document
+                      <Download className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Download</span>
                     </a>
-                  ) : (
-                    <div className="text-[11px] text-[#636c82]">
-                      Sample document metadata record. Upload your actual file using "Upload Document to Cloud".
-                    </div>
                   )}
+
+                  <button
+                    onClick={() => setPreviewDoc(null)}
+                    title="Close Preview"
+                    aria-label="Close Preview"
+                    className="p-1.5 text-[#94a3b8] hover:text-white rounded-lg hover:bg-[#1a1f2e] transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
-              )}
+              </div>
+
+              {/* Document Content View */}
+              <div className="flex-1 bg-[#090b12] p-4 flex flex-col overflow-hidden">
+                {previewMode === 'preview' && isPdf && previewDoc.fileUrl && previewDoc.fileUrl !== '#' ? (
+                  <iframe
+                    src={previewDoc.fileUrl}
+                    title={previewDoc.title}
+                    className="w-full h-full rounded-lg border border-[#1f2638] bg-white shadow-inner"
+                  />
+                ) : previewMode === 'preview' && isImage && previewDoc.fileUrl && previewDoc.fileUrl !== '#' ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-[#05070c] rounded-lg border border-[#1f2638] overflow-auto">
+                    <img
+                      src={previewDoc.fileUrl}
+                      alt={previewDoc.title}
+                      className="max-h-[72vh] max-w-full object-contain rounded-lg shadow-2xl border border-[#1f2638]"
+                    />
+                  </div>
+                ) : previewMode === 'preview' && isDocx && hasWebUrl ? (
+                  <iframe
+                    src={`https://docs.google.com/viewer?url=${encodeURIComponent(previewDoc.fileUrl)}&embedded=true`}
+                    title={previewDoc.title}
+                    className="w-full h-full rounded-lg border border-[#1f2638] bg-white shadow-inner"
+                  />
+                ) : (
+                  /* Standard Read View */
+                  <div className="flex-1 flex flex-col items-center justify-center text-center p-6 sm:p-8 space-y-4 overflow-y-auto">
+                    <div className="w-16 h-16 rounded-2xl bg-[#141824] border border-[#242c40] flex items-center justify-center text-[#cda052] shadow-inner">
+                      {isImage ? <ImageIcon className="w-8 h-8" /> : isDocx ? <FileSpreadsheet className="w-8 h-8" /> : <FileText className="w-8 h-8" />}
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="text-base sm:text-lg font-bold text-white">{previewDoc.title}</h4>
+                      <p className="text-xs text-[#94a3b8]">
+                        {previewDoc.documentType} • Associated with <strong className="text-white">{previewDoc.associatedVendor || 'Rivlet Sourcing & HQ'}</strong>
+                      </p>
+                    </div>
+
+                    <div className="bg-[#121622] p-4 sm:p-5 rounded-xl border border-[#1f2638] max-w-md w-full space-y-2.5 text-xs text-left shadow-lg">
+                      <div className="flex justify-between items-center pb-2 border-b border-[#1b2132]">
+                        <span className="text-[#94a3b8]">Compliance Status:</span>
+                        <span className="text-emerald-400 font-bold px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-700/50 font-mono">
+                          {previewDoc.status}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center pb-2 border-b border-[#1b2132]">
+                        <span className="text-[#94a3b8]">Compliance Expiry:</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[#cda052] font-mono font-semibold">
+                            {previewDoc.expiryDate || 'Permanent / No Expiry'}
+                          </span>
+                          <button
+                            onClick={() => handleOpenEdit(previewDoc)}
+                            className="text-[10px] text-[#cda052] hover:underline"
+                          >
+                            Change
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center pb-2 border-b border-[#1b2132]">
+                        <span className="text-[#94a3b8]">File Details:</span>
+                        <span className="text-white font-mono">{previewDoc.fileName} ({(previewDoc.fileSizeBytes / 1024 / 1024).toFixed(2)} MB)</span>
+                      </div>
+
+                      {previewDoc.tags && previewDoc.tags.length > 0 && (
+                        <div className="pt-1">
+                          <span className="text-[11px] text-[#94a3b8] block mb-1.5 font-medium">Compliance Tags:</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {previewDoc.tags.map((t, idx) => (
+                              <span key={idx} className="text-[10px] px-2 py-0.5 rounded bg-[#161d2d] text-[#cbd5e1] border border-[#232f48] font-mono">
+                                #{t}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-3 pt-2">
+                      <button
+                        onClick={() => handleOpenEdit(previewDoc)}
+                        className="px-4 py-2 rounded-lg bg-[#192236] border border-[#2b3956] text-[#cda052] hover:text-white hover:border-[#cda052] font-semibold text-xs flex items-center gap-1.5 transition-colors"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                        <span>Edit Expiry & Information</span>
+                      </button>
+
+                      {previewDoc.fileUrl && previewDoc.fileUrl !== '#' ? (
+                        <a
+                          href={previewDoc.fileUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-4 py-2 rounded-lg bg-[#cda052] text-black font-bold text-xs inline-flex items-center gap-1.5 hover:brightness-110 shadow-glow"
+                        >
+                          <Download className="w-3.5 h-3.5" /> Download / Open Document
+                        </a>
+                      ) : (
+                        <div className="text-[11px] text-[#94a3b8]">
+                          Sample compliance metadata record.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Upload Modal */}
       {isUploadModalOpen && (
@@ -520,7 +678,7 @@ export default function DocumentsPage() {
                 type="button"
                 onClick={() => setIsUploadModalOpen(false)}
                 title="Discard and close upload dialog"
-                className="px-4 py-2 rounded-lg bg-[#141824] border border-[#22283a] text-xs text-[#8e97ae] hover:text-white transition-colors"
+                className="px-4 py-2 rounded-lg bg-[#141824] border border-[#22283a] text-xs text-[#cbd5e1] hover:text-white transition-colors"
               >
                 Cancel
               </button>
@@ -532,6 +690,139 @@ export default function DocumentsPage() {
                 className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow disabled:opacity-50 transition-all"
               >
                 {isUploading ? 'Uploading to Supabase...' : 'Save to Vault'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Document Modal */}
+      {editingDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-lg bg-[#0e111a] border border-[#242b3d] rounded-2xl p-6 shadow-2xl relative space-y-4">
+            <button
+              onClick={() => setEditingDoc(null)}
+              className="absolute top-4 right-4 text-[#94a3b8] hover:text-white p-1 rounded-lg hover:bg-[#182030] transition-colors"
+              title="Close dialog"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="p-1.5 rounded-lg bg-[rgba(205,160,82,0.15)] text-[#cda052]">
+                  <Pencil className="w-4 h-4" />
+                </span>
+                <h3 className="text-base font-bold text-white">Edit Document & Compliance Expiry</h3>
+              </div>
+              <p className="text-xs text-[#94a3b8]">
+                Update compliance expiration deadlines, vendor associations, and certification statuses.
+              </p>
+            </div>
+
+            {editSavedAlert && (
+              <div className="p-3 bg-emerald-950/80 border border-emerald-700/60 rounded-lg text-emerald-300 text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <span>Document updated and synced to Supabase!</span>
+              </div>
+            )}
+
+            <div className="space-y-3.5 text-xs">
+              <div>
+                <label className="block text-[#cbd5e1] font-semibold mb-1">Document Title</label>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-[#080b12] border border-[#242d40] text-white outline-none focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40 transition-colors"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[#cbd5e1] font-semibold mb-1">Document Type</label>
+                  <select
+                    value={editDocType}
+                    onChange={(e) => setEditDocType(e.target.value as any)}
+                    className="w-full px-3 py-2 rounded-lg bg-[#080b12] border border-[#242d40] text-white outline-none focus:border-[#cda052] transition-colors"
+                  >
+                    <option value="Certificate">Certificate</option>
+                    <option value="Tech Pack">Tech Pack</option>
+                    <option value="Legal & Contract">Legal & Contract</option>
+                    <option value="Audit Report">Audit Report</option>
+                    <option value="Specification">Specification</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[#cbd5e1] font-semibold mb-1">Compliance Status</label>
+                  <select
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(e.target.value as any)}
+                    className="w-full px-3 py-2 rounded-lg bg-[#080b12] border border-[#242d40] text-white outline-none focus:border-[#cda052] transition-colors"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Expiring Soon">Expiring Soon</option>
+                    <option value="Expired">Expired</option>
+                    <option value="Draft">Draft</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[#cbd5e1] font-semibold mb-1">
+                    Compliance Expiry Date
+                  </label>
+                  <input
+                    type="date"
+                    value={editExpiry}
+                    onChange={(e) => setEditExpiry(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-[#080b12] border border-[#242d40] text-white outline-none focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40 font-mono transition-colors"
+                  />
+                  <span className="text-[10px] text-[#94a3b8] mt-0.5 block">Leave empty for Permanent</span>
+                </div>
+
+                <div>
+                  <label className="block text-[#cbd5e1] font-semibold mb-1">Associated Mill / Vendor</label>
+                  <input
+                    type="text"
+                    value={editVendor}
+                    onChange={(e) => setEditVendor(e.target.value)}
+                    placeholder="e.g. Tirupur Knitting Mills"
+                    className="w-full px-3 py-2 rounded-lg bg-[#080b12] border border-[#242d40] text-white outline-none focus:border-[#cda052] transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[#cbd5e1] font-semibold mb-1">Tags (comma-separated)</label>
+                <input
+                  type="text"
+                  value={editTags}
+                  onChange={(e) => setEditTags(e.target.value)}
+                  placeholder="GOTS, Organic, Cotton, FW26"
+                  className="w-full px-3 py-2 rounded-lg bg-[#080b12] border border-[#242d40] text-white outline-none focus:border-[#cda052] transition-colors"
+                />
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-[#1f273a] flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setEditingDoc(null)}
+                className="px-4 py-2 rounded-lg bg-[#141824] border border-[#242e44] text-[#cbd5e1] hover:text-white text-xs font-semibold transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveEdit}
+                disabled={isSavingEdit}
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black text-xs font-bold hover:brightness-110 shadow-glow flex items-center gap-1.5 transition-all disabled:opacity-50"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>{isSavingEdit ? 'Saving to Cloud...' : 'Save Changes'}</span>
               </button>
             </div>
           </div>

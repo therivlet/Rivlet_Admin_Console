@@ -12,7 +12,6 @@ import {
   ShieldCheck, 
   Sparkles,
   ChevronDown,
-  Download,
   Info,
   X
 } from 'lucide-react';
@@ -33,7 +32,6 @@ export default function Topbar({
 }: TopbarProps) {
   const { user, signOut } = useAuth();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const [showInstallHelp, setShowInstallHelp] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
@@ -55,23 +53,9 @@ export default function Topbar({
     }
   };
 
-  const handleInstallPWA = () => {
-    if (typeof window !== 'undefined' && (window as any).__rivletInstallPrompt) {
-      const promptEvent = (window as any).__rivletInstallPrompt;
-      promptEvent.prompt();
-      promptEvent.userChoice.then((choice: any) => {
-        if (choice.outcome === 'accepted') {
-          (window as any).__rivletInstallPrompt = null;
-        }
-      });
-    } else {
-      setShowInstallHelp(true);
-    }
-  };
-
   return (
     <>
-      <header className="h-16 border-b border-[#1a1f2c] bg-[#0a0c12]/90 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between sticky top-0 z-30 select-none">
+      <header className="h-16 flex-shrink-0 border-b border-[#1a1f2c] bg-[#0a0c12]/95 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between z-30 select-none">
         {/* Left section: Mobile Hamburger + Logo + Search */}
         <div className="flex items-center gap-2 sm:gap-4 flex-1 max-w-xl">
           {/* Mobile Hamburger Menu Toggle */}
@@ -119,17 +103,6 @@ export default function Topbar({
             <Tag className="w-3 h-3 text-[#cda052]" />
             <span className="font-semibold tracking-wider font-mono">FW26 / SS27</span>
           </div>
-
-          {/* Chrome PWA Install Button */}
-          <button
-            onClick={handleInstallPWA}
-            title="Install Rivlet Executive App as Chrome Desktop or Mobile PWA"
-            aria-label="Install Chrome PWA"
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#141824] border border-[#263148] text-[#cda052] hover:text-white hover:border-[#cda052]/60 text-xs font-semibold transition-all shadow-sm"
-          >
-            <Download className="w-3.5 h-3.5 text-[#cda052]" />
-            <span className="hidden md:inline">Install App</span>
-          </button>
 
           {/* Quick action: Add Artifact */}
           {onNewArtifact ? (
@@ -225,55 +198,6 @@ export default function Topbar({
           </div>
         </div>
       </header>
-
-      {/* PWA Install Guide Modal */}
-      {showInstallHelp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#0e121b] border border-[#242e44] rounded-2xl p-6 max-w-md w-full shadow-2xl relative">
-            <button
-              onClick={() => setShowInstallHelp(false)}
-              className="absolute top-4 right-4 p-1.5 text-[#717a90] hover:text-white rounded-lg hover:bg-[#1a1f2e] transition-colors"
-              title="Close Dialog"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#cda052] to-[#8c672b] flex items-center justify-center text-black font-bold shadow-glow">
-                <Download className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-white">Install Rivlet Admin on Chrome</h3>
-                <p className="text-xs text-[#94a3b8]">Run as a standalone desktop or mobile application</p>
-              </div>
-            </div>
-
-            <div className="space-y-3 text-xs text-[#cbd5e1] bg-[#07090e] p-4 rounded-xl border border-[#1b2234] leading-relaxed">
-              <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-[#171d2b] text-[#cda052] flex items-center justify-center font-bold flex-shrink-0">1</span>
-                <span>Look at the right side of your Chrome URL address bar.</span>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-[#171d2b] text-[#cda052] flex items-center justify-center font-bold flex-shrink-0">2</span>
-                <span>Click the <strong>Install Rivlet (⊕ or ⤓)</strong> icon.</span>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-[#171d2b] text-[#cda052] flex items-center justify-center font-bold flex-shrink-0">3</span>
-                <span>Or open Chrome Menu <strong>(⋮) → More Tools → Install Rivlet Console...</strong></span>
-              </div>
-            </div>
-
-            <div className="mt-5 flex justify-end">
-              <button
-                onClick={() => setShowInstallHelp(false)}
-                className="px-4 py-2 rounded-lg bg-[#cda052] text-black font-bold text-xs hover:brightness-110 transition-all shadow-glow"
-              >
-                Got It
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

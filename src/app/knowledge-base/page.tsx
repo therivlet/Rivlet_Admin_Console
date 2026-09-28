@@ -318,7 +318,7 @@ export default function KnowledgeBasePage() {
                   </div>
 
                   {/* Rendered content */}
-                  <div className="text-sm text-[#cbd5e1] leading-relaxed space-y-4 whitespace-pre-line font-sans font-normal border-l-2 border-[#cda052]/30 pl-4 py-1">
+                  <div className="text-sm text-[#e2e8f0] leading-relaxed space-y-4 whitespace-pre-line font-sans font-normal border-l-2 border-[#cda052]/40 pl-4 py-1">
                     {currentArticle.content}
                   </div>
 

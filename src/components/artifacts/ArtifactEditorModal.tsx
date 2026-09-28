@@ -37,6 +37,7 @@ export default function ArtifactEditorModal({
   const [isPromoted, setIsPromoted] = useState(false);
   const [status, setStatus] = useState<ArtifactStatus>('inbox');
   const [routeSlug, setRouteSlug] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
   const [activeTab, setActiveTab] = useState<'split' | 'code' | 'preview'>('split');
 
   useEffect(() => {
@@ -51,6 +52,7 @@ export default function ArtifactEditorModal({
       setIsPromoted(artifact.isPromoted);
       setStatus(artifact.status);
       setRouteSlug(artifact.routeSlug || '');
+      setExpiryDate(artifact.expiryDate || '');
     } else {
       // Default blank for new artifact
       setTitle('');
@@ -75,6 +77,7 @@ export default function ArtifactEditorModal({
       setIsPromoted(false);
       setStatus('inbox');
       setRouteSlug('');
+      setExpiryDate('');
     }
   }, [artifact, isOpen]);
 
@@ -122,6 +125,7 @@ export default function ArtifactEditorModal({
       isPromoted,
       status: isPromoted ? 'promoted' : status,
       routeSlug: generatedSlug,
+      expiryDate: expiryDate || undefined,
     });
     onClose();
   };
@@ -249,6 +253,18 @@ export default function ArtifactEditorModal({
                 className="w-full py-1.5 bg-transparent text-white outline-none text-xs font-mono"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">
+              Review / Expiry Date
+            </label>
+            <input
+              type="date"
+              value={expiryDate}
+              onChange={(e) => setExpiryDate(e.target.value)}
+              className="w-full px-3 py-1.5 rounded-lg bg-[#07090e] border border-[#263147] text-white outline-none focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40 transition-colors text-xs font-mono"
+            />
           </div>
 
           {/* Promotion & Status Toggle */}
