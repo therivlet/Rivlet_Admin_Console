@@ -14,7 +14,8 @@ import {
   Calendar,
   User,
   FolderOpen,
-  ChevronRight
+  ChevronRight,
+  AlertCircle
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { KBArticle } from '@/lib/types';
@@ -31,6 +32,7 @@ export default function KnowledgeBasePage() {
   const [editContent, setEditContent] = useState('');
   const [editIsConfidential, setEditIsConfidential] = useState(false);
   const [editTags, setEditTags] = useState('');
+  const [editError, setEditError] = useState<string | null>(null);
 
   const currentArticle = kbArticles.find((a) => a.id === selectedArticleId) || kbArticles[0];
 
@@ -40,6 +42,7 @@ export default function KnowledgeBasePage() {
     setEditContent(article.content);
     setEditIsConfidential(article.isConfidential);
     setEditTags(article.tags.join(', '));
+    setEditError(null);
     setIsEditing(true);
   };
 
@@ -63,9 +66,21 @@ export default function KnowledgeBasePage() {
 
   const handleSaveArticle = () => {
     if (!currentArticle) return;
+    setEditError(null);
+
+    if (!editTitle || editTitle.trim().length < 3) {
+      setEditError('Article title is required (minimum 3 characters).');
+      return;
+    }
+
+    if (!editContent || editContent.trim().length < 5) {
+      setEditError('Article content is required (minimum 5 characters).');
+      return;
+    }
+
     saveArticle({
       ...currentArticle,
-      title: editTitle,
+      title: editTitle.trim(),
       category: editCategory,
       content: editContent,
       isConfidential: editIsConfidential,
@@ -74,6 +89,7 @@ export default function KnowledgeBasePage() {
     });
     setIsEditing(false);
   };
+
 
   const filteredArticles = kbArticles.filter(
     (a) =>
@@ -230,9 +246,17 @@ export default function KnowledgeBasePage() {
               {/* Viewer or Editor Mode */}
               {isEditing ? (
                 <div className="space-y-4 text-xs">
+                  {editError && (
+                    <div className="p-3 bg-rose-950/80 border border-rose-700/60 rounded-xl text-rose-200 text-xs flex items-center gap-2 animate-fade-in font-medium">
+                      <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+                      <span>{editError}</span>
+                    </div>
+                  )}
+
                   <div>
                     <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">
                       Article Title
+
                     </label>
                     <input
                       type="text"

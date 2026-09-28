@@ -95,6 +95,71 @@ export interface PricingInputs {
   bom?: GarmentBOM;
 }
 
+export interface CalculatorDefaults {
+  // Brand Commercial Policies
+  currency: string;
+  targetMargin: number;
+  autoOutputTax: boolean;
+  manualOutputGst: number;
+  autoFactoryTax: boolean;
+  manualFactoryGst: number;
+  factoryGstRecoverable: boolean;
+  includeFactoryCash: boolean;
+
+  // Fixed Standard Production & Inbound Costs (per unit)
+  development: number;
+  inbound: number;
+  qc: number;
+  packaging: number;
+  tags: number;
+  branding: number;
+  receiving: number;
+  pickpack: number;
+  inventory: number;
+
+  // Fixed Sales Charges
+  gateway: number;
+  shopifyFee: number;
+  affiliate: number;
+  promoter: number;
+  marketplace: number;
+  marketAds: number;
+  cod: number;
+  reverse: number;
+  exchange: number;
+
+  // Fixed Annual Business Overheads
+  salary: ScenarioRange;
+  office: ScenarioRange;
+  saas: ScenarioRange;
+  professional: ScenarioRange;
+  finance: ScenarioRange;
+  brandAmort: ScenarioRange;
+
+  // Default Forecast Ranges
+  units: ScenarioRange;
+  discount: ScenarioRange;
+  cac: ScenarioRange;
+  returnProvision: ScenarioRange;
+  shippingSubsidy: ScenarioRange;
+
+  // Import Customs Defaults
+  importMode: 'domestic' | 'imported';
+  intlFreight: number;
+  insurance: number;
+  bcd: number;
+  sws: number;
+  importIgst: number;
+  importIgstRecoverable: boolean;
+  clearance: number;
+
+  // User-defined locked fixed fields
+  lockedOverheads?: boolean;
+  lockedInbound?: boolean;
+  lockedSalesRates?: boolean;
+}
+
+
 export interface FabricBOMItem {
   id: string;
   name: string; // e.g. "Main Body French Terry", "2x2 Rib Knit"

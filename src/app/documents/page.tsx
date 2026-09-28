@@ -23,7 +23,8 @@ import {
   Edit3,
   Save,
   FileSpreadsheet,
-  Image as ImageIcon
+  Image as ImageIcon,
+  AlertCircle
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { DocumentItem } from '@/lib/types';
@@ -57,6 +58,8 @@ export default function DocumentsPage() {
   const [newTags, setNewTags] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatusMsg, setUploadStatusMsg] = useState('');
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
 
   const filtered = documents.filter((doc) => {
     const matchesSearch =
@@ -77,15 +80,31 @@ export default function DocumentsPage() {
     setEditExpiry(doc.expiryDate || '');
     setEditStatus(doc.status);
     setEditTags(doc.tags.join(', '));
+    setEditError(null);
   };
 
   const handleSaveEdit = async () => {
     if (!editingDoc) return;
+    setEditError(null);
+
+    if (!editTitle || editTitle.trim().length < 2) {
+      setEditError('Document title is required (minimum 2 characters).');
+      return;
+    }
+
+    if (editExpiry) {
+      const year = new Date(editExpiry).getFullYear();
+      if (isNaN(year) || year < 2000 || year > 2100) {
+        setEditError('Please enter a valid expiration date (between 2000 and 2100).');
+        return;
+      }
+    }
+
     setIsSavingEdit(true);
     await updateDocument(editingDoc.id, {
-      title: editTitle,
+      title: editTitle.trim(),
       documentType: editDocType,
-      associatedVendor: editVendor || undefined,
+      associatedVendor: editVendor.trim() || undefined,
       expiryDate: editExpiry || undefined,
       status: editStatus,
       tags: editTags.split(',').map((t) => t.trim()).filter(Boolean),
@@ -95,9 +114,9 @@ export default function DocumentsPage() {
     if (previewDoc && previewDoc.id === editingDoc.id) {
       setPreviewDoc({
         ...previewDoc,
-        title: editTitle,
+        title: editTitle.trim(),
         documentType: editDocType,
-        associatedVendor: editVendor || undefined,
+        associatedVendor: editVendor.trim() || undefined,
         expiryDate: editExpiry || undefined,
         status: editStatus,
         tags: editTags.split(',').map((t) => t.trim()).filter(Boolean),
@@ -112,7 +131,22 @@ export default function DocumentsPage() {
   // Handle file selection from local device
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    setUploadError(null);
     if (file) {
+      // 1. File size validation (50MB)
+      if (file.size > 50 * 1024 * 1024) {
+        setUploadError('File size exceeds the 50MB maximum upload limit.');
+        return;
+      }
+
+      // 2. Extension validation
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      const allowedExts = ['pdf', 'docx', 'doc', 'xlsx', 'xls', 'png', 'jpg', 'jpeg'];
+      if (!ext || !allowedExts.includes(ext)) {
+        setUploadError(`Unsupported format (.${ext}). Accepted: PDF, Word (DOCX), Excel (XLSX), and Images (PNG/JPG).`);
+        return;
+      }
+
       setSelectedFile(file);
       if (!newTitle) {
         // Auto-generate title from filename
@@ -123,7 +157,21 @@ export default function DocumentsPage() {
   };
 
   const handleCreateDocument = async () => {
-    if (!newTitle.trim()) return;
+    setUploadError(null);
+
+    if (!newTitle || newTitle.trim().length < 2) {
+      setUploadError('Document title is required (minimum 2 characters).');
+      return;
+    }
+
+    if (newExpiry) {
+      const year = new Date(newExpiry).getFullYear();
+      if (isNaN(year) || year < 2000 || year > 2100) {
+        setUploadError('Please specify a valid expiration date (between 2000 and 2100).');
+        return;
+      }
+    }
+
 
     setIsUploading(true);
     setUploadStatusMsg('Preparing document...');
@@ -667,6 +715,13 @@ export default function DocumentsPage() {
               </div>
             </div>
 
+            {uploadError && (
+              <div className="p-3 bg-rose-950/80 border border-rose-700/60 rounded-xl text-rose-200 text-xs flex items-center gap-2 animate-fade-in font-medium">
+                <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+                <span>{uploadError}</span>
+              </div>
+            )}
+
             {uploadStatusMsg && (
               <div className="text-[11px] text-[#cda052] animate-pulse">
                 {uploadStatusMsg}
@@ -720,12 +775,20 @@ export default function DocumentsPage() {
               </p>
             </div>
 
+            {editError && (
+              <div className="p-3 bg-rose-950/80 border border-rose-700/60 rounded-xl text-rose-200 text-xs flex items-center gap-2 animate-fade-in font-medium">
+                <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+                <span>{editError}</span>
+              </div>
+            )}
+
             {editSavedAlert && (
               <div className="p-3 bg-emerald-950/80 border border-emerald-700/60 rounded-lg text-emerald-300 text-xs flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                 <span>Document updated and synced to Supabase!</span>
               </div>
             )}
+
 
             <div className="space-y-3.5 text-xs">
               <div>

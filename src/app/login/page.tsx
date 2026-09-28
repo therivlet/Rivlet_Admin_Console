@@ -36,13 +36,20 @@ export default function LoginPage() {
     setErrorMessage('');
     setSuccessMessage('');
 
+    const emailTrimmed = email.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     if (mode === 'forgot') {
-      if (!email) {
+      if (!emailTrimmed) {
         setErrorMessage('Please enter your email address.');
         return;
       }
+      if (!emailRegex.test(emailTrimmed)) {
+        setErrorMessage('Please enter a valid email address.');
+        return;
+      }
       setIsSubmitting(true);
-      const res = await resetPassword(email);
+      const res = await resetPassword(emailTrimmed);
       setIsSubmitting(false);
       if (res.error) {
         setErrorMessage(res.error);
@@ -52,15 +59,30 @@ export default function LoginPage() {
       return;
     }
 
-    if (!email || !password) {
+    if (!emailTrimmed || !password) {
       setErrorMessage('Please provide both email and password.');
+      return;
+    }
+
+    if (!emailRegex.test(emailTrimmed)) {
+      setErrorMessage('Please enter a valid email address (e.g. admin@therivlet.com).');
+      return;
+    }
+
+    if (password.length < 6) {
+      setErrorMessage('Password must be at least 6 characters long.');
+      return;
+    }
+
+    if (mode === 'signup' && (!name.trim() || name.trim().length < 2)) {
+      setErrorMessage('Please enter your full name (at least 2 characters).');
       return;
     }
 
     setIsSubmitting(true);
 
     if (mode === 'signin') {
-      const res = await signIn(email, password);
+      const res = await signIn(emailTrimmed, password);
       setIsSubmitting(false);
       if (res.error) {
         setErrorMessage(res.error);
@@ -69,7 +91,7 @@ export default function LoginPage() {
       }
     } else {
       // Sign Up
-      const res = await signUp(email, password, name);
+      const res = await signUp(emailTrimmed, password, name.trim());
       setIsSubmitting(false);
       if (res.error) {
         setErrorMessage(res.error);

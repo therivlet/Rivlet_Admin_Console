@@ -10,7 +10,8 @@ import {
   CheckCircle, 
   ArrowUpRight,
   Eraser,
-  Tag
+  Tag,
+  AlertCircle
 } from 'lucide-react';
 import { ArtifactItem, ArtifactStatus } from '@/lib/types';
 
@@ -39,6 +40,7 @@ export default function ArtifactEditorModal({
   const [routeSlug, setRouteSlug] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [activeTab, setActiveTab] = useState<'split' | 'code' | 'preview'>('split');
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
     if (artifact) {
@@ -107,15 +109,39 @@ export default function ArtifactEditorModal({
   };
 
   const handleSave = () => {
+    setValidationError(null);
+
+    if (!title || title.trim().length < 2) {
+      setValidationError('Artifact title is required (minimum 2 characters).');
+      return;
+    }
+
+    const generatedSlug = routeSlug.trim() || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(generatedSlug)) {
+      setValidationError('Slug must contain only lowercase letters, numbers, and hyphens (e.g. "fabric-yield-calc").');
+      return;
+    }
+
+    if (!htmlContent || htmlContent.trim().length < 10) {
+      setValidationError('HTML content is required (minimum 10 characters).');
+      return;
+    }
+
+    if (expiryDate) {
+      const year = new Date(expiryDate).getFullYear();
+      if (isNaN(year) || year < 2000 || year > 2100) {
+        setValidationError('Please enter a valid expiration date (between 2000 and 2100).');
+        return;
+      }
+    }
+
     const formattedTags = tags
       .split(',')
       .map((t) => t.trim())
       .filter(Boolean);
 
-    const generatedSlug = routeSlug.trim() || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-
     onSave({
-      title: title || 'Untitled Artifact',
+      title: title.trim(),
       description,
       category,
       tags: formattedTags,
@@ -206,7 +232,15 @@ export default function ArtifactEditorModal({
           </div>
         </div>
 
+        {validationError && (
+          <div className="p-3 mx-4 sm:mx-6 mt-3 bg-rose-950/80 border border-rose-700/60 rounded-xl text-rose-200 text-xs flex items-center gap-2 animate-fade-in font-medium flex-shrink-0">
+            <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+            <span>{validationError}</span>
+          </div>
+        )}
+
         {/* Metadata Configuration Bar */}
+
         <div className="px-4 sm:px-6 py-3.5 border-b border-[#1e2638] bg-[#090c13] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
           <div>
             <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">

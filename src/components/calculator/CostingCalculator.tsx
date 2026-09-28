@@ -20,18 +20,26 @@ import {
   ChevronDown,
   ChevronUp,
   Scissors,
-  Plus
+  Plus,
+  Settings,
+  Lock,
+  Unlock
 } from 'lucide-react';
-import { PricingInputs, CalculationResult, ScenarioKey, CostingSheet, GarmentBOM } from '@/lib/types';
+import { PricingInputs, CalculationResult, ScenarioKey, CostingSheet, GarmentBOM, CalculatorDefaults } from '@/lib/types';
 import { 
   defaultPricingInputs, 
   calculateScenario, 
   formatMoney, 
-  formatPercent 
+  formatPercent,
+  getStoredCalculatorDefaults,
+  mergeDefaultsIntoInputs,
+  validatePricingInputs
 } from '@/lib/pricingEngine';
 import { useAdminStore } from '@/lib/store';
+import { useAuth } from '@/lib/authContext';
 import CostingExportModal from './CostingExportModal';
 import BOMSpecifierModal from './BOMSpecifierModal';
+import CalculatorSettingsModal from './CalculatorSettingsModal';
 
 interface CostingCalculatorProps {
   initialSheet?: CostingSheet;
@@ -41,13 +49,37 @@ interface CostingCalculatorProps {
 
 export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCalculation }: CostingCalculatorProps) {
   const { saveCostingSheet } = useAdminStore();
+  const { user } = useAuth();
+
+  // Active calculator defaults (synced via Supabase or localStorage)
+  const [activeDefaults, setActiveDefaults] = useState<CalculatorDefaults>(() => {
+    return user?.metadata?.calculator_defaults || getStoredCalculatorDefaults();
+  });
+
   const [currentSheetId, setCurrentSheetId] = useState<string | null>(initialSheet?.id || null);
-  const [inputs, setInputs] = useState<PricingInputs>(initialSheet?.inputs || defaultPricingInputs);
+  const [inputs, setInputs] = useState<PricingInputs>(() => {
+    if (initialSheet?.inputs) return initialSheet.inputs;
+    return mergeDefaultsIntoInputs({
+      productName: '',
+      productCode: `RIV-${Math.floor(1000 + Math.random() * 9000)}`,
+      mrp: 2999,
+    }, user?.metadata?.calculator_defaults || getStoredCalculatorDefaults());
+  });
+
   const [activeScenario, setActiveScenario] = useState<ScenarioKey>('mid');
   const [savedSuccessAlert, setSavedSuccessAlert] = useState(false);
   const [newCalcAlert, setNewCalcAlert] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isBOMModalOpen, setIsBOMModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [validationAttempted, setValidationAttempted] = useState(false);
+
+  // Sync defaults whenever user metadata loads
+  useEffect(() => {
+    if (user?.metadata?.calculator_defaults) {
+      setActiveDefaults(user.metadata.calculator_defaults);
+    }
+  }, [user]);
 
   // Sync inputs when initialSheet prop changes from parent
   useEffect(() => {
@@ -55,24 +87,25 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
       setInputs(initialSheet.inputs);
       setCurrentSheetId(initialSheet.id);
     } else {
-      setInputs({
-        ...defaultPricingInputs,
+      setInputs(mergeDefaultsIntoInputs({
         productName: '',
         productCode: `RIV-${Math.floor(1000 + Math.random() * 9000)}`,
-      });
+        mrp: 2999,
+      }, activeDefaults));
       setCurrentSheetId(null);
     }
-  }, [initialSheet]);
+  }, [initialSheet, activeDefaults]);
+
 
   const handleStartNewCalculation = () => {
     setCurrentSheetId(null);
-    setInputs({
-      ...defaultPricingInputs,
+    setValidationAttempted(false);
+    setInputs(mergeDefaultsIntoInputs({
       productName: '',
       productCode: `RIV-${Math.floor(1000 + Math.random() * 9000)}`,
       mrp: 2999,
-      targetMargin: 25,
-    });
+      targetMargin: activeDefaults.targetMargin ?? 25,
+    }, activeDefaults));
     setActiveScenario('mid');
     setNewCalcAlert(true);
     setTimeout(() => setNewCalcAlert(false), 3500);
@@ -86,6 +119,9 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
 
   // Currency
   const curr = inputs.currency || '₹';
+
+  // Live Validation
+  const validation = validatePricingInputs(inputs);
 
   // Calculations for active scenario and all three
   const currentResult: CalculationResult = calculateScenario(inputs, activeScenario);
@@ -143,13 +179,20 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
     }
   };
 
-  // Save handler
+  // Save handler with validation enforcement
   const handleSave = () => {
+    setValidationAttempted(true);
+    const valResult = validatePricingInputs(inputs);
+    if (!valResult.isValid) {
+      // Abort save if data integrity rules are violated
+      return;
+    }
+
     const sheetId = currentSheetId || `cost-${Date.now()}`;
     const sheetData: CostingSheet = {
       id: sheetId,
-      sku: inputs.productCode || 'RIV-SKU',
-      styleName: inputs.productName || 'New Product Style',
+      sku: inputs.productCode.trim(),
+      styleName: inputs.productName.trim(),
       currency: curr,
       mrp: inputs.mrp,
       expectedMargin: midResult.contributionMargin * 100,
@@ -165,6 +208,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
     setTimeout(() => setSavedSuccessAlert(false), 3500);
     if (onSaveSuccess) onSaveSuccess();
   };
+
 
   // CSV Export
   const handleExportCsv = () => {
@@ -265,6 +309,16 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
             <span className="hidden sm:inline">Export Suite</span>
           </button>
 
+          {/* Calculator Brand Settings Button */}
+          <button
+            onClick={() => setIsSettingsModalOpen(true)}
+            title="Configure Brand Defaults, Fixed Overheads & Locks (Syncs across tab & laptop)"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#161a26] border border-[#263147] text-[#cda052] hover:text-white hover:border-[#cda052] font-semibold text-xs transition-all shadow-sm"
+          >
+            <Settings className="w-3.5 h-3.5" />
+            <span>Settings</span>
+          </button>
+
           {/* New Calculation Button */}
           <button
             onClick={handleStartNewCalculation}
@@ -289,7 +343,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
       {newCalcAlert && (
         <div className="p-3.5 bg-blue-950/80 border border-blue-700/60 rounded-lg text-blue-200 text-xs flex items-center gap-2 animate-fade-in shadow-md">
           <Sparkles className="w-4 h-4 text-[#cda052] flex-shrink-0" />
-          <span>New product calculation started! Customize your parameters below and click <strong>Save Product Calculation</strong>.</span>
+          <span>New product calculation started with custom brand defaults! Customize your parameters below and click <strong>Save Product Calculation</strong>.</span>
         </div>
       )}
 
@@ -299,6 +353,30 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
           <span>Product calculation for <strong>{inputs.productCode}</strong> ({inputs.productName}) saved to your Rivlet database!</span>
         </div>
       )}
+
+      {/* Validation Error Banner */}
+      {validationAttempted && !validation.isValid && (
+        <div className="p-4 bg-rose-950/80 border border-rose-700/70 rounded-xl text-rose-200 text-xs flex items-start gap-3 animate-fade-in shadow-xl">
+          <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" />
+          <div className="space-y-1.5 flex-1">
+            <div className="flex items-center justify-between">
+              <strong className="text-white text-xs font-semibold">Data Validation Failed: Please correct the following fields to proceed:</strong>
+              <span className="text-[10px] text-rose-300 font-mono bg-rose-900/60 px-2 py-0.5 rounded border border-rose-700/50">
+                {Object.keys(validation.errors).length} {Object.keys(validation.errors).length === 1 ? 'Error' : 'Errors'} Found
+              </span>
+            </div>
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-1 text-[11px] text-rose-300 font-medium">
+              {Object.entries(validation.errors).map(([key, msg]) => (
+                <li key={key} className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400 flex-shrink-0"></span>
+                  <span>{msg}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
 
       {/* Scenario Selector & Status Summary Bar */}
       <div className="bg-[#111420] border border-[#1e2436] p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -441,59 +519,101 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
 
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div>
-              <label className="text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider block mb-1">
-                Product Name
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider block">
+                  Product Name <span className="text-rose-400">*</span>
+                </label>
+                {validationAttempted && validation.errors.productName && (
+                  <span className="text-[10px] text-rose-400 font-medium">Required</span>
+                )}
+              </div>
               <input
                 type="text"
                 value={inputs.productName}
+                placeholder="e.g. Oversized French Terry Hoodie"
                 onChange={(e) => updateField('productName', e.target.value)}
-                className="w-full px-2.5 py-1.5 rounded bg-[#090b12] border border-[#22283b] text-white"
+                className={`w-full px-2.5 py-1.5 rounded bg-[#090b12] border text-white transition-colors outline-none ${
+                  validationAttempted && validation.errors.productName
+                    ? 'border-rose-500 ring-1 ring-rose-500/50'
+                    : 'border-[#22283b] focus:border-[#cda052]'
+                }`}
               />
             </div>
 
             <div>
-              <label className="text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider block mb-1">
-                Product Code / SKU
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider block">
+                  Product Code / SKU <span className="text-rose-400">*</span>
+                </label>
+                {validationAttempted && validation.errors.productCode && (
+                  <span className="text-[10px] text-rose-400 font-medium">Required</span>
+                )}
+              </div>
               <input
                 type="text"
                 value={inputs.productCode}
+                placeholder="e.g. RIV-FW26-HOOD-01"
                 onChange={(e) => updateField('productCode', e.target.value)}
-                className="w-full px-2.5 py-1.5 rounded bg-[#090b12] border border-[#22283b] text-white font-mono"
+                className={`w-full px-2.5 py-1.5 rounded bg-[#090b12] border text-white font-mono transition-colors outline-none ${
+                  validationAttempted && validation.errors.productCode
+                    ? 'border-rose-500 ring-1 ring-rose-500/50'
+                    : 'border-[#22283b] focus:border-[#cda052]'
+                }`}
               />
             </div>
 
             <div>
-              <label className="text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider block mb-1">
-                Listed MRP (GST Included)
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider block">
+                  Listed MRP (GST Included) <span className="text-rose-400">*</span>
+                </label>
+                {validationAttempted && validation.errors.mrp && (
+                  <span className="text-[10px] text-rose-400 font-medium">&gt; 0</span>
+                )}
+              </div>
               <div className="relative">
                 <span className="absolute left-2.5 top-1.5 text-[#6c758a] font-bold">{curr}</span>
                 <input
                   type="number"
+                  min="1"
                   value={inputs.mrp}
                   onChange={(e) => updateField('mrp', Number(e.target.value))}
-                  className="w-full pl-7 pr-2.5 py-1.5 rounded bg-[#090b12] border border-[#22283b] text-white font-bold"
+                  className={`w-full pl-7 pr-2.5 py-1.5 rounded bg-[#090b12] border text-white font-bold transition-colors outline-none ${
+                    validationAttempted && validation.errors.mrp
+                      ? 'border-rose-500 ring-1 ring-rose-500/50'
+                      : 'border-[#22283b] focus:border-[#cda052]'
+                  }`}
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider block mb-1">
-                Target Contribution Margin %
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider block">
+                  Target Contribution Margin %
+                </label>
+                {validationAttempted && validation.errors.targetMargin && (
+                  <span className="text-[10px] text-rose-400 font-medium">0-95%</span>
+                )}
+              </div>
               <div className="relative">
                 <input
                   type="number"
+                  min="0"
+                  max="95"
                   value={inputs.targetMargin}
                   onChange={(e) => updateField('targetMargin', Number(e.target.value))}
-                  className="w-full pr-7 px-2.5 py-1.5 rounded bg-[#090b12] border border-[#22283b] text-white font-bold"
+                  className={`w-full pr-7 px-2.5 py-1.5 rounded bg-[#090b12] border text-white font-bold transition-colors outline-none ${
+                    validationAttempted && validation.errors.targetMargin
+                      ? 'border-rose-500 ring-1 ring-rose-500/50'
+                      : 'border-[#22283b] focus:border-[#cda052]'
+                  }`}
                 />
                 <span className="absolute right-2.5 top-1.5 text-[#6c758a] font-bold">%</span>
               </div>
             </div>
           </div>
+
 
           {/* GST Mode Toggle */}
           <div className="p-3 bg-[#090b12] border border-[#1b2132] rounded-lg space-y-2 text-xs">
@@ -739,6 +859,20 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
               3. Product, Factory & Inbound Supply Costs
             </h3>
             <div className="flex items-center gap-2">
+              {activeDefaults.lockedInbound && (
+                <span className="text-[10px] px-2 py-0.5 rounded bg-[rgba(205,160,82,0.12)] text-[#e6c875] border border-[rgba(205,160,82,0.3)] font-mono flex items-center gap-1">
+                  <Lock className="w-2.5 h-2.5" /> Fixed Rates
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => setIsSettingsModalOpen(true)}
+                className="text-[11px] text-[#cda052] hover:underline flex items-center gap-1 font-medium bg-[#141824] px-2 py-1 rounded-lg border border-[#252f44]"
+                title="Configure standard packaging and inbound rates"
+              >
+                <Settings className="w-3 h-3" />
+                <span>{activeDefaults.lockedInbound ? 'Unlock' : 'Settings'}</span>
+              </button>
               <button
                 type="button"
                 onClick={() => setIsBOMModalOpen(true)}
@@ -746,7 +880,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
                 className="px-2.5 py-1 rounded-lg bg-[rgba(205,160,82,0.15)] hover:bg-[rgba(205,160,82,0.25)] border border-[rgba(205,160,82,0.35)] text-xs text-[#cda052] font-semibold flex items-center gap-1.5 transition-colors shadow-glow"
               >
                 <Scissors className="w-3.5 h-3.5" />
-                <span>Technical BOM & Fabric Specifier</span>
+                <span>BOM Specifier</span>
               </button>
               <span className="text-[10px] text-[#717a90]">Step 3</span>
             </div>
@@ -772,9 +906,10 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
                 <span className="absolute left-2.5 top-1.5 text-[#6c758a] font-bold">{curr}</span>
                 <input
                   type="number"
+                  min="0"
                   value={inputs.factory}
                   onChange={(e) => updateField('factory', Number(e.target.value))}
-                  className="w-full pl-7 pr-2.5 py-1.5 rounded bg-[#090b12] border border-[#22283b] text-white font-bold"
+                  className="w-full pl-7 pr-2.5 py-1.5 rounded bg-[#090b12] border border-[#22283b] text-white font-bold outline-none focus:border-[#cda052]"
                 />
               </div>
               {inputs.bom && (
@@ -792,9 +927,15 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
                 <span className="absolute left-2.5 top-1.5 text-[#6c758a] font-bold">{curr}</span>
                 <input
                   type="number"
+                  min="0"
+                  readOnly={Boolean(activeDefaults.lockedInbound)}
                   value={inputs.development}
                   onChange={(e) => updateField('development', Number(e.target.value))}
-                  className="w-full pl-7 pr-2.5 py-1.5 rounded bg-[#090b12] border border-[#22283b] text-white"
+                  className={`w-full pl-7 pr-2.5 py-1.5 rounded border text-white outline-none ${
+                    activeDefaults.lockedInbound
+                      ? 'bg-[#07090e] border-[#1d2334] text-[#94a3b8] cursor-not-allowed opacity-90'
+                      : 'bg-[#090b12] border-[#22283b] focus:border-[#cda052]'
+                  }`}
                 />
               </div>
             </div>
@@ -807,9 +948,15 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
                 <span className="absolute left-2.5 top-1.5 text-[#6c758a] font-bold">{curr}</span>
                 <input
                   type="number"
+                  min="0"
+                  readOnly={Boolean(activeDefaults.lockedInbound)}
                   value={inputs.inbound}
                   onChange={(e) => updateField('inbound', Number(e.target.value))}
-                  className="w-full pl-7 pr-2.5 py-1.5 rounded bg-[#090b12] border border-[#22283b] text-white"
+                  className={`w-full pl-7 pr-2.5 py-1.5 rounded border text-white outline-none ${
+                    activeDefaults.lockedInbound
+                      ? 'bg-[#07090e] border-[#1d2334] text-[#94a3b8] cursor-not-allowed opacity-90'
+                      : 'bg-[#090b12] border-[#22283b] focus:border-[#cda052]'
+                  }`}
                 />
               </div>
             </div>
@@ -822,9 +969,15 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
                 <span className="absolute left-2.5 top-1.5 text-[#6c758a] font-bold">{curr}</span>
                 <input
                   type="number"
+                  min="0"
+                  readOnly={Boolean(activeDefaults.lockedInbound)}
                   value={inputs.qc}
                   onChange={(e) => updateField('qc', Number(e.target.value))}
-                  className="w-full pl-7 pr-2.5 py-1.5 rounded bg-[#090b12] border border-[#22283b] text-white"
+                  className={`w-full pl-7 pr-2.5 py-1.5 rounded border text-white outline-none ${
+                    activeDefaults.lockedInbound
+                      ? 'bg-[#07090e] border-[#1d2334] text-[#94a3b8] cursor-not-allowed opacity-90'
+                      : 'bg-[#090b12] border-[#22283b] focus:border-[#cda052]'
+                  }`}
                 />
               </div>
             </div>
@@ -837,9 +990,15 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
                 <span className="absolute left-2.5 top-1.5 text-[#6c758a] font-bold">{curr}</span>
                 <input
                   type="number"
+                  min="0"
+                  readOnly={Boolean(activeDefaults.lockedInbound)}
                   value={inputs.packaging}
                   onChange={(e) => updateField('packaging', Number(e.target.value))}
-                  className="w-full pl-7 pr-2.5 py-1.5 rounded bg-[#090b12] border border-[#22283b] text-white"
+                  className={`w-full pl-7 pr-2.5 py-1.5 rounded border text-white outline-none ${
+                    activeDefaults.lockedInbound
+                      ? 'bg-[#07090e] border-[#1d2334] text-[#94a3b8] cursor-not-allowed opacity-90'
+                      : 'bg-[#090b12] border-[#22283b] focus:border-[#cda052]'
+                  }`}
                 />
               </div>
             </div>
@@ -852,9 +1011,15 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
                 <span className="absolute left-2.5 top-1.5 text-[#6c758a] font-bold">{curr}</span>
                 <input
                   type="number"
+                  min="0"
+                  readOnly={Boolean(activeDefaults.lockedInbound)}
                   value={inputs.tags}
                   onChange={(e) => updateField('tags', Number(e.target.value))}
-                  className="w-full pl-7 pr-2.5 py-1.5 rounded bg-[#090b12] border border-[#22283b] text-white"
+                  className={`w-full pl-7 pr-2.5 py-1.5 rounded border text-white outline-none ${
+                    activeDefaults.lockedInbound
+                      ? 'bg-[#07090e] border-[#1d2334] text-[#94a3b8] cursor-not-allowed opacity-90'
+                      : 'bg-[#090b12] border-[#22283b] focus:border-[#cda052]'
+                  }`}
                 />
               </div>
             </div>
@@ -867,9 +1032,15 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
                 <span className="absolute left-2.5 top-1.5 text-[#6c758a] font-bold">{curr}</span>
                 <input
                   type="number"
+                  min="0"
+                  readOnly={Boolean(activeDefaults.lockedInbound)}
                   value={inputs.branding}
                   onChange={(e) => updateField('branding', Number(e.target.value))}
-                  className="w-full pl-7 pr-2.5 py-1.5 rounded bg-[#090b12] border border-[#22283b] text-white"
+                  className={`w-full pl-7 pr-2.5 py-1.5 rounded border text-white outline-none ${
+                    activeDefaults.lockedInbound
+                      ? 'bg-[#07090e] border-[#1d2334] text-[#94a3b8] cursor-not-allowed opacity-90'
+                      : 'bg-[#090b12] border-[#22283b] focus:border-[#cda052]'
+                  }`}
                 />
               </div>
             </div>
@@ -882,9 +1053,15 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
                 <span className="absolute left-2.5 top-1.5 text-[#6c758a] font-bold">{curr}</span>
                 <input
                   type="number"
+                  min="0"
+                  readOnly={Boolean(activeDefaults.lockedInbound)}
                   value={inputs.receiving}
                   onChange={(e) => updateField('receiving', Number(e.target.value))}
-                  className="w-full pl-7 pr-2.5 py-1.5 rounded bg-[#090b12] border border-[#22283b] text-white"
+                  className={`w-full pl-7 pr-2.5 py-1.5 rounded border text-white outline-none ${
+                    activeDefaults.lockedInbound
+                      ? 'bg-[#07090e] border-[#1d2334] text-[#94a3b8] cursor-not-allowed opacity-90'
+                      : 'bg-[#090b12] border-[#22283b] focus:border-[#cda052]'
+                  }`}
                 />
               </div>
             </div>
@@ -897,9 +1074,15 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
                 <span className="absolute left-2.5 top-1.5 text-[#6c758a] font-bold">{curr}</span>
                 <input
                   type="number"
+                  min="0"
+                  readOnly={Boolean(activeDefaults.lockedInbound)}
                   value={inputs.pickpack}
                   onChange={(e) => updateField('pickpack', Number(e.target.value))}
-                  className="w-full pl-7 pr-2.5 py-1.5 rounded bg-[#090b12] border border-[#22283b] text-white"
+                  className={`w-full pl-7 pr-2.5 py-1.5 rounded border text-white outline-none ${
+                    activeDefaults.lockedInbound
+                      ? 'bg-[#07090e] border-[#1d2334] text-[#94a3b8] cursor-not-allowed opacity-90'
+                      : 'bg-[#090b12] border-[#22283b] focus:border-[#cda052]'
+                  }`}
                 />
               </div>
             </div>
@@ -912,12 +1095,19 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
                 <span className="absolute left-2.5 top-1.5 text-[#6c758a] font-bold">{curr}</span>
                 <input
                   type="number"
+                  min="0"
+                  readOnly={Boolean(activeDefaults.lockedInbound)}
                   value={inputs.inventory}
                   onChange={(e) => updateField('inventory', Number(e.target.value))}
-                  className="w-full pl-7 pr-2.5 py-1.5 rounded bg-[#090b12] border border-[#22283b] text-white"
+                  className={`w-full pl-7 pr-2.5 py-1.5 rounded border text-white outline-none ${
+                    activeDefaults.lockedInbound
+                      ? 'bg-[#07090e] border-[#1d2334] text-[#94a3b8] cursor-not-allowed opacity-90'
+                      : 'bg-[#090b12] border-[#22283b] focus:border-[#cda052]'
+                  }`}
                 />
               </div>
             </div>
+
           </div>
 
           {/* Factory GST & Input Credit Config */}
@@ -1088,17 +1278,35 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
 
       {/* Section 5: Annual Business Overhead Allocation */}
       <div className="bg-[#11141e] border border-[#1e2436] rounded-xl p-5 space-y-4">
-        <div className="flex items-center justify-between border-b border-[#1b2132] pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#1b2132] pb-3 gap-2">
           <div>
-            <h3 className="text-xs font-bold text-white tracking-wider uppercase flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-blue-400"></span>
-              5. Annual Business Overhead & Dynamic Allocation
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-xs font-bold text-white tracking-wider uppercase flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+                5. Annual Business Overhead & Dynamic Allocation
+              </h3>
+              {activeDefaults.lockedOverheads && (
+                <span className="text-[10px] px-2 py-0.5 rounded bg-[rgba(205,160,82,0.12)] text-[#e6c875] border border-[rgba(205,160,82,0.3)] font-mono flex items-center gap-1">
+                  <Lock className="w-2.5 h-2.5" /> Fixed Brand Standard
+                </span>
+              )}
+            </div>
             <p className="text-[11px] text-[#717a90] mt-0.5">
               Enter annual company expenses. The planner divides annual total by planned annual units automatically: {curr}{Math.round(currentResult.overheadPerUnit)}/unit ({formatMoney(currentResult.overheadAnnual, curr)} ÷ {currentResult.units.toLocaleString()} units).
             </p>
           </div>
-          <span className="text-[10px] text-[#717a90]">Step 5</span>
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setIsSettingsModalOpen(true)}
+              className="text-[11px] text-[#cda052] hover:underline flex items-center gap-1 font-medium bg-[#141824] px-2.5 py-1 rounded-lg border border-[#252f44]"
+              title="Configure Brand Fixed Overheads"
+            >
+              <Settings className="w-3 h-3" />
+              <span>{activeDefaults.lockedOverheads ? 'Unlock in Settings' : 'Brand Settings'}</span>
+            </button>
+            <span className="text-[10px] text-[#717a90]">Step 5</span>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -1128,25 +1336,40 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
                   <td className="py-2 pr-2">
                     <input
                       type="number"
+                      readOnly={Boolean(activeDefaults.lockedOverheads)}
                       value={(inputs as any)[key].low}
                       onChange={(e) => updateRange(key as any, 'low', Number(e.target.value))}
-                      className="w-full bg-[#0a0c13] px-2 py-1 rounded border border-[#202638] text-white"
+                      className={`w-full px-2 py-1 rounded border outline-none ${
+                        activeDefaults.lockedOverheads
+                          ? 'bg-[#07090e] border-[#1d2334] text-[#94a3b8] cursor-not-allowed opacity-90'
+                          : 'bg-[#0a0c13] border-[#202638] text-white focus:border-[#cda052]'
+                      }`}
                     />
                   </td>
                   <td className="py-2 pr-2">
                     <input
                       type="number"
+                      readOnly={Boolean(activeDefaults.lockedOverheads)}
                       value={(inputs as any)[key].mid}
                       onChange={(e) => updateRange(key as any, 'mid', Number(e.target.value))}
-                      className="w-full bg-[#0a0c13] px-2 py-1 rounded border border-[#cda052]/50 text-[#cda052] font-bold"
+                      className={`w-full px-2 py-1 rounded border outline-none ${
+                        activeDefaults.lockedOverheads
+                          ? 'bg-[#07090e] border-[#2f2716] text-[#cda052]/80 cursor-not-allowed opacity-90'
+                          : 'bg-[#0a0c13] border-[#cda052]/50 text-[#cda052] font-bold focus:border-[#cda052]'
+                      }`}
                     />
                   </td>
                   <td className="py-2">
                     <input
                       type="number"
+                      readOnly={Boolean(activeDefaults.lockedOverheads)}
                       value={(inputs as any)[key].high}
                       onChange={(e) => updateRange(key as any, 'high', Number(e.target.value))}
-                      className="w-full bg-[#0a0c13] px-2 py-1 rounded border border-[#202638] text-white"
+                      className={`w-full px-2 py-1 rounded border outline-none ${
+                        activeDefaults.lockedOverheads
+                          ? 'bg-[#07090e] border-[#1d2334] text-[#94a3b8] cursor-not-allowed opacity-90'
+                          : 'bg-[#0a0c13] border-[#202638] text-white focus:border-[#cda052]'
+                      }`}
                     />
                   </td>
                 </tr>
@@ -1155,6 +1378,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
           </table>
         </div>
       </div>
+
 
       {/* Deep-Dive Tables: Scenarios & Cost Breakdown */}
       <div className="space-y-4">
@@ -1378,6 +1602,18 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
         initialBOM={inputs.bom}
         onApplyBOM={handleApplyBOM}
       />
+
+      {/* Brand Defaults & Fixed Overheads Settings Modal */}
+      <CalculatorSettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+        currentInputs={inputs}
+        onApplyDefaultsToCurrent={(newDefs) => {
+          setActiveDefaults(newDefs);
+          setInputs(prev => mergeDefaultsIntoInputs(prev, newDefs));
+        }}
+      />
     </div>
+
   );
 }

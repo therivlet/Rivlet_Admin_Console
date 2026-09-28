@@ -12,7 +12,8 @@ import {
   CheckCircle2,
   Inbox,
   LayoutGrid,
-  List
+  List,
+  AlertCircle
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { ArtifactItem, ArtifactStatus } from '@/lib/types';
@@ -35,17 +36,39 @@ export default function ArtifactsPage() {
   const [activeArtifactId, setActiveArtifactId] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingArtifact, setEditingArtifact] = useState<ArtifactItem | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const activeArtifact = artifacts.find((a) => a.id === activeArtifactId) || null;
 
-  // File upload handler for .html files
+  // File upload handler for .html files with validation
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUploadError(null);
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // 1. File extension validation
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (ext !== 'html' && ext !== 'htm') {
+      setUploadError('Invalid file type: Only .html and .htm files are supported for artifact import.');
+      e.target.value = '';
+      return;
+    }
+
+    // 2. File size validation (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError('File size exceeds the 10MB limit for HTML artifacts.');
+      e.target.value = '';
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target?.result as string;
+      if (!content || content.trim().length < 10) {
+        setUploadError('The selected HTML file is empty or does not contain valid markup.');
+        return;
+      }
+
       const title = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
       addArtifact({
         title,
@@ -62,6 +85,7 @@ export default function ArtifactsPage() {
     reader.readAsText(file);
     e.target.value = '';
   };
+
 
   // Filter artifacts
   const filtered = artifacts.filter((item) => {
@@ -132,7 +156,18 @@ export default function ArtifactsPage() {
         </div>
       </div>
 
+      {uploadError && (
+        <div className="p-3 bg-rose-950/80 border border-rose-700/60 rounded-xl text-rose-200 text-xs flex items-center justify-between gap-2 animate-fade-in font-medium">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+            <span>{uploadError}</span>
+          </div>
+          <button onClick={() => setUploadError(null)} className="text-rose-300 hover:text-white text-xs">Dismiss</button>
+        </div>
+      )}
+
       {/* Filter and Search Bar */}
+
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#0e121b] p-3 rounded-xl border border-[#1e2638] shadow-md">
         {/* Status Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">

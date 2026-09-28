@@ -70,25 +70,78 @@ export default function ProfilePage() {
   // Cloud Saving State
   const [isSaving, setIsSaving] = useState(false);
   const [savedAlert, setSavedAlert] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  // Validate form fields
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!fullName.trim() || fullName.trim().length < 2) {
+      errors.fullName = 'Full legal name must be at least 2 characters.';
+    }
+
+    if (!roleTitle.trim() || roleTitle.trim().length < 2) {
+      errors.roleTitle = 'Role & title must be at least 2 characters.';
+    }
+
+    if (phoneNumber.trim()) {
+      const phoneRegex = /^\+?[0-9\s-]{10,16}$/;
+      if (!phoneRegex.test(phoneNumber.trim())) {
+        errors.phoneNumber = 'Enter a valid phone number (10-15 digits, e.g. +91 98765 43210).';
+      }
+    }
+
+    if (!legalEntity.trim() || legalEntity.trim().length < 2) {
+      errors.legalEntity = 'Registered legal entity must be at least 2 characters.';
+    }
+
+    if (gstin.trim()) {
+      const gstinClean = gstin.trim().toUpperCase();
+      const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+      if (!gstinRegex.test(gstinClean)) {
+        errors.gstin = 'Invalid GSTIN. Standard Indian format is 15 alphanumeric characters (e.g. 33AAAAA0000A1Z5).';
+      }
+    }
+
+    if (!primaryHub.trim() || primaryHub.trim().length < 2) {
+      errors.primaryHub = 'Production hub must be at least 2 characters.';
+    }
+
+    if (!warehouseLocation.trim() || warehouseLocation.trim().length < 2) {
+      errors.warehouseLocation = 'Warehouse location must be at least 2 characters.';
+    }
+
+    if (isNaN(defaultTargetMargin) || defaultTargetMargin < 1 || defaultTargetMargin > 90) {
+      errors.defaultTargetMargin = 'Target margin must be between 1% and 90%.';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   // Save changes directly to Supabase cloud
   const handleSaveProfile = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
     setIsSaving(true);
     const result = await updateProfile({
-      full_name: fullName,
-      role_title: roleTitle,
-      phone_number: phoneNumber,
+      full_name: fullName.trim(),
+      role_title: roleTitle.trim(),
+      phone_number: phoneNumber.trim(),
       department: department,
-      legal_entity: legalEntity,
-      gstin: gstin,
-      primary_hub: primaryHub,
-      warehouse_location: warehouseLocation,
+      legal_entity: legalEntity.trim(),
+      gstin: gstin.trim().toUpperCase(),
+      primary_hub: primaryHub.trim(),
+      warehouse_location: warehouseLocation.trim(),
       default_currency: defaultCurrency,
       default_target_margin: defaultTargetMargin,
     });
     setIsSaving(false);
     if (!result.error) {
       setSavedAlert(true);
+      setFormErrors({});
       setTimeout(() => setSavedAlert(false), 3500);
     } else {
       alert('Error syncing to Supabase: ' + result.error);
@@ -212,6 +265,20 @@ export default function ProfilePage() {
         </div>
       )}
 
+      {Object.keys(formErrors).length > 0 && (
+        <div className="p-4 bg-rose-950/80 border border-rose-800/60 rounded-xl text-rose-300 text-xs sm:text-sm space-y-1.5 animate-fade-in font-medium">
+          <div className="flex items-center gap-2 font-bold text-rose-200">
+            <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+            <span>Please resolve the following validation issues:</span>
+          </div>
+          <ul className="list-disc list-inside pl-1 text-xs text-rose-300/90 space-y-0.5">
+            {Object.values(formErrors).map((err, idx) => (
+              <li key={idx}>{err}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Tabs Navigation */}
       <div className="flex items-center gap-2 border-b border-[#1e2638] pb-1 overflow-x-auto custom-scrollbar">
         <button
@@ -275,13 +342,21 @@ export default function ProfilePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs">
             <div>
-              <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">Full Legal Name</label>
+              <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">Full Legal Name *</label>
               <input
                 type="text"
                 value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-lg bg-[#07090e] border border-[#263147] text-white outline-none focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40 transition-colors"
+                onChange={(e) => {
+                  setFullName(e.target.value);
+                  if (formErrors.fullName) setFormErrors(prev => { const n = {...prev}; delete n.fullName; return n; });
+                }}
+                className={`w-full px-3.5 py-2.5 rounded-lg bg-[#07090e] border text-white outline-none transition-colors ${
+                  formErrors.fullName 
+                    ? 'border-rose-500/80 ring-1 ring-rose-500/30' 
+                    : 'border-[#263147] focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40'
+                }`}
               />
+              {formErrors.fullName && <p className="text-[11px] text-rose-400 mt-1 font-medium">{formErrors.fullName}</p>}
             </div>
 
             <div>
@@ -296,13 +371,21 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">Role & Title</label>
+              <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">Role & Title *</label>
               <input
                 type="text"
                 value={roleTitle}
-                onChange={(e) => setRoleTitle(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-lg bg-[#07090e] border border-[#263147] text-white outline-none focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40 transition-colors"
+                onChange={(e) => {
+                  setRoleTitle(e.target.value);
+                  if (formErrors.roleTitle) setFormErrors(prev => { const n = {...prev}; delete n.roleTitle; return n; });
+                }}
+                className={`w-full px-3.5 py-2.5 rounded-lg bg-[#07090e] border text-white outline-none transition-colors ${
+                  formErrors.roleTitle 
+                    ? 'border-rose-500/80 ring-1 ring-rose-500/30' 
+                    : 'border-[#263147] focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40'
+                }`}
               />
+              {formErrors.roleTitle && <p className="text-[11px] text-rose-400 mt-1 font-medium">{formErrors.roleTitle}</p>}
             </div>
 
             <div>
@@ -324,10 +407,18 @@ export default function ProfilePage() {
               <input
                 type="text"
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
+                onChange={(e) => {
+                  setPhoneNumber(e.target.value);
+                  if (formErrors.phoneNumber) setFormErrors(prev => { const n = {...prev}; delete n.phoneNumber; return n; });
+                }}
                 placeholder="e.g. +91 98765 43210"
-                className="w-full px-3.5 py-2.5 rounded-lg bg-[#07090e] border border-[#263147] text-white placeholder-[#5a6478] outline-none focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40 transition-colors"
+                className={`w-full px-3.5 py-2.5 rounded-lg bg-[#07090e] border text-white placeholder-[#5a6478] outline-none transition-colors ${
+                  formErrors.phoneNumber 
+                    ? 'border-rose-500/80 ring-1 ring-rose-500/30' 
+                    : 'border-[#263147] focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40'
+                }`}
               />
+              {formErrors.phoneNumber && <p className="text-[11px] text-rose-400 mt-1 font-medium">{formErrors.phoneNumber}</p>}
             </div>
 
             <div>
@@ -367,13 +458,21 @@ export default function ProfilePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs">
             <div>
-              <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">Registered Legal Entity</label>
+              <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">Registered Legal Entity *</label>
               <input
                 type="text"
                 value={legalEntity}
-                onChange={(e) => setLegalEntity(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-lg bg-[#07090e] border border-[#263147] text-white outline-none focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40 transition-colors"
+                onChange={(e) => {
+                  setLegalEntity(e.target.value);
+                  if (formErrors.legalEntity) setFormErrors(prev => { const n = {...prev}; delete n.legalEntity; return n; });
+                }}
+                className={`w-full px-3.5 py-2.5 rounded-lg bg-[#07090e] border text-white outline-none transition-colors ${
+                  formErrors.legalEntity 
+                    ? 'border-rose-500/80 ring-1 ring-rose-500/30' 
+                    : 'border-[#263147] focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40'
+                }`}
               />
+              {formErrors.legalEntity && <p className="text-[11px] text-rose-400 mt-1 font-medium">{formErrors.legalEntity}</p>}
             </div>
 
             <div>
@@ -381,30 +480,54 @@ export default function ProfilePage() {
               <input
                 type="text"
                 value={gstin}
-                onChange={(e) => setGstin(e.target.value)}
+                onChange={(e) => {
+                  setGstin(e.target.value.toUpperCase());
+                  if (formErrors.gstin) setFormErrors(prev => { const n = {...prev}; delete n.gstin; return n; });
+                }}
                 placeholder="e.g. 33AAAAA0000A1Z5"
-                className="w-full px-3.5 py-2.5 rounded-lg bg-[#07090e] border border-[#263147] text-white font-mono placeholder-[#5a6478] outline-none focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40 transition-colors"
+                className={`w-full px-3.5 py-2.5 rounded-lg bg-[#07090e] border text-white font-mono placeholder-[#5a6478] outline-none transition-colors ${
+                  formErrors.gstin 
+                    ? 'border-rose-500/80 ring-1 ring-rose-500/30' 
+                    : 'border-[#263147] focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40'
+                }`}
               />
+              {formErrors.gstin && <p className="text-[11px] text-rose-400 mt-1 font-medium">{formErrors.gstin}</p>}
             </div>
 
             <div>
-              <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">Primary Production Hub / Mill Cluster</label>
+              <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">Primary Production Hub / Mill Cluster *</label>
               <input
                 type="text"
                 value={primaryHub}
-                onChange={(e) => setPrimaryHub(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-lg bg-[#07090e] border border-[#263147] text-white outline-none focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40 transition-colors"
+                onChange={(e) => {
+                  setPrimaryHub(e.target.value);
+                  if (formErrors.primaryHub) setFormErrors(prev => { const n = {...prev}; delete n.primaryHub; return n; });
+                }}
+                className={`w-full px-3.5 py-2.5 rounded-lg bg-[#07090e] border text-white outline-none transition-colors ${
+                  formErrors.primaryHub 
+                    ? 'border-rose-500/80 ring-1 ring-rose-500/30' 
+                    : 'border-[#263147] focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40'
+                }`}
               />
+              {formErrors.primaryHub && <p className="text-[11px] text-rose-400 mt-1 font-medium">{formErrors.primaryHub}</p>}
             </div>
 
             <div>
-              <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">Central Warehouse & Fulfillment Facility</label>
+              <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">Central Warehouse & Fulfillment Facility *</label>
               <input
                 type="text"
                 value={warehouseLocation}
-                onChange={(e) => setWarehouseLocation(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-lg bg-[#07090e] border border-[#263147] text-white outline-none focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40 transition-colors"
+                onChange={(e) => {
+                  setWarehouseLocation(e.target.value);
+                  if (formErrors.warehouseLocation) setFormErrors(prev => { const n = {...prev}; delete n.warehouseLocation; return n; });
+                }}
+                className={`w-full px-3.5 py-2.5 rounded-lg bg-[#07090e] border text-white outline-none transition-colors ${
+                  formErrors.warehouseLocation 
+                    ? 'border-rose-500/80 ring-1 ring-rose-500/30' 
+                    : 'border-[#263147] focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40'
+                }`}
               />
+              {formErrors.warehouseLocation && <p className="text-[11px] text-rose-400 mt-1 font-medium">{formErrors.warehouseLocation}</p>}
             </div>
 
             <div>
@@ -420,13 +543,24 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">Target Net Margin Benchmark (%)</label>
+              <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">Target Net Margin Benchmark (%) *</label>
               <input
                 type="number"
+                min="1"
+                max="90"
+                step="0.5"
                 value={defaultTargetMargin}
-                onChange={(e) => setDefaultTargetMargin(Number(e.target.value))}
-                className="w-full px-3.5 py-2.5 rounded-lg bg-[#07090e] border border-[#263147] text-white font-bold outline-none focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40 transition-colors"
+                onChange={(e) => {
+                  setDefaultTargetMargin(Number(e.target.value));
+                  if (formErrors.defaultTargetMargin) setFormErrors(prev => { const n = {...prev}; delete n.defaultTargetMargin; return n; });
+                }}
+                className={`w-full px-3.5 py-2.5 rounded-lg bg-[#07090e] border text-white font-bold outline-none transition-colors ${
+                  formErrors.defaultTargetMargin 
+                    ? 'border-rose-500/80 ring-1 ring-rose-500/30' 
+                    : 'border-[#263147] focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40'
+                }`}
               />
+              {formErrors.defaultTargetMargin && <p className="text-[11px] text-rose-400 mt-1 font-medium">{formErrors.defaultTargetMargin}</p>}
             </div>
           </div>
 

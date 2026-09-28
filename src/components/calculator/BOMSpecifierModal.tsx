@@ -14,7 +14,8 @@ import {
   Package, 
   RotateCcw,
   Info,
-  ArrowRight
+  ArrowRight,
+  AlertCircle
 } from 'lucide-react';
 import { GarmentBOM, FabricBOMItem, TrimBOMItem } from '@/lib/types';
 import { bomPresets } from '@/lib/bomPresets';
@@ -47,6 +48,7 @@ export default function BOMSpecifierModal({
   const [washFinishCost, setWashFinishCost] = useState<number>(65);
   const [notes, setNotes] = useState<string>('');
   const [appliedAlert, setAppliedAlert] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const loadPreset = useCallback((key: string) => {
     setSelectedPreset(key);
@@ -147,6 +149,53 @@ export default function BOMSpecifierModal({
 
   // Apply to Calculator
   const handleApply = () => {
+    setValidationError(null);
+
+    if (!garmentType || garmentType.trim().length < 2) {
+      setValidationError('Garment type description is required.');
+      return;
+    }
+
+    if (fabricItems.length === 0) {
+      setValidationError('At least one fabric layer/body must be specified in the BOM.');
+      return;
+    }
+
+    for (const fab of fabricItems) {
+      if (!fab.name.trim()) {
+        setValidationError('All fabric items must have a valid fabric name.');
+        return;
+      }
+      if (Number(fab.consumption) <= 0) {
+        setValidationError(`Consumption for "${fab.name}" must be greater than 0.`);
+        return;
+      }
+      if (Number(fab.ratePerUnit) < 0) {
+        setValidationError(`Rate for "${fab.name}" cannot be negative.`);
+        return;
+      }
+    }
+
+    for (const trm of trimItems) {
+      if (!trm.name.trim()) {
+        setValidationError('All trim items must have a valid name.');
+        return;
+      }
+      if (Number(trm.quantity) <= 0) {
+        setValidationError(`Quantity for "${trm.name}" must be greater than 0.`);
+        return;
+      }
+      if (Number(trm.ratePerUnit) < 0) {
+        setValidationError(`Rate for "${trm.name}" cannot be negative.`);
+        return;
+      }
+    }
+
+    if (stitchingLabor < 0 || washFinishCost < 0) {
+      setValidationError('Labor and wash finishing costs cannot be negative.');
+      return;
+    }
+
     // Break up into Rivlet Step 1 cost buckets:
     // Factory base CMT = Fabric Total + Stitching Labor + Wash/Finish
     const factoryCost = Math.round(fabricTotal + stitchingLabor + washFinishCost);
@@ -231,6 +280,14 @@ export default function BOMSpecifierModal({
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {validationError && (
+          <div className="p-3 mx-4 mt-3 bg-rose-950/80 border border-rose-700/60 rounded-xl text-rose-200 text-xs flex items-center gap-2 animate-fade-in font-medium flex-shrink-0">
+            <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+            <span>{validationError}</span>
+          </div>
+        )}
+
 
         {/* Preset Selector Banner */}
         <div className="p-3 sm:p-4 bg-[#0d101a] border-b border-[#181f30] flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-shrink-0">
