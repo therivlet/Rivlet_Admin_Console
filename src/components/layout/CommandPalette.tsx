@@ -13,6 +13,7 @@ import {
   X
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
+import ModalPortal from '@/components/ui/ModalPortal';
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -78,14 +79,15 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
   };
 
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-black/80 backdrop-blur-md animate-fade-in"
-      onClick={onClose}
-    >
+    <ModalPortal isOpen={isOpen}>
       <div 
-        className="w-full max-w-2xl bg-[#0e121b] border border-[#263147] rounded-2xl shadow-2xl overflow-hidden ring-1 ring-[#cda052]/20"
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-[100] flex items-start justify-center pt-20 px-4 bg-black/80 backdrop-blur-md animate-fade-in"
+        onClick={onClose}
       >
+        <div 
+          className="w-full max-w-2xl bg-[#0e121b] border border-[#263147] rounded-2xl shadow-2xl overflow-hidden ring-1 ring-[#cda052]/20"
+          onClick={(e) => e.stopPropagation()}
+        >
         {/* Search Input Bar */}
         <div className="relative border-b border-[#1e2638] p-4 flex items-center gap-3 bg-[#0a0d14]">
           <Search className="w-5 h-5 text-[#cda052] flex-shrink-0" />
@@ -255,5 +257,6 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }

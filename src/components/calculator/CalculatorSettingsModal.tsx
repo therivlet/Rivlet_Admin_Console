@@ -23,6 +23,7 @@ import {
 import { CalculatorDefaults, ScenarioKey, PricingInputs } from '@/lib/types';
 import { defaultCalculatorDefaults, formatMoney } from '@/lib/pricingEngine';
 import { useAuth } from '@/lib/authContext';
+import ModalPortal from '@/components/ui/ModalPortal';
 
 interface CalculatorSettingsModalProps {
   isOpen: boolean;
@@ -176,11 +177,15 @@ export default function CalculatorSettingsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md animate-fade-in text-white">
+    <ModalPortal isOpen={isOpen}>
       <div 
-        className="w-full max-w-4xl max-h-[92vh] bg-[#0c0f17] border border-[#22283a] rounded-2xl flex flex-col shadow-2xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md animate-fade-in text-white"
+        onClick={onClose}
       >
+        <div 
+          className="w-full max-w-4xl max-h-[92vh] bg-[#0c0f17] border border-[#22283a] rounded-2xl flex flex-col shadow-2xl overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
         {/* Header */}
         <div className="px-5 py-4 border-b border-[#1e2638] bg-[#0e121b] flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -684,5 +689,6 @@ export default function CalculatorSettingsModal({
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }

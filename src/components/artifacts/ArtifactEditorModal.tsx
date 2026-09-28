@@ -14,6 +14,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { ArtifactItem, ArtifactStatus } from '@/lib/types';
+import ModalPortal from '@/components/ui/ModalPortal';
 
 interface ArtifactEditorModalProps {
   artifact?: ArtifactItem | null;
@@ -157,11 +158,15 @@ export default function ArtifactEditorModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+    <ModalPortal isOpen={isOpen}>
       <div 
-        className="w-full max-w-6xl h-[94vh] sm:h-[90vh] bg-[#0c0f17] border border-[#22283a] rounded-xl flex flex-col shadow-2xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in"
+        onClick={onClose}
       >
+        <div 
+          className="w-full max-w-6xl h-[94vh] sm:h-[90vh] bg-[#0c0f17] border border-[#22283a] rounded-xl flex flex-col shadow-2xl overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
         {/* Modal Header */}
         <div className="px-4 sm:px-6 py-3.5 border-b border-[#1e2638] bg-[#0e121b] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -375,5 +380,6 @@ export default function ArtifactEditorModal({
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }

@@ -20,6 +20,7 @@ import { ArtifactItem, ArtifactStatus } from '@/lib/types';
 import ArtifactCard from '@/components/artifacts/ArtifactCard';
 import ArtifactSandbox from '@/components/artifacts/ArtifactSandbox';
 import ArtifactEditorModal from '@/components/artifacts/ArtifactEditorModal';
+import ModalPortal from '@/components/ui/ModalPortal';
 
 export default function ArtifactsPage() {
   const { 
@@ -263,21 +264,29 @@ export default function ArtifactsPage() {
 
       {/* Interactive Modal Viewer */}
       {activeArtifact && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-7xl h-[92vh] sm:h-[90vh] bg-[#0c0f17] border border-[#22283a] rounded-xl flex flex-col shadow-2xl overflow-hidden relative">
-            <ArtifactSandbox
-              artifact={activeArtifact}
-              onClose={() => setActiveArtifactId(null)}
-              onEdit={() => {
-                const target = activeArtifact;
-                setActiveArtifactId(null);
-                setEditingArtifact(target);
-                setIsEditorOpen(true);
-              }}
-              onTogglePromote={() => togglePromoteArtifact(activeArtifact.id)}
-            />
+        <ModalPortal isOpen={Boolean(activeArtifact)}>
+          <div 
+            className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in"
+            onClick={() => setActiveArtifactId(null)}
+          >
+            <div 
+              className="w-full max-w-7xl h-[92vh] sm:h-[90vh] bg-[#0c0f17] border border-[#22283a] rounded-xl flex flex-col shadow-2xl overflow-hidden relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ArtifactSandbox
+                artifact={activeArtifact}
+                onClose={() => setActiveArtifactId(null)}
+                onEdit={() => {
+                  const target = activeArtifact;
+                  setActiveArtifactId(null);
+                  setEditingArtifact(target);
+                  setIsEditorOpen(true);
+                }}
+                onTogglePromote={() => togglePromoteArtifact(activeArtifact.id)}
+              />
+            </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
 
       {/* Editor & Data Scrubber Modal */}

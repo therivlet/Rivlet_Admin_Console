@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { GarmentBOM, FabricBOMItem, TrimBOMItem } from '@/lib/types';
 import { bomPresets } from '@/lib/bomPresets';
+import ModalPortal from '@/components/ui/ModalPortal';
 
 interface BOMSpecifierModalProps {
   isOpen: boolean;
@@ -248,8 +249,15 @@ export default function BOMSpecifierModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="w-full max-w-5xl bg-[#090b12] border border-[#20273a] rounded-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
+    <ModalPortal isOpen={isOpen}>
+      <div 
+        className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in"
+        onClick={onClose}
+      >
+        <div 
+          className="w-full max-w-5xl bg-[#090b12] border border-[#20273a] rounded-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
         {/* Modal Header */}
         <div className="p-4 sm:p-5 border-b border-[#1c2336] bg-[#0e121d] flex items-center justify-between gap-3 sm:gap-4 flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
@@ -659,5 +667,6 @@ export default function BOMSpecifierModal({
         </div>
       </div>
     </div>
+  </ModalPortal>
   );
 }
