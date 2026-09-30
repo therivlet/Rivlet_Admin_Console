@@ -56,6 +56,16 @@ export default function WorkItemModal({ item, onClose }: WorkItemModalProps) {
 
   const possibleParents = workItems.filter((w) => w.id !== form.id);
 
+  // `form` is a local snapshot taken when the modal opened. Comments, though,
+  // can be added while the modal is open (handleAddComment writes straight to
+  // the store) — reading them from the live store instead of the stale local
+  // snapshot fixes two things: the discussion thread updating immediately
+  // after posting, and clicking Save no longer overwriting the store's
+  // current comment list with the older one captured at open-time (which
+  // would silently delete any comment posted since).
+  const liveItem = workItems.find((w) => w.id === form.id);
+  const liveComments = liveItem?.comments ?? form.comments;
+
   const handleSave = async () => {
     if (!form.title || form.title.trim().length < 3) {
       setError('Title is required (minimum 3 characters).');
@@ -68,6 +78,7 @@ export default function WorkItemModal({ item, onClose }: WorkItemModalProps) {
       ...form,
       title: form.title.trim(),
       tags: tagsInput.split(',').map((t) => t.trim()).filter(Boolean),
+      comments: liveComments,
       createdAt: form.createdAt || now,
       updatedAt: now,
     });
@@ -81,10 +92,21 @@ export default function WorkItemModal({ item, onClose }: WorkItemModalProps) {
     onClose();
   };
 
+  const [isPostingComment, setIsPostingComment] = useState(false);
+
   const handleAddComment = async () => {
-    if (!commentText.trim()) return;
-    await addWorkItemComment(form.id, commentText, user?.name || 'Rivlet Admin');
+    const text = commentText.trim();
+    if (!text || isPostingComment) return;
     setCommentText('');
+    setIsPostingComment(true);
+    try {
+      await addWorkItemComment(form.id, text, user?.name || 'Rivlet Admin');
+    } catch {
+      // Restore the draft so a failed post doesn't silently lose what was typed.
+      setCommentText(text);
+    } finally {
+      setIsPostingComment(false);
+    }
   };
 
   return (
@@ -231,8 +253,8 @@ export default function WorkItemModal({ item, onClose }: WorkItemModalProps) {
               <div className="pt-2 border-t border-[#161a26]">
                 <label className="text-[11px] text-[#94a3b8] block mb-2 flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Discussion</label>
                 <div className="space-y-2 max-h-40 overflow-y-auto mb-2">
-                  {form.comments.length === 0 && <p className="text-xs text-[#5f6c85]">No comments yet.</p>}
-                  {form.comments.map((c) => (
+                  {liveComments.length === 0 && <p className="text-xs text-[#5f6c85]">No comments yet.</p>}
+                  {liveComments.map((c) => (
                     <div key={c.id} className="bg-[#0e121b] border border-[#1c2438] rounded-lg p-2.5 text-xs">
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-semibold text-[#cbd5e1]">{c.author}</span>
@@ -243,10 +265,21 @@ export default function WorkItemModal({ item, onClose }: WorkItemModalProps) {
                   ))}
                 </div>
                 <div className="flex items-center gap-2">
-                  <input value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
+                  <input
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAddComment(); } }}
                     placeholder="Add a comment..."
-                    className="flex-1 px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-xs text-white focus:outline-none focus:border-[#cda052]/50" />
-                  <button onClick={handleAddComment} title="Post comment" aria-label="Post comment" className="p-2 rounded-lg bg-[#141724] text-[#cda052] hover:bg-[#1a1f2e]">
+                    disabled={isPostingComment}
+                    className="flex-1 px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-xs text-white focus:outline-none focus:border-[#cda052]/50 disabled:opacity-60"
+                  />
+                  <button
+                    onClick={handleAddComment}
+                    disabled={isPostingComment || !commentText.trim()}
+                    title="Post comment"
+                    aria-label="Post comment"
+                    className="p-2 rounded-lg bg-[#141724] text-[#cda052] hover:bg-[#1a1f2e] disabled:opacity-50"
+                  >
                     <Send className="w-3.5 h-3.5" />
                   </button>
                 </div>
