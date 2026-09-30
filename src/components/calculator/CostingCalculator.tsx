@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Calculator, 
   Sparkles, 
@@ -23,7 +23,8 @@ import {
   Plus,
   Settings,
   Lock,
-  Unlock
+  Unlock,
+  Copy
 } from 'lucide-react';
 import { PricingInputs, CalculationResult, ScenarioKey, CostingSheet, GarmentBOM, CalculatorDefaults } from '@/lib/types';
 import { 
@@ -49,6 +50,15 @@ interface CostingCalculatorProps {
   onNewCalculation?: () => void;
 }
 
+function makeBlankProduct(overrides: Partial<Pick<PricingInputs, 'productName' | 'productCode' | 'mrp' | 'targetMargin'>> = {}) {
+  return {
+    productName: '',
+    productCode: `RIV-${Math.floor(1000 + Math.random() * 9000)}`,
+    mrp: 2999,
+    ...overrides,
+  };
+}
+
 export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCalculation }: CostingCalculatorProps) {
   const { saveCostingSheet } = useAdminStore();
   const { user } = useAuth();
@@ -61,11 +71,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
   const [currentSheetId, setCurrentSheetId] = useState<string | null>(initialSheet?.id || null);
   const [inputs, setInputs] = useState<PricingInputs>(() => {
     if (initialSheet?.inputs) return initialSheet.inputs;
-    return mergeDefaultsIntoInputs({
-      productName: '',
-      productCode: `RIV-${Math.floor(1000 + Math.random() * 9000)}`,
-      mrp: 2999,
-    }, user?.metadata?.calculator_defaults || getStoredCalculatorDefaults());
+    return mergeDefaultsIntoInputs(makeBlankProduct(), user?.metadata?.calculator_defaults || getStoredCalculatorDefaults());
   });
 
   const [activeScenario, setActiveScenario] = useState<ScenarioKey>('mid');
@@ -84,35 +90,50 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
     }
   }, [user]);
 
+  // Read the latest activeDefaults without making it a dependency below —
+  // applying newly-saved brand defaults to the CURRENT sheet is already
+  // handled non-destructively by onApplyDefaultsToCurrent (Settings modal).
+  // This effect must only reset the form on a genuine initialSheet change,
+  // not every time activeDefaults changes, or opening Settings mid-edit and
+  // saving would silently wipe the product name/code/MRP the user just typed.
+  const activeDefaultsRef = useRef(activeDefaults);
+  useEffect(() => { activeDefaultsRef.current = activeDefaults; }, [activeDefaults]);
+
   // Sync inputs when initialSheet prop changes from parent
   useEffect(() => {
     if (initialSheet) {
       setInputs(initialSheet.inputs);
       setCurrentSheetId(initialSheet.id);
     } else {
-      setInputs(mergeDefaultsIntoInputs({
-        productName: '',
-        productCode: `RIV-${Math.floor(1000 + Math.random() * 9000)}`,
-        mrp: 2999,
-      }, activeDefaults));
+      setInputs(mergeDefaultsIntoInputs(makeBlankProduct(), activeDefaultsRef.current));
       setCurrentSheetId(null);
     }
-  }, [initialSheet, activeDefaults]);
+  }, [initialSheet]);
 
 
   const handleStartNewCalculation = () => {
     setCurrentSheetId(null);
     setValidationAttempted(false);
-    setInputs(mergeDefaultsIntoInputs({
-      productName: '',
-      productCode: `RIV-${Math.floor(1000 + Math.random() * 9000)}`,
-      mrp: 2999,
-      targetMargin: activeDefaults.targetMargin ?? 25,
-    }, activeDefaults));
+    setInputs(mergeDefaultsIntoInputs(
+      makeBlankProduct({ targetMargin: activeDefaults.targetMargin ?? 25 }),
+      activeDefaults
+    ));
     setActiveScenario('mid');
     setNewCalcAlert(true);
     setTimeout(() => setNewCalcAlert(false), 3500);
     if (onNewCalculation) onNewCalculation();
+  };
+
+  const handleDuplicateCalculation = () => {
+    setCurrentSheetId(null);
+    setValidationAttempted(false);
+    setInputs(prev => ({
+      ...prev,
+      productName: prev.productName ? `${prev.productName} (Copy)` : '',
+      productCode: `RIV-${Math.floor(1000 + Math.random() * 9000)}`,
+    }));
+    setNewCalcAlert(true);
+    setTimeout(() => setNewCalcAlert(false), 3500);
   };
 
   // Accordion section states
@@ -276,8 +297,10 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
 
         <div className="flex items-center gap-2.5 flex-wrap">
           {/* Currency Toggle */}
-          <div className="flex items-center bg-[#171b28] p-1 rounded-lg border border-[#252c40]">
+          <div className="flex items-center bg-[#171b28] p-1 rounded-lg border border-[#252c40]" role="tablist" aria-label="Pricing currency">
             <button
+              role="tab"
+              aria-selected={curr === '₹'}
               onClick={() => updateField('currency', '₹')}
               title="Set active pricing currency to Indian Rupee (₹)"
               className={`px-2.5 py-1 text-xs rounded font-semibold transition-colors ${
@@ -287,7 +310,20 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
               ₹ INR
             </button>
             <button
-              onClick={() => updateField('currency', '$')}
+              role="tab"
+              aria-selected={curr === '$'}
+              onClick={() => {
+                // The ₹2,500 Indian retail GST bracket is meaningless against a USD
+                // price, and export sales are typically zero-rated — force manual
+                // mode (defaulting to 0%) so the displayed rule and the actual
+                // computed GST rate never contradict each other.
+                setInputs(prev => ({
+                  ...prev,
+                  currency: '$',
+                  autoOutputTax: false,
+                  manualOutputGst: prev.autoOutputTax ? 0 : prev.manualOutputGst,
+                }));
+              }}
               title="Set active pricing currency to US Dollar ($)"
               className={`px-2.5 py-1 text-xs rounded font-semibold transition-colors ${
                 curr === '$' ? 'bg-[#cda052] text-black' : 'text-[#848d9f] hover:text-white'
@@ -333,6 +369,16 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
           >
             <Settings className="w-3.5 h-3.5" />
             <span>Settings</span>
+          </button>
+
+          {/* Duplicate current calculation — useful for costing fabric/GSM variants of the same style */}
+          <button
+            onClick={handleDuplicateCalculation}
+            title="Duplicate this calculation to try a cost variant (e.g. different fabric or GSM)"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#161a26] border border-[#263147] text-[#8e97ae] hover:text-white hover:border-[#cda052]/50 font-semibold text-xs transition-all shadow-sm"
+          >
+            <Copy className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Duplicate</span>
           </button>
 
           {/* New Calculation Button */}
@@ -402,10 +448,12 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
             title="Conservative / Expected / Upside"
             text="Three forecasts, not one guess. Conservative is your worst-realistic case, Expected is your genuine best estimate, Upside is a strong-but-plausible outcome. Click Scenario Guide above for field-by-field guidance."
           />
-          <div className="flex items-center bg-[#090b12] p-1 rounded-lg border border-[#20273a]">
+          <div className="flex items-center bg-[#090b12] p-1 rounded-lg border border-[#20273a]" role="tablist" aria-label="Active scenario">
             {(['low', 'mid', 'high'] as ScenarioKey[]).map(sc => (
               <button
                 key={sc}
+                role="tab"
+                aria-selected={activeScenario === sc}
                 onClick={() => setActiveScenario(sc)}
                 title={sc === 'low' ? 'Conservative Scenario (Low volume, higher CAC)' : sc === 'mid' ? 'Expected Baseline Scenario' : 'Upside Scenario (High volume, optimized scale)'}
                 className={`px-3 py-1.5 text-xs rounded font-semibold transition-all ${
@@ -639,31 +687,41 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
           <div className="p-3 bg-[#090b12] border border-[#1b2132] rounded-lg space-y-2 text-xs">
             <div className="flex items-center justify-between">
               <span className="text-[#8e97ae] font-semibold">Output GST Rule:</span>
-              <div className="flex items-center bg-[#171b28] p-0.5 rounded border border-[#252c40]">
-                <button
-                  type="button"
-                  onClick={() => updateField('autoOutputTax', true)}
-                  title="Automatically apply 5% GST if price ≤ ₹2,500, or 18% if > ₹2,500 under Indian tax code"
-                  className={`px-2 py-0.5 text-[11px] rounded transition-colors ${
-                    inputs.autoOutputTax ? 'bg-[#cda052] text-black font-bold' : 'text-[#848d9f]'
-                  }`}
-                >
-                  Automatic (Indian Rule)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => updateField('autoOutputTax', false)}
-                  title="Override automatic tax bracket with custom GST percentage"
-                  className={`px-2 py-0.5 text-[11px] rounded transition-colors ${
-                    !inputs.autoOutputTax ? 'bg-[#cda052] text-black font-bold' : 'text-[#848d9f]'
-                  }`}
-                >
-                  Manual %
-                </button>
-              </div>
+              {curr === '$' ? (
+                <span className="text-[10px] px-2 py-0.5 rounded bg-amber-950/50 text-amber-300 border border-amber-800/50 font-semibold">
+                  Manual only — USD pricing
+                </span>
+              ) : (
+                <div className="flex items-center bg-[#171b28] p-0.5 rounded border border-[#252c40]" role="tablist" aria-label="Output GST rule mode">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={inputs.autoOutputTax}
+                    onClick={() => updateField('autoOutputTax', true)}
+                    title="Automatically apply 5% GST if price ≤ ₹2,500, or 18% if > ₹2,500 under Indian tax code"
+                    className={`px-2 py-0.5 text-[11px] rounded transition-colors ${
+                      inputs.autoOutputTax ? 'bg-[#cda052] text-black font-bold' : 'text-[#848d9f]'
+                    }`}
+                  >
+                    Automatic (Indian Rule)
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={!inputs.autoOutputTax}
+                    onClick={() => updateField('autoOutputTax', false)}
+                    title="Override automatic tax bracket with custom GST percentage"
+                    className={`px-2 py-0.5 text-[11px] rounded transition-colors ${
+                      !inputs.autoOutputTax ? 'bg-[#cda052] text-black font-bold' : 'text-[#848d9f]'
+                    }`}
+                  >
+                    Manual %
+                  </button>
+                </div>
+              )}
             </div>
 
-            {!inputs.autoOutputTax && (
+            {(curr === '$' || !inputs.autoOutputTax) && (
               <div className="flex items-center gap-2 pt-1">
                 <span className="text-[11px] text-[#717a90]">Manual GST Rate:</span>
                 <input
@@ -677,7 +735,12 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
             )}
 
             <div className="text-[11px] text-[#636c82] leading-relaxed">
-              {inputs.autoOutputTax ? (
+              {curr === '$' ? (
+                <span>
+                  Export invoices in USD are typically <strong>zero-rated under GST</strong> — the ₹2,500 Indian retail
+                  threshold doesn't apply here. Set a manual rate only if a specific duty/tax applies to this shipment.
+                </span>
+              ) : inputs.autoOutputTax ? (
                 <span>
                   Automatic rule: customer price ≤ ₹2,500 = <strong>5% GST</strong>; above ₹2,500 = <strong>18% GST</strong>. Active rate: <strong>{currentResult.outputRate}%</strong>.
                 </span>
@@ -1218,7 +1281,9 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
                 type="number"
                 step="0.1"
                 value={inputs.gateway}
-                onChange={(e) => updateField('gateway', Number(e.target.value))}
+                min="0"
+                max="100"
+                onChange={(e) => updateField('gateway', Math.max(0, Math.min(100, Number(e.target.value))))}
                 className="w-20 bg-[#090b12] px-2.5 py-1.5 rounded border border-[#202638] text-white text-right"
               />
             </div>
@@ -1229,7 +1294,9 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
                 type="number"
                 step="0.1"
                 value={inputs.shopifyFee}
-                onChange={(e) => updateField('shopifyFee', Number(e.target.value))}
+                min="0"
+                max="100"
+                onChange={(e) => updateField('shopifyFee', Math.max(0, Math.min(100, Number(e.target.value))))}
                 className="w-20 bg-[#090b12] px-2.5 py-1.5 rounded border border-[#202638] text-white text-right"
               />
             </div>
@@ -1240,7 +1307,9 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
                 type="number"
                 step="0.5"
                 value={inputs.affiliate}
-                onChange={(e) => updateField('affiliate', Number(e.target.value))}
+                min="0"
+                max="100"
+                onChange={(e) => updateField('affiliate', Math.max(0, Math.min(100, Number(e.target.value))))}
                 className="w-20 bg-[#090b12] px-2.5 py-1.5 rounded border border-[#202638] text-white text-right"
               />
             </div>
@@ -1251,7 +1320,9 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
                 type="number"
                 step="0.5"
                 value={inputs.marketplace}
-                onChange={(e) => updateField('marketplace', Number(e.target.value))}
+                min="0"
+                max="100"
+                onChange={(e) => updateField('marketplace', Math.max(0, Math.min(100, Number(e.target.value))))}
                 className="w-20 bg-[#090b12] px-2.5 py-1.5 rounded border border-[#202638] text-white text-right"
               />
             </div>
@@ -1262,7 +1333,9 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
                 type="number"
                 step="0.5"
                 value={inputs.marketAds}
-                onChange={(e) => updateField('marketAds', Number(e.target.value))}
+                min="0"
+                max="100"
+                onChange={(e) => updateField('marketAds', Math.max(0, Math.min(100, Number(e.target.value))))}
                 className="w-20 bg-[#090b12] px-2.5 py-1.5 rounded border border-[#202638] text-white text-right"
               />
             </div>

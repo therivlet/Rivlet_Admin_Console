@@ -25,23 +25,33 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import RivletLogo from '@/components/brand/RivletLogo';
 import Link from 'next/link';
 
+// GST state codes for the leading 2 digits of a GSTIN (covers major states;
+// falls back to just showing the numeric code for anything not listed).
+const GST_STATE_CODES: Record<string, string> = {
+  '06': 'Haryana', '07': 'Delhi', '09': 'Uttar Pradesh', '19': 'West Bengal',
+  '21': 'Odisha', '24': 'Gujarat', '27': 'Maharashtra', '29': 'Karnataka',
+  '32': 'Kerala', '33': 'Tamil Nadu', '36': 'Telangana', '37': 'Andhra Pradesh',
+};
+
 export default function ProfilePage() {
   const { user, signOut, updateProfile } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'profile' | 'brand' | 'security' | 'preferences'>('profile');
 
-  // Personal Profile State
-  const [fullName, setFullName] = useState(user?.metadata?.full_name || user?.name || 'Rivlet Executive');
-  const [email] = useState(user?.email || 'admin@therivlet.com');
-  const [roleTitle, setRoleTitle] = useState(user?.metadata?.role_title || 'Founder & Creative Director');
+  // Personal Profile State — real values or empty, never a fabricated
+  // placeholder that could get silently saved to Supabase as if the user
+  // had entered it. Empty fields show hint text via the input's placeholder.
+  const [fullName, setFullName] = useState(user?.metadata?.full_name || user?.name || '');
+  const [email] = useState(user?.email || '');
+  const [roleTitle, setRoleTitle] = useState(user?.metadata?.role_title || '');
   const [phoneNumber, setPhoneNumber] = useState(user?.metadata?.phone_number || '');
-  const [department, setDepartment] = useState(user?.metadata?.department || 'Executive & Merchandising');
+  const [department, setDepartment] = useState(user?.metadata?.department || '');
 
   // Brand Entity State
   const [legalEntity, setLegalEntity] = useState(user?.metadata?.legal_entity || 'Rivlet');
   const [gstin, setGstin] = useState(user?.metadata?.gstin || '');
-  const [primaryHub, setPrimaryHub] = useState(user?.metadata?.primary_hub || 'Tirupur Apparel Complex, Tamil Nadu');
-  const [warehouseLocation, setWarehouseLocation] = useState(user?.metadata?.warehouse_location || 'Bangalore Logistics Hub, Karnataka');
+  const [primaryHub, setPrimaryHub] = useState(user?.metadata?.primary_hub || '');
+  const [warehouseLocation, setWarehouseLocation] = useState(user?.metadata?.warehouse_location || '');
   const [defaultCurrency, setDefaultCurrency] = useState(user?.metadata?.default_currency || '₹');
   const [defaultTargetMargin, setDefaultTargetMargin] = useState(user?.metadata?.default_target_margin ?? 25);
 
@@ -72,8 +82,11 @@ export default function ProfilePage() {
   const [savedAlert, setSavedAlert] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  // Validate form fields
-  const validateForm = (): boolean => {
+  // Field validation, scoped per tab — each tab has its own Save button, and
+  // validating every field across every tab on any single Save previously
+  // meant a user editing Profile could be blocked by an error on a Brand
+  // field they hadn't even looked at yet.
+  const validateProfileFields = (): Record<string, string> => {
     const errors: Record<string, string> = {};
 
     if (!fullName.trim() || fullName.trim().length < 2) {
@@ -91,6 +104,12 @@ export default function ProfilePage() {
       }
     }
 
+    return errors;
+  };
+
+  const validateBrandFields = (): Record<string, string> => {
+    const errors: Record<string, string> = {};
+
     if (!legalEntity.trim() || legalEntity.trim().length < 2) {
       errors.legalEntity = 'Registered legal entity must be at least 2 characters.';
     }
@@ -103,11 +122,13 @@ export default function ProfilePage() {
       }
     }
 
-    if (!primaryHub.trim() || primaryHub.trim().length < 2) {
+    // Production hub / warehouse are informational, not required — a
+    // pre-revenue or home-based operation may not have either yet.
+    if (primaryHub.trim() && primaryHub.trim().length < 2) {
       errors.primaryHub = 'Production hub must be at least 2 characters.';
     }
 
-    if (!warehouseLocation.trim() || warehouseLocation.trim().length < 2) {
+    if (warehouseLocation.trim() && warehouseLocation.trim().length < 2) {
       errors.warehouseLocation = 'Warehouse location must be at least 2 characters.';
     }
 
@@ -115,13 +136,14 @@ export default function ProfilePage() {
       errors.defaultTargetMargin = 'Target margin must be between 1% and 90%.';
     }
 
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    return errors;
   };
 
   // Save changes directly to Supabase cloud
-  const handleSaveProfile = async () => {
-    if (!validateForm()) {
+  const handleSaveProfile = async (scope: 'profile' | 'brand') => {
+    const errors = scope === 'profile' ? validateProfileFields() : validateBrandFields();
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) {
       return;
     }
 
@@ -151,8 +173,8 @@ export default function ProfilePage() {
   // Change password handler
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPassword || newPassword.length < 6) {
-      setPasswordStatusMsg({ type: 'error', text: 'Password must be at least 6 characters long.' });
+    if (!newPassword || newPassword.length < 8) {
+      setPasswordStatusMsg({ type: 'error', text: 'Password must be at least 8 characters long.' });
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -227,9 +249,15 @@ export default function ProfilePage() {
               <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-[rgba(205,160,82,0.15)] text-[#e6c875] border border-[rgba(205,160,82,0.35)] font-semibold">
                 Super Admin
               </span>
-              <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 font-semibold flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3 text-emerald-400" /> Supabase Live
-              </span>
+              {isSupabaseConfigured ? (
+                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 font-semibold flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3 text-emerald-400" /> Supabase Live
+                </span>
+              ) : (
+                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-[#182030] text-[#94a3b8] border border-[#263148] font-semibold flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3" /> Local / Offline
+                </span>
+              )}
             </div>
             <p className="text-xs text-[#cbd5e1] flex items-center gap-1.5 font-medium">
               <Mail className="w-3.5 h-3.5 text-[#cda052]" />
@@ -245,11 +273,15 @@ export default function ProfilePage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 border-t md:border-t-0 md:border-l border-[#1e2638] pt-4 md:pt-0 md:pl-6 text-xs">
           <div>
             <span className="text-[10px] text-[#94a3b8] block uppercase font-mono tracking-wider font-semibold">PRIMARY ENTITY</span>
-            <span className="font-semibold text-white font-mono text-sm">Rivlet Apparel</span>
+            <span className="font-semibold text-white font-mono text-sm">{legalEntity || 'Not set'}</span>
           </div>
           <div>
             <span className="text-[10px] text-[#94a3b8] block uppercase font-mono tracking-wider font-semibold">GST JURISDICTION</span>
-            <span className="font-semibold text-[#e6c875] font-mono text-sm">Tamil Nadu (33)</span>
+            <span className="font-semibold text-[#e6c875] font-mono text-sm">
+              {gstin.trim().length >= 2
+                ? `${GST_STATE_CODES[gstin.trim().slice(0, 2)] || 'State'} (${gstin.trim().slice(0, 2)})`
+                : 'Not set'}
+            </span>
           </div>
           <div>
             <span className="text-[10px] text-[#94a3b8] block uppercase font-mono tracking-wider font-semibold">AUTH SESSION</span>
@@ -346,6 +378,7 @@ export default function ProfilePage() {
               <input
                 type="text"
                 value={fullName}
+                placeholder="e.g. Harichandru"
                 onChange={(e) => {
                   setFullName(e.target.value);
                   if (formErrors.fullName) setFormErrors(prev => { const n = {...prev}; delete n.fullName; return n; });
@@ -375,6 +408,7 @@ export default function ProfilePage() {
               <input
                 type="text"
                 value={roleTitle}
+                placeholder="e.g. Founder & Creative Director"
                 onChange={(e) => {
                   setRoleTitle(e.target.value);
                   if (formErrors.roleTitle) setFormErrors(prev => { const n = {...prev}; delete n.roleTitle; return n; });
@@ -395,6 +429,7 @@ export default function ProfilePage() {
                 onChange={(e) => setDepartment(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-lg bg-[#07090e] border border-[#263147] text-white outline-none focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40 transition-colors"
               >
+                <option value="">Select department</option>
                 <option value="Executive & Merchandising">Executive & Merchandising</option>
                 <option value="Product Design & Development">Product Design & Development</option>
                 <option value="Sourcing & Supply Chain">Sourcing & Supply Chain</option>
@@ -434,7 +469,7 @@ export default function ProfilePage() {
 
           <div className="pt-4 border-t border-[#1e2638] flex justify-end">
             <button
-              onClick={handleSaveProfile}
+              onClick={() => handleSaveProfile('profile')}
               disabled={isSaving}
               title="Save personal profile details to Supabase Cloud"
               className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow transition-all active:scale-[0.98] disabled:opacity-60"
@@ -495,10 +530,11 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">Primary Production Hub / Mill Cluster *</label>
+              <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">Primary Production Hub / Mill Cluster</label>
               <input
                 type="text"
                 value={primaryHub}
+                placeholder="e.g. Tirupur, Tamil Nadu"
                 onChange={(e) => {
                   setPrimaryHub(e.target.value);
                   if (formErrors.primaryHub) setFormErrors(prev => { const n = {...prev}; delete n.primaryHub; return n; });
@@ -513,10 +549,11 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">Central Warehouse & Fulfillment Facility *</label>
+              <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">Central Warehouse & Fulfillment Facility</label>
               <input
                 type="text"
                 value={warehouseLocation}
+                placeholder="Not yet active — leave blank until fulfillment starts"
                 onChange={(e) => {
                   setWarehouseLocation(e.target.value);
                   if (formErrors.warehouseLocation) setFormErrors(prev => { const n = {...prev}; delete n.warehouseLocation; return n; });
@@ -566,7 +603,7 @@ export default function ProfilePage() {
 
           <div className="pt-4 border-t border-[#1e2638] flex justify-end">
             <button
-              onClick={handleSaveProfile}
+              onClick={() => handleSaveProfile('brand')}
               disabled={isSaving}
               title="Save brand entity specifications to Supabase Cloud"
               className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow transition-all active:scale-[0.98] disabled:opacity-60"
@@ -597,15 +634,21 @@ export default function ProfilePage() {
 
             <div className="space-y-3.5 text-xs">
               <div>
-                <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">New Password (min 6 characters)</label>
+                <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">New Password (min 8 characters)</label>
                 <input
                   type="password"
                   required
+                  minLength={8}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="••••••••"
                   className="w-full px-3.5 py-2.5 rounded-lg bg-[#05070a] border border-[#263147] text-white outline-none focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40 transition-colors"
                 />
+                {newPassword.length > 0 && (
+                  <p className={`text-[10px] mt-1 font-medium ${newPassword.length >= 8 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                    {newPassword.length >= 8 ? 'Meets minimum length.' : `${8 - newPassword.length} more character${8 - newPassword.length === 1 ? '' : 's'} needed.`}
+                  </p>
+                )}
               </div>
 
               <div>
