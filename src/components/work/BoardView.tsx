@@ -35,12 +35,12 @@ function currentSprintId(sprints: Sprint[]): string | undefined {
 }
 
 // Default is unassigned (not Dasani)
-function emptyTask(sprintId?: string, parentId?: string, state?: WorkItemState): Omit<WorkItem, 'createdAt' | 'updatedAt'> {
-  return { id: `wi-${Date.now()}`, type: 'Task', title: '', state: state || 'New', priority: 2, tags: [], sprintId, parentId, assignee: undefined, comments: [] };
+function emptyTask(sprintId?: string, parentId?: string, state?: WorkItemState, nextOrder?: number): Omit<WorkItem, 'createdAt' | 'updatedAt'> {
+  return { id: `wi-${Date.now()}`, type: 'Task', title: '', state: state || 'New', priority: 2, tags: [], sprintId, parentId, order: nextOrder || Date.now(), assignee: undefined, comments: [] };
 }
 
-function emptyStory(sprintId?: string): Omit<WorkItem, 'createdAt' | 'updatedAt'> {
-  return { id: `wi-${Date.now()}`, type: 'User Story', title: '', state: 'New', priority: 2, tags: [], sprintId, assignee: undefined, comments: [] };
+function emptyStory(sprintId?: string, nextOrder?: number): Omit<WorkItem, 'createdAt' | 'updatedAt'> {
+  return { id: `wi-${Date.now()}`, type: 'User Story', title: '', state: 'New', priority: 2, tags: [], sprintId, order: nextOrder || Date.now(), assignee: undefined, comments: [] };
 }
 
 interface BoardViewProps {
@@ -104,11 +104,22 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
     if (!target) return;
     const nextParentId = rowId === UNPARENTED ? undefined : rowId;
     if (target.state === state && target.parentId === nextParentId) return;
+
+    const destTasks = workItems.filter(
+      (w) =>
+        w.sprintId === activeSprintId &&
+        w.type === 'Task' &&
+        (rowId === UNPARENTED ? !w.parentId : w.parentId === rowId) &&
+        w.state === state
+    );
+    const maxOrder = destTasks.reduce((max, t) => Math.max(max, t.order ?? 0), 0);
+
     await saveWorkItem({
       ...target,
       state,
       parentId: nextParentId,
       sprintId: activeSprintId,
+      order: maxOrder + 1,
       completedDate: (state === 'Closed' || state === 'Resolved') ? (target.completedDate || new Date().toISOString().slice(0, 10)) : target.completedDate,
     });
   };
@@ -127,7 +138,7 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
     updatedRows[idx] = target;
     updatedRows[targetIdx] = current;
 
-    // Assign sequential order indices
+    // Assign sequential order indices (1, 2, 3...)
     const updatedMap = new Map<string, number>();
     updatedRows.forEach((r, i) => updatedMap.set(r.id, i + 1));
 
@@ -155,6 +166,7 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
     updatedCell[idx] = target;
     updatedCell[targetIdx] = current;
 
+    // Assign sequential order indices (1, 2, 3...) for this cell
     const updatedMap = new Map<string, number>();
     updatedCell.forEach((t, i) => updatedMap.set(t.id, i + 1));
 
@@ -211,7 +223,7 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
 
         <div className="flex items-center flex-wrap gap-2.5 flex-shrink-0">
           <button
-            onClick={() => setModalItem(emptyStory(activeSprintId))}
+            onClick={() => setModalItem(emptyStory(activeSprintId, rows.length + 1))}
             disabled={!activeSprintId}
             title="Add a User Story to this sprint"
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#141824] border border-[#263148] text-[#cbd5e1] text-xs font-semibold hover:text-white transition-all disabled:opacity-50"
@@ -219,7 +231,7 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
             <Plus className="w-3.5 h-3.5" /> Story
           </button>
           <button
-            onClick={() => setModalItem(emptyTask(activeSprintId))}
+            onClick={() => setModalItem(emptyTask(activeSprintId, undefined, 'New', tasksInSprint.length + 1))}
             disabled={!activeSprintId}
             title="Add a standalone task to this sprint"
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-xs font-bold hover:shadow-glow transition-all disabled:opacity-50"
@@ -320,6 +332,8 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
               const row = rowId === UNPARENTED ? null : rows.find((r) => r.id === rowId)!;
               const rowTasks = tasksFor(rowId);
               const doneCount = rowTasks.filter((t) => t.state === 'Closed' || t.state === 'Resolved').length;
+              const storyIdx = row ? rows.findIndex((r) => r.id === row.id) : -1;
+              const storyNumber = storyIdx + 1;
 
               return (
                 <React.Fragment key={rowId}>
@@ -338,6 +352,9 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                           {/* Top controls: type, priority, and Move Up / Down buttons */}
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-[#cda052]/20 text-[#cda052] border border-[#cda052]/40 shadow-sm flex items-center gap-1 flex-shrink-0">
+                                Story #{storyNumber}
+                              </span>
                               <span className={`text-[9px] px-1.5 py-0.5 rounded border font-semibold ${TYPE_COLOR[row.type]}`}>
                                 {row.type}
                               </span>
@@ -358,16 +375,16 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                             >
                               <button
                                 onClick={() => handleMoveStory(row.id, 'up')}
-                                disabled={rowIdx === 0}
-                                title="Move story up"
+                                disabled={storyIdx === 0}
+                                title={`Move Story #${storyNumber} Up`}
                                 className="p-1 rounded text-[#7c869d] hover:text-white hover:bg-[#161d2d] disabled:opacity-30 disabled:hover:bg-transparent"
                               >
                                 <ChevronUp className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => handleMoveStory(row.id, 'down')}
-                                disabled={rowIdx === rows.length - 1}
-                                title="Move story down"
+                                disabled={storyIdx === rows.length - 1}
+                                title={`Move Story #${storyNumber} Down`}
                                 className="p-1 rounded text-[#7c869d] hover:text-white hover:bg-[#161d2d] disabled:opacity-30 disabled:hover:bg-transparent"
                               >
                                 <ChevronDown className="w-3.5 h-3.5" />
@@ -375,7 +392,10 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                             </div>
                           </div>
 
-                          <p className="text-xs font-bold text-white leading-snug">{row.title}</p>
+                          <p className="text-xs font-bold text-white leading-snug flex items-start gap-1.5">
+                            <span className="text-[#cda052] font-mono font-bold text-xs flex-shrink-0">#{storyNumber}</span>
+                            <span>{row.title}</span>
+                          </p>
 
                           {/* Extra Story Details on Board */}
                           <div className="flex items-center gap-1 flex-wrap pt-1">
@@ -434,6 +454,7 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                         className="rounded-xl border border-[#161a26] bg-[#07090e] p-1.5 space-y-1.5 min-h-[70px]"
                       >
                         {cellTasks.map((task, taskIdx) => {
+                          const taskNumber = taskIdx + 1;
                           const linkedVendor = task.linkedVendorId ? vendors.find((v) => v.id === task.linkedVendorId) : undefined;
 
                           return (
@@ -449,7 +470,10 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                             >
                               {/* Top Task Header: Priority flag, Type, Points & Move Up/Down buttons */}
                               <div className="flex items-center justify-between mb-1.5">
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1 flex-wrap">
+                                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#cda052]/20 text-[#cda052] border border-[#cda052]/40 shadow-sm flex items-center gap-0.5 flex-shrink-0">
+                                    Task #{taskNumber}
+                                  </span>
                                   <span className={`text-[8px] px-1 py-0.2 rounded border font-semibold ${TYPE_COLOR[task.type]}`}>
                                     {task.type}
                                   </span>
@@ -471,7 +495,7 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                                   <button
                                     onClick={() => handleMoveTask(task.id, 'up', cellTasks)}
                                     disabled={taskIdx === 0}
-                                    title="Move task up"
+                                    title={`Move Task #${taskNumber} Up`}
                                     className="p-0.5 rounded text-[#64748b] hover:text-white hover:bg-[#161d2d] disabled:opacity-20"
                                   >
                                     <ChevronUp className="w-3 h-3" />
@@ -479,7 +503,7 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                                   <button
                                     onClick={() => handleMoveTask(task.id, 'down', cellTasks)}
                                     disabled={taskIdx === cellTasks.length - 1}
-                                    title="Move task down"
+                                    title={`Move Task #${taskNumber} Down`}
                                     className="p-0.5 rounded text-[#64748b] hover:text-white hover:bg-[#161d2d] disabled:opacity-20"
                                   >
                                     <ChevronDown className="w-3 h-3" />
@@ -487,7 +511,10 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                                 </div>
                               </div>
 
-                              <p className="text-[11px] font-medium text-white leading-snug">{task.title}</p>
+                              <p className="text-[11px] font-medium text-white leading-snug flex items-start gap-1">
+                                <span className="text-[#cda052] font-mono font-bold text-[10px] flex-shrink-0">#{taskNumber}</span>
+                                <span>{task.title}</span>
+                              </p>
 
                               {/* Task Metadata: Manufacturer & Operation */}
                               {linkedVendor && (
@@ -506,7 +533,10 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                                 <span className="flex items-center gap-0.5 truncate">
                                   <User className="w-2.5 h-2.5" /> {task.assignee || 'Unassigned'}
                                 </span>
-                                <span className="text-[8px] font-mono text-[#54627a]">{task.id.slice(-4)}</span>
+                                <div className="flex items-center gap-1 font-mono text-[8px] text-[#54627a]">
+                                  {row && <span className="text-[#cda052]/70 font-semibold">S{storyNumber}</span>}
+                                  <span>{task.id.slice(-4)}</span>
+                                </div>
                               </div>
                             </div>
                           );
@@ -514,7 +544,7 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
 
                         {col === 'New' && (
                           <button
-                            onClick={() => setModalItem(emptyTask(activeSprintId, rowId === UNPARENTED ? undefined : rowId, col))}
+                            onClick={() => setModalItem(emptyTask(activeSprintId, rowId === UNPARENTED ? undefined : rowId, col, cellTasks.length + 1))}
                             title="Add task here"
                             className="w-full text-[10px] text-[#5f6c85] hover:text-[#cda052] py-1 rounded border border-dashed border-[#1f2638] hover:border-[#cda052]/40 transition-colors"
                           >

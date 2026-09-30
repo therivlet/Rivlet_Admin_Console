@@ -297,7 +297,7 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
             type: 'User Story',
             priority: 2,
             points: 3,
-            assignee: 'Dasani',
+            assignee: undefined,
             tasks: [],
           };
           continue;
@@ -310,7 +310,7 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
             type: 'User Story',
             priority: 2,
             points: 3,
-            assignee: 'Dasani',
+            assignee: undefined,
             tasks: [],
           };
           continue;
@@ -334,7 +334,7 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
               title: content,
               priority: 2,
               points: 1,
-              assignee: currentStory.assignee || 'Dasani',
+              assignee: currentStory.assignee || undefined,
             };
             continue;
           }
@@ -346,7 +346,7 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
               const val = line.slice(colonIdx + 1).replace(/^[\s"']+|[\s"']+$/g, '');
               if (key.includes('priority')) currentTask.priority = resolvePriority(val);
               if (key.includes('point')) currentTask.points = Number(val) || 1;
-              if (key.includes('assignee')) currentTask.assignee = val || 'Dasani';
+              if (key.includes('assignee')) currentTask.assignee = val.toLowerCase() === 'unassigned' ? undefined : (val || undefined);
             }
             continue;
           }
@@ -367,7 +367,7 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
           } else if (key === 'points' || key === 'story_points' || key === 'new priority points') {
             currentStory.points = Number(val) || 3;
           } else if (key === 'assignee' || key === 'assigned or unassigned') {
-            currentStory.assignee = val || 'Dasani';
+            currentStory.assignee = val.toLowerCase() === 'unassigned' ? undefined : (val || undefined);
           } else if (key === 'sprint' || key === 'sprints') {
             currentStory.sprintName = val;
             currentStory.sprintId = resolveSprintId(val);
@@ -557,7 +557,7 @@ Format:
               <h2 className="text-lg sm:text-xl font-bold text-white">Bulk Creation & AI Importer</h2>
             </div>
             <p className="text-xs sm:text-sm text-[#94a3b8] max-w-2xl">
-              Paste structured story & task data generated with your AI tools (Claude, ChatGPT, Gemini). The importer automatically creates both the User Stories and their corresponding child Tasks with Dasani assigned.
+              Paste structured story & task data generated with your AI tools (Claude, ChatGPT, Gemini). The importer automatically creates both the User Stories and their corresponding child Tasks with unassigned default.
             </p>
           </div>
 
@@ -575,10 +575,10 @@ Format:
                 setRawInput(SAMPLE_YAML);
                 setFormatMode('yaml');
               }}
-              title="Load realistic sample data featuring Dasani"
+              title="Load realistic sample data"
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#141926] border border-[#222c42] text-xs font-semibold text-[#cbd5e1] hover:text-white hover:border-[#38486b] transition-all"
             >
-              <RotateCcw className="w-3.5 h-3.5 text-[#cda052]" /> Load Sample (Dasani)
+              <RotateCcw className="w-3.5 h-3.5 text-[#cda052]" /> Load Sample
             </button>
           </div>
         </div>
@@ -594,7 +594,7 @@ Format:
             <div>
               <h3 className="text-sm font-bold text-white">Work Items Successfully Created!</h3>
               <p className="text-xs text-emerald-200/80 mt-0.5">
-                Created {createdSummary.stories} User Stor{createdSummary.stories === 1 ? 'y' : 'ies'} and {createdSummary.tasks} Task{createdSummary.tasks === 1 ? '' : 's'} assigned to Dasani.
+                Created {createdSummary.stories} User Stor{createdSummary.stories === 1 ? 'y' : 'ies'} and {createdSummary.tasks} Task{createdSummary.tasks === 1 ? '' : 's'}.
               </p>
             </div>
           </div>
@@ -667,7 +667,7 @@ Format:
               <h4 className="text-[11px] font-semibold text-[#64748b] uppercase tracking-wider">Field Mapping:</h4>
               <div className="grid grid-cols-2 gap-2 text-[11px]">
                 <div className="text-[#cbd5e1]"><span className="text-[#cda052] font-semibold">user_story:</span> Story title</div>
-                <div className="text-[#cbd5e1]"><span className="text-[#cda052] font-semibold">assignee:</span> e.g. Dasani</div>
+                <div className="text-[#cbd5e1]"><span className="text-[#cda052] font-semibold">assignee:</span> Unassigned / Name</div>
                 <div className="text-[#cbd5e1]"><span className="text-[#cda052] font-semibold">priority:</span> P1, P2, P3, P4</div>
                 <div className="text-[#cbd5e1]"><span className="text-[#cda052] font-semibold">points:</span> 1 to 8 pts</div>
                 <div className="text-[#cbd5e1]"><span className="text-[#cda052] font-semibold">sprint:</span> Sprint 1, Sprint 2</div>
@@ -700,7 +700,7 @@ Format:
               value={rawInput}
               onChange={(e) => setRawInput(e.target.value)}
               rows={14}
-              placeholder={`Paste your AI-generated YAML or JSON here...\n\nExample:\n- user_story: "Dasani: Validate 4-way stretch fabric GSM"\n  priority: "P1"\n  assignee: "Dasani"\n  sprint: "Sprint 1"\n  manufacture: "Techno Sportswear"\n  styles: "All Styles"\n  description: "..."\n  acceptance_criteria: "..."\n  tasks:\n    - title: "Dasani: Measure swatch weight"\n      priority: "P1"`}
+              placeholder={`Paste your AI-generated YAML or JSON here...\n\nExample:\n- user_story: "Validate 4-way stretch fabric GSM"\n  priority: "P1"\n  assignee: "Unassigned"\n  sprint: "Sprint 1"\n  manufacture: "Techno Sportswear"\n  styles: "All Styles"\n  description: "..."\n  acceptance_criteria: "..."\n  tasks:\n    - title: "Measure swatch weight"\n      priority: "P1"`}
               className="w-full p-4 rounded-xl bg-[#07090e] border border-[#20293d] text-xs font-mono text-white placeholder:text-[#424f67] focus:outline-none focus:border-[#cda052]/60 leading-relaxed resize-y"
             />
 
@@ -744,7 +744,7 @@ Format:
               </div>
               <p className="text-xs text-[#94a3b8] mt-0.5">
                 Ready to create {parsedStories.length} User Stor{parsedStories.length === 1 ? 'y' : 'ies'} and{' '}
-                {parsedStories.reduce((acc, s) => acc + s.tasks.length, 0)} linked sub-tasks with Dasani assigned.
+                {parsedStories.reduce((acc, s) => acc + s.tasks.length, 0)} linked sub-tasks.
               </p>
             </div>
 

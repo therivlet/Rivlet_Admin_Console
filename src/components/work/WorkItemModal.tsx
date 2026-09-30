@@ -156,6 +156,32 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
     [vendors, currentItem.linkedVendorId]
   );
 
+  // Dynamic position number based on active sprint board placement
+  const boardPosition = useMemo(() => {
+    if (!currentItem.sprintId) return null;
+    if (currentItem.type === 'User Story' || currentItem.type === 'Bug') {
+      const stories = workItems
+        .filter((w) => w.sprintId === currentItem.sprintId && ['User Story', 'Bug'].includes(w.type))
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      const idx = stories.findIndex((s) => s.id === currentItem.id);
+      return idx >= 0 ? `Story #${idx + 1}` : null;
+    }
+    if (currentItem.type === 'Task') {
+      const siblingTasks = workItems
+        .filter(
+          (w) =>
+            w.sprintId === currentItem.sprintId &&
+            w.type === 'Task' &&
+            w.parentId === currentItem.parentId &&
+            w.state === currentItem.state
+        )
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      const idx = siblingTasks.findIndex((t) => t.id === currentItem.id);
+      return idx >= 0 ? `Task #${idx + 1}` : null;
+    }
+    return null;
+  }, [workItems, currentItem]);
+
   // Style names helper
   const selectedStyleIds = form.linkedPipelineItemIds || [];
   const isAllStylesSelected = selectedStyleIds.includes('all') || (pipelineItems.length > 0 && selectedStyleIds.length === pipelineItems.length);
@@ -315,6 +341,11 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
           {/* Top Bar Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-[#171d2b] bg-[#0c1018]/90">
             <div className="flex items-center flex-wrap gap-2.5">
+              {boardPosition && (
+                <span className="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-[#cda052]/20 text-[#cda052] border border-[#cda052]/40 shadow-sm">
+                  {boardPosition}
+                </span>
+              )}
               <span className={`text-[11px] px-2.5 py-1 rounded-full border font-semibold uppercase tracking-wider ${TYPE_COLOR[currentItem.type]}`}>
                 {currentItem.type}
               </span>
@@ -378,7 +409,7 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                 <input
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  placeholder="e.g. Dasani: Confirm lab-dip approvals with Techno Sportswear"
+                  placeholder="e.g. Confirm lab-dip approvals with Techno Sportswear"
                   className="w-full px-4 py-2.5 rounded-xl bg-[#0d121c] border border-[#222c42] text-base font-semibold text-white focus:outline-none focus:border-[#cda052]/60"
                 />
               </div>
@@ -444,7 +475,7 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                             value={subTaskTitle}
                             onChange={(e) => setSubTaskTitle(e.target.value)}
                             onKeyDown={(e) => { if (e.key === 'Enter') handleCreateSubTask(); }}
-                            placeholder="e.g. Dasani: Inspect fabric swatch cards under D65 booth"
+                            placeholder="e.g. Inspect fabric swatch cards under D65 booth"
                             className="flex-1 px-3 py-1.5 rounded bg-[#0a0c12] border border-[#1f2638] text-xs text-white focus:outline-none focus:border-[#cda052]/50"
                             autoFocus
                           />
@@ -468,14 +499,17 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                         <p className="text-xs text-[#54627a] italic">No sub-tasks attached to this story yet.</p>
                       ) : (
                         <div className="space-y-2">
-                          {childItems.map((child) => (
+                          {childItems.map((child, childIdx) => (
                             <div
                               key={child.id}
                               className="flex items-center justify-between p-2.5 rounded-lg border border-[#1a2233] bg-[#080b11] hover:border-[#2a3754] transition-colors"
                             >
                               <div className="flex items-center gap-2.5 truncate">
+                                <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#cda052]/20 text-[#cda052] border border-[#cda052]/40">
+                                  #{childIdx + 1}
+                                </span>
                                 <span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${TYPE_COLOR[child.type]}`}>{child.type}</span>
-                                <span className="text-xs text-white font-medium truncate">{child.title}</span>
+                                <span className="text-xs text-white font-medium truncate">#{childIdx + 1} · {child.title}</span>
                               </div>
                               <div className="flex items-center gap-2 flex-shrink-0">
                                 {child.assignee && (
@@ -917,7 +951,7 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                   <input
                     value={tagsInput}
                     onChange={(e) => setTagsInput(e.target.value)}
-                    placeholder="Outreach, Fabric, Dasani, Sampling"
+                    placeholder="Outreach, Fabric, Quality, Sampling"
                     className="w-full px-3.5 py-2 rounded-xl bg-[#0e121b] border border-[#1f2638] text-xs text-white focus:outline-none focus:border-[#cda052]/50"
                   />
                 </div>
