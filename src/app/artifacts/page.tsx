@@ -265,12 +265,15 @@ export default function ArtifactsPage() {
       {/* Interactive Modal Viewer */}
       {activeArtifact && (
         <ModalPortal isOpen={Boolean(activeArtifact)}>
-          <div 
-            className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in"
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center p-1.5 sm:p-3 bg-black/85 backdrop-blur-md animate-fade-in"
             onClick={() => setActiveArtifactId(null)}
           >
-            <div 
-              className="w-full max-w-7xl h-[92vh] sm:h-[90vh] bg-[#0c0f17] border border-[#22283a] rounded-xl flex flex-col shadow-2xl overflow-hidden relative"
+            {/* Sized near full-viewport so artifacts with responsive JS/CSS tied to their
+                rendered width lay out the same way here as they do on the standalone
+                /tools/[slug] page, which renders at true viewport width. */}
+            <div
+              className="w-full max-w-[98vw] h-[97vh] bg-[#0c0f17] border border-[#22283a] rounded-xl flex flex-col shadow-2xl overflow-hidden relative"
               onClick={(e) => e.stopPropagation()}
             >
               <ArtifactSandbox

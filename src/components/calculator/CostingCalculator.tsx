@@ -40,6 +40,8 @@ import { useAuth } from '@/lib/authContext';
 import CostingExportModal from './CostingExportModal';
 import BOMSpecifierModal from './BOMSpecifierModal';
 import CalculatorSettingsModal from './CalculatorSettingsModal';
+import ScenarioHelpModal from './ScenarioHelpModal';
+import InfoTooltip from '@/components/ui/InfoTooltip';
 
 interface CostingCalculatorProps {
   initialSheet?: CostingSheet;
@@ -72,6 +74,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isBOMModalOpen, setIsBOMModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [validationAttempted, setValidationAttempted] = useState(false);
 
   // Sync defaults whenever user metadata loads
@@ -312,6 +315,16 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
             <span className="hidden sm:inline">Export Suite</span>
           </button>
 
+          {/* Scenario Planning Help */}
+          <button
+            onClick={() => setIsHelpModalOpen(true)}
+            title="How to fill Conservative, Expected & Upside values"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#161a26] border border-[#263147] text-[#94a3b8] hover:text-[#cda052] hover:border-[#cda052]/50 font-semibold text-xs transition-all shadow-sm"
+          >
+            <HelpCircle className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Scenario Guide</span>
+          </button>
+
           {/* Calculator Brand Settings Button */}
           <button
             onClick={() => setIsSettingsModalOpen(true)}
@@ -385,6 +398,10 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
       <div className="bg-[#111420] border border-[#1e2436] p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <span className="text-xs text-[#8e97af] font-medium mr-1">Active Scenario:</span>
+          <InfoTooltip
+            title="Conservative / Expected / Upside"
+            text="Three forecasts, not one guess. Conservative is your worst-realistic case, Expected is your genuine best estimate, Upside is a strong-but-plausible outcome. Click Scenario Guide above for field-by-field guidance."
+          />
           <div className="flex items-center bg-[#090b12] p-1 rounded-lg border border-[#20273a]">
             {(['low', 'mid', 'high'] as ScenarioKey[]).map(sc => (
               <button
@@ -677,6 +694,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
             <h3 className="text-xs font-bold text-white tracking-wider uppercase flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
               2. Forecast Range (Low / Expected / High)
+              <InfoTooltip title="How to set these" text="Conservative = worst-realistic case. Expected = your genuine best estimate. Upside = strong-but-plausible. See the Scenario Guide button above for guidance per field." />
             </h3>
             <span className="text-[10px] text-[#717a90]">Step 2</span>
           </div>
@@ -1287,6 +1305,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
               <h3 className="text-xs font-bold text-white tracking-wider uppercase flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-blue-400"></span>
                 5. Annual Business Overhead & Dynamic Allocation
+                <InfoTooltip title="How to set these" text="Conservative = highest plausible cost (e.g. hiring sooner than planned). Expected = your current run-rate budget. Upside = leanest realistic operation." />
               </h3>
               {activeDefaults.lockedOverheads && (
                 <span className="text-[10px] px-2 py-0.5 rounded bg-[rgba(205,160,82,0.12)] text-[#e6c875] border border-[rgba(205,160,82,0.3)] font-mono flex items-center gap-1">
@@ -1616,6 +1635,9 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
           setInputs(prev => mergeDefaultsIntoInputs(prev, newDefs));
         }}
       />
+
+      {/* Conservative / Expected / Upside Scenario Planning Guide */}
+      <ScenarioHelpModal isOpen={isHelpModalOpen} onClose={() => setIsHelpModalOpen(false)} />
     </div>
 
   );

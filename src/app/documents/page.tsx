@@ -189,13 +189,18 @@ export default function DocumentsPage() {
       else if (ext === 'png' || ext === 'jpg' || ext === 'jpeg') fileFormat = 'image';
       else fileFormat = 'pdf';
 
-      // 1. Upload to Supabase Storage if configured
+      // 1. Upload to Supabase Storage if configured.
+      // A blob: URL only exists in this tab's memory for this session — it can
+      // never be opened later, on another device, or after a reload. Previously
+      // a failed cloud upload silently fell back to one anyway, so the document
+      // record looked saved but its preview/download was permanently broken.
+      // Now a real upload failure aborts the save and tells the user to retry.
       if (isSupabaseConfigured && supabase) {
-        try {
-          setUploadStatusMsg('Uploading file to Supabase Cloud Storage...');
-          const safeName = `${Date.now()}_${selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-          const filePath = `documents/${safeName}`;
+        setUploadStatusMsg('Uploading file to Supabase Cloud Storage...');
+        const safeName = `${Date.now()}_${selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+        const filePath = `documents/${safeName}`;
 
+        try {
           const { data, error } = await supabase.storage
             .from('vault-files')
             .upload(filePath, selectedFile, {
@@ -203,18 +208,19 @@ export default function DocumentsPage() {
               upsert: true,
             });
 
-          if (!error && data) {
-            const { data: urlData } = supabase.storage
-              .from('vault-files')
-              .getPublicUrl(filePath);
-            fileUrl = urlData.publicUrl;
-          } else {
-            console.warn('Storage upload notice (using fallback URL):', error?.message);
-            fileUrl = URL.createObjectURL(selectedFile);
+          if (error || !data) {
+            throw error || new Error('Upload returned no data.');
           }
-        } catch (err) {
+
+          const { data: urlData } = supabase.storage
+            .from('vault-files')
+            .getPublicUrl(filePath);
+          fileUrl = urlData.publicUrl;
+        } catch (err: any) {
           console.error('Upload error:', err);
-          fileUrl = URL.createObjectURL(selectedFile);
+          setUploadError(`Cloud upload failed: ${err?.message || 'unknown error'}. The document was not saved — please try again.`);
+          setIsUploading(false);
+          return;
         }
       } else {
         fileUrl = URL.createObjectURL(selectedFile);

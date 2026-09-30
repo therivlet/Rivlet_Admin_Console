@@ -39,7 +39,8 @@ function isDueToday(item: { targetDate?: string; state: string }) {
 }
 
 export default function DashboardOverviewPage() {
-  const { artifacts, costingSheets, documents, kbArticles, vendors, pipelineItems, budgetItems, workItems, sprints } = useAdminStore();
+  const { artifacts, costingSheets, documents, kbArticles, vendors, pipelineItems, budgetItems, budgetSettings, workItems, sprints } = useAdminStore();
+  const [showAllTools, setShowAllTools] = useState(false);
 
   const todayStr = new Date().toISOString().slice(0, 10);
   const currentSprint = sprints.find((s) => s.startDate <= todayStr && s.endDate >= todayStr);
@@ -58,9 +59,12 @@ export default function DashboardOverviewPage() {
 
   const approvedVendors = vendors.filter((v) => v.stage === 'Approved Partner').length;
   const inProductionCount = pipelineItems.filter((p) => ['PO Issued', 'In Production', 'QC Inspection'].includes(p.stage)).length;
-  const budgetPlanned = budgetItems.reduce((sum, b) => sum + b.plannedAmount, 0);
+  const sumPlannedBudget = budgetItems.reduce((sum, b) => sum + b.plannedAmount, 0);
+  const budgetPlanned = budgetSettings.totalPlannedOverride ?? sumPlannedBudget;
   const budgetActual = budgetItems.reduce((sum, b) => sum + b.actualAmount, 0);
   const budgetPct = budgetPlanned > 0 ? Math.round((budgetActual / budgetPlanned) * 100) : 0;
+  const topCategoriesBySpend = [...budgetItems].sort((a, b) => b.actualAmount - a.actualAmount).slice(0, 3);
+  const visibleTools = showAllTools ? promotedTools : promotedTools.slice(0, 3);
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-8 animate-fade-in">
@@ -282,7 +286,7 @@ export default function DashboardOverviewPage() {
 
         <Link
           href="/budget"
-          className="bg-[#0e121b] border border-[#1e2638] hover:border-emerald-600/50 p-5 rounded-xl transition-all duration-150 group shadow-md"
+          className="bg-[#0e121b] border border-[#1e2638] hover:border-emerald-600/50 p-5 rounded-xl transition-all duration-150 group shadow-md flex flex-col"
         >
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-[#94a3b8] uppercase tracking-wider">Launch Budget</span>
@@ -290,11 +294,33 @@ export default function DashboardOverviewPage() {
               <Wallet className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-bold text-white font-mono tabular-nums">{budgetPct}%</div>
-          <div className="flex items-center justify-between text-xs mt-2.5 text-[#94a3b8]">
+          <div className="flex items-end justify-between mb-2">
+            <div className="text-3xl font-bold text-white font-mono tabular-nums">{budgetPct}%</div>
+            <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${budgetPct > 100 ? 'bg-rose-950/60 text-rose-300' : budgetPct > 80 ? 'bg-amber-950/60 text-amber-300' : 'bg-emerald-950/60 text-emerald-300'}`}>
+              {budgetPct > 100 ? 'Over' : 'On Track'}
+            </span>
+          </div>
+          <div className="w-full h-1.5 rounded-full bg-[#1a1f2c] overflow-hidden mb-2.5">
+            <div
+              className={`h-full ${budgetPct > 100 ? 'bg-rose-500' : 'bg-gradient-to-r from-[#cda052] to-emerald-500'}`}
+              style={{ width: `${Math.min(budgetPct, 100)}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between text-xs text-[#94a3b8] mb-3">
             <span className="text-emerald-300 font-semibold">₹{budgetActual.toLocaleString('en-IN')} spent</span>
             <span>of ₹{budgetPlanned.toLocaleString('en-IN')}</span>
           </div>
+          {topCategoriesBySpend.length > 0 && topCategoriesBySpend[0].actualAmount > 0 && (
+            <div className="pt-2.5 mt-auto border-t border-[#182032] space-y-1">
+              <p className="text-[10px] text-[#7c869d] uppercase tracking-wide font-semibold mb-1">Top Spend Categories</p>
+              {topCategoriesBySpend.filter((c) => c.actualAmount > 0).map((c) => (
+                <div key={c.id} className="flex items-center justify-between text-[11px]">
+                  <span className="text-[#cbd5e1] truncate max-w-[65%]">{c.category}</span>
+                  <span className="font-mono text-[#94a3b8]">₹{c.actualAmount.toLocaleString('en-IN')}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </Link>
       </div>
 
@@ -325,7 +351,7 @@ export default function DashboardOverviewPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {promotedTools.map((tool) => (
+          {visibleTools.map((tool) => (
             <Link
               key={tool.id}
               href={`/tools/${tool.routeSlug || tool.id}`}
@@ -355,6 +381,20 @@ export default function DashboardOverviewPage() {
             </Link>
           ))}
         </div>
+
+        {promotedTools.length === 0 && (
+          <p className="text-xs text-[#94a3b8] text-center py-6">No promoted tools yet. Approve one from the Artifact Hub to pin it here.</p>
+        )}
+
+        {promotedTools.length > 3 && (
+          <button
+            onClick={() => setShowAllTools((v) => !v)}
+            className="w-full mt-4 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-[#cda052] hover:bg-[#141724] transition-colors border border-dashed border-[#263148]"
+          >
+            {showAllTools ? 'Show Fewer' : `Show ${promotedTools.length - 3} More`}
+            <ChevronRight className={`w-3.5 h-3.5 transition-transform ${showAllTools ? '-rotate-90' : 'rotate-90'}`} />
+          </button>
+        )}
       </div>
 
       {/* Two Column Grid: Costing Sheets + Document Compliance */}

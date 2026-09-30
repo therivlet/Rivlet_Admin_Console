@@ -341,15 +341,29 @@ export interface PipelineItem {
 
 // --- Launch Budget Tracker ---
 
+export interface BudgetSpendEntry {
+  id: string;
+  amount: number;
+  date: string; // ISO date the spend happened
+  note?: string;
+}
+
 export interface BudgetItem {
   id: string;
   category: string; // e.g. "First production (1,580 pieces)"
   plannedAmount: number;
-  actualAmount: number;
+  actualAmount: number; // maintained as the sum of spendLog entries
+  spendLog: BudgetSpendEntry[];
   currency: string; // '₹'
   phase?: string; // e.g. "Phase 3: Manufacturing"
   notes?: string;
   createdAt: string;
+  updatedAt: string;
+}
+
+export interface BudgetSettings {
+  id: string; // singleton row, always 'default'
+  totalPlannedOverride?: number; // fixed ceiling independent of the sum of line items
   updatedAt: string;
 }
 

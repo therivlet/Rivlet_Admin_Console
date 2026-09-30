@@ -149,3 +149,40 @@ body {
   }
 }
 
+/* Rendered Markdown (Knowledge Base articles) */
+.kb-markdown {
+  color: #e2e8f0;
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+.kb-markdown h1, .kb-markdown h2, .kb-markdown h3, .kb-markdown h4 {
+  color: #ffffff;
+  font-weight: 700;
+  margin-top: 1.5em;
+  margin-bottom: 0.6em;
+}
+.kb-markdown h1:first-child, .kb-markdown h2:first-child, .kb-markdown h3:first-child {
+  margin-top: 0;
+}
+.kb-markdown h1 { font-size: 1.375rem; border-bottom: 1px solid #263147; padding-bottom: 0.4em; }
+.kb-markdown h2 { font-size: 1.15rem; color: #e6c875; }
+.kb-markdown h3 { font-size: 1rem; }
+.kb-markdown h4 { font-size: 0.9rem; color: #cbd5e1; }
+.kb-markdown p { margin-bottom: 1em; }
+.kb-markdown ul, .kb-markdown ol { margin: 0 0 1em 1.25em; }
+.kb-markdown ul { list-style: disc; }
+.kb-markdown ol { list-style: decimal; }
+.kb-markdown li { margin-bottom: 0.35em; }
+.kb-markdown a { color: #cda052; text-decoration: underline; }
+.kb-markdown strong { color: #ffffff; font-weight: 700; }
+.kb-markdown code { background: #141824; border: 1px solid #263147; border-radius: 4px; padding: 0.1em 0.4em; font-size: 0.85em; color: #e6c875; }
+.kb-markdown pre { background: #0a0c12; border: 1px solid #263147; border-radius: 8px; padding: 1em; overflow-x: auto; margin-bottom: 1em; }
+.kb-markdown pre code { background: none; border: none; padding: 0; color: #cbd5e1; }
+.kb-markdown blockquote { border-left: 3px solid #cda052; padding-left: 1em; color: #94a3b8; font-style: italic; margin: 0 0 1em 0; }
+.kb-markdown hr { border: none; border-top: 1px solid #263147; margin: 1.5em 0; }
+.kb-markdown table { width: 100%; border-collapse: collapse; margin-bottom: 1.25em; font-size: 0.85em; overflow-x: auto; display: block; }
+.kb-markdown thead { background: #141824; }
+.kb-markdown th, .kb-markdown td { border: 1px solid #263147; padding: 0.5em 0.75em; text-align: left; white-space: nowrap; }
+.kb-markdown th { color: #e6c875; font-weight: 600; }
+.kb-markdown tbody tr:nth-child(even) { background: #0a0c12; }
+

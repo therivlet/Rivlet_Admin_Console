@@ -1,8 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { ArtifactItem, CostingSheet, DocumentItem, KBArticle, ArtifactStatus, VendorItem, PipelineItem, BudgetItem, Sprint, WorkItem, TeamMember, WorkSettings } from './types';
-import { initialArtifacts, initialCostingSheets, initialDocuments, initialKBArticles, initialVendors, initialPipelineItems, initialBudgetItems, initialSprints, initialWorkItems, initialTeamMembers, initialWorkSettings } from './initialData';
+import { ArtifactItem, CostingSheet, DocumentItem, KBArticle, ArtifactStatus, VendorItem, PipelineItem, BudgetItem, Sprint, WorkItem, TeamMember, WorkSettings, BudgetSettings } from './types';
+import { initialArtifacts, initialCostingSheets, initialDocuments, initialKBArticles, initialVendors, initialPipelineItems, initialBudgetItems, initialSprints, initialWorkItems, initialTeamMembers, initialWorkSettings, initialBudgetSettings } from './initialData';
 import { supabase, isSupabaseConfigured } from './supabase';
 
 const STORAGE_KEYS = {
@@ -17,6 +17,7 @@ const STORAGE_KEYS = {
   WORK_ITEMS: 'rivlet_admin_work_items',
   TEAM_MEMBERS: 'rivlet_admin_team_members',
   WORK_SETTINGS: 'rivlet_admin_work_settings',
+  BUDGET_SETTINGS: 'rivlet_admin_budget_settings',
 };
 
 interface AdminStoreContextType {
@@ -35,6 +36,7 @@ interface AdminStoreContextType {
   workItems: WorkItem[];
   teamMembers: TeamMember[];
   workSettings: WorkSettings;
+  budgetSettings: BudgetSettings;
   syncWithSupabase: () => Promise<void>;
   addArtifact: (item: Omit<ArtifactItem, 'id' | 'createdAt' | 'updatedAt'>) => Promise<ArtifactItem>;
   updateArtifact: (id: string, updates: Partial<ArtifactItem>) => Promise<void>;
@@ -61,6 +63,9 @@ interface AdminStoreContextType {
   saveTeamMember: (member: TeamMember) => Promise<void>;
   deleteTeamMember: (id: string) => Promise<void>;
   saveWorkSettings: (settings: Partial<WorkSettings>) => Promise<void>;
+  saveBudgetSettings: (settings: Partial<BudgetSettings>) => Promise<void>;
+  logBudgetSpend: (budgetItemId: string, amount: number, date: string, note?: string) => Promise<void>;
+  deleteBudgetSpend: (budgetItemId: string, spendId: string) => Promise<void>;
   resetToSeed: () => Promise<void>;
 }
 
@@ -78,6 +83,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
   const [workItems, setWorkItems] = useState<WorkItem[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [workSettings, setWorkSettings] = useState<WorkSettings>(initialWorkSettings);
+  const [budgetSettings, setBudgetSettings] = useState<BudgetSettings>(initialBudgetSettings);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastWriteError, setLastWriteError] = useState<string | null>(null);
@@ -106,11 +112,15 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       // New-module tables (vendors/pipeline/budget) may not exist yet if
       // supabase_migration_v2.sql hasn't been run — fail soft per-table so
       // a missing table there never breaks sync for the original modules.
-      const safeSelect = (table: string) =>
-        Promise.resolve(supabase!.from(table).select('*').order('created_at', { ascending: false }))
+      // Singleton settings tables (work_settings/budget_settings) have no
+      // created_at column, so ordering by it must be skipped for those.
+      const safeSelect = (table: string, orderByCreatedAt = true) => {
+        const query = supabase!.from(table).select('*');
+        return Promise.resolve(orderByCreatedAt ? query.order('created_at', { ascending: false }) : query)
           .catch(() => ({ data: null, error: null } as any));
+      };
 
-      const [artRes, costRes, docRes, kbRes, venRes, pipeRes, budRes, sprRes, wiRes, tmRes, wsRes] = await Promise.all([
+      const [artRes, costRes, docRes, kbRes, venRes, pipeRes, budRes, sprRes, wiRes, tmRes, wsRes, bsRes] = await Promise.all([
         supabase.from('artifacts').select('*').order('created_at', { ascending: false }),
         supabase.from('costing_sheets').select('*').order('created_at', { ascending: false }),
         supabase.from('documents').select('*').order('created_at', { ascending: false }),
@@ -121,7 +131,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         safeSelect('sprints'),
         safeSelect('work_items'),
         safeSelect('team_members'),
-        safeSelect('work_settings'),
+        safeSelect('work_settings', false),
+        safeSelect('budget_settings', false),
       ]);
 
       // 1. Artifacts sync & auto-seed
@@ -352,6 +363,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           category: r.category,
           plannedAmount: Number(r.planned_amount || 0),
           actualAmount: Number(r.actual_amount || 0),
+          spendLog: Array.isArray(r.spend_log) ? r.spend_log : [],
           currency: r.currency || '₹',
           phase: r.phase || undefined,
           notes: r.notes || undefined,
@@ -364,12 +376,32 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         for (const b of initialBudgetItems) {
           await Promise.resolve(supabase.from('budget_items').upsert({
             id: b.id, category: b.category, planned_amount: b.plannedAmount,
-            actual_amount: b.actualAmount, currency: b.currency, phase: b.phase,
+            actual_amount: b.actualAmount, spend_log: b.spendLog, currency: b.currency, phase: b.phase,
             notes: b.notes, created_at: b.createdAt, updated_at: b.updatedAt,
           })).catch(() => {});
         }
         setBudgetItems(initialBudgetItems);
         try { localStorage.setItem(STORAGE_KEYS.BUDGET_ITEMS, JSON.stringify(initialBudgetItems)); } catch (_) {}
+      }
+
+      // 7b. Budget settings sync & auto-seed (singleton row)
+      if (bsRes.data && bsRes.data.length > 0) {
+        const r = bsRes.data[0];
+        const formatted: BudgetSettings = {
+          id: r.id,
+          totalPlannedOverride: r.total_planned_override !== null && r.total_planned_override !== undefined ? Number(r.total_planned_override) : undefined,
+          updatedAt: r.updated_at || new Date().toISOString(),
+        };
+        setBudgetSettings(formatted);
+        try { localStorage.setItem(STORAGE_KEYS.BUDGET_SETTINGS, JSON.stringify(formatted)); } catch (_) {}
+      } else if (bsRes.data && bsRes.data.length === 0) {
+        await Promise.resolve(supabase.from('budget_settings').upsert({
+          id: initialBudgetSettings.id,
+          total_planned_override: initialBudgetSettings.totalPlannedOverride,
+          updated_at: initialBudgetSettings.updatedAt,
+        })).catch(() => {});
+        setBudgetSettings(initialBudgetSettings);
+        try { localStorage.setItem(STORAGE_KEYS.BUDGET_SETTINGS, JSON.stringify(initialBudgetSettings)); } catch (_) {}
       }
 
       // 8. Sprints sync & auto-seed
@@ -502,6 +534,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       const storedWorkItems = localStorage.getItem(STORAGE_KEYS.WORK_ITEMS);
       const storedTeamMembers = localStorage.getItem(STORAGE_KEYS.TEAM_MEMBERS);
       const storedWorkSettings = localStorage.getItem(STORAGE_KEYS.WORK_SETTINGS);
+      const storedBudgetSettings = localStorage.getItem(STORAGE_KEYS.BUDGET_SETTINGS);
 
       if (storedArtifacts) {
         const parsed = JSON.parse(storedArtifacts).filter((a: any) => a.id !== 'art-001' && a.id !== 'art-002');
@@ -536,6 +569,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       setWorkItems(storedWorkItems ? JSON.parse(storedWorkItems) : initialWorkItems);
       setTeamMembers(storedTeamMembers ? JSON.parse(storedTeamMembers) : initialTeamMembers);
       setWorkSettings(storedWorkSettings ? JSON.parse(storedWorkSettings) : initialWorkSettings);
+      setBudgetSettings(storedBudgetSettings ? JSON.parse(storedBudgetSettings) : initialBudgetSettings);
     } catch (e) {
       setArtifacts(initialArtifacts);
       setCostingSheets(initialCostingSheets);
@@ -548,6 +582,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       setWorkItems(initialWorkItems);
       setTeamMembers(initialTeamMembers);
       setWorkSettings(initialWorkSettings);
+      setBudgetSettings(initialBudgetSettings);
     }
 
     // Immediately trigger cloud sync from Supabase
@@ -569,8 +604,9 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       localStorage.setItem(STORAGE_KEYS.WORK_ITEMS, JSON.stringify(workItems));
       localStorage.setItem(STORAGE_KEYS.TEAM_MEMBERS, JSON.stringify(teamMembers));
       localStorage.setItem(STORAGE_KEYS.WORK_SETTINGS, JSON.stringify(workSettings));
+      localStorage.setItem(STORAGE_KEYS.BUDGET_SETTINGS, JSON.stringify(budgetSettings));
     } catch (_) {}
-  }, [artifacts, costingSheets, documents, kbArticles, vendors, pipelineItems, budgetItems, sprints, workItems, teamMembers, workSettings, isLoaded]);
+  }, [artifacts, costingSheets, documents, kbArticles, vendors, pipelineItems, budgetItems, sprints, workItems, teamMembers, workSettings, budgetSettings, isLoaded]);
 
   // Window Focus & Visibility Listener: Automatically syncs when switching between Laptop and Tab.
   // Realtime Postgres subscriptions (below) handle live cross-device pushes, so we don't also
@@ -638,6 +674,9 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         syncWithSupabase();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'work_settings' }, () => {
+        syncWithSupabase();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'budget_settings' }, () => {
         syncWithSupabase();
       })
       .subscribe();
@@ -1044,6 +1083,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           category: updated.category,
           planned_amount: updated.plannedAmount,
           actual_amount: updated.actualAmount,
+          spend_log: updated.spendLog || [],
           currency: updated.currency,
           phase: updated.phase || null,
           notes: updated.notes || null,
@@ -1236,6 +1276,40 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     }
   };
 
+  // 12. Budget Settings & Spend Ledger Actions
+  const saveBudgetSettings = async (settings: Partial<BudgetSettings>) => {
+    const now = new Date().toISOString();
+    const updated: BudgetSettings = { ...budgetSettings, ...settings, id: 'default', updatedAt: now };
+    setBudgetSettings(updated);
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('budget_settings').upsert({
+          id: 'default',
+          total_planned_override: updated.totalPlannedOverride ?? null,
+          updated_at: now,
+        });
+      } catch (e) {
+        reportWriteFailure('Saving budget settings', e);
+      }
+    }
+  };
+
+  const logBudgetSpend = async (budgetItemId: string, amount: number, date: string, note?: string) => {
+    const target = budgetItems.find((b) => b.id === budgetItemId);
+    if (!target || !amount) return;
+    const entry = { id: `spend-${Date.now()}`, amount, date, note: note || undefined };
+    const nextLog = [...target.spendLog, entry];
+    await saveBudgetItem({ ...target, spendLog: nextLog, actualAmount: nextLog.reduce((s, e) => s + e.amount, 0) });
+  };
+
+  const deleteBudgetSpend = async (budgetItemId: string, spendId: string) => {
+    const target = budgetItems.find((b) => b.id === budgetItemId);
+    if (!target) return;
+    const nextLog = target.spendLog.filter((e) => e.id !== spendId);
+    await saveBudgetItem({ ...target, spendLog: nextLog, actualAmount: nextLog.reduce((s, e) => s + e.amount, 0) });
+  };
+
   const resetToSeed = async () => {
     if (isSupabaseConfigured && supabase) {
       try {
@@ -1268,6 +1342,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         workItems,
         teamMembers,
         workSettings,
+        budgetSettings,
         syncWithSupabase,
         addArtifact,
         updateArtifact,
@@ -1294,6 +1369,9 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         saveTeamMember,
         deleteTeamMember,
         saveWorkSettings,
+        saveBudgetSettings,
+        logBudgetSpend,
+        deleteBudgetSpend,
         resetToSeed,
       }}
     >

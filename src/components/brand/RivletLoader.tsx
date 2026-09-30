@@ -13,7 +13,7 @@ interface RivletLoaderProps {
 export default function RivletLoader({
   fullscreen = true,
   message = 'Authenticating & Initializing Brand Console...',
-  subMessage = 'Rivlet Luxury Apparel Co. • Tirupur Production Hub',
+  subMessage = 'Rivlet • Tirupur Sourcing Network',
   size = 'lg',
 }: RivletLoaderProps) {
   const containerClasses = fullscreen

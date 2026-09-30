@@ -23,6 +23,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { DocumentItem } from '@/lib/types';
+import { resolveDocumentUrl } from '@/lib/supabase';
 import * as XLSX from 'xlsx';
 import mammoth from 'mammoth';
 
@@ -38,6 +39,29 @@ export default function UniversalDocumentViewer({
   onEditExpiry,
 }: UniversalDocumentViewerProps) {
   const [viewTab, setViewTab] = useState<'viewer' | 'readview'>('viewer');
+
+  // The stored fileUrl is a Supabase public URL, but storage reads now require
+  // authentication — resolve a short-lived signed URL before fetching/displaying.
+  const [resolvedUrl, setResolvedUrl] = useState<string>(doc.fileUrl || '#');
+  const [urlResolving, setUrlResolving] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setUrlResolving(true);
+    resolveDocumentUrl(doc.fileUrl).then((url) => {
+      if (!cancelled) {
+        setResolvedUrl(url);
+        setUrlResolving(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [doc.fileUrl]);
+
+  // A blob: URL only ever resolves inside the browser tab/session that created
+  // it — if this record was saved with one (e.g. from a past failed cloud
+  // upload) it can never load again, on any device or after any reload.
+  // Detect it up front instead of showing an unexplained blank preview.
+  const isDeadBlobUrl = typeof window !== 'undefined' && !!doc.fileUrl?.startsWith('blob:') && !doc.fileUrl.startsWith(`blob:${window.location.origin}`);
 
   // File type detection
   const fileName = doc.fileName || doc.title || '';
@@ -79,18 +103,21 @@ export default function UniversalDocumentViewer({
     let isCancelled = false;
 
     async function loadDocumentData() {
+      // Wait for the signed URL to resolve before attempting any fetch
+      if (urlResolving) return;
+
       setIsLoading(true);
       setLoadError(null);
 
       // If document has no valid URL
-      if (!doc.fileUrl || doc.fileUrl === '#') {
+      if (!resolvedUrl || resolvedUrl === '#') {
         setIsLoading(false);
         return;
       }
 
       try {
         if (isWord) {
-          const res = await fetch(doc.fileUrl);
+          const res = await fetch(resolvedUrl);
           if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to download Word document.`);
           const arrayBuffer = await res.arrayBuffer();
 
@@ -105,7 +132,7 @@ export default function UniversalDocumentViewer({
           setWordHtml(htmlResult.value || '<p class="text-gray-400 italic">No formatted content found in Word document.</p>');
           setWordText(textResult.value || '');
         } else if (isExcel) {
-          const res = await fetch(doc.fileUrl);
+          const res = await fetch(resolvedUrl);
           if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to download Excel spreadsheet.`);
           const arrayBuffer = await res.arrayBuffer();
 
@@ -141,14 +168,14 @@ export default function UniversalDocumentViewer({
     return () => {
       isCancelled = true;
     };
-  }, [doc.fileUrl, isWord, isExcel]);
+  }, [resolvedUrl, urlResolving, isWord, isExcel]);
 
   // Switch Excel sheets
   const handleSheetChange = async (sheetName: string) => {
     setActiveSheet(sheetName);
     try {
-      if (!doc.fileUrl || doc.fileUrl === '#') return;
-      const res = await fetch(doc.fileUrl);
+      if (!resolvedUrl || resolvedUrl === '#') return;
+      const res = await fetch(resolvedUrl);
       const arrayBuffer = await res.arrayBuffer();
       const workbook = XLSX.read(arrayBuffer, { type: 'array' });
       const sheet = workbook.Sheets[sheetName];
@@ -251,9 +278,9 @@ export default function UniversalDocumentViewer({
             </button>
 
             {/* Download */}
-            {doc.fileUrl && doc.fileUrl !== '#' && (
+            {resolvedUrl && resolvedUrl !== '#' && (
               <a
-                href={doc.fileUrl}
+                href={resolvedUrl}
                 target="_blank"
                 rel="noreferrer"
                 download={fileName}
@@ -278,7 +305,21 @@ export default function UniversalDocumentViewer({
 
         {/* Content Viewer Area */}
         <div className="flex-1 bg-[#07090e] overflow-hidden flex flex-col relative">
-          {viewTab === 'viewer' ? (
+          {isDeadBlobUrl ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-rose-950/40 border border-rose-800/60 flex items-center justify-center text-rose-400">
+                <AlertCircle className="w-8 h-8" />
+              </div>
+              <div>
+                <h4 className="text-base font-bold text-white">This file was never saved to cloud storage</h4>
+                <p className="text-xs text-[#94a3b8] mt-1 max-w-md">
+                  Its upload failed at the time and the record was saved with a temporary local link instead — this has
+                  since been fixed for new uploads, but this file's original bytes can't be recovered.
+                  Please delete this record and re-upload the original file.
+                </p>
+              </div>
+            </div>
+          ) : viewTab === 'viewer' ? (
             <>
               {/* 1. EXCEL SPREADSHEET VIEWER (.xlsx, .xls, .csv) */}
               {isExcel && (
@@ -423,9 +464,9 @@ export default function UniversalDocumentViewer({
                     <span className="text-rose-400 font-semibold flex items-center gap-1.5">
                       <FileCheck className="w-3.5 h-3.5" /> High-Resolution PDF Engine
                     </span>
-                    {doc.fileUrl && doc.fileUrl !== '#' && (
+                    {resolvedUrl && resolvedUrl !== '#' && (
                       <a
-                        href={doc.fileUrl}
+                        href={resolvedUrl}
                         target="_blank"
                         rel="noreferrer"
                         className="text-[11px] text-[#e6c875] hover:underline flex items-center gap-1"
@@ -436,21 +477,21 @@ export default function UniversalDocumentViewer({
                   </div>
 
                   <div className="flex-1 p-2 sm:p-4 bg-[#05070a] overflow-hidden">
-                    {doc.fileUrl && doc.fileUrl !== '#' ? (
+                    {resolvedUrl && resolvedUrl !== '#' ? (
                       <object
-                        data={doc.fileUrl}
+                        data={resolvedUrl}
                         type="application/pdf"
                         className="w-full h-full rounded-xl border border-[#1e2638] bg-white shadow-2xl"
                       >
                         <iframe
-                          src={`${doc.fileUrl}#toolbar=1`}
+                          src={`${resolvedUrl}#toolbar=1`}
                           title={doc.title}
                           className="w-full h-full rounded-xl border border-[#1e2638] bg-white shadow-2xl"
                         >
                           <div className="p-8 text-center text-xs text-[#94a3b8] space-y-3">
                             <p>Unable to display PDF preview directly inside your current browser.</p>
                             <a
-                              href={doc.fileUrl}
+                              href={resolvedUrl}
                               target="_blank"
                               rel="noreferrer"
                               className="px-4 py-2 rounded-lg bg-[#cda052] text-black font-bold inline-block"
@@ -512,7 +553,7 @@ export default function UniversalDocumentViewer({
 
                   {/* Image Canvas */}
                   <div className="flex-1 p-6 flex items-center justify-center overflow-auto bg-[#05070a] relative select-none">
-                    {doc.fileUrl && doc.fileUrl !== '#' ? (
+                    {resolvedUrl && resolvedUrl !== '#' ? (
                       <div 
                         className="transition-transform duration-200 ease-out flex items-center justify-center"
                         style={{
@@ -521,7 +562,7 @@ export default function UniversalDocumentViewer({
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={doc.fileUrl}
+                          src={resolvedUrl}
                           alt={doc.title}
                           className="max-h-[70vh] max-w-[85vw] object-contain rounded-xl shadow-2xl border border-[#1e2638]"
                         />
@@ -548,9 +589,9 @@ export default function UniversalDocumentViewer({
                   <p className="text-xs text-[#cbd5e1] max-w-md">
                     This file format ({doc.fileFormat}) is stored in your secure vault. You can review its technical compliance metadata or download it to open natively.
                   </p>
-                  {doc.fileUrl && doc.fileUrl !== '#' && (
+                  {resolvedUrl && resolvedUrl !== '#' && (
                     <a
-                      href={doc.fileUrl}
+                      href={resolvedUrl}
                       target="_blank"
                       rel="noreferrer"
                       download={fileName}
@@ -657,9 +698,9 @@ export default function UniversalDocumentViewer({
                     <Pencil className="w-3.5 h-3.5" /> Edit Compliance Expiry
                   </button>
 
-                  {doc.fileUrl && doc.fileUrl !== '#' && (
+                  {resolvedUrl && resolvedUrl !== '#' && (
                     <a
-                      href={doc.fileUrl}
+                      href={resolvedUrl}
                       target="_blank"
                       rel="noreferrer"
                       download={fileName}

@@ -51,7 +51,7 @@ export default function CostingExportModal({
   const handleDownloadCsv = () => {
     const sc = allScenarios;
     const lines: string[][] = [
-      ['RIVLET LUXURY APPAREL - COMMERCIAL COSTING & UNIT ECONOMICS DOSSIER'],
+      ['RIVLET - COMMERCIAL COSTING & UNIT ECONOMICS DOSSIER'],
       ['Generated On', currentDate],
       ['Style Name', inputs.productName],
       ['SKU / Product Code', inputs.productCode],

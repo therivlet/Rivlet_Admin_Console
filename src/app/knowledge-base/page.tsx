@@ -1,24 +1,28 @@
 'use client';
 
-import React, { useState } from 'react';
-import { 
-  BookOpen, 
-  Search, 
-  Plus, 
-  Lock, 
-  ShieldCheck, 
-  Edit3, 
-  Trash2, 
-  Save, 
-  Tag, 
+import React, { useRef, useState } from 'react';
+import {
+  BookOpen,
+  Search,
+  Plus,
+  Lock,
+  ShieldCheck,
+  Edit3,
+  Trash2,
+  Save,
+  Tag,
   Calendar,
   User,
   FolderOpen,
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  Eye,
+  Code,
+  Upload
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { KBArticle } from '@/lib/types';
+import { renderMarkdown } from '@/lib/markdown';
 
 export default function KnowledgeBasePage() {
   const { kbArticles, saveArticle, deleteArticle } = useAdminStore();
@@ -33,6 +37,23 @@ export default function KnowledgeBasePage() {
   const [editIsConfidential, setEditIsConfidential] = useState(false);
   const [editTags, setEditTags] = useState('');
   const [editError, setEditError] = useState<string | null>(null);
+  const [editorMode, setEditorMode] = useState<'write' | 'preview'>('write');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUploadMdFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result || '');
+      setEditContent(text);
+      if (!editTitle || editTitle === 'New SOP / Operational Guide') {
+        setEditTitle(file.name.replace(/\.mdx?$/i, '').replace(/[-_]/g, ' '));
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
 
   const currentArticle = kbArticles.find((a) => a.id === selectedArticleId) || kbArticles[0];
 
@@ -313,15 +334,51 @@ export default function KnowledgeBasePage() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">
-                      Markdown Content & Operational Details
-                    </label>
-                    <textarea
-                      value={editContent}
-                      onChange={(e) => setEditContent(e.target.value)}
-                      rows={16}
-                      className="w-full bg-[#07090e] border border-[#263147] text-[#e2e8f0] font-mono text-xs p-4 rounded-lg outline-none leading-relaxed focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40"
-                    />
+                    <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
+                      <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider">
+                        Markdown Content & Operational Details
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input ref={fileInputRef} type="file" accept=".md,.markdown,text/markdown,text/plain" className="hidden" onChange={handleUploadMdFile} />
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          title="Upload a .md file to replace this content"
+                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#141824] border border-[#263147] text-[#94a3b8] hover:text-white text-[11px] font-medium transition-colors"
+                        >
+                          <Upload className="w-3 h-3" /> Upload .md
+                        </button>
+                        <div className="flex items-center bg-[#07090e] p-0.5 rounded-lg border border-[#263147]">
+                          <button
+                            type="button"
+                            onClick={() => setEditorMode('write')}
+                            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${editorMode === 'write' ? 'bg-[#141824] text-[#e6c875]' : 'text-[#94a3b8] hover:text-white'}`}
+                          >
+                            <Code className="w-3 h-3" /> Write
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditorMode('preview')}
+                            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${editorMode === 'preview' ? 'bg-[#141824] text-[#e6c875]' : 'text-[#94a3b8] hover:text-white'}`}
+                          >
+                            <Eye className="w-3 h-3" /> Preview
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    {editorMode === 'write' ? (
+                      <textarea
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        rows={16}
+                        className="w-full bg-[#07090e] border border-[#263147] text-[#e2e8f0] font-mono text-xs p-4 rounded-lg outline-none leading-relaxed focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40"
+                      />
+                    ) : (
+                      <div
+                        className="w-full min-h-[26rem] max-h-[32rem] overflow-y-auto bg-[#07090e] border border-[#263147] rounded-lg p-4 kb-markdown"
+                        dangerouslySetInnerHTML={{ __html: renderMarkdown(editContent) || '<p class="text-[#5f6c85] italic">Nothing to preview yet.</p>' }}
+                      />
+                    )}
                   </div>
                 </div>
               ) : (
@@ -341,10 +398,11 @@ export default function KnowledgeBasePage() {
                     </span>
                   </div>
 
-                  {/* Rendered content */}
-                  <div className="text-sm text-[#e2e8f0] leading-relaxed space-y-4 whitespace-pre-line font-sans font-normal border-l-2 border-[#cda052]/40 pl-4 py-1">
-                    {currentArticle.content}
-                  </div>
+                  {/* Rendered markdown content */}
+                  <div
+                    className="kb-markdown border-l-2 border-[#cda052]/40 pl-4 py-1"
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(currentArticle.content) }}
+                  />
 
                   {/* Tags */}
                   <div className="flex flex-wrap gap-2 pt-6 border-t border-[#1e2638]">

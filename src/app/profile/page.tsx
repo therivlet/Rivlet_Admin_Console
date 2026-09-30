@@ -38,7 +38,7 @@ export default function ProfilePage() {
   const [department, setDepartment] = useState(user?.metadata?.department || 'Executive & Merchandising');
 
   // Brand Entity State
-  const [legalEntity, setLegalEntity] = useState(user?.metadata?.legal_entity || 'Rivlet Luxury Apparel Co.');
+  const [legalEntity, setLegalEntity] = useState(user?.metadata?.legal_entity || 'Rivlet');
   const [gstin, setGstin] = useState(user?.metadata?.gstin || '');
   const [primaryHub, setPrimaryHub] = useState(user?.metadata?.primary_hub || 'Tirupur Apparel Complex, Tamil Nadu');
   const [warehouseLocation, setWarehouseLocation] = useState(user?.metadata?.warehouse_location || 'Bangalore Logistics Hub, Karnataka');
