@@ -2,7 +2,6 @@
 
 import React, { useMemo, useState } from 'react';
 import { CalendarRange, Plus, X, Save, Trash2, Pencil, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
 import { useAdminStore } from '@/lib/store';
 import { Sprint } from '@/lib/types';
 import ModalPortal from '@/components/ui/ModalPortal';
@@ -26,7 +25,11 @@ const STATUS_COLOR = {
   past: 'bg-[#182030] text-[#94a3b8] border-[#263148]',
 };
 
-export default function SprintsPage() {
+interface SprintsViewProps {
+  onOpenBoard?: (sprintId: string) => void;
+}
+
+export default function SprintsView({ onOpenBoard }: SprintsViewProps) {
   const { sprints, workItems, saveSprint, deleteSprint } = useAdminStore();
   const [modalItem, setModalItem] = useState<Sprint | Omit<Sprint, 'createdAt' | 'updatedAt'> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -61,17 +64,11 @@ export default function SprintsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2.5">
-            <CalendarRange className="w-6 h-6 text-[#cda052]" />
-            Sprints
-          </h1>
-          <p className="text-sm text-[#94a3b8] mt-1">Plan work in fixed windows and track burn-down toward each sprint goal.</p>
-        </div>
+    <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+        <p className="text-sm text-[#94a3b8]">Plan work in fixed windows and track burn-down toward each sprint goal.</p>
         <button onClick={() => { setModalItem(emptyItem()); setError(null); }} title="Create a new sprint"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-sm font-semibold hover:shadow-glow transition-all">
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-sm font-semibold hover:shadow-glow transition-all flex-shrink-0">
           <Plus className="w-4 h-4" /> New Sprint
         </button>
       </div>
@@ -112,9 +109,9 @@ export default function SprintsPage() {
                     <div className="h-full bg-gradient-to-r from-[#cda052] to-emerald-500" style={{ width: `${pct}%` }} />
                   </div>
                   <span className="text-[11px] font-mono text-[#94a3b8] flex-shrink-0">{stats.done}/{stats.total} items · {stats.donePoints}/{stats.points} pts</span>
-                  <Link href="/work/board" className="text-[11px] text-[#cda052] hover:underline flex items-center gap-0.5 flex-shrink-0">
+                  <button onClick={() => onOpenBoard?.(s.id)} className="text-[11px] text-[#cda052] hover:underline flex items-center gap-0.5 flex-shrink-0">
                     Board <ArrowRight className="w-3 h-3" />
-                  </Link>
+                  </button>
                 </div>
               </div>
             );

@@ -46,6 +46,19 @@ export default function PipelinePage() {
   const [modalItem, setModalItem] = useState<PipelineItem | Omit<PipelineItem, 'createdAt' | 'updatedAt'> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+
+  const handleDrop = async (stage: PipelineStage) => {
+    if (!draggingId) return;
+    const target = pipelineItems.find((p) => p.id === draggingId);
+    setDraggingId(null);
+    if (!target || target.stage === stage) return;
+    await savePipelineItem({
+      ...target,
+      stage,
+      actualDate: (stage === 'Shipped' || stage === 'Delivered') ? (target.actualDate || new Date().toISOString().slice(0, 10)) : target.actualDate,
+    });
+  };
 
   const byStage = useMemo(() => {
     const map: Record<string, PipelineItem[]> = {};
@@ -109,14 +122,25 @@ export default function PipelinePage() {
       {/* Kanban-style stage board */}
       <div className="flex gap-3 overflow-x-auto pb-4">
         {STAGES.map((stage) => (
-          <div key={stage} className="flex-shrink-0 w-64 rounded-2xl border border-[#1a1f2c] bg-[#0a0c12]">
+          <div
+            key={stage}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={() => handleDrop(stage)}
+            className="flex-shrink-0 w-64 rounded-2xl border border-[#1a1f2c] bg-[#0a0c12]"
+          >
             <div className="px-3 py-2.5 border-b border-[#1a1f2c] flex items-center justify-between">
               <span className="text-[11px] font-semibold text-[#cbd5e1] uppercase tracking-wide">{stage}</span>
               <span className="text-[10px] font-mono text-[#7c869d] bg-[#141724] px-1.5 py-0.5 rounded">{byStage[stage]?.length || 0}</span>
             </div>
             <div className="p-2.5 space-y-2.5 min-h-[120px]">
               {(byStage[stage] || []).map((item) => (
-                <div key={item.id} className="rounded-xl border border-[#1f2638] bg-[#0e121b] p-3 group">
+                <div
+                  key={item.id}
+                  draggable
+                  onDragStart={() => setDraggingId(item.id)}
+                  onDragEnd={() => setDraggingId(null)}
+                  className={`rounded-xl border border-[#1f2638] bg-[#0e121b] p-3 group cursor-grab active:cursor-grabbing ${draggingId === item.id ? 'opacity-40' : ''}`}
+                >
                   <div className="flex items-start justify-between gap-1.5">
                     <div>
                       <p className="text-xs font-semibold text-white">{item.styleName}</p>

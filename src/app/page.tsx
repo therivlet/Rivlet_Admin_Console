@@ -92,7 +92,7 @@ export default function DashboardOverviewPage() {
               </p>
             </div>
           </div>
-          <Link href="/work/board" className="text-xs text-[#cda052] hover:underline flex items-center gap-1 font-semibold">
+          <Link href="/work?tab=board" className="text-xs text-[#cda052] hover:underline flex items-center gap-1 font-semibold">
             Open Sprint Board <ChevronRight className="w-3.5 h-3.5" />
           </Link>
         </div>

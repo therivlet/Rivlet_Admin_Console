@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   LayoutDashboard,
   Layers,
@@ -37,6 +37,8 @@ interface SidebarProps {
 
 export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const activeWorkTab = pathname === '/work' ? (searchParams.get('tab') || 'backlog') : null;
   const { artifacts } = useAdminStore();
   const { user, signOut } = useAuth();
 
@@ -54,10 +56,10 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
     { label: 'Profile & Brand Settings', href: '/profile', icon: Settings },
   ];
 
-  const workItems = [
-    { label: 'Backlog', href: '/work/backlog', icon: ListTree },
-    { label: 'Sprint Board', href: '/work/board', icon: KanbanSquare },
-    { label: 'Sprints', href: '/work/sprints', icon: CalendarRange },
+  const workNavItems = [
+    { label: 'Backlog', href: '/work?tab=backlog', tab: 'backlog', icon: ListTree },
+    { label: 'Sprint Board', href: '/work?tab=board', tab: 'board', icon: KanbanSquare },
+    { label: 'Sprints', href: '/work?tab=sprints', tab: 'sprints', icon: CalendarRange },
   ];
 
   const handleLinkClick = () => {
@@ -92,9 +94,9 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
             Work Tracking
           </div>
           <nav className="space-y-1">
-            {workItems.map((item) => {
+            {workNavItems.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href;
+              const isActive = activeWorkTab === item.tab;
               return (
                 <Link
                   key={item.href}

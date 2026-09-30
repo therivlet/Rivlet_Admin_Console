@@ -4,25 +4,16 @@ import React, { useMemo, useState } from 'react';
 import { ListTree, Plus, Search, ChevronDown, ChevronRight as ChevronRightIcon } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { WorkItem, WorkItemType, WorkItemState } from '@/lib/types';
-import WorkItemModal, { TYPE_COLOR, STATE_COLOR, PRIORITY_LABEL } from '@/components/work/WorkItemModal';
+import WorkItemModal, { TYPE_COLOR, STATE_COLOR } from '@/components/work/WorkItemModal';
 
 const TYPES: WorkItemType[] = ['Epic', 'Feature', 'User Story', 'Task', 'Bug'];
 const STATES: WorkItemState[] = ['New', 'Active', 'In Review', 'Resolved', 'Closed'];
 
 function emptyItem(parentId?: string): Omit<WorkItem, 'createdAt' | 'updatedAt'> {
-  return {
-    id: `wi-${Date.now()}`,
-    type: 'User Story',
-    title: '',
-    state: 'New',
-    priority: 2,
-    tags: [],
-    parentId,
-    comments: [],
-  };
+  return { id: `wi-${Date.now()}`, type: 'User Story', title: '', state: 'New', priority: 2, tags: [], parentId, comments: [] };
 }
 
-export default function BacklogPage() {
+export default function BacklogView() {
   const { workItems, sprints } = useAdminStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<'All' | WorkItemType>('All');
@@ -41,7 +32,6 @@ export default function BacklogPage() {
   };
 
   const sprintName = (id?: string) => sprints.find((s) => s.id === id)?.name;
-
   const toggleCollapse = (id: string) => setCollapsed((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const renderRow = (item: WorkItem, depth: number) => {
@@ -75,19 +65,13 @@ export default function BacklogPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2.5">
-            <ListTree className="w-6 h-6 text-[#cda052]" />
-            Product Backlog
-          </h1>
-          <p className="text-sm text-[#94a3b8] mt-1">Epics, Features, User Stories, Tasks & Bugs — the full work hierarchy.</p>
-        </div>
+    <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+        <p className="text-sm text-[#94a3b8]">Epics, Features, User Stories, Tasks & Bugs — the full work hierarchy.</p>
         <button
           onClick={() => setModalItem(emptyItem())}
           title="Create a new work item"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-sm font-semibold hover:shadow-glow transition-all"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-sm font-semibold hover:shadow-glow transition-all flex-shrink-0"
         >
           <Plus className="w-4 h-4" /> New Work Item
         </button>

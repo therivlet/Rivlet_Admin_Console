@@ -326,7 +326,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
                 {filteredWorkItems.slice(0, 5).map((w) => (
                   <div
                     key={w.id}
-                    onClick={() => navigateTo('/work/backlog')}
+                    onClick={() => navigateTo('/work?tab=backlog')}
                     className="flex items-center justify-between p-2.5 rounded-lg hover:bg-[#181d2a] cursor-pointer group text-xs"
                   >
                     <div>
