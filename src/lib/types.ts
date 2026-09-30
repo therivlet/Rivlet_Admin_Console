@@ -399,6 +399,7 @@ export interface WorkItem {
   linkedPipelineItemId?: string; // cross-link to a single Sampling & Production style (legacy/compatibility)
   linkedPipelineItemIds?: string[]; // cross-link to multiple Sampling & Production styles (or ['all'])
   operationCategory?: string; // e.g. "Operations", "Sourcing & Fabrics", "Sampling & Fit", "Production QC", etc.
+  order?: number; // Sorting/display order within sprint or board
   startDate?: string;
   targetDate?: string;
   completedDate?: string;

@@ -241,7 +241,7 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
     setCommentText('');
     setIsPostingComment(true);
     try {
-      await addWorkItemComment(form.id, text, user?.name || 'Dasani');
+      await addWorkItemComment(form.id, text, user?.name || 'Rivlet Admin');
     } catch {
       setCommentText(text);
     } finally {
@@ -261,7 +261,7 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
       storyPoints: 1,
       parentId: currentItem.id,
       sprintId: currentItem.sprintId,
-      assignee: currentItem.assignee || 'Dasani',
+      assignee: currentItem.assignee || undefined,
       linkedVendorId: currentItem.linkedVendorId,
       linkedPipelineItemIds: currentItem.linkedPipelineItemIds,
       operationCategory: currentItem.operationCategory,
@@ -494,57 +494,67 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                     </div>
                   )}
 
-                  {/* Discussion / Comment Box — fully active in Read-Only mode */}
-                  <div className="rounded-xl border border-[#1b2233] bg-[#0c1018] p-5 shadow-sm">
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-[#7c869d] mb-3 flex items-center gap-1.5">
-                      <MessageSquare className="w-3.5 h-3.5 text-[#cda052]" /> Discussion & Activity
-                    </h3>
-
-                    {/* Comment list */}
-                    <div className="space-y-2.5 max-h-56 overflow-y-auto mb-4 pr-1">
-                      {liveComments.length === 0 ? (
-                        <p className="text-xs text-[#54627a] italic">No comments yet. Start the discussion below.</p>
-                      ) : (
-                        liveComments.map((c) => (
-                          <div key={c.id} className="p-3 rounded-lg bg-[#0e1320] border border-[#1a2336] text-xs">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="font-semibold text-white flex items-center gap-1.5">
-                                <span className="w-5 h-5 rounded-full bg-gradient-to-br from-[#cda052] to-[#7f5a1c] text-black text-[10px] font-bold flex items-center justify-center">
-                                  {c.author[0]?.toUpperCase()}
-                                </span>
-                                {c.author}
-                              </span>
-                              <span className="text-[10px] text-[#64748b]">{new Date(c.createdAt).toLocaleString()}</span>
-                            </div>
-                            <p className="text-[#cbd5e1] leading-relaxed pl-6 whitespace-pre-wrap">{c.text}</p>
-                          </div>
-                        ))
-                      )}
+                  {/* Discussion / Comment Box — input box at top, comments listed at bottom of text box */}
+                  <div className="rounded-xl border border-[#1b2233] bg-[#0c1018] p-5 shadow-sm space-y-4">
+                    <div className="flex items-center justify-between border-b border-[#171d2b] pb-2.5">
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-[#7c869d] flex items-center gap-1.5">
+                        <MessageSquare className="w-3.5 h-3.5 text-[#cda052]" /> Discussion & Comments ({liveComments.length})
+                      </h3>
                     </div>
 
-                    {/* Add Comment Input */}
-                    <div className="flex items-center gap-2">
-                      <input
-                        value={commentText}
-                        onChange={(e) => setCommentText(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleAddComment();
-                          }
-                        }}
-                        placeholder="Add a comment or update (e.g. Dasani approved swatch card)..."
-                        disabled={isPostingComment}
-                        className="flex-1 px-3.5 py-2.5 rounded-xl bg-[#080b11] border border-[#20293d] text-xs text-white placeholder:text-[#54627a] focus:outline-none focus:border-[#cda052]/60 disabled:opacity-60"
-                      />
-                      <button
-                        onClick={handleAddComment}
-                        disabled={isPostingComment || !commentText.trim()}
-                        title="Post comment"
-                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-xs font-semibold hover:shadow-glow transition-all disabled:opacity-50"
-                      >
-                        <Send className="w-3.5 h-3.5" /> Post
-                      </button>
+                    {/* Add Comment Input — Placed at the top */}
+                    <div>
+                      <label className="text-[11px] font-medium text-[#94a3b8] block mb-1.5">Add a Comment / Note</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          value={commentText}
+                          onChange={(e) => setCommentText(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleAddComment();
+                            }
+                          }}
+                          placeholder="Type your comment or update here..."
+                          disabled={isPostingComment}
+                          className="flex-1 px-3.5 py-2.5 rounded-xl bg-[#080b11] border border-[#20293d] text-xs text-white placeholder:text-[#54627a] focus:outline-none focus:border-[#cda052]/60 disabled:opacity-60"
+                        />
+                        <button
+                          onClick={handleAddComment}
+                          disabled={isPostingComment || !commentText.trim()}
+                          title="Post comment"
+                          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-xs font-semibold hover:shadow-glow transition-all disabled:opacity-50"
+                        >
+                          <Send className="w-3.5 h-3.5" /> Post
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Comment list — Appears at the bottom of the text box */}
+                    <div className="space-y-2 pt-1 border-t border-[#171d2b]">
+                      <span className="text-[11px] font-medium text-[#64748b] block mb-1">Comment History</span>
+                      {liveComments.length === 0 ? (
+                        <p className="text-xs text-[#54627a] italic p-3 rounded-lg bg-[#080b11] border border-[#171e2e]">
+                          No comments yet. Type in the box above to add a comment.
+                        </p>
+                      ) : (
+                        <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
+                          {liveComments.map((c) => (
+                            <div key={c.id} className="p-3 rounded-lg bg-[#0e1320] border border-[#1a2336] text-xs">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="font-semibold text-white flex items-center gap-1.5">
+                                  <span className="w-5 h-5 rounded-full bg-gradient-to-br from-[#cda052] to-[#7f5a1c] text-black text-[10px] font-bold flex items-center justify-center">
+                                    {c.author ? c.author[0]?.toUpperCase() : '?'}
+                                  </span>
+                                  {c.author}
+                                </span>
+                                <span className="text-[10px] text-[#64748b]">{new Date(c.createdAt).toLocaleString()}</span>
+                              </div>
+                              <p className="text-[#cbd5e1] leading-relaxed pl-6 whitespace-pre-wrap">{c.text}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -560,13 +570,17 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                     <div>
                       <span className="text-[11px] text-[#64748b] block mb-1">Assignee</span>
                       <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#cda052] to-[#8c672b] text-black flex items-center justify-center text-xs font-bold flex-shrink-0">
+                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#1e293b] to-[#0f172a] text-[#94a3b8] border border-[#334155] flex items-center justify-center text-xs font-bold flex-shrink-0">
                           {currentItem.assignee ? currentItem.assignee[0]?.toUpperCase() : '?'}
                         </div>
                         <div>
-                          <p className="text-xs font-semibold text-white">{currentItem.assignee || 'Unassigned'}</p>
-                          {currentItem.assignee === 'Dasani' && (
-                            <p className="text-[10px] text-[#cda052]">Operations & Sourcing Lead</p>
+                          <p className={`text-xs font-semibold ${currentItem.assignee ? 'text-white' : 'text-[#8594ab]'}`}>
+                            {currentItem.assignee || 'Unassigned'}
+                          </p>
+                          {currentItem.assignee && (
+                            <p className="text-[10px] text-[#cda052]">
+                              {teamMembers.find((m) => m.name === currentItem.assignee)?.role || 'Team Member'}
+                            </p>
                           )}
                         </div>
                       </div>

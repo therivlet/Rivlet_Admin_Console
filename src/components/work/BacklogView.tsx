@@ -10,7 +10,7 @@ const TYPES: WorkItemType[] = ['Epic', 'Feature', 'User Story', 'Task', 'Bug'];
 const STATES: WorkItemState[] = ['New', 'Active', 'In Review', 'Resolved', 'Closed'];
 
 function emptyItem(parentId?: string): Omit<WorkItem, 'createdAt' | 'updatedAt'> {
-  return { id: `wi-${Date.now()}`, type: 'User Story', title: '', state: 'New', priority: 2, tags: [], parentId, assignee: 'Dasani', comments: [] };
+  return { id: `wi-${Date.now()}`, type: 'User Story', title: '', state: 'New', priority: 2, tags: [], parentId, assignee: undefined, comments: [] };
 }
 
 export default function BacklogView() {

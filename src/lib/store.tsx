@@ -59,6 +59,7 @@ interface AdminStoreContextType {
   deleteSprint: (id: string) => Promise<void>;
   saveWorkItem: (item: WorkItem) => Promise<void>;
   saveWorkItemsBulk: (items: WorkItem[]) => Promise<void>;
+  reorderWorkItems: (reordered: WorkItem[]) => Promise<void>;
   deleteWorkItem: (id: string) => Promise<void>;
   addWorkItemComment: (id: string, text: string, author: string) => Promise<void>;
   saveTeamMember: (member: TeamMember) => Promise<void>;
@@ -460,6 +461,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           linkedPipelineItemId: r.linked_pipeline_item_id || undefined,
           linkedPipelineItemIds: Array.isArray(r.linkedPipelineItemIds) ? r.linkedPipelineItemIds : (r.linked_pipeline_item_id ? [r.linked_pipeline_item_id] : []),
           operationCategory: r.operationCategory || r.operation_category || undefined,
+          order: r.order !== undefined && r.order !== null ? Number(r.order) : undefined,
           startDate: r.start_date || undefined,
           targetDate: r.target_date || undefined,
           completedDate: r.completed_date || undefined,
@@ -1294,6 +1296,13 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     }
   };
 
+  const reorderWorkItems = async (reordered: WorkItem[]) => {
+    setWorkItems(reordered);
+    try {
+      localStorage.setItem(STORAGE_KEYS.WORK_ITEMS, JSON.stringify(reordered));
+    } catch (_) {}
+  };
+
   const deleteWorkItem = async (id: string) => {
     setWorkItems((prev) => prev.filter((w) => w.id !== id && w.parentId !== id));
     if (isSupabaseConfigured && supabase) {
@@ -1467,6 +1476,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         deleteSprint,
         saveWorkItem,
         saveWorkItemsBulk,
+        reorderWorkItems,
         deleteWorkItem,
         addWorkItemComment,
         saveTeamMember,

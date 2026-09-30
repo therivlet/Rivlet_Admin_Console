@@ -24,76 +24,76 @@ import { WorkItem, WorkItemPriority, WorkItemState, WorkItemType } from '@/lib/t
 import { TYPE_COLOR, STATE_COLOR, PRIORITY_BADGE_COLOR, PRIORITY_LABEL } from '@/components/work/WorkItemModal';
 
 const SAMPLE_YAML = `
-- user_story: "Dasani: Finalize proto sample fit & sizing specs for Drop 1 Leggings"
+- user_story: "Finalize proto sample fit & sizing specs for Drop 1 Leggings"
   story_type: "User Story"
   priority: "P1"
   points: 5
-  assignee: "Dasani"
+  assignee: "Unassigned"
   sprint: "Sprint 1"
   manufacture: "Techno Sportswear"
   styles: "Leggings, Sports Bra"
-  description: "Dasani to lead fit sessions with sample master. Verify waistband elasticity, high-rise seam placement, and 4-way squat-proof density under 240 GSM."
+  description: "Lead fit sessions with sample master. Verify waistband elasticity, high-rise seam placement, and 4-way squat-proof density under 240 GSM."
   acceptance_criteria: "Fit trial approved across XS, S, and M. Zero roll-down on waistband during movement testing."
   tasks:
-    - title: "Dasani: Audit proto sample waist tension & stretch recovery"
+    - title: "Audit proto sample waist tension & stretch recovery"
       priority: "P1"
       points: 2
-      assignee: "Dasani"
-    - title: "Dasani: Log measurement delta between tech-pack spec and physical sample"
+      assignee: "Unassigned"
+    - title: "Log measurement delta between tech-pack spec and physical sample"
       priority: "P2"
       points: 1
-      assignee: "Dasani"
-    - title: "Dasani: Request second proto adjustment for leg hem flatlock seams"
+      assignee: "Unassigned"
+    - title: "Request second proto adjustment for leg hem flatlock seams"
       priority: "P2"
       points: 1
-      assignee: "Dasani"
+      assignee: "Unassigned"
 
-- user_story: "Dasani: Lab Dip Colorfastness & D65 Lighting Booth Verification"
+- user_story: "Lab Dip Colorfastness & D65 Lighting Booth Verification"
   story_type: "User Story"
   priority: "P2"
   points: 3
-  assignee: "Dasani"
+  assignee: "Unassigned"
   sprint: "Sprint 1"
   manufacture: "Techno Sportswear"
   styles: "All Styles"
-  description: "Dasani to inspect and sign off on fabric lab dips in Midnight and Cardamom colorways for all 6 launch styles."
+  description: "Inspect and sign off on fabric lab dips in Midnight and Cardamom colorways for all 6 launch styles."
   acceptance_criteria: "Delta-E color difference is under 0.8 compared to Pantone TCX standard swatch. Washing colorfastness grade 4.5+."
   tasks:
-    - title: "Dasani: Review color swatches under D65, TL84, and daylight lamps"
+    - title: "Review color swatches under D65, TL84, and daylight lamps"
       priority: "P1"
       points: 1
-      assignee: "Dasani"
-    - title: "Dasani: Send signed swatch physical approvals back to factory"
+      assignee: "Unassigned"
+    - title: "Send signed swatch physical approvals back to factory"
       priority: "P2"
       points: 1
-      assignee: "Dasani"
+      assignee: "Unassigned"
 `.trim();
 
 const SAMPLE_JSON = JSON.stringify(
   [
     {
-      user_story: 'Dasani: Finalize proto sample fit & sizing specs for Drop 1 Leggings',
+      user_story: 'Finalize proto sample fit & sizing specs for Drop 1 Leggings',
       story_type: 'User Story',
       priority: 'P1',
       points: 5,
-      assignee: 'Dasani',
+      assignee: 'Unassigned',
       sprint: 'Sprint 1',
       manufacture: 'Techno Sportswear',
       styles: 'Leggings, Sports Bra',
-      description: 'Dasani to lead fit sessions with sample master. Verify waistband elasticity, high-rise seam placement, and 4-way squat-proof density under 240 GSM.',
+      description: 'Lead fit sessions with sample master. Verify waistband elasticity, high-rise seam placement, and 4-way squat-proof density under 240 GSM.',
       acceptance_criteria: 'Fit trial approved across XS, S, and M. Zero roll-down on waistband during movement testing.',
       tasks: [
         {
-          title: 'Dasani: Audit proto sample waist tension & stretch recovery',
+          title: 'Audit proto sample waist tension & stretch recovery',
           priority: 'P1',
           points: 2,
-          assignee: 'Dasani',
+          assignee: 'Unassigned',
         },
         {
-          title: 'Dasani: Log measurement delta between tech-pack spec and physical sample',
+          title: 'Log measurement delta between tech-pack spec and physical sample',
           priority: 'P2',
           points: 1,
-          assignee: 'Dasani',
+          assignee: 'Unassigned',
         },
       ],
     },
@@ -222,7 +222,7 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
             title: t.title || t.name || t.task || 'Task',
             priority: resolvePriority(t.priority),
             points: t.points !== undefined ? Number(t.points) : 1,
-            assignee: t.assignee || item.assignee || 'Dasani',
+            assignee: t.assignee || item.assignee || 'Unassigned',
             description: t.description,
           }));
 
@@ -231,7 +231,7 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
             type: (item.story_type || item.type || 'User Story') as WorkItemType,
             priority: resolvePriority(item.priority),
             points: item.points ? Number(item.points) : (item.story_points ? Number(item.story_points) : 3),
-            assignee: item.assignee || 'Dasani',
+            assignee: item.assignee || 'Unassigned',
             sprintName: item.sprint || item.sprints,
             sprintId: resolveSprintId(item.sprint || item.sprints),
             vendorName: item.manufacture || item.manufacturer || item.vendor,
@@ -405,7 +405,7 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
           if (!s.sprintId) s.sprintId = resolveSprintId(s.sprintName);
           if (!s.vendorId && s.vendorName) s.vendorId = resolveVendorId(s.vendorName);
           if (!s.styleIds && s.stylesText) s.styleIds = resolveStyleIds(s.stylesText);
-          if (!s.assignee) s.assignee = 'Dasani';
+          if (!s.assignee) s.assignee = 'Unassigned';
         }
         setParsedStories(stories);
       }
@@ -438,19 +438,20 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
         acceptanceCriteria: s.acceptanceCriteria || '',
         state: 'New',
         priority: s.priority || 2,
+        order: i + 1,
         storyPoints: s.points || 3,
-        assignee: s.assignee || 'Dasani',
+        assignee: s.assignee && s.assignee !== 'Unassigned' ? s.assignee : undefined,
         sprintId: s.sprintId || sprints[0]?.id,
         linkedVendorId: s.vendorId,
         linkedPipelineItemIds: s.styleIds || [],
         linkedPipelineItemId: s.styleIds && s.styleIds.length > 0 && s.styleIds[0] !== 'all' ? s.styleIds[0] : undefined,
         operationCategory: s.operationCategory || 'Operations & Sourcing',
-        tags: ['AI-Imported', 'Dasani'],
+        tags: ['AI-Imported'],
         comments: [
           {
             id: `cm-${Date.now()}-${i}`,
             author: 'System (AI Importer)',
-            text: `Imported via Bulk Creation module on ${new Date().toLocaleDateString()}. Mention Dasani.`,
+            text: `Imported via Bulk Creation module on ${new Date().toLocaleDateString()}.`,
             createdAt: now,
           },
         ],
@@ -474,14 +475,15 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
             description: t.description || `Task for: ${s.title}`,
             state: 'New',
             priority: t.priority || 2,
+            order: j + 1,
             storyPoints: t.points || 1,
             parentId: storyId, // Linked to parent story!
             sprintId: s.sprintId || sprints[0]?.id,
-            assignee: t.assignee || s.assignee || 'Dasani',
+            assignee: t.assignee && t.assignee !== 'Unassigned' ? t.assignee : (s.assignee && s.assignee !== 'Unassigned' ? s.assignee : undefined),
             linkedVendorId: s.vendorId,
             linkedPipelineItemIds: s.styleIds || [],
             operationCategory: s.operationCategory || 'Operations & Sourcing',
-            tags: ['AI-Imported', 'Dasani'],
+            tags: ['AI-Imported'],
             comments: [],
             createdAt: now,
             updatedAt: now,
@@ -507,28 +509,28 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
 
   const handleCopyPrompt = () => {
     const promptText = `
-Please generate software / apparel production user stories and child tasks for Rivlet apparel brand in the following format. Ensure "assignee" is mentioned as "Dasani" for all stories and tasks.
+Please generate software / apparel production user stories and child tasks for Rivlet apparel brand in the following format. Leave "assignee" as "Unassigned" unless specifically assigned.
 
 Format:
 - user_story: "[Title of user story]"
   story_type: "User Story"
   priority: "P1" # P1, P2, P3, P4
   points: 5 # 1, 2, 3, 5, 8
-  assignee: "Dasani"
+  assignee: "Unassigned"
   sprint: "Sprint 1"
   manufacture: "Techno Sportswear" # or Wings2Fashion
   styles: "All Styles" # or "Leggings, Sports Bra"
   description: "[Detailed description without word count restriction]"
   acceptance_criteria: "[Checklist of done criteria]"
   tasks:
-    - title: "Dasani: [Subtask 1 action]"
+    - title: "[Subtask 1 action]"
       priority: "P1"
       points: 1
-      assignee: "Dasani"
-    - title: "Dasani: [Subtask 2 action]"
+      assignee: "Unassigned"
+    - title: "[Subtask 2 action]"
       priority: "P2"
       points: 2
-      assignee: "Dasani"
+      assignee: "Unassigned"
 `.trim();
 
     navigator.clipboard.writeText(promptText);
