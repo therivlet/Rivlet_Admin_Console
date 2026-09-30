@@ -5,6 +5,7 @@ import { Settings2, Users, Plus, X, Save, Trash2, Pencil, Clock } from 'lucide-r
 import { useAdminStore } from '@/lib/store';
 import { TeamMember } from '@/lib/types';
 import ModalPortal from '@/components/ui/ModalPortal';
+import { useConfirm } from '@/lib/confirmContext';
 
 const LENGTH_PRESETS = [
   { label: '1 Week', days: 7 },
@@ -18,6 +19,7 @@ function emptyMember(): Omit<TeamMember, 'createdAt' | 'updatedAt'> {
 }
 
 export default function SettingsView() {
+  const confirm = useConfirm();
   const { workSettings, saveWorkSettings, teamMembers, saveTeamMember, deleteTeamMember } = useAdminStore();
   const [customDays, setCustomDays] = useState(String(workSettings.defaultSprintLengthDays));
   const [modalMember, setModalMember] = useState<TeamMember | Omit<TeamMember, 'createdAt' | 'updatedAt'> | null>(null);
@@ -38,7 +40,13 @@ export default function SettingsView() {
   };
 
   const handleDeleteMember = async (id: string, name: string) => {
-    if (!confirm(`Remove "${name}" from the team roster? Existing assignments will keep showing their name but won't be selectable going forward.`)) return;
+    const ok = await confirm({
+      title: 'Remove Team Member',
+      message: `Remove "${name}" from the team roster? Existing work items will retain their assignment history, but "${name}" will no longer be selectable for new assignments.`,
+      confirmLabel: 'Remove Member',
+      danger: true,
+    });
+    if (!ok) return;
     await deleteTeamMember(id);
   };
 

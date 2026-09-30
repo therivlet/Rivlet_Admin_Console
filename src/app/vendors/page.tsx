@@ -23,6 +23,7 @@ import {
 import Link from 'next/link';
 import { useAdminStore } from '@/lib/store';
 import { VendorItem, VendorOutreachStage } from '@/lib/types';
+import { useConfirm } from '@/lib/confirmContext';
 import ModalPortal from '@/components/ui/ModalPortal';
 
 const STAGES: VendorOutreachStage[] = [
@@ -67,6 +68,7 @@ function emptyVendor(): Omit<VendorItem, 'createdAt' | 'updatedAt'> {
 }
 
 export default function VendorsPage() {
+  const confirm = useConfirm();
   const { vendors, saveVendor, deleteVendor, documents, pipelineItems, workItems } = useAdminStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [stageFilter, setStageFilter] = useState<'All' | VendorOutreachStage>('All');
@@ -112,7 +114,23 @@ export default function VendorsPage() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Remove "${name}" from the vendor pipeline? This cannot be undone.`)) return;
+    const linkedStyles = pipelineItems.filter((p) => p.vendorId === id);
+    const linkedDocs = documents.filter((d) => d.vendorId === id);
+    const sideEffects: string[] = [];
+    if (linkedStyles.length > 0) sideEffects.push(`${linkedStyles.length} sampling pipeline style${linkedStyles.length === 1 ? '' : 's'}`);
+    if (linkedDocs.length > 0) sideEffects.push(`${linkedDocs.length} linked document${linkedDocs.length === 1 ? '' : 's'}`);
+
+    const ok = await confirm({
+      title: 'Remove Vendor',
+      message: `Remove "${name}" from the vendor directory?${
+        sideEffects.length > 0
+          ? ` Warning: Linked manufacturer references on ${sideEffects.join(' and ')} will be unlinked.`
+          : ' This action cannot be undone.'
+      }`,
+      confirmLabel: 'Remove Vendor',
+      danger: true,
+    });
+    if (!ok) return;
     await deleteVendor(id);
   };
 

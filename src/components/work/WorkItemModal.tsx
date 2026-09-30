@@ -6,6 +6,7 @@ import { useAdminStore } from '@/lib/store';
 import { WorkItem, WorkItemType, WorkItemState, WorkItemPriority } from '@/lib/types';
 import { useAuth } from '@/lib/authContext';
 import ModalPortal from '@/components/ui/ModalPortal';
+import { useConfirm } from '@/lib/confirmContext';
 
 const TYPES: WorkItemType[] = ['Epic', 'Feature', 'User Story', 'Task', 'Bug'];
 const STATES: WorkItemState[] = ['New', 'Active', 'In Review', 'Resolved', 'Closed'];
@@ -41,6 +42,7 @@ interface WorkItemModalProps {
 }
 
 export default function WorkItemModal({ item, onClose }: WorkItemModalProps) {
+  const confirm = useConfirm();
   const { workItems, sprints, teamMembers, vendors, pipelineItems, saveWorkItem, deleteWorkItem, addWorkItemComment } = useAdminStore();
   const { user } = useAuth();
   const [form, setForm] = useState<WorkItem>({
@@ -87,7 +89,18 @@ export default function WorkItemModal({ item, onClose }: WorkItemModalProps) {
   };
 
   const handleDelete = async () => {
-    if (!confirm(`Delete "${form.title}"? Any sub-items will also be removed.`)) return;
+    const subItemCount = workItems.filter((w) => w.parentId === form.id).length;
+    const ok = await confirm({
+      title: 'Delete Work Item',
+      message: `Are you sure you want to delete "${form.title}"?${
+        subItemCount > 0
+          ? ` Warning: ${subItemCount} child sub-item${subItemCount === 1 ? '' : 's'} linked to this task will also be permanently deleted.`
+          : ' This action cannot be undone.'
+      }`,
+      confirmLabel: 'Delete Item',
+      danger: true,
+    });
+    if (!ok) return;
     await deleteWorkItem(form.id);
     onClose();
   };

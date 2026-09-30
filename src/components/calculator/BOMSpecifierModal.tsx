@@ -20,6 +20,7 @@ import {
 import { GarmentBOM, FabricBOMItem, TrimBOMItem } from '@/lib/types';
 import { bomPresets } from '@/lib/bomPresets';
 import ModalPortal from '@/components/ui/ModalPortal';
+import { useConfirm } from '@/lib/confirmContext';
 
 interface BOMSpecifierModalProps {
   isOpen: boolean;
@@ -41,6 +42,7 @@ export default function BOMSpecifierModal({
   initialBOM,
   onApplyBOM,
 }: BOMSpecifierModalProps) {
+  const confirm = useConfirm();
   const [selectedPreset, setSelectedPreset] = useState<string>('hoodie');
   const [garmentType, setGarmentType] = useState<string>('Oversized French Terry Hoodie (450 GSM)');
   const [fabricItems, setFabricItems] = useState<FabricBOMItem[]>([]);
@@ -63,6 +65,23 @@ export default function BOMSpecifierModal({
       setNotes(preset.notes || '');
     }
   }, []);
+
+  const handleSelectPreset = async (key: string) => {
+    if (key === selectedPreset) return;
+    const preset = bomPresets[key];
+    if (!preset) return;
+
+    if (fabricItems.length > 0 || trimItems.length > 0) {
+      const ok = await confirm({
+        title: 'Switch Apparel Preset',
+        message: `Loading the "${preset.garmentType}" preset will replace all current fabric rows, trim specifications, and labor costs. Do you want to proceed?`,
+        confirmLabel: 'Load Preset',
+        danger: false,
+      });
+      if (!ok) return;
+    }
+    loadPreset(key);
+  };
 
   // Initialize or load preset
   useEffect(() => {
@@ -115,7 +134,14 @@ export default function BOMSpecifierModal({
     setFabricItems(prev => [...prev, newItem]);
   };
 
-  const removeFabricRow = (id: string) => {
+  const removeFabricRow = async (id: string, name?: string) => {
+    const ok = await confirm({
+      title: 'Remove Fabric Component',
+      message: `Remove "${name || 'this fabric'}" from the Bill of Materials?`,
+      confirmLabel: 'Remove Fabric',
+      danger: true,
+    });
+    if (!ok) return;
     setFabricItems(prev => prev.filter(item => item.id !== id));
   };
 
@@ -144,7 +170,14 @@ export default function BOMSpecifierModal({
     setTrimItems(prev => [...prev, newItem]);
   };
 
-  const removeTrimRow = (id: string) => {
+  const removeTrimRow = async (id: string, name?: string) => {
+    const ok = await confirm({
+      title: 'Remove Trim Component',
+      message: `Remove "${name || 'this trim item'}" from the Bill of Materials?`,
+      confirmLabel: 'Remove Trim',
+      danger: true,
+    });
+    if (!ok) return;
     setTrimItems(prev => prev.filter(item => item.id !== id));
   };
 
@@ -302,7 +335,7 @@ export default function BOMSpecifierModal({
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs text-[#717a90] font-medium mr-1">Apparel Presets:</span>
             <button
-              onClick={() => loadPreset('hoodie')}
+              onClick={() => handleSelectPreset('hoodie')}
               title="Load preset specs for 450 GSM French Terry Hoodie"
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 selectedPreset === 'hoodie'
@@ -315,7 +348,7 @@ export default function BOMSpecifierModal({
             </button>
 
             <button
-              onClick={() => loadPreset('tshirt')}
+              onClick={() => handleSelectPreset('tshirt')}
               title="Load preset specs for 280 GSM Heavy Boxy Tee"
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 selectedPreset === 'tshirt'
@@ -328,7 +361,7 @@ export default function BOMSpecifierModal({
             </button>
 
             <button
-              onClick={() => loadPreset('sweatpants')}
+              onClick={() => handleSelectPreset('sweatpants')}
               title="Load preset specs for 400 GSM Heavy Sweatpants"
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 selectedPreset === 'sweatpants'
@@ -441,7 +474,7 @@ export default function BOMSpecifierModal({
                       <td className="py-2 px-2 text-center">
                         {fabricItems.length > 1 && (
                           <button
-                            onClick={() => removeFabricRow(item.id)}
+                            onClick={() => removeFabricRow(item.id, item.name)}
                             title="Remove fabric component"
                             className="p-1 text-[#626a7e] hover:text-rose-400 transition-colors"
                           >
@@ -596,7 +629,7 @@ export default function BOMSpecifierModal({
                       </td>
                       <td className="py-2 px-2 text-center">
                         <button
-                          onClick={() => removeTrimRow(item.id)}
+                          onClick={() => removeTrimRow(item.id, item.name)}
                           title="Remove trim component"
                           className="p-1 text-[#626a7e] hover:text-rose-400 transition-colors"
                         >

@@ -24,6 +24,7 @@ import { CalculatorDefaults, ScenarioKey, PricingInputs } from '@/lib/types';
 import { defaultCalculatorDefaults, formatMoney } from '@/lib/pricingEngine';
 import { useAuth } from '@/lib/authContext';
 import ModalPortal from '@/components/ui/ModalPortal';
+import { useConfirm } from '@/lib/confirmContext';
 
 interface CalculatorSettingsModalProps {
   isOpen: boolean;
@@ -38,6 +39,7 @@ export default function CalculatorSettingsModal({
   currentInputs,
   onApplyDefaultsToCurrent,
 }: CalculatorSettingsModalProps) {
+  const confirm = useConfirm();
   const { user, updateProfile } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'overheads' | 'inbound' | 'commercial' | 'locks'>('overheads');
@@ -170,10 +172,15 @@ export default function CalculatorSettingsModal({
   };
 
   // Reset to initial standards
-  const handleResetToStandard = () => {
-    if (window.confirm('Reset all defaults to factory standard Rivlet settings?')) {
-      setDefaults(defaultCalculatorDefaults);
-    }
+  const handleResetToStandard = async () => {
+    const ok = await confirm({
+      title: 'Reset Brand Defaults to Factory Standards',
+      message: 'Reset all calculator defaults (benchmark overheads, freight subsidies, packaging, and return allowances) back to factory initial standards? You will need to save to apply them globally.',
+      confirmLabel: 'Reset Standards',
+      danger: false,
+    });
+    if (!ok) return;
+    setDefaults(defaultCalculatorDefaults);
   };
 
   return (

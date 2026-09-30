@@ -7,6 +7,7 @@ import Topbar from '@/components/layout/Topbar';
 import CommandPalette from '@/components/layout/CommandPalette';
 import { AuthProvider, useAuth } from '@/lib/authContext';
 import { AdminStoreProvider } from '@/lib/store';
+import { ConfirmProvider } from '@/lib/confirmContext';
 import { RivletWatermark } from '@/components/brand/RivletLogo';
 import RivletLoader from '@/components/brand/RivletLoader';
 import WriteErrorToast from '@/components/ui/WriteErrorToast';
@@ -140,9 +141,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
       <AdminStoreProvider>
-        <AuthGuard>
-          {children}
-        </AuthGuard>
+        <ConfirmProvider>
+          <AuthGuard>
+            {children}
+          </AuthGuard>
+        </ConfirmProvider>
       </AdminStoreProvider>
     </AuthProvider>
   );

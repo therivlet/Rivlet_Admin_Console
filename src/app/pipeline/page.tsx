@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { useAdminStore } from '@/lib/store';
 import { PipelineItem, PipelineStage } from '@/lib/types';
 import ModalPortal from '@/components/ui/ModalPortal';
+import { useConfirm } from '@/lib/confirmContext';
 
 const STAGES: PipelineStage[] = [
   'Design Finalized',
@@ -45,6 +46,7 @@ function emptyItem(): Omit<PipelineItem, 'createdAt' | 'updatedAt'> {
 }
 
 export default function PipelinePage() {
+  const confirm = useConfirm();
   const { pipelineItems, savePipelineItem, deletePipelineItem, vendors, documents, workItems } = useAdminStore();
   const [modalItem, setModalItem] = useState<PipelineItem | Omit<PipelineItem, 'createdAt' | 'updatedAt'> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -96,7 +98,18 @@ export default function PipelinePage() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Remove "${name}" from the production pipeline?`)) return;
+    const linkedDocs = documents.filter((d) => d.pipelineItemId === id);
+    const ok = await confirm({
+      title: 'Remove Pipeline Style',
+      message: `Remove "${name}" from the production pipeline?${
+        linkedDocs.length > 0
+          ? ` Warning: ${linkedDocs.length} linked document${linkedDocs.length === 1 ? '' : 's'} (e.g. tech packs/specs) will be unlinked from this style.`
+          : ' This action cannot be undone.'
+      }`,
+      confirmLabel: 'Remove Style',
+      danger: true,
+    });
+    if (!ok) return;
     await deletePipelineItem(id);
   };
 

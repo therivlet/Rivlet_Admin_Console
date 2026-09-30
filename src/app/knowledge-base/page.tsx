@@ -23,8 +23,10 @@ import {
 import { useAdminStore } from '@/lib/store';
 import { KBArticle } from '@/lib/types';
 import { renderMarkdown } from '@/lib/markdown';
+import { useConfirm } from '@/lib/confirmContext';
 
 export default function KnowledgeBasePage() {
+  const confirm = useConfirm();
   const { kbArticles, saveArticle, deleteArticle } = useAdminStore();
   const [selectedArticleId, setSelectedArticleId] = useState<string>(kbArticles[0]?.id || '');
   const [searchQuery, setSearchQuery] = useState('');
@@ -111,6 +113,16 @@ export default function KnowledgeBasePage() {
     setIsEditing(false);
   };
 
+  const handleDeleteArticle = async (article: KBArticle) => {
+    const ok = await confirm({
+      title: 'Delete SOP Article',
+      message: `Are you sure you want to permanently delete "${article.title}"? This action cannot be undone.`,
+      confirmLabel: 'Delete Article',
+      danger: true,
+    });
+    if (!ok) return;
+    deleteArticle(article.id);
+  };
 
   const filteredArticles = kbArticles.filter(
     (a) =>
@@ -250,11 +262,7 @@ export default function KnowledgeBasePage() {
                   )}
 
                   <button
-                    onClick={() => {
-                      if (confirm(`Delete "${currentArticle.title}"?`)) {
-                        deleteArticle(currentArticle.id);
-                      }
-                    }}
+                    onClick={() => handleDeleteArticle(currentArticle)}
                     className="p-2 rounded-lg bg-[#141824] border border-[#263147] text-[#94a3b8] hover:text-rose-400 hover:border-rose-800/50 transition-colors"
                     title="Delete SOP article from database"
                     aria-label="Delete SOP article"

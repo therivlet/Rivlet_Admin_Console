@@ -5,6 +5,7 @@ import { Wallet, Plus, X, Save, Trash2, Pencil, TrendingUp, TrendingDown, Chevro
 import { useAdminStore } from '@/lib/store';
 import { BudgetItem } from '@/lib/types';
 import ModalPortal from '@/components/ui/ModalPortal';
+import { useConfirm } from '@/lib/confirmContext';
 
 function emptyItem(): Omit<BudgetItem, 'createdAt' | 'updatedAt'> {
   return { id: `bud-${Date.now()}`, category: '', plannedAmount: 0, actualAmount: 0, spendLog: [], currency: '₹' };
@@ -15,6 +16,7 @@ function formatINR(n: number) {
 }
 
 export default function BudgetPage() {
+  const confirm = useConfirm();
   const { budgetItems, budgetSettings, saveBudgetItem, deleteBudgetItem, saveBudgetSettings, logBudgetSpend, deleteBudgetSpend } = useAdminStore();
   const [modalItem, setModalItem] = useState<BudgetItem | Omit<BudgetItem, 'createdAt' | 'updatedAt'> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -59,8 +61,27 @@ export default function BudgetPage() {
   };
 
   const handleDelete = async (id: string, category: string) => {
-    if (!confirm(`Remove budget line "${category}"? Its spend history will be removed too.`)) return;
+    const target = budgetItems.find((b) => b.id === id);
+    const spendCount = target?.spendLog?.length || 0;
+    const ok = await confirm({
+      title: 'Remove Budget Category',
+      message: `Are you sure you want to remove "${category}"? Its entire spend history (${spendCount} logged transaction${spendCount === 1 ? '' : 's'}) will be permanently deleted.`,
+      confirmLabel: 'Remove Category',
+      danger: true,
+    });
+    if (!ok) return;
     await deleteBudgetItem(id);
+  };
+
+  const handleDeleteSpend = async (budgetItemId: string, spendId: string, amount: number, note?: string) => {
+    const ok = await confirm({
+      title: 'Remove Spend Entry',
+      message: `Remove logged expenditure of ${formatINR(amount)}${note ? ` ("${note}")` : ''}? This will decrease actual spend for this category.`,
+      confirmLabel: 'Remove Entry',
+      danger: true,
+    });
+    if (!ok) return;
+    await deleteBudgetSpend(budgetItemId, spendId);
   };
 
   const handleLogSpend = async () => {
@@ -219,7 +240,7 @@ export default function BudgetPage() {
                                 <span className="font-mono text-white flex-shrink-0">{formatINR(entry.amount)}</span>
                                 {entry.note && <span className="text-[#94a3b8] truncate">{entry.note}</span>}
                               </div>
-                              <button onClick={() => deleteBudgetSpend(b.id, entry.id)} title="Remove this spend entry" aria-label="Remove spend entry" className="text-[#7c869d] hover:text-rose-400 flex-shrink-0">
+                              <button onClick={() => handleDeleteSpend(b.id, entry.id, entry.amount, entry.note)} title="Remove this spend entry" aria-label="Remove spend entry" className="text-[#7c869d] hover:text-rose-400 flex-shrink-0">
                                 <Trash2 className="w-3 h-3" />
                               </button>
                             </div>

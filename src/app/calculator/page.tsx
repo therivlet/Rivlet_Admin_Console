@@ -15,11 +15,24 @@ import {
 import { useAdminStore } from '@/lib/store';
 import { CostingSheet } from '@/lib/types';
 import CostingCalculator from '@/components/calculator/CostingCalculator';
+import { useConfirm } from '@/lib/confirmContext';
 
 export default function CalculatorPage() {
+  const confirm = useConfirm();
   const { costingSheets, deleteCostingSheet, addArtifact } = useAdminStore();
   const [activeTab, setActiveTab] = useState<'studio' | 'saved' | 'raw-html'>('studio');
   const [selectedSheet, setSelectedSheet] = useState<CostingSheet | null>(costingSheets[0] || null);
+
+  const handleDeleteSheet = async (sheet: CostingSheet) => {
+    const ok = await confirm({
+      title: 'Delete Costing Sheet',
+      message: `Delete saved costing sheet for ${sheet.sku} (${sheet.styleName})? This will permanently remove its manufacturing financial model.`,
+      confirmLabel: 'Delete Sheet',
+      danger: true,
+    });
+    if (!ok) return;
+    deleteCostingSheet(sheet.id);
+  };
 
   const [rawCode, setRawCode] = useState('');
   const [rawTitle, setRawTitle] = useState('Custom Pricing Planner');
@@ -174,11 +187,7 @@ export default function CalculatorPage() {
                     Open in Studio <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                   <button
-                    onClick={() => {
-                      if (confirm(`Delete saved product calculation for ${sheet.sku}?`)) {
-                        deleteCostingSheet(sheet.id);
-                      }
-                    }}
+                    onClick={() => handleDeleteSheet(sheet)}
                     className="text-xs text-[#94a3b8] hover:text-rose-400 px-2 py-1 rounded hover:bg-rose-950/30 transition-colors"
                     title={`Delete calculation for ${sheet.sku}`}
                   >

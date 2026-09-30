@@ -21,8 +21,10 @@ import ArtifactCard from '@/components/artifacts/ArtifactCard';
 import ArtifactSandbox from '@/components/artifacts/ArtifactSandbox';
 import ArtifactEditorModal from '@/components/artifacts/ArtifactEditorModal';
 import ModalPortal from '@/components/ui/ModalPortal';
+import { useConfirm } from '@/lib/confirmContext';
 
 export default function ArtifactsPage() {
+  const confirm = useConfirm();
   const { 
     artifacts, 
     addArtifact, 
@@ -87,6 +89,20 @@ export default function ArtifactsPage() {
     e.target.value = '';
   };
 
+  const handleDeleteArtifact = async (item: ArtifactItem) => {
+    const ok = await confirm({
+      title: 'Delete Claude Artifact',
+      message: `Are you sure you want to permanently delete "${item.title}"?${
+        item.isPromoted
+          ? ` Warning: This tool is currently promoted to the navigation sidebar at /tools/${item.routeSlug || item.id}.`
+          : ' Its HTML code and metadata will be permanently removed.'
+      }`,
+      confirmLabel: 'Delete Artifact',
+      danger: true,
+    });
+    if (!ok) return;
+    deleteArtifact(item.id);
+  };
 
   // Filter artifacts
   const filtered = artifacts.filter((item) => {
@@ -252,11 +268,7 @@ export default function ArtifactsPage() {
                 setIsEditorOpen(true);
               }}
               onTogglePromote={() => togglePromoteArtifact(item.id)}
-              onDelete={() => {
-                if (confirm(`Are you sure you want to remove "${item.title}"?`)) {
-                  deleteArtifact(item.id);
-                }
-              }}
+              onDelete={() => handleDeleteArtifact(item)}
             />
           ))}
         </div>

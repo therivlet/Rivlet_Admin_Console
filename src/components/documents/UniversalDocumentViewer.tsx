@@ -26,6 +26,7 @@ import {
 import { DocumentItem } from '@/lib/types';
 import { resolveDocumentUrl, supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { useAdminStore } from '@/lib/store';
+import { useConfirm } from '@/lib/confirmContext';
 import * as XLSX from 'xlsx';
 import mammoth from 'mammoth';
 
@@ -40,6 +41,7 @@ export default function UniversalDocumentViewer({
   onClose,
   onEditExpiry,
 }: UniversalDocumentViewerProps) {
+  const confirm = useConfirm();
   const [viewTab, setViewTab] = useState<'viewer' | 'readview'>('viewer');
   const { updateDocument } = useAdminStore();
 
@@ -95,6 +97,14 @@ export default function UniversalDocumentViewer({
       setReuploadError('Cloud storage is not configured.');
       return;
     }
+
+    const ok = await confirm({
+      title: 'Replace Document File',
+      message: `Replace current file with "${file.name}" (${(file.size / 1024).toFixed(1)} KB)? This will upload the file to Supabase cloud storage and permanently update this document record.`,
+      confirmLabel: 'Upload & Replace',
+      danger: false,
+    });
+    if (!ok) return;
 
     setReuploadError(null);
     setIsReuploading(true);

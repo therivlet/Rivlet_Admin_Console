@@ -5,6 +5,7 @@ import { CalendarRange, Plus, X, Save, Trash2, Pencil, ArrowRight } from 'lucide
 import { useAdminStore } from '@/lib/store';
 import { Sprint } from '@/lib/types';
 import ModalPortal from '@/components/ui/ModalPortal';
+import { useConfirm } from '@/lib/confirmContext';
 
 function emptyItem(defaultDays: number): Omit<Sprint, 'createdAt' | 'updatedAt'> {
   const today = new Date();
@@ -37,6 +38,7 @@ interface SprintsViewProps {
 }
 
 export default function SprintsView({ onOpenBoard }: SprintsViewProps) {
+  const confirm = useConfirm();
   const { sprints, workItems, workSettings, saveSprint, deleteSprint } = useAdminStore();
   const [modalItem, setModalItem] = useState<Sprint | Omit<Sprint, 'createdAt' | 'updatedAt'> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -66,7 +68,18 @@ export default function SprintsView({ onOpenBoard }: SprintsViewProps) {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Delete sprint "${name}"? Work items in it will move back to the backlog.`)) return;
+    const assignedCount = workItems.filter((w) => w.sprintId === id).length;
+    const ok = await confirm({
+      title: 'Delete Sprint',
+      message: `Delete sprint "${name}"?${
+        assignedCount > 0
+          ? ` ${assignedCount} work item${assignedCount === 1 ? '' : 's'} scheduled in this sprint will move back to the unassigned backlog.`
+          : ' This action cannot be undone.'
+      }`,
+      confirmLabel: 'Delete Sprint',
+      danger: true,
+    });
+    if (!ok) return;
     await deleteSprint(id);
   };
 

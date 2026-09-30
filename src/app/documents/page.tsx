@@ -34,8 +34,10 @@ import { DocumentItem } from '@/lib/types';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import ModalPortal from '@/components/ui/ModalPortal';
 import UniversalDocumentViewer from '@/components/documents/UniversalDocumentViewer';
+import { useConfirm } from '@/lib/confirmContext';
 
 export default function DocumentsPage() {
+  const confirm = useConfirm();
   const { documents, addDocument, updateDocument, deleteDocument, vendors, pipelineItems } = useAdminStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<string>('All');
@@ -260,9 +262,14 @@ export default function DocumentsPage() {
   };
 
   const handleDelete = async (doc: DocumentItem) => {
-    if (confirm(`Remove document record "${doc.title}"?`)) {
-      deleteDocument(doc.id);
-    }
+    const ok = await confirm({
+      title: 'Remove Document Record',
+      message: `Are you sure you want to remove "${doc.title}" (${doc.fileName}) from the document vault? This cannot be undone.`,
+      confirmLabel: 'Remove Document',
+      danger: true,
+    });
+    if (!ok) return;
+    deleteDocument(doc.id);
   };
 
   const getFormatBadge = (fmt: string) => {
