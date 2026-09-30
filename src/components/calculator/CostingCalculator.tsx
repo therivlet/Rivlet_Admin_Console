@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Calculator, 
   Sparkles, 
@@ -121,14 +121,17 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
   const curr = inputs.currency || '₹';
 
   // Live Validation
-  const validation = validatePricingInputs(inputs);
+  const validation = useMemo(() => validatePricingInputs(inputs), [inputs]);
 
-  // Calculations for active scenario and all three
-  const currentResult: CalculationResult = calculateScenario(inputs, activeScenario);
-  const lowResult: CalculationResult = calculateScenario(inputs, 'low');
-  const midResult: CalculationResult = calculateScenario(inputs, 'mid');
-  const highResult: CalculationResult = calculateScenario(inputs, 'high');
-  const allResults = { low: lowResult, mid: midResult, high: highResult };
+  // Calculations for all three scenarios — memoized so a keystroke in one field
+  // doesn't re-run the full BOM/GST/forecast pipeline three extra times per render.
+  const allResults = useMemo(() => ({
+    low: calculateScenario(inputs, 'low'),
+    mid: calculateScenario(inputs, 'mid'),
+    high: calculateScenario(inputs, 'high'),
+  }), [inputs]);
+  const currentResult: CalculationResult = allResults[activeScenario];
+  const { low: lowResult, mid: midResult, high: highResult } = allResults;
 
   // Generic updater
   const updateField = <K extends keyof PricingInputs>(key: K, value: PricingInputs[K]) => {

@@ -1,4 +1,4 @@
-import { ArtifactItem, CostingSheet, DocumentItem, KBArticle } from './types';
+import { ArtifactItem, CostingSheet, DocumentItem, KBArticle, VendorItem, PipelineItem, BudgetItem } from './types';
 import { defaultPricingInputs } from './pricingEngine';
 import { userPricingHtml } from './userPricingArtifact';
 
@@ -181,4 +181,56 @@ Rivlet is built on understated luxury, structural silhouettes, and uncompromisin
 4. Sealed with embossed metallic wafer sticker.
 `
   }
+];
+
+export const initialVendors: VendorItem[] = [
+  {
+    id: 'ven-001',
+    name: 'Techno Sportswear',
+    location: 'Tirupur, Tamil Nadu',
+    specialty: 'Vertically integrated activewear (yarn to stitching)',
+    isVerticallyIntegrated: null,
+    stage: 'Prospect',
+    moqTarget: 175,
+    paymentTermsTarget: '30% advance / 50% pre-shipment / 20% on delivery',
+    certifications: [],
+    notes: 'Top outreach target. Ask the qualifying question: fully vertical (yarn, knitting, dyeing, stitching all in-house)?',
+    createdAt: '2026-09-20T09:00:00Z',
+    updatedAt: '2026-09-20T09:00:00Z',
+  },
+  {
+    id: 'ven-002',
+    name: 'Wings2Fashion',
+    location: 'Tirupur, Tamil Nadu',
+    specialty: 'Vertically integrated activewear (yarn to stitching)',
+    isVerticallyIntegrated: null,
+    stage: 'Prospect',
+    moqTarget: 175,
+    paymentTermsTarget: '30% advance / 50% pre-shipment / 20% on delivery',
+    certifications: [],
+    notes: 'Second outreach target from the manufacturer playbook.',
+    createdAt: '2026-09-20T09:00:00Z',
+    updatedAt: '2026-09-20T09:00:00Z',
+  },
+];
+
+export const initialPipelineItems: PipelineItem[] = [
+  { id: 'pip-001', styleName: 'Leggings', category: "Women's Activewear", drop: 'Drop 1', stage: 'Design Finalized', targetQuantity: 400, createdAt: '2026-09-20T09:00:00Z', updatedAt: '2026-09-20T09:00:00Z' },
+  { id: 'pip-002', styleName: 'Sports Bra', category: "Women's Activewear", drop: 'Drop 1', stage: 'Design Finalized', targetQuantity: 280, createdAt: '2026-09-20T09:00:00Z', updatedAt: '2026-09-20T09:00:00Z' },
+  { id: 'pip-003', styleName: 'Training Tee', category: 'Athleisure', drop: 'Drop 1', stage: 'Design Finalized', targetQuantity: 300, createdAt: '2026-09-20T09:00:00Z', updatedAt: '2026-09-20T09:00:00Z' },
+  { id: 'pip-004', styleName: 'Co-ord Set', category: 'Athleisure', drop: 'Drop 1', stage: 'Design Finalized', targetQuantity: 250, createdAt: '2026-09-20T09:00:00Z', updatedAt: '2026-09-20T09:00:00Z' },
+  { id: 'pip-005', styleName: 'Joggers', category: "Men's Activewear", drop: 'Drop 1', stage: 'Design Finalized', targetQuantity: 220, createdAt: '2026-09-20T09:00:00Z', updatedAt: '2026-09-20T09:00:00Z' },
+  { id: 'pip-006', styleName: 'Slip Dress', category: 'Easy/Casual Wear', drop: 'Drop 1', stage: 'Design Finalized', targetQuantity: 130, createdAt: '2026-09-20T09:00:00Z', updatedAt: '2026-09-20T09:00:00Z' },
+];
+
+export const initialBudgetItems: BudgetItem[] = [
+  { id: 'bud-001', category: 'Legal / Registration', plannedAmount: 35000, actualAmount: 0, currency: '₹', phase: 'Phase 1', createdAt: '2026-09-01T09:00:00Z', updatedAt: '2026-09-01T09:00:00Z' },
+  { id: 'bud-002', category: 'Brand Identity + Photography', plannedAmount: 85000, actualAmount: 0, currency: '₹', phase: 'Phase 4', createdAt: '2026-09-01T09:00:00Z', updatedAt: '2026-09-01T09:00:00Z' },
+  { id: 'bud-003', category: 'Manufacturer Approach + Sampling', plannedAmount: 95000, actualAmount: 0, currency: '₹', phase: 'Phase 3', createdAt: '2026-09-01T09:00:00Z', updatedAt: '2026-09-01T09:00:00Z' },
+  { id: 'bud-004', category: 'First Production (1,580 pieces)', plannedAmount: 738900, actualAmount: 0, currency: '₹', phase: 'Phase 3', createdAt: '2026-09-01T09:00:00Z', updatedAt: '2026-09-01T09:00:00Z' },
+  { id: 'bud-005', category: 'E-commerce + Packaging + Logistics', plannedAmount: 125000, actualAmount: 0, currency: '₹', phase: 'Phase 4', createdAt: '2026-09-01T09:00:00Z', updatedAt: '2026-09-01T09:00:00Z' },
+  { id: 'bud-006', category: 'Digital Marketing (3 months)', plannedAmount: 180000, actualAmount: 0, currency: '₹', phase: 'Phase 5', createdAt: '2026-09-01T09:00:00Z', updatedAt: '2026-09-01T09:00:00Z' },
+  { id: 'bud-007', category: 'Offline Activation (Gyms, Trainers, Events)', plannedAmount: 75000, actualAmount: 0, currency: '₹', phase: 'Phase 5', createdAt: '2026-09-01T09:00:00Z', updatedAt: '2026-09-01T09:00:00Z' },
+  { id: 'bud-008', category: 'Operations Buffer', plannedAmount: 66100, actualAmount: 0, currency: '₹', createdAt: '2026-09-01T09:00:00Z', updatedAt: '2026-09-01T09:00:00Z' },
+  { id: 'bud-009', category: 'Emergency Buffer (Untouched)', plannedAmount: 200000, actualAmount: 0, currency: '₹', notes: 'Do not draw down except for true emergencies.', createdAt: '2026-09-01T09:00:00Z', updatedAt: '2026-09-01T09:00:00Z' },
 ];

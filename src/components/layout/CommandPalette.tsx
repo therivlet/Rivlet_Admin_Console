@@ -2,15 +2,17 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Search, 
-  Layers, 
-  Calculator, 
-  FileText, 
-  BookOpen, 
+import {
+  Search,
+  Layers,
+  Calculator,
+  FileText,
+  BookOpen,
   Sparkles,
   ArrowRight,
-  X
+  X,
+  Factory,
+  GitBranch
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import ModalPortal from '@/components/ui/ModalPortal';
@@ -23,7 +25,7 @@ interface CommandPaletteProps {
 export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
-  const { artifacts, costingSheets, documents, kbArticles } = useAdminStore();
+  const { artifacts, costingSheets, documents, kbArticles, vendors, pipelineItems } = useAdminStore();
 
   useEffect(() => {
     if (isOpen) {
@@ -71,6 +73,20 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
       k.title.toLowerCase().includes(q) ||
       k.tags.some((t) => t.toLowerCase().includes(q)) ||
       k.category.toLowerCase().includes(q)
+  );
+
+  const filteredVendors = vendors.filter(
+    (v) =>
+      v.name.toLowerCase().includes(q) ||
+      (v.specialty || '').toLowerCase().includes(q) ||
+      v.stage.toLowerCase().includes(q)
+  );
+
+  const filteredPipeline = pipelineItems.filter(
+    (p) =>
+      p.styleName.toLowerCase().includes(q) ||
+      p.stage.toLowerCase().includes(q) ||
+      (p.sku || '').toLowerCase().includes(q)
   );
 
   const navigateTo = (path: string) => {
@@ -240,10 +256,62 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
             </div>
           )}
 
+          {/* Vendors */}
+          {filteredVendors.length > 0 && (
+            <div>
+              <div className="px-3 py-1 text-[10px] font-semibold text-[#666f85] uppercase tracking-wider flex items-center gap-1.5">
+                <Factory className="w-3 h-3 text-amber-400" />
+                Manufacturers & Vendors ({filteredVendors.length})
+              </div>
+              <div className="space-y-1 mt-1">
+                {filteredVendors.slice(0, 4).map((v) => (
+                  <div
+                    key={v.id}
+                    onClick={() => navigateTo('/vendors')}
+                    className="flex items-center justify-between p-2.5 rounded-lg hover:bg-[#181d2a] cursor-pointer group text-xs"
+                  >
+                    <div>
+                      <div className="text-white font-medium group-hover:text-amber-300">{v.name}</div>
+                      <div className="text-[10px] text-[#747c91]">{v.location} • {v.stage}</div>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-[#555d71] group-hover:text-white" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Pipeline */}
+          {filteredPipeline.length > 0 && (
+            <div>
+              <div className="px-3 py-1 text-[10px] font-semibold text-[#666f85] uppercase tracking-wider flex items-center gap-1.5">
+                <GitBranch className="w-3 h-3 text-sky-400" />
+                Sampling & Production ({filteredPipeline.length})
+              </div>
+              <div className="space-y-1 mt-1">
+                {filteredPipeline.slice(0, 4).map((p) => (
+                  <div
+                    key={p.id}
+                    onClick={() => navigateTo('/pipeline')}
+                    className="flex items-center justify-between p-2.5 rounded-lg hover:bg-[#181d2a] cursor-pointer group text-xs"
+                  >
+                    <div>
+                      <div className="text-white font-medium group-hover:text-sky-300">{p.styleName}</div>
+                      <div className="text-[10px] text-[#747c91]">{p.category} • {p.stage}</div>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-[#555d71] group-hover:text-white" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {filteredArtifacts.length === 0 &&
             filteredCosting.length === 0 &&
             filteredDocs.length === 0 &&
-            filteredArticles.length === 0 && (
+            filteredArticles.length === 0 &&
+            filteredVendors.length === 0 &&
+            filteredPipeline.length === 0 && (
               <div className="p-8 text-center text-[#687084] text-xs">
                 No matching records found for "{query}".
               </div>

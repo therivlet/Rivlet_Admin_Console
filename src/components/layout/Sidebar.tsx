@@ -3,13 +3,13 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  Layers, 
-  Calculator, 
-  FileText, 
-  BookOpen, 
-  Sparkles, 
+import {
+  LayoutDashboard,
+  Layers,
+  Calculator,
+  FileText,
+  BookOpen,
+  Sparkles,
   ChevronRight,
   Database,
   ExternalLink,
@@ -17,7 +17,10 @@ import {
   LogOut,
   User,
   X,
-  Settings
+  Settings,
+  Factory,
+  GitBranch,
+  Wallet
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { isSupabaseConfigured } from '@/lib/supabase';
@@ -38,10 +41,13 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
 
   const navItems = [
     { label: 'Overview', href: '/', icon: LayoutDashboard },
-    { label: 'Artifact Hub & Review', href: '/artifacts', icon: Layers, badge: artifacts.length },
     { label: 'Garment Cost Calculator', href: '/calculator', icon: Calculator },
+    { label: 'Manufacturer & Vendors', href: '/vendors', icon: Factory },
+    { label: 'Sampling & Production', href: '/pipeline', icon: GitBranch },
+    { label: 'Launch Budget', href: '/budget', icon: Wallet },
     { label: 'Document Vault', href: '/documents', icon: FileText },
     { label: 'Confidential Brand KB', href: '/knowledge-base', icon: BookOpen },
+    { label: 'Artifact Hub & Review', href: '/artifacts', icon: Layers, badge: artifacts.length },
     { label: 'Profile & Brand Settings', href: '/profile', icon: Settings },
   ];
 

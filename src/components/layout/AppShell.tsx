@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from '@/lib/authContext';
 import { AdminStoreProvider } from '@/lib/store';
 import { RivletWatermark } from '@/components/brand/RivletLogo';
 import RivletLoader from '@/components/brand/RivletLoader';
+import WriteErrorToast from '@/components/ui/WriteErrorToast';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -128,6 +129,9 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
       {/* Subtle luxury brand watermark in background */}
       <RivletWatermark />
+
+      {/* Surfaces failed cloud writes instead of silently swallowing them */}
+      <WriteErrorToast />
     </div>
   );
 }

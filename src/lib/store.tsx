@@ -1,8 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { ArtifactItem, CostingSheet, DocumentItem, KBArticle, ArtifactStatus } from './types';
-import { initialArtifacts, initialCostingSheets, initialDocuments, initialKBArticles } from './initialData';
+import { ArtifactItem, CostingSheet, DocumentItem, KBArticle, ArtifactStatus, VendorItem, PipelineItem, BudgetItem } from './types';
+import { initialArtifacts, initialCostingSheets, initialDocuments, initialKBArticles, initialVendors, initialPipelineItems, initialBudgetItems } from './initialData';
 import { supabase, isSupabaseConfigured } from './supabase';
 
 const STORAGE_KEYS = {
@@ -10,15 +10,23 @@ const STORAGE_KEYS = {
   COSTING_SHEETS: 'rivlet_admin_costing_sheets',
   DOCUMENTS: 'rivlet_admin_documents',
   KB_ARTICLES: 'rivlet_admin_kb_articles',
+  VENDORS: 'rivlet_admin_vendors',
+  PIPELINE_ITEMS: 'rivlet_admin_pipeline_items',
+  BUDGET_ITEMS: 'rivlet_admin_budget_items',
 };
 
 interface AdminStoreContextType {
   isLoaded: boolean;
   isSyncing: boolean;
+  lastWriteError: string | null;
+  clearWriteError: () => void;
   artifacts: ArtifactItem[];
   costingSheets: CostingSheet[];
   documents: DocumentItem[];
   kbArticles: KBArticle[];
+  vendors: VendorItem[];
+  pipelineItems: PipelineItem[];
+  budgetItems: BudgetItem[];
   syncWithSupabase: () => Promise<void>;
   addArtifact: (item: Omit<ArtifactItem, 'id' | 'createdAt' | 'updatedAt'>) => Promise<ArtifactItem>;
   updateArtifact: (id: string, updates: Partial<ArtifactItem>) => Promise<void>;
@@ -31,6 +39,12 @@ interface AdminStoreContextType {
   deleteDocument: (id: string) => Promise<void>;
   saveArticle: (article: KBArticle) => Promise<void>;
   deleteArticle: (id: string) => Promise<void>;
+  saveVendor: (vendor: VendorItem) => Promise<void>;
+  deleteVendor: (id: string) => Promise<void>;
+  savePipelineItem: (item: PipelineItem) => Promise<void>;
+  deletePipelineItem: (id: string) => Promise<void>;
+  saveBudgetItem: (item: BudgetItem) => Promise<void>;
+  deleteBudgetItem: (id: string) => Promise<void>;
   resetToSeed: () => Promise<void>;
 }
 
@@ -41,10 +55,24 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
   const [costingSheets, setCostingSheets] = useState<CostingSheet[]>([]);
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [kbArticles, setKbArticles] = useState<KBArticle[]>([]);
+  const [vendors, setVendors] = useState<VendorItem[]>([]);
+  const [pipelineItems, setPipelineItems] = useState<PipelineItem[]>([]);
+  const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [lastWriteError, setLastWriteError] = useState<string | null>(null);
 
   const isSyncingRef = useRef(false);
+  const clearWriteError = useCallback(() => setLastWriteError(null), []);
+
+  // Wraps a Supabase write: reports the underlying error to the user
+  // instead of silently swallowing it (an optimistic UI update already
+  // happened, so at minimum the user needs to know it may not have saved).
+  const reportWriteFailure = useCallback((action: string, err: unknown) => {
+    console.error(`[Rivlet Store] ${action} failed:`, err);
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    setLastWriteError(`${action} failed to save to the cloud: ${message}. It's kept locally — try again once you're back online.`);
+  }, []);
 
   // Synchronize state with Supabase Cloud
   const syncWithSupabase = useCallback(async () => {
@@ -55,11 +83,21 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       isSyncingRef.current = true;
       setIsSyncing(true);
 
-      const [artRes, costRes, docRes, kbRes] = await Promise.all([
+      // New-module tables (vendors/pipeline/budget) may not exist yet if
+      // supabase_migration_v2.sql hasn't been run — fail soft per-table so
+      // a missing table there never breaks sync for the original modules.
+      const safeSelect = (table: string) =>
+        Promise.resolve(supabase!.from(table).select('*').order('created_at', { ascending: false }))
+          .catch(() => ({ data: null, error: null } as any));
+
+      const [artRes, costRes, docRes, kbRes, venRes, pipeRes, budRes] = await Promise.all([
         supabase.from('artifacts').select('*').order('created_at', { ascending: false }),
         supabase.from('costing_sheets').select('*').order('created_at', { ascending: false }),
         supabase.from('documents').select('*').order('created_at', { ascending: false }),
         supabase.from('kb_articles').select('*').order('created_at', { ascending: false }),
+        safeSelect('vendors'),
+        safeSelect('pipeline_items'),
+        safeSelect('budget_items'),
       ]);
 
       // 1. Artifacts sync & auto-seed
@@ -206,6 +244,109 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         setKbArticles(initialKBArticles);
         try { localStorage.setItem(STORAGE_KEYS.KB_ARTICLES, JSON.stringify(initialKBArticles)); } catch (_) {}
       }
+
+      // 5. Vendors sync & auto-seed
+      if (venRes.data && venRes.data.length > 0) {
+        const formatted: VendorItem[] = venRes.data.map((r: any) => ({
+          id: r.id,
+          name: r.name,
+          location: r.location || 'Tirupur, Tamil Nadu',
+          contactName: r.contact_name || undefined,
+          contactEmail: r.contact_email || undefined,
+          contactPhone: r.contact_phone || undefined,
+          isVerticallyIntegrated: r.is_vertically_integrated ?? null,
+          specialty: r.specialty || undefined,
+          stage: r.stage || 'Prospect',
+          moqOffered: r.moq_offered !== null && r.moq_offered !== undefined ? Number(r.moq_offered) : undefined,
+          moqTarget: r.moq_target !== null && r.moq_target !== undefined ? Number(r.moq_target) : undefined,
+          paymentTermsOffered: r.payment_terms_offered || undefined,
+          paymentTermsTarget: r.payment_terms_target || undefined,
+          samplingFee: r.sampling_fee !== null && r.sampling_fee !== undefined ? Number(r.sampling_fee) : undefined,
+          certifications: Array.isArray(r.certifications) ? r.certifications : [],
+          lastContactedAt: r.last_contacted_at || undefined,
+          nextFollowUpAt: r.next_follow_up_at || undefined,
+          notes: r.notes || undefined,
+          createdAt: r.created_at || new Date().toISOString(),
+          updatedAt: r.updated_at || new Date().toISOString(),
+        }));
+        setVendors(formatted);
+        try { localStorage.setItem(STORAGE_KEYS.VENDORS, JSON.stringify(formatted)); } catch (_) {}
+      } else if (venRes.data && venRes.data.length === 0) {
+        for (const v of initialVendors) {
+          await Promise.resolve(supabase.from('vendors').upsert({
+            id: v.id, name: v.name, location: v.location, contact_name: v.contactName,
+            contact_email: v.contactEmail, contact_phone: v.contactPhone,
+            is_vertically_integrated: v.isVerticallyIntegrated, specialty: v.specialty,
+            stage: v.stage, moq_offered: v.moqOffered, moq_target: v.moqTarget,
+            payment_terms_offered: v.paymentTermsOffered, payment_terms_target: v.paymentTermsTarget,
+            sampling_fee: v.samplingFee, certifications: v.certifications,
+            last_contacted_at: v.lastContactedAt, next_follow_up_at: v.nextFollowUpAt,
+            notes: v.notes, created_at: v.createdAt, updated_at: v.updatedAt,
+          })).catch(() => {});
+        }
+        setVendors(initialVendors);
+        try { localStorage.setItem(STORAGE_KEYS.VENDORS, JSON.stringify(initialVendors)); } catch (_) {}
+      }
+
+      // 6. Pipeline items sync & auto-seed
+      if (pipeRes.data && pipeRes.data.length > 0) {
+        const formatted: PipelineItem[] = pipeRes.data.map((r: any) => ({
+          id: r.id,
+          styleName: r.style_name,
+          sku: r.sku || undefined,
+          category: r.category || "Women's Activewear",
+          colorway: r.colorway || undefined,
+          drop: r.drop_name || 'Drop 1',
+          vendorId: r.vendor_id || undefined,
+          stage: r.stage || 'Design Finalized',
+          targetQuantity: r.target_quantity !== null && r.target_quantity !== undefined ? Number(r.target_quantity) : undefined,
+          targetDate: r.target_date || undefined,
+          actualDate: r.actual_date || undefined,
+          notes: r.notes || undefined,
+          createdAt: r.created_at || new Date().toISOString(),
+          updatedAt: r.updated_at || new Date().toISOString(),
+        }));
+        setPipelineItems(formatted);
+        try { localStorage.setItem(STORAGE_KEYS.PIPELINE_ITEMS, JSON.stringify(formatted)); } catch (_) {}
+      } else if (pipeRes.data && pipeRes.data.length === 0) {
+        for (const p of initialPipelineItems) {
+          await Promise.resolve(supabase.from('pipeline_items').upsert({
+            id: p.id, style_name: p.styleName, sku: p.sku, category: p.category,
+            colorway: p.colorway, drop_name: p.drop, vendor_id: p.vendorId, stage: p.stage,
+            target_quantity: p.targetQuantity, target_date: p.targetDate, actual_date: p.actualDate,
+            notes: p.notes, created_at: p.createdAt, updated_at: p.updatedAt,
+          })).catch(() => {});
+        }
+        setPipelineItems(initialPipelineItems);
+        try { localStorage.setItem(STORAGE_KEYS.PIPELINE_ITEMS, JSON.stringify(initialPipelineItems)); } catch (_) {}
+      }
+
+      // 7. Budget items sync & auto-seed
+      if (budRes.data && budRes.data.length > 0) {
+        const formatted: BudgetItem[] = budRes.data.map((r: any) => ({
+          id: r.id,
+          category: r.category,
+          plannedAmount: Number(r.planned_amount || 0),
+          actualAmount: Number(r.actual_amount || 0),
+          currency: r.currency || '₹',
+          phase: r.phase || undefined,
+          notes: r.notes || undefined,
+          createdAt: r.created_at || new Date().toISOString(),
+          updatedAt: r.updated_at || new Date().toISOString(),
+        }));
+        setBudgetItems(formatted);
+        try { localStorage.setItem(STORAGE_KEYS.BUDGET_ITEMS, JSON.stringify(formatted)); } catch (_) {}
+      } else if (budRes.data && budRes.data.length === 0) {
+        for (const b of initialBudgetItems) {
+          await Promise.resolve(supabase.from('budget_items').upsert({
+            id: b.id, category: b.category, planned_amount: b.plannedAmount,
+            actual_amount: b.actualAmount, currency: b.currency, phase: b.phase,
+            notes: b.notes, created_at: b.createdAt, updated_at: b.updatedAt,
+          })).catch(() => {});
+        }
+        setBudgetItems(initialBudgetItems);
+        try { localStorage.setItem(STORAGE_KEYS.BUDGET_ITEMS, JSON.stringify(initialBudgetItems)); } catch (_) {}
+      }
     } catch (err) {
       console.warn('[Rivlet Store] Supabase sync notice:', err);
     } finally {
@@ -222,6 +363,9 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       const storedSheets = localStorage.getItem(STORAGE_KEYS.COSTING_SHEETS);
       const storedDocs = localStorage.getItem(STORAGE_KEYS.DOCUMENTS);
       const storedArticles = localStorage.getItem(STORAGE_KEYS.KB_ARTICLES);
+      const storedVendors = localStorage.getItem(STORAGE_KEYS.VENDORS);
+      const storedPipeline = localStorage.getItem(STORAGE_KEYS.PIPELINE_ITEMS);
+      const storedBudget = localStorage.getItem(STORAGE_KEYS.BUDGET_ITEMS);
 
       if (storedArtifacts) {
         const parsed = JSON.parse(storedArtifacts).filter((a: any) => a.id !== 'art-001' && a.id !== 'art-002');
@@ -248,11 +392,18 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       } else {
         setKbArticles(initialKBArticles);
       }
+
+      setVendors(storedVendors ? JSON.parse(storedVendors) : initialVendors);
+      setPipelineItems(storedPipeline ? JSON.parse(storedPipeline) : initialPipelineItems);
+      setBudgetItems(storedBudget ? JSON.parse(storedBudget) : initialBudgetItems);
     } catch (e) {
       setArtifacts(initialArtifacts);
       setCostingSheets(initialCostingSheets);
       setDocuments([]);
       setKbArticles(initialKBArticles);
+      setVendors(initialVendors);
+      setPipelineItems(initialPipelineItems);
+      setBudgetItems(initialBudgetItems);
     }
 
     // Immediately trigger cloud sync from Supabase
@@ -267,10 +418,15 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       localStorage.setItem(STORAGE_KEYS.COSTING_SHEETS, JSON.stringify(costingSheets));
       localStorage.setItem(STORAGE_KEYS.DOCUMENTS, JSON.stringify(documents));
       localStorage.setItem(STORAGE_KEYS.KB_ARTICLES, JSON.stringify(kbArticles));
+      localStorage.setItem(STORAGE_KEYS.VENDORS, JSON.stringify(vendors));
+      localStorage.setItem(STORAGE_KEYS.PIPELINE_ITEMS, JSON.stringify(pipelineItems));
+      localStorage.setItem(STORAGE_KEYS.BUDGET_ITEMS, JSON.stringify(budgetItems));
     } catch (_) {}
-  }, [artifacts, costingSheets, documents, kbArticles, isLoaded]);
+  }, [artifacts, costingSheets, documents, kbArticles, vendors, pipelineItems, budgetItems, isLoaded]);
 
-  // Window Focus & Visibility Listener: Automatically syncs when switching between Laptop and Tab
+  // Window Focus & Visibility Listener: Automatically syncs when switching between Laptop and Tab.
+  // Realtime Postgres subscriptions (below) handle live cross-device pushes, so we don't also
+  // need a fixed-interval poll on top of that — it was pure read amplification.
   useEffect(() => {
     const handleFocus = () => {
       syncWithSupabase();
@@ -285,10 +441,10 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     window.addEventListener('focus', handleFocus);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // Heartbeat background sync every 5 seconds for cross-device live consistency
+    // Slow fallback poll (2 min) in case a realtime connection silently drops.
     const interval = setInterval(() => {
       syncWithSupabase();
-    }, 5000);
+    }, 120000);
 
     return () => {
       window.removeEventListener('focus', handleFocus);
@@ -313,6 +469,15 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         syncWithSupabase();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'kb_articles' }, () => {
+        syncWithSupabase();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'vendors' }, () => {
+        syncWithSupabase();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pipeline_items' }, () => {
+        syncWithSupabase();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'budget_items' }, () => {
         syncWithSupabase();
       })
       .subscribe();
@@ -357,7 +522,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           updated_at: newItem.updatedAt,
         });
       } catch (e) {
-        console.error('Failed to insert artifact into Supabase:', e);
+        reportWriteFailure('Saving artifact', e);
       }
     }
 
@@ -388,7 +553,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
         await supabase.from('artifacts').update(payload).eq('id', id);
       } catch (e) {
-        console.error('Failed to update artifact on Supabase:', e);
+        reportWriteFailure('Updating artifact', e);
       }
     }
   };
@@ -415,7 +580,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       try {
         await supabase.from('artifacts').delete().eq('id', id);
       } catch (e) {
-        console.error('Failed to delete artifact on Supabase:', e);
+        reportWriteFailure('Deleting artifact', e);
       }
     }
   };
@@ -452,7 +617,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           updated_at: now,
         });
       } catch (e) {
-        console.error('Failed to save costing sheet to Supabase:', e);
+        reportWriteFailure('Saving costing sheet', e);
       }
     }
   };
@@ -464,7 +629,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       try {
         await supabase.from('costing_sheets').delete().eq('id', id);
       } catch (e) {
-        console.error('Failed to delete costing sheet on Supabase:', e);
+        reportWriteFailure('Deleting costing sheet', e);
       }
     }
   };
@@ -499,7 +664,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           updated_at: now,
         });
       } catch (e) {
-        console.error('Failed to insert document into Supabase:', e);
+        reportWriteFailure('Saving document', e);
       }
     }
 
@@ -527,7 +692,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
         await supabase.from('documents').update(payload).eq('id', id);
       } catch (e) {
-        console.error('Failed to update document on Supabase:', e);
+        reportWriteFailure('Updating document', e);
       }
     }
   };
@@ -539,7 +704,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       try {
         await supabase.from('documents').delete().eq('id', id);
       } catch (e) {
-        console.error('Failed to delete document on Supabase:', e);
+        reportWriteFailure('Deleting document', e);
       }
     }
   };
@@ -574,7 +739,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           updated_at: now,
         });
       } catch (e) {
-        console.error('Failed to save KB article to Supabase:', e);
+        reportWriteFailure('Saving knowledge base article', e);
       }
     }
   };
@@ -586,7 +751,158 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       try {
         await supabase.from('kb_articles').delete().eq('id', id);
       } catch (e) {
-        console.error('Failed to delete KB article on Supabase:', e);
+        reportWriteFailure('Deleting knowledge base article', e);
+      }
+    }
+  };
+
+  // 5. Vendor CRM Actions
+  const saveVendor = async (vendor: VendorItem) => {
+    const now = new Date().toISOString();
+    const updated: VendorItem = { ...vendor, updatedAt: now };
+
+    setVendors((prev) => {
+      const idx = prev.findIndex((v) => v.id === vendor.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = updated;
+        return copy;
+      }
+      return [updated, ...prev];
+    });
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('vendors').upsert({
+          id: updated.id,
+          name: updated.name,
+          location: updated.location,
+          contact_name: updated.contactName || null,
+          contact_email: updated.contactEmail || null,
+          contact_phone: updated.contactPhone || null,
+          is_vertically_integrated: updated.isVerticallyIntegrated ?? null,
+          specialty: updated.specialty || null,
+          stage: updated.stage,
+          moq_offered: updated.moqOffered ?? null,
+          moq_target: updated.moqTarget ?? null,
+          payment_terms_offered: updated.paymentTermsOffered || null,
+          payment_terms_target: updated.paymentTermsTarget || null,
+          sampling_fee: updated.samplingFee ?? null,
+          certifications: updated.certifications || [],
+          last_contacted_at: updated.lastContactedAt || null,
+          next_follow_up_at: updated.nextFollowUpAt || null,
+          notes: updated.notes || null,
+          created_at: updated.createdAt || now,
+          updated_at: now,
+        });
+      } catch (e) {
+        reportWriteFailure('Saving vendor', e);
+      }
+    }
+  };
+
+  const deleteVendor = async (id: string) => {
+    setVendors((prev) => prev.filter((v) => v.id !== id));
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('vendors').delete().eq('id', id);
+      } catch (e) {
+        reportWriteFailure('Deleting vendor', e);
+      }
+    }
+  };
+
+  // 6. Sampling & Production Pipeline Actions
+  const savePipelineItem = async (item: PipelineItem) => {
+    const now = new Date().toISOString();
+    const updated: PipelineItem = { ...item, updatedAt: now };
+
+    setPipelineItems((prev) => {
+      const idx = prev.findIndex((p) => p.id === item.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = updated;
+        return copy;
+      }
+      return [updated, ...prev];
+    });
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('pipeline_items').upsert({
+          id: updated.id,
+          style_name: updated.styleName,
+          sku: updated.sku || null,
+          category: updated.category,
+          colorway: updated.colorway || null,
+          drop_name: updated.drop,
+          vendor_id: updated.vendorId || null,
+          stage: updated.stage,
+          target_quantity: updated.targetQuantity ?? null,
+          target_date: updated.targetDate || null,
+          actual_date: updated.actualDate || null,
+          notes: updated.notes || null,
+          created_at: updated.createdAt || now,
+          updated_at: now,
+        });
+      } catch (e) {
+        reportWriteFailure('Saving pipeline item', e);
+      }
+    }
+  };
+
+  const deletePipelineItem = async (id: string) => {
+    setPipelineItems((prev) => prev.filter((p) => p.id !== id));
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('pipeline_items').delete().eq('id', id);
+      } catch (e) {
+        reportWriteFailure('Deleting pipeline item', e);
+      }
+    }
+  };
+
+  // 7. Launch Budget Tracker Actions
+  const saveBudgetItem = async (item: BudgetItem) => {
+    const now = new Date().toISOString();
+    const updated: BudgetItem = { ...item, updatedAt: now };
+
+    setBudgetItems((prev) => {
+      const idx = prev.findIndex((b) => b.id === item.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = updated;
+        return copy;
+      }
+      return [updated, ...prev];
+    });
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('budget_items').upsert({
+          id: updated.id,
+          category: updated.category,
+          planned_amount: updated.plannedAmount,
+          actual_amount: updated.actualAmount,
+          currency: updated.currency,
+          phase: updated.phase || null,
+          notes: updated.notes || null,
+          created_at: updated.createdAt || now,
+          updated_at: now,
+        });
+      } catch (e) {
+        reportWriteFailure('Saving budget item', e);
+      }
+    }
+  };
+
+  const deleteBudgetItem = async (id: string) => {
+    setBudgetItems((prev) => prev.filter((b) => b.id !== id));
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('budget_items').delete().eq('id', id);
+      } catch (e) {
+        reportWriteFailure('Deleting budget item', e);
       }
     }
   };
@@ -610,10 +926,15 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       value={{
         isLoaded,
         isSyncing,
+        lastWriteError,
+        clearWriteError,
         artifacts,
         costingSheets,
         documents,
         kbArticles,
+        vendors,
+        pipelineItems,
+        budgetItems,
         syncWithSupabase,
         addArtifact,
         updateArtifact,
@@ -626,6 +947,12 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         deleteDocument,
         saveArticle,
         deleteArticle,
+        saveVendor,
+        deleteVendor,
+        savePipelineItem,
+        deletePipelineItem,
+        saveBudgetItem,
+        deleteBudgetItem,
         resetToSeed,
       }}
     >

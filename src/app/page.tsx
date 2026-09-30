@@ -2,38 +2,62 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { 
-  Sparkles, 
-  Layers, 
-  Calculator, 
-  FileText, 
-  BookOpen, 
-  ArrowUpRight, 
-  TrendingUp, 
-  Plus, 
-  Search, 
-  CheckCircle2, 
-  Clock, 
+import {
+  Sparkles,
+  Layers,
+  Calculator,
+  FileText,
+  BookOpen,
+  ArrowUpRight,
+  TrendingUp,
+  Plus,
+  Search,
+  CheckCircle2,
+  Clock,
   ChevronRight,
   ShieldCheck,
   Percent,
-  DollarSign
+  DollarSign,
+  Factory,
+  GitBranch,
+  Wallet,
+  AlertTriangle
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 
 export default function DashboardOverviewPage() {
-  const { artifacts, costingSheets, documents, kbArticles } = useAdminStore();
+  const { artifacts, costingSheets, documents, kbArticles, vendors, pipelineItems, budgetItems } = useAdminStore();
 
   const promotedTools = artifacts.filter((a) => a.isPromoted);
   const activeCerts = documents.filter((d) => d.status === 'Active');
+  const expiringDocs = documents.filter((d) => d.status === 'Expiring Soon' || d.status === 'Expired');
 
   // Compute average margin across sheets
   const avgGrossMargin = costingSheets.length > 0
     ? (costingSheets.reduce((sum, s) => sum + (s.expectedMargin || 0), 0) / costingSheets.length).toFixed(1)
     : '0';
 
+  const approvedVendors = vendors.filter((v) => v.stage === 'Approved Partner').length;
+  const inProductionCount = pipelineItems.filter((p) => ['PO Issued', 'In Production', 'QC Inspection'].includes(p.stage)).length;
+  const budgetPlanned = budgetItems.reduce((sum, b) => sum + b.plannedAmount, 0);
+  const budgetActual = budgetItems.reduce((sum, b) => sum + b.actualAmount, 0);
+  const budgetPct = budgetPlanned > 0 ? Math.round((budgetActual / budgetPlanned) * 100) : 0;
+
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-8 animate-fade-in">
+      {/* Proactive certificate expiry banner — surfaces what was previously only a passive badge */}
+      {expiringDocs.length > 0 && (
+        <Link
+          href="/documents"
+          className="flex items-center gap-3 rounded-xl border border-amber-800/50 bg-amber-950/20 px-4 py-3 hover:bg-amber-950/30 transition-colors"
+        >
+          <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+          <p className="text-xs text-amber-200">
+            <span className="font-semibold">{expiringDocs.length} document{expiringDocs.length > 1 ? 's' : ''}</span> expiring soon or already expired — review the vault.
+          </p>
+          <ChevronRight className="w-3.5 h-3.5 text-amber-400 ml-auto flex-shrink-0" />
+        </Link>
+      )}
       {/* Top Welcome & Executive Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#1c2233] pb-6">
         <div>
@@ -153,6 +177,60 @@ export default function DashboardOverviewPage() {
           <div className="flex items-center justify-between text-xs mt-2.5 text-[#94a3b8]">
             <span className="text-purple-300 font-semibold">Tirupur Sourcing Wiki</span>
             <span>AQL 2.5 Standards</span>
+          </div>
+        </Link>
+      </div>
+
+      {/* Business Workflow Widgets: Vendors, Pipeline, Budget */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Link
+          href="/vendors"
+          className="bg-[#0e121b] border border-[#1e2638] hover:border-amber-600/50 p-5 rounded-xl transition-all duration-150 group shadow-md"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-semibold text-[#94a3b8] uppercase tracking-wider">Manufacturer Outreach</span>
+            <div className="p-2 rounded-lg bg-amber-950/60 text-amber-400 group-hover:scale-110 transition-transform">
+              <Factory className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-3xl font-bold text-white font-mono tabular-nums">{vendors.length}</div>
+          <div className="flex items-center justify-between text-xs mt-2.5 text-[#94a3b8]">
+            <span className="text-amber-300 font-semibold">{approvedVendors} Approved</span>
+            <span>Tirupur outreach pipeline</span>
+          </div>
+        </Link>
+
+        <Link
+          href="/pipeline"
+          className="bg-[#0e121b] border border-[#1e2638] hover:border-sky-600/50 p-5 rounded-xl transition-all duration-150 group shadow-md"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-semibold text-[#94a3b8] uppercase tracking-wider">Sampling & Production</span>
+            <div className="p-2 rounded-lg bg-sky-950/60 text-sky-400 group-hover:scale-110 transition-transform">
+              <GitBranch className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-3xl font-bold text-white font-mono tabular-nums">{pipelineItems.length}</div>
+          <div className="flex items-center justify-between text-xs mt-2.5 text-[#94a3b8]">
+            <span className="text-sky-300 font-semibold">{inProductionCount} In Production</span>
+            <span>Drop 1 styles</span>
+          </div>
+        </Link>
+
+        <Link
+          href="/budget"
+          className="bg-[#0e121b] border border-[#1e2638] hover:border-emerald-600/50 p-5 rounded-xl transition-all duration-150 group shadow-md"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-semibold text-[#94a3b8] uppercase tracking-wider">Launch Budget</span>
+            <div className="p-2 rounded-lg bg-emerald-950/60 text-emerald-400 group-hover:scale-110 transition-transform">
+              <Wallet className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-3xl font-bold text-white font-mono tabular-nums">{budgetPct}%</div>
+          <div className="flex items-center justify-between text-xs mt-2.5 text-[#94a3b8]">
+            <span className="text-emerald-300 font-semibold">₹{budgetActual.toLocaleString('en-IN')} spent</span>
+            <span>of ₹{budgetPlanned.toLocaleString('en-IN')}</span>
           </div>
         </Link>
       </div>

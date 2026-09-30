@@ -268,3 +268,87 @@ export interface KBArticle {
   createdAt: string;
   updatedAt: string;
 }
+
+// --- Vendor / Manufacturer Outreach CRM ---
+
+export type VendorOutreachStage =
+  | 'Prospect'
+  | 'Email Sent'
+  | 'WhatsApp Follow-up'
+  | 'Second Email'
+  | 'Call Attempted'
+  | 'LinkedIn Referral'
+  | 'Factory Visit Scheduled'
+  | 'Sampling'
+  | 'Negotiating'
+  | 'Approved Partner'
+  | 'Rejected / Stalled';
+
+export interface VendorItem {
+  id: string;
+  name: string; // e.g. "Techno Sportswear"
+  location: string; // e.g. "Tirupur, Tamil Nadu"
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  isVerticallyIntegrated?: boolean | null; // yarn -> knit -> dye -> stitch in-house, null = unknown/unasked
+  specialty?: string; // e.g. "78/22 Nylon-Lycra compression knits"
+  stage: VendorOutreachStage;
+  moqOffered?: number;
+  moqTarget?: number; // Rivlet's ask, e.g. 175
+  paymentTermsOffered?: string;
+  paymentTermsTarget?: string; // e.g. "30% advance / 50% pre-shipment / 20% on delivery"
+  samplingFee?: number;
+  certifications?: string[]; // e.g. ['GOTS', 'OEKO-TEX Standard 100']
+  lastContactedAt?: string;
+  nextFollowUpAt?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// --- Sampling & Production Pipeline ---
+
+export type PipelineStage =
+  | 'Design Finalized'
+  | 'Proto Sample'
+  | 'Fit Sample'
+  | 'Pre-Production Sample'
+  | 'Approved'
+  | 'PO Issued'
+  | 'In Production'
+  | 'QC Inspection'
+  | 'Shipped'
+  | 'Delivered'
+  | 'On Hold';
+
+export interface PipelineItem {
+  id: string;
+  styleName: string; // e.g. "Leggings"
+  sku?: string; // links to a CostingSheet.sku if priced
+  category: 'Women\'s Activewear' | 'Men\'s Activewear' | 'Athleisure' | 'Easy/Casual Wear';
+  colorway?: string; // 'Midnight' | 'Cardamom' | etc.
+  drop: string; // e.g. "Drop 1"
+  vendorId?: string; // links to VendorItem
+  stage: PipelineStage;
+  targetQuantity?: number;
+  targetDate?: string;
+  actualDate?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// --- Launch Budget Tracker ---
+
+export interface BudgetItem {
+  id: string;
+  category: string; // e.g. "First production (1,580 pieces)"
+  plannedAmount: number;
+  actualAmount: number;
+  currency: string; // '₹'
+  phase?: string; // e.g. "Phase 3: Manufacturing"
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
