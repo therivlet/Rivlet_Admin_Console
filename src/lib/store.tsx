@@ -37,7 +37,7 @@ interface AdminStoreContextType {
   teamMembers: TeamMember[];
   workSettings: WorkSettings;
   budgetSettings: BudgetSettings;
-  syncWithSupabase: () => Promise<void>;
+  syncWithSupabase: (tables?: string[]) => Promise<void>;
   addArtifact: (item: Omit<ArtifactItem, 'id' | 'createdAt' | 'updatedAt'>) => Promise<ArtifactItem>;
   updateArtifact: (id: string, updates: Partial<ArtifactItem>) => Promise<void>;
   togglePromoteArtifact: (id: string) => Promise<void>;
@@ -101,7 +101,14 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   // Synchronize state with Supabase Cloud
-  const syncWithSupabase = useCallback(async () => {
+  // `tables`, when passed, restricts this sync to only those tables instead of
+  // all 13 — a realtime event on e.g. `budget_items` should never also drag
+  // along a full re-fetch of `artifacts.html_content` and `kb_articles.content`
+  // (large text blobs), which is what was driving egress far higher than this
+  // app's actual 27MB of data should ever cost. Omitting `tables` (initial
+  // load, window focus, visibility change) still fetches everything, since at
+  // that point we don't know what may have changed elsewhere.
+  const syncWithSupabase = useCallback(async (tables?: string[]) => {
     if (!isSupabaseConfigured || !supabase) return;
     if (isSyncingRef.current) return;
 
@@ -109,22 +116,25 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       isSyncingRef.current = true;
       setIsSyncing(true);
 
+      const shouldSync = (table: string) => !tables || tables.includes(table);
+
       // New-module tables (vendors/pipeline/budget) may not exist yet if
       // supabase_migration_v2.sql hasn't been run — fail soft per-table so
       // a missing table there never breaks sync for the original modules.
       // Singleton settings tables (work_settings/budget_settings) have no
       // created_at column, so ordering by it must be skipped for those.
       const safeSelect = (table: string, orderByCreatedAt = true) => {
+        if (!shouldSync(table)) return Promise.resolve({ data: null, error: null } as any);
         const query = supabase!.from(table).select('*');
         return Promise.resolve(orderByCreatedAt ? query.order('created_at', { ascending: false }) : query)
           .catch(() => ({ data: null, error: null } as any));
       };
 
       const [artRes, costRes, docRes, kbRes, venRes, pipeRes, budRes, sprRes, wiRes, tmRes, wsRes, bsRes] = await Promise.all([
-        supabase.from('artifacts').select('*').order('created_at', { ascending: false }),
-        supabase.from('costing_sheets').select('*').order('created_at', { ascending: false }),
-        supabase.from('documents').select('*').order('created_at', { ascending: false }),
-        supabase.from('kb_articles').select('*').order('created_at', { ascending: false }),
+        safeSelect('artifacts'),
+        safeSelect('costing_sheets'),
+        safeSelect('documents'),
+        safeSelect('kb_articles'),
         safeSelect('vendors'),
         safeSelect('pipeline_items'),
         safeSelect('budget_items'),
@@ -608,34 +618,43 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     } catch (_) {}
   }, [artifacts, costingSheets, documents, kbArticles, vendors, pipelineItems, budgetItems, sprints, workItems, teamMembers, workSettings, budgetSettings, isLoaded]);
 
-  // Window Focus & Visibility Listener: Automatically syncs when switching between Laptop and Tab.
-  // Realtime Postgres subscriptions (below) handle live cross-device pushes, so we don't also
-  // need a fixed-interval poll on top of that — it was pure read amplification.
-  useEffect(() => {
-    const handleFocus = () => {
-      syncWithSupabase();
-    };
+  // Window Focus & Visibility Listener: catches changes made on another
+  // device/tab while this one was inactive. A single tab-switch typically
+  // fires BOTH visibilitychange and focus within milliseconds of each other,
+  // which was triggering two full 12-table re-fetches back to back — debounce
+  // them into one. Realtime handles the common case of "this tab is open and
+  // something changed," so these full syncs should be the rare exception,
+  // not routine traffic.
+  const lastFullSyncRef = useRef(0);
+  const debouncedFullSync = useCallback(() => {
+    const now = Date.now();
+    if (now - lastFullSyncRef.current < 5000) return;
+    lastFullSyncRef.current = now;
+    syncWithSupabase();
+  }, [syncWithSupabase]);
 
+  useEffect(() => {
+    const handleFocus = () => debouncedFullSync();
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        syncWithSupabase();
-      }
+      if (document.visibilityState === 'visible') debouncedFullSync();
     };
 
     window.addEventListener('focus', handleFocus);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // Slow fallback poll (2 min) in case a realtime connection silently drops.
+    // Slow fallback poll in case a realtime connection silently drops —
+    // scoped syncs from realtime + the focus/visibility triggers above
+    // handle the normal case, so this only needs to be a safety net.
     const interval = setInterval(() => {
       syncWithSupabase();
-    }, 120000);
+    }, 1200000); // 20 minutes
 
     return () => {
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       clearInterval(interval);
     };
-  }, [syncWithSupabase]);
+  }, [syncWithSupabase, debouncedFullSync]);
 
   // Realtime Supabase Channel Listener
   useEffect(() => {
@@ -644,40 +663,40 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     const channel = supabase
       .channel('rivlet-live-cloud-sync')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'artifacts' }, () => {
-        syncWithSupabase();
+        syncWithSupabase(['artifacts']);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'costing_sheets' }, () => {
-        syncWithSupabase();
+        syncWithSupabase(['costing_sheets']);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'documents' }, () => {
-        syncWithSupabase();
+        syncWithSupabase(['documents']);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'kb_articles' }, () => {
-        syncWithSupabase();
+        syncWithSupabase(['kb_articles']);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'vendors' }, () => {
-        syncWithSupabase();
+        syncWithSupabase(['vendors']);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'pipeline_items' }, () => {
-        syncWithSupabase();
+        syncWithSupabase(['pipeline_items']);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'budget_items' }, () => {
-        syncWithSupabase();
+        syncWithSupabase(['budget_items']);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sprints' }, () => {
-        syncWithSupabase();
+        syncWithSupabase(['sprints']);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'work_items' }, () => {
-        syncWithSupabase();
+        syncWithSupabase(['work_items']);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members' }, () => {
-        syncWithSupabase();
+        syncWithSupabase(['team_members']);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'work_settings' }, () => {
-        syncWithSupabase();
+        syncWithSupabase(['work_settings']);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'budget_settings' }, () => {
-        syncWithSupabase();
+        syncWithSupabase(['budget_settings']);
       })
       .subscribe();
 
