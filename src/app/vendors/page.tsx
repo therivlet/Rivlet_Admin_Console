@@ -16,7 +16,11 @@ import {
   X,
   Save,
   CalendarClock,
+  FileText,
+  Shirt,
+  KanbanSquare,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useAdminStore } from '@/lib/store';
 import { VendorItem, VendorOutreachStage } from '@/lib/types';
 import ModalPortal from '@/components/ui/ModalPortal';
@@ -63,7 +67,7 @@ function emptyVendor(): Omit<VendorItem, 'createdAt' | 'updatedAt'> {
 }
 
 export default function VendorsPage() {
-  const { vendors, saveVendor, deleteVendor } = useAdminStore();
+  const { vendors, saveVendor, deleteVendor, documents, pipelineItems, workItems } = useAdminStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [stageFilter, setStageFilter] = useState<'All' | VendorOutreachStage>('All');
   const [modalVendor, setModalVendor] = useState<VendorItem | (Omit<VendorItem, 'createdAt' | 'updatedAt'>) | null>(null);
@@ -209,6 +213,32 @@ export default function VendorsPage() {
                   {v.contactPhone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{v.contactPhone}</span>}
                 </div>
               )}
+
+              {(() => {
+                const linkedStyles = pipelineItems.filter((p) => p.vendorId === v.id);
+                const linkedDocs = documents.filter((d) => d.vendorId === v.id);
+                const linkedTasks = workItems.filter((w) => w.linkedVendorId === v.id);
+                if (linkedStyles.length === 0 && linkedDocs.length === 0 && linkedTasks.length === 0) return null;
+                return (
+                  <div className="flex flex-wrap items-center gap-2 pt-2 text-[10px]">
+                    {linkedStyles.length > 0 && (
+                      <Link href="/pipeline" title="View linked styles in the production pipeline" className="flex items-center gap-1 px-2 py-1 rounded-md bg-sky-950/40 text-sky-300 border border-sky-800/40 hover:bg-sky-950/70">
+                        <Shirt className="w-3 h-3" /> {linkedStyles.length} style{linkedStyles.length === 1 ? '' : 's'}
+                      </Link>
+                    )}
+                    {linkedDocs.length > 0 && (
+                      <Link href="/documents" title="View linked documents in the vault" className="flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-950/40 text-emerald-300 border border-emerald-800/40 hover:bg-emerald-950/70">
+                        <FileText className="w-3 h-3" /> {linkedDocs.length} doc{linkedDocs.length === 1 ? '' : 's'}
+                      </Link>
+                    )}
+                    {linkedTasks.length > 0 && (
+                      <Link href="/work?tab=backlog" title="View linked work items" className="flex items-center gap-1 px-2 py-1 rounded-md bg-indigo-950/40 text-indigo-300 border border-indigo-800/40 hover:bg-indigo-950/70">
+                        <KanbanSquare className="w-3 h-3" /> {linkedTasks.length} task{linkedTasks.length === 1 ? '' : 's'}
+                      </Link>
+                    )}
+                  </div>
+                );
+              })()}
 
               <div className="flex items-center justify-end gap-1 pt-2 mt-auto border-t border-[#161a26]">
                 <button onClick={() => { setModalVendor(v); setError(null); }} title="Edit vendor" aria-label={`Edit ${v.name}`} className="p-1.5 rounded-lg text-[#94a3b8] hover:text-[#cda052] hover:bg-[#141724]">

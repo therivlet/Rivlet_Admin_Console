@@ -10,7 +10,10 @@ import {
   Pencil,
   Factory,
   Package,
+  FileText,
+  KanbanSquare,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useAdminStore } from '@/lib/store';
 import { PipelineItem, PipelineStage } from '@/lib/types';
 import ModalPortal from '@/components/ui/ModalPortal';
@@ -42,7 +45,7 @@ function emptyItem(): Omit<PipelineItem, 'createdAt' | 'updatedAt'> {
 }
 
 export default function PipelinePage() {
-  const { pipelineItems, savePipelineItem, deletePipelineItem, vendors } = useAdminStore();
+  const { pipelineItems, savePipelineItem, deletePipelineItem, vendors, documents, workItems } = useAdminStore();
   const [modalItem, setModalItem] = useState<PipelineItem | Omit<PipelineItem, 'createdAt' | 'updatedAt'> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -164,6 +167,25 @@ export default function PipelinePage() {
                   {item.targetDate && (
                     <p className="text-[10px] text-amber-300 mt-0.5">Target: {new Date(item.targetDate).toLocaleDateString()}</p>
                   )}
+                  {(() => {
+                    const linkedDocs = documents.filter((d) => d.pipelineItemId === item.id);
+                    const linkedTasks = workItems.filter((w) => w.linkedPipelineItemId === item.id);
+                    if (linkedDocs.length === 0 && linkedTasks.length === 0) return null;
+                    return (
+                      <div className="flex flex-wrap gap-1.5 mt-1.5">
+                        {linkedDocs.length > 0 && (
+                          <Link href="/documents" onClick={(e) => e.stopPropagation()} title="View linked documents" className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-950/40 text-emerald-300 border border-emerald-800/40 text-[9px] hover:bg-emerald-950/70">
+                            <FileText className="w-2.5 h-2.5" /> {linkedDocs.length}
+                          </Link>
+                        )}
+                        {linkedTasks.length > 0 && (
+                          <Link href="/work?tab=backlog" onClick={(e) => e.stopPropagation()} title="View linked work items" className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-950/40 text-indigo-300 border border-indigo-800/40 text-[9px] hover:bg-indigo-950/70">
+                            <KanbanSquare className="w-2.5 h-2.5" /> {linkedTasks.length}
+                          </Link>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               ))}
             </div>

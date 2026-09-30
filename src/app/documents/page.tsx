@@ -24,8 +24,11 @@ import {
   Save,
   FileSpreadsheet,
   Image as ImageIcon,
-  AlertCircle
+  AlertCircle,
+  Factory,
+  Shirt
 } from 'lucide-react';
+import Link from 'next/link';
 import { useAdminStore } from '@/lib/store';
 import { DocumentItem } from '@/lib/types';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
@@ -33,7 +36,7 @@ import ModalPortal from '@/components/ui/ModalPortal';
 import UniversalDocumentViewer from '@/components/documents/UniversalDocumentViewer';
 
 export default function DocumentsPage() {
-  const { documents, addDocument, updateDocument, deleteDocument } = useAdminStore();
+  const { documents, addDocument, updateDocument, deleteDocument, vendors, pipelineItems } = useAdminStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<string>('All');
   const [previewDoc, setPreviewDoc] = useState<DocumentItem | null>(null);
@@ -43,7 +46,8 @@ export default function DocumentsPage() {
   const [editingDoc, setEditingDoc] = useState<DocumentItem | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDocType, setEditDocType] = useState<DocumentItem['documentType']>('Certificate');
-  const [editVendor, setEditVendor] = useState('');
+  const [editVendorId, setEditVendorId] = useState('');
+  const [editPipelineItemId, setEditPipelineItemId] = useState('');
   const [editExpiry, setEditExpiry] = useState('');
   const [editStatus, setEditStatus] = useState<DocumentItem['status']>('Active');
   const [editTags, setEditTags] = useState('');
@@ -55,7 +59,8 @@ export default function DocumentsPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [newTitle, setNewTitle] = useState('');
   const [newDocType, setNewDocType] = useState<DocumentItem['documentType']>('Certificate');
-  const [newVendor, setNewVendor] = useState('');
+  const [newVendorId, setNewVendorId] = useState('');
+  const [newPipelineItemId, setNewPipelineItemId] = useState('');
   const [newExpiry, setNewExpiry] = useState('');
   const [newTags, setNewTags] = useState('');
   const [isUploading, setIsUploading] = useState(false);
@@ -78,7 +83,8 @@ export default function DocumentsPage() {
     setEditingDoc(doc);
     setEditTitle(doc.title);
     setEditDocType(doc.documentType);
-    setEditVendor(doc.associatedVendor || '');
+    setEditVendorId(doc.vendorId || '');
+    setEditPipelineItemId(doc.pipelineItemId || '');
     setEditExpiry(doc.expiryDate || '');
     setEditStatus(doc.status);
     setEditTags(doc.tags.join(', '));
@@ -102,27 +108,24 @@ export default function DocumentsPage() {
       }
     }
 
+    const linkedVendorName = vendors.find((v) => v.id === editVendorId)?.name;
+
     setIsSavingEdit(true);
-    await updateDocument(editingDoc.id, {
+    const patch = {
       title: editTitle.trim(),
       documentType: editDocType,
-      associatedVendor: editVendor.trim() || undefined,
+      vendorId: editVendorId || undefined,
+      associatedVendor: linkedVendorName,
+      pipelineItemId: editPipelineItemId || undefined,
       expiryDate: editExpiry || undefined,
       status: editStatus,
       tags: editTags.split(',').map((t) => t.trim()).filter(Boolean),
-    });
+    };
+    await updateDocument(editingDoc.id, patch);
     setIsSavingEdit(false);
     setEditSavedAlert(true);
     if (previewDoc && previewDoc.id === editingDoc.id) {
-      setPreviewDoc({
-        ...previewDoc,
-        title: editTitle.trim(),
-        documentType: editDocType,
-        associatedVendor: editVendor.trim() || undefined,
-        expiryDate: editExpiry || undefined,
-        status: editStatus,
-        tags: editTags.split(',').map((t) => t.trim()).filter(Boolean),
-      });
+      setPreviewDoc({ ...previewDoc, ...patch });
     }
     setTimeout(() => {
       setEditSavedAlert(false);
@@ -229,6 +232,8 @@ export default function DocumentsPage() {
 
     setUploadStatusMsg('Saving metadata to database...');
 
+    const linkedVendorName = vendors.find((v) => v.id === newVendorId)?.name;
+
     await addDocument({
       title: newTitle,
       documentType: newDocType,
@@ -239,14 +244,17 @@ export default function DocumentsPage() {
       expiryDate: newExpiry || undefined,
       status: 'Active',
       tags: newTags.split(',').map((t) => t.trim()).filter(Boolean),
-      associatedVendor: newVendor || undefined,
+      vendorId: newVendorId || undefined,
+      associatedVendor: linkedVendorName,
+      pipelineItemId: newPipelineItemId || undefined,
     });
 
     setIsUploading(false);
     setIsUploadModalOpen(false);
     setSelectedFile(null);
     setNewTitle('');
-    setNewVendor('');
+    setNewVendorId('');
+    setNewPipelineItemId('');
     setNewExpiry('');
     setNewTags('');
   };
@@ -370,10 +378,35 @@ export default function DocumentsPage() {
                   {doc.title}
                 </h3>
 
-                {doc.associatedVendor && (
-                  <div className="flex items-center gap-1.5 text-xs text-[#94a3b8] mb-2.5">
-                    <Building className="w-3.5 h-3.5 text-[#64748b]" />
-                    <span>{doc.associatedVendor}</span>
+                {(doc.vendorId || doc.pipelineItemId || doc.associatedVendor) && (
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2.5">
+                    {doc.vendorId ? (
+                      <Link
+                        href="/vendors"
+                        onClick={(e) => e.stopPropagation()}
+                        title="Open this manufacturer"
+                        className="flex items-center gap-1.5 text-xs text-amber-300 hover:underline"
+                      >
+                        <Factory className="w-3.5 h-3.5" />
+                        <span>{vendors.find((v) => v.id === doc.vendorId)?.name || doc.associatedVendor}</span>
+                      </Link>
+                    ) : doc.associatedVendor ? (
+                      <span className="flex items-center gap-1.5 text-xs text-[#94a3b8]">
+                        <Building className="w-3.5 h-3.5 text-[#64748b]" />
+                        {doc.associatedVendor}
+                      </span>
+                    ) : null}
+                    {doc.pipelineItemId && (
+                      <Link
+                        href="/pipeline"
+                        onClick={(e) => e.stopPropagation()}
+                        title="Open this style in the production pipeline"
+                        className="flex items-center gap-1.5 text-xs text-sky-300 hover:underline"
+                      >
+                        <Shirt className="w-3.5 h-3.5" />
+                        <span>{pipelineItems.find((p) => p.id === doc.pipelineItemId)?.styleName}</span>
+                      </Link>
+                    )}
                   </div>
                 )}
 
@@ -517,17 +550,30 @@ export default function DocumentsPage() {
 
                   <div>
                     <label className="block text-[#7b859b] font-medium mb-1">Associated Vendor / Mill</label>
-                    <input
-                      type="text"
-                      value={newVendor}
-                      onChange={(e) => setNewVendor(e.target.value)}
-                      placeholder="e.g. Southern Eco Mills Ltd"
+                    <select
+                      value={newVendorId}
+                      onChange={(e) => setNewVendorId(e.target.value)}
                       className="w-full px-3 py-2 rounded bg-[#090b12] border border-[#22283a] text-white outline-none"
-                    />
+                    >
+                      <option value="">None</option>
+                      {vendors.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+                    </select>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[#7b859b] font-medium mb-1">Related Style</label>
+                    <select
+                      value={newPipelineItemId}
+                      onChange={(e) => setNewPipelineItemId(e.target.value)}
+                      className="w-full px-3 py-2 rounded bg-[#090b12] border border-[#22283a] text-white outline-none"
+                    >
+                      <option value="">None</option>
+                      {pipelineItems.map((p) => <option key={p.id} value={p.id}>{p.styleName}</option>)}
+                    </select>
+                  </div>
+
                   <div>
                     <label className="block text-[#7b859b] font-medium mb-1">Expiry Date (Optional)</label>
                     <input
@@ -537,7 +583,9 @@ export default function DocumentsPage() {
                       className="w-full px-3 py-2 rounded bg-[#090b12] border border-[#22283a] text-white outline-none"
                     />
                   </div>
+                </div>
 
+                <div className="grid grid-cols-1 gap-3">
                   <div>
                     <label className="block text-[#7b859b] font-medium mb-1">Tags (comma separated)</label>
                     <input
@@ -692,13 +740,28 @@ export default function DocumentsPage() {
 
                   <div>
                     <label className="block text-[#cbd5e1] font-semibold mb-1">Associated Mill / Vendor</label>
-                    <input
-                      type="text"
-                      value={editVendor}
-                      onChange={(e) => setEditVendor(e.target.value)}
-                      placeholder="e.g. Tirupur Knitting Mills"
+                    <select
+                      value={editVendorId}
+                      onChange={(e) => setEditVendorId(e.target.value)}
                       className="w-full px-3 py-2 rounded-lg bg-[#080b12] border border-[#242d40] text-white outline-none focus:border-[#cda052] transition-colors"
-                    />
+                    >
+                      <option value="">None</option>
+                      {vendors.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[#cbd5e1] font-semibold mb-1">Related Style</label>
+                    <select
+                      value={editPipelineItemId}
+                      onChange={(e) => setEditPipelineItemId(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-[#080b12] border border-[#242d40] text-white outline-none focus:border-[#cda052] transition-colors"
+                    >
+                      <option value="">None</option>
+                      {pipelineItems.map((p) => <option key={p.id} value={p.id}>{p.styleName}</option>)}
+                    </select>
                   </div>
                 </div>
 

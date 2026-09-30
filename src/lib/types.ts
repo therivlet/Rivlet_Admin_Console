@@ -251,7 +251,9 @@ export interface DocumentItem {
   expiryDate?: string;
   status: 'Active' | 'Expiring Soon' | 'Expired' | 'Draft';
   tags: string[];
-  associatedVendor?: string;
+  associatedVendor?: string; // free-text fallback; kept for documents predating vendorId
+  vendorId?: string; // real link to VendorItem
+  pipelineItemId?: string; // real link to a PipelineItem (e.g. a tech pack's style)
   createdAt: string;
   updatedAt: string;
 }

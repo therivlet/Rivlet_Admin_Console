@@ -248,6 +248,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
             status: r.status || 'Active',
             tags: Array.isArray(r.tags) ? r.tags : [],
             associatedVendor: r.associated_vendor,
+            vendorId: r.vendor_id || undefined,
+            pipelineItemId: r.pipeline_item_id || undefined,
             createdAt: r.created_at || new Date().toISOString(),
             updatedAt: r.updated_at || new Date().toISOString(),
           }));
@@ -723,7 +725,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('artifacts').insert({
+        const { error: writeErr } = await supabase.from('artifacts').insert({
           id: newItem.id,
           title: newItem.title,
           description: newItem.description,
@@ -739,6 +741,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           created_at: newItem.createdAt,
           updated_at: newItem.updatedAt,
         });
+        if (writeErr) throw writeErr;
       } catch (e) {
         reportWriteFailure('Saving artifact', e);
       }
@@ -769,7 +772,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         if (updates.isFavorite !== undefined) payload.is_favorite = updates.isFavorite;
         if (updates.expiryDate !== undefined) payload.expiry_date = updates.expiryDate || null;
 
-        await supabase.from('artifacts').update(payload).eq('id', id);
+        const { error: writeErr } = await supabase.from('artifacts').update(payload).eq('id', id);
+        if (writeErr) throw writeErr;
       } catch (e) {
         reportWriteFailure('Updating artifact', e);
       }
@@ -796,7 +800,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('artifacts').delete().eq('id', id);
+        const { error: writeErr } = await supabase.from('artifacts').delete().eq('id', id);
+        if (writeErr) throw writeErr;
       } catch (e) {
         reportWriteFailure('Deleting artifact', e);
       }
@@ -820,7 +825,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('costing_sheets').upsert({
+        const { error: writeErr } = await supabase.from('costing_sheets').upsert({
           id: updatedSheet.id,
           sku: updatedSheet.sku,
           style_name: updatedSheet.styleName,
@@ -834,6 +839,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           created_at: updatedSheet.createdAt || now,
           updated_at: now,
         });
+        if (writeErr) throw writeErr;
       } catch (e) {
         reportWriteFailure('Saving costing sheet', e);
       }
@@ -845,7 +851,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('costing_sheets').delete().eq('id', id);
+        const { error: writeErr } = await supabase.from('costing_sheets').delete().eq('id', id);
+        if (writeErr) throw writeErr;
       } catch (e) {
         reportWriteFailure('Deleting costing sheet', e);
       }
@@ -866,7 +873,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('documents').insert({
+        const { error: writeErr } = await supabase.from('documents').insert({
           id: newDoc.id,
           title: newDoc.title,
           document_type: newDoc.documentType,
@@ -878,9 +885,12 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           status: newDoc.status,
           tags: newDoc.tags,
           associated_vendor: newDoc.associatedVendor || null,
+          vendor_id: newDoc.vendorId || null,
+          pipeline_item_id: newDoc.pipelineItemId || null,
           created_at: now,
           updated_at: now,
         });
+        if (writeErr) throw writeErr;
       } catch (e) {
         reportWriteFailure('Saving document', e);
       }
@@ -907,8 +917,11 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         if (updates.status !== undefined) payload.status = updates.status;
         if (updates.tags !== undefined) payload.tags = updates.tags;
         if (updates.associatedVendor !== undefined) payload.associated_vendor = updates.associatedVendor || null;
+        if (updates.vendorId !== undefined) payload.vendor_id = updates.vendorId || null;
+        if (updates.pipelineItemId !== undefined) payload.pipeline_item_id = updates.pipelineItemId || null;
 
-        await supabase.from('documents').update(payload).eq('id', id);
+        const { error: writeErr } = await supabase.from('documents').update(payload).eq('id', id);
+        if (writeErr) throw writeErr;
       } catch (e) {
         reportWriteFailure('Updating document', e);
       }
@@ -920,7 +933,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('documents').delete().eq('id', id);
+        const { error: writeErr } = await supabase.from('documents').delete().eq('id', id);
+        if (writeErr) throw writeErr;
       } catch (e) {
         reportWriteFailure('Deleting document', e);
       }
@@ -944,7 +958,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('kb_articles').upsert({
+        const { error: writeErr } = await supabase.from('kb_articles').upsert({
           id: updatedArticle.id,
           title: updatedArticle.title,
           slug: updatedArticle.slug,
@@ -956,6 +970,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           created_at: updatedArticle.createdAt || now,
           updated_at: now,
         });
+        if (writeErr) throw writeErr;
       } catch (e) {
         reportWriteFailure('Saving knowledge base article', e);
       }
@@ -967,7 +982,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('kb_articles').delete().eq('id', id);
+        const { error: writeErr } = await supabase.from('kb_articles').delete().eq('id', id);
+        if (writeErr) throw writeErr;
       } catch (e) {
         reportWriteFailure('Deleting knowledge base article', e);
       }
@@ -991,7 +1007,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('vendors').upsert({
+        const { error: writeErr } = await supabase.from('vendors').upsert({
           id: updated.id,
           name: updated.name,
           location: updated.location,
@@ -1013,6 +1029,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           created_at: updated.createdAt || now,
           updated_at: now,
         });
+        if (writeErr) throw writeErr;
       } catch (e) {
         reportWriteFailure('Saving vendor', e);
       }
@@ -1023,7 +1040,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     setVendors((prev) => prev.filter((v) => v.id !== id));
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('vendors').delete().eq('id', id);
+        const { error: writeErr } = await supabase.from('vendors').delete().eq('id', id);
+        if (writeErr) throw writeErr;
       } catch (e) {
         reportWriteFailure('Deleting vendor', e);
       }
@@ -1047,7 +1065,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('pipeline_items').upsert({
+        const { error: writeErr } = await supabase.from('pipeline_items').upsert({
           id: updated.id,
           style_name: updated.styleName,
           sku: updated.sku || null,
@@ -1063,6 +1081,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           created_at: updated.createdAt || now,
           updated_at: now,
         });
+        if (writeErr) throw writeErr;
       } catch (e) {
         reportWriteFailure('Saving pipeline item', e);
       }
@@ -1073,7 +1092,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     setPipelineItems((prev) => prev.filter((p) => p.id !== id));
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('pipeline_items').delete().eq('id', id);
+        const { error: writeErr } = await supabase.from('pipeline_items').delete().eq('id', id);
+        if (writeErr) throw writeErr;
       } catch (e) {
         reportWriteFailure('Deleting pipeline item', e);
       }
@@ -1097,7 +1117,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('budget_items').upsert({
+        const { error: writeErr } = await supabase.from('budget_items').upsert({
           id: updated.id,
           category: updated.category,
           planned_amount: updated.plannedAmount,
@@ -1109,6 +1129,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           created_at: updated.createdAt || now,
           updated_at: now,
         });
+        if (writeErr) throw writeErr;
       } catch (e) {
         reportWriteFailure('Saving budget item', e);
       }
@@ -1119,7 +1140,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     setBudgetItems((prev) => prev.filter((b) => b.id !== id));
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('budget_items').delete().eq('id', id);
+        const { error: writeErr } = await supabase.from('budget_items').delete().eq('id', id);
+        if (writeErr) throw writeErr;
       } catch (e) {
         reportWriteFailure('Deleting budget item', e);
       }
@@ -1143,7 +1165,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('sprints').upsert({
+        const { error: writeErr } = await supabase.from('sprints').upsert({
           id: updated.id,
           name: updated.name,
           goal: updated.goal || null,
@@ -1152,6 +1174,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           created_at: updated.createdAt || now,
           updated_at: now,
         });
+        if (writeErr) throw writeErr;
       } catch (e) {
         reportWriteFailure('Saving sprint', e);
       }
@@ -1164,7 +1187,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     setWorkItems((prev) => prev.map((w) => (w.sprintId === id ? { ...w, sprintId: undefined } : w)));
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('sprints').delete().eq('id', id);
+        const { error: writeErr } = await supabase.from('sprints').delete().eq('id', id);
+        if (writeErr) throw writeErr;
       } catch (e) {
         reportWriteFailure('Deleting sprint', e);
       }
@@ -1188,7 +1212,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('work_items').upsert({
+        const { error: writeErr } = await supabase.from('work_items').upsert({
           id: updated.id,
           type: updated.type,
           title: updated.title,
@@ -1210,6 +1234,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           created_at: updated.createdAt || now,
           updated_at: now,
         });
+        if (writeErr) throw writeErr;
       } catch (e) {
         reportWriteFailure('Saving work item', e);
       }
@@ -1220,7 +1245,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     setWorkItems((prev) => prev.filter((w) => w.id !== id && w.parentId !== id));
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('work_items').delete().eq('id', id);
+        const { error: writeErr } = await supabase.from('work_items').delete().eq('id', id);
+        if (writeErr) throw writeErr;
       } catch (e) {
         reportWriteFailure('Deleting work item', e);
       }
@@ -1251,7 +1277,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('team_members').upsert({
+        const { error: writeErr } = await supabase.from('team_members').upsert({
           id: updated.id,
           name: updated.name,
           role: updated.role || null,
@@ -1259,6 +1285,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           created_at: updated.createdAt || now,
           updated_at: now,
         });
+        if (writeErr) throw writeErr;
       } catch (e) {
         reportWriteFailure('Saving team member', e);
       }
@@ -1269,7 +1296,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     setTeamMembers((prev) => prev.filter((m) => m.id !== id));
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('team_members').delete().eq('id', id);
+        const { error: writeErr } = await supabase.from('team_members').delete().eq('id', id);
+        if (writeErr) throw writeErr;
       } catch (e) {
         reportWriteFailure('Deleting team member', e);
       }
@@ -1284,11 +1312,12 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('work_settings').upsert({
+        const { error: writeErr } = await supabase.from('work_settings').upsert({
           id: 'default',
           default_sprint_length_days: updated.defaultSprintLengthDays,
           updated_at: now,
         });
+        if (writeErr) throw writeErr;
       } catch (e) {
         reportWriteFailure('Saving work settings', e);
       }
@@ -1303,11 +1332,12 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('budget_settings').upsert({
+        const { error: writeErr } = await supabase.from('budget_settings').upsert({
           id: 'default',
           total_planned_override: updated.totalPlannedOverride ?? null,
           updated_at: now,
         });
+        if (writeErr) throw writeErr;
       } catch (e) {
         reportWriteFailure('Saving budget settings', e);
       }
