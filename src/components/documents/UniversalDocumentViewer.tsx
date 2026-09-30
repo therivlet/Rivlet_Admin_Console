@@ -1,29 +1,31 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { 
-  X, 
-  Download, 
-  ExternalLink, 
-  FileText, 
-  FileSpreadsheet, 
-  Image as ImageIcon, 
-  ZoomIn, 
-  ZoomOut, 
-  RotateCw, 
-  Maximize2, 
-  Pencil, 
-  FileCheck, 
-  Search, 
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  X,
+  Download,
+  ExternalLink,
+  FileText,
+  FileSpreadsheet,
+  Image as ImageIcon,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  Maximize2,
+  Pencil,
+  FileCheck,
+  Search,
   AlertCircle,
   Loader2,
   RefreshCw,
   Table,
   Eye,
-  CheckCircle2
+  CheckCircle2,
+  Upload
 } from 'lucide-react';
 import { DocumentItem } from '@/lib/types';
-import { resolveDocumentUrl } from '@/lib/supabase';
+import { resolveDocumentUrl, supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { useAdminStore } from '@/lib/store';
 import * as XLSX from 'xlsx';
 import mammoth from 'mammoth';
 
@@ -39,37 +41,95 @@ export default function UniversalDocumentViewer({
   onEditExpiry,
 }: UniversalDocumentViewerProps) {
   const [viewTab, setViewTab] = useState<'viewer' | 'readview'>('viewer');
+  const { updateDocument } = useAdminStore();
+
+  // Local override applied immediately after a successful re-upload, so the
+  // viewer reflects the new file right away instead of showing the stale
+  // snapshot the parent passed in as `doc` when this modal was opened.
+  const [override, setOverride] = useState<Partial<DocumentItem> | null>(null);
+  const effectiveDoc: DocumentItem = override ? { ...doc, ...override } : doc;
 
   // The stored fileUrl is a Supabase public URL, but storage reads now require
   // authentication — resolve a short-lived signed URL before fetching/displaying.
-  const [resolvedUrl, setResolvedUrl] = useState<string>(doc.fileUrl || '#');
+  const [resolvedUrl, setResolvedUrl] = useState<string>(effectiveDoc.fileUrl || '#');
   const [urlResolving, setUrlResolving] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setUrlResolving(true);
-    resolveDocumentUrl(doc.fileUrl).then((url) => {
+    resolveDocumentUrl(effectiveDoc.fileUrl).then((url) => {
       if (!cancelled) {
         setResolvedUrl(url);
         setUrlResolving(false);
       }
     });
     return () => { cancelled = true; };
-  }, [doc.fileUrl]);
+  }, [effectiveDoc.fileUrl]);
 
   // A blob: URL only ever resolves inside the browser tab/session that created
   // it — if this record was saved with one (e.g. from a past failed cloud
   // upload) it can never load again, on any device or after any reload.
   // Detect it up front instead of showing an unexplained blank preview.
-  const isDeadBlobUrl = typeof window !== 'undefined' && !!doc.fileUrl?.startsWith('blob:') && !doc.fileUrl.startsWith(`blob:${window.location.origin}`);
+  const isDeadBlobUrl = typeof window !== 'undefined' && !!effectiveDoc.fileUrl?.startsWith('blob:') && !effectiveDoc.fileUrl.startsWith(`blob:${window.location.origin}`);
 
   // File type detection
-  const fileName = doc.fileName || doc.title || '';
+  const fileName = effectiveDoc.fileName || effectiveDoc.title || '';
   const ext = fileName.split('.').pop()?.toLowerCase() || '';
-  const isImage = doc.fileFormat === 'image' || /\.(png|jpg|jpeg|webp|svg|gif)$/i.test(fileName) || (doc.fileUrl && doc.fileUrl.startsWith('data:image/'));
-  const isPdf = doc.fileFormat === 'pdf' || ext === 'pdf';
-  const isWord = doc.fileFormat === 'docx' || ext === 'docx' || ext === 'doc';
-  const isExcel = doc.fileFormat === 'xlsx' || ext === 'xlsx' || ext === 'xls' || ext === 'csv';
+  const isImage = effectiveDoc.fileFormat === 'image' || /\.(png|jpg|jpeg|webp|svg|gif)$/i.test(fileName) || (effectiveDoc.fileUrl && effectiveDoc.fileUrl.startsWith('data:image/'));
+  const isPdf = effectiveDoc.fileFormat === 'pdf' || ext === 'pdf';
+  const isWord = effectiveDoc.fileFormat === 'docx' || ext === 'docx' || ext === 'doc';
+  const isExcel = effectiveDoc.fileFormat === 'xlsx' || ext === 'xlsx' || ext === 'xls' || ext === 'csv';
+
+  // Re-upload state: lets the user fix a dead-blob record in one click
+  // instead of deleting it and creating a brand new document from scratch.
+  const reuploadInputRef = useRef<HTMLInputElement>(null);
+  const [isReuploading, setIsReuploading] = useState(false);
+  const [reuploadError, setReuploadError] = useState<string | null>(null);
+
+  const handleReuploadFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    if (!isSupabaseConfigured || !supabase) {
+      setReuploadError('Cloud storage is not configured.');
+      return;
+    }
+
+    setReuploadError(null);
+    setIsReuploading(true);
+    try {
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      let fileFormat: DocumentItem['fileFormat'] = 'pdf';
+      if (ext === 'docx' || ext === 'doc') fileFormat = 'docx';
+      else if (ext === 'xlsx' || ext === 'xls') fileFormat = 'xlsx';
+      else if (ext === 'png' || ext === 'jpg' || ext === 'jpeg') fileFormat = 'image';
+
+      const safeName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+      const filePath = `documents/${safeName}`;
+
+      const { data, error } = await supabase.storage
+        .from('vault-files')
+        .upload(filePath, file, { cacheControl: '3600', upsert: true });
+
+      if (error || !data) throw error || new Error('Upload returned no data.');
+
+      const { data: urlData } = supabase.storage.from('vault-files').getPublicUrl(filePath);
+      const patch: Partial<DocumentItem> = {
+        fileUrl: urlData.publicUrl,
+        fileName: file.name,
+        fileSizeBytes: file.size,
+        fileFormat,
+      };
+
+      await updateDocument(doc.id, patch);
+      setOverride(patch);
+    } catch (err: any) {
+      setReuploadError(err?.message || 'Re-upload failed. Please try again.');
+    } finally {
+      setIsReuploading(false);
+    }
+  };
 
   // Loading & Error States
   const [isLoading, setIsLoading] = useState(true);
@@ -154,7 +214,14 @@ export default function UniversalDocumentViewer({
       } catch (err: any) {
         console.error('Document parser error:', err);
         if (!isCancelled) {
-          setLoadError(err.message || 'Unable to parse document in-app.');
+          // A bare "Failed to fetch" is a network-level failure (the request
+          // never got an HTTP response at all) — almost always because the
+          // file no longer exists at that path in the vault-files bucket,
+          // not because the document record itself is missing.
+          const message = err?.message === 'Failed to fetch'
+            ? 'Could not download this file from cloud storage. It may have been removed from the vault-files bucket, or the storage connection is temporarily unavailable.'
+            : (err?.message || 'Unable to parse document in-app.');
+          setLoadError(message);
         }
       } finally {
         if (!isCancelled) {
@@ -222,13 +289,13 @@ export default function UniversalDocumentViewer({
                   isPdf ? 'bg-rose-950/80 text-rose-400 border-rose-800/60' :
                   'bg-amber-950/80 text-[#e6c875] border-amber-800/60'
                 }`}>
-                  {doc.fileFormat || ext}
+                  {effectiveDoc.fileFormat || ext}
                 </span>
               </div>
               <div className="flex items-center gap-2 text-[11px] text-[#94a3b8] truncate">
                 <span className="truncate">{fileName}</span>
                 <span>•</span>
-                <span className="flex-shrink-0">{(doc.fileSizeBytes / 1024 / 1024).toFixed(2)} MB</span>
+                <span className="flex-shrink-0">{(effectiveDoc.fileSizeBytes / 1024 / 1024).toFixed(2)} MB</span>
                 {doc.associatedVendor && (
                   <>
                     <span>•</span>
@@ -315,9 +382,30 @@ export default function UniversalDocumentViewer({
                 <p className="text-xs text-[#94a3b8] mt-1 max-w-md">
                   Its upload failed at the time and the record was saved with a temporary local link instead — this has
                   since been fixed for new uploads, but this file's original bytes can't be recovered.
-                  Please delete this record and re-upload the original file.
+                  Re-upload the original file below to fix this record in place.
                 </p>
               </div>
+
+              <input
+                ref={reuploadInputRef}
+                type="file"
+                accept=".pdf,.docx,.doc,.xlsx,.xls,.csv,.png,.jpg,.jpeg"
+                className="hidden"
+                onChange={handleReuploadFile}
+              />
+              <button
+                onClick={() => reuploadInputRef.current?.click()}
+                disabled={isReuploading}
+                title="Upload the original file to replace this broken record"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-bold text-xs hover:brightness-110 shadow-glow disabled:opacity-60"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                {isReuploading ? 'Uploading...' : 'Re-upload File'}
+              </button>
+
+              {reuploadError && (
+                <p className="text-xs text-rose-400 max-w-md">{reuploadError}</p>
+              )}
             </div>
           ) : viewTab === 'viewer' ? (
             <>
@@ -587,7 +675,7 @@ export default function UniversalDocumentViewer({
                     <p className="text-xs text-[#94a3b8] mt-1">{fileName}</p>
                   </div>
                   <p className="text-xs text-[#cbd5e1] max-w-md">
-                    This file format ({doc.fileFormat}) is stored in your secure vault. You can review its technical compliance metadata or download it to open natively.
+                    This file format ({effectiveDoc.fileFormat}) is stored in your secure vault. You can review its technical compliance metadata or download it to open natively.
                   </p>
                   {resolvedUrl && resolvedUrl !== '#' && (
                     <a
@@ -647,7 +735,7 @@ export default function UniversalDocumentViewer({
                     <div className="p-3 bg-[#07090e] rounded-xl border border-[#1e2638] space-y-1">
                       <span className="text-[10px] text-[#94a3b8] uppercase font-mono tracking-wider font-semibold block">File Size & Format</span>
                       <span className="text-xs font-mono text-white">
-                        {(doc.fileSizeBytes / 1024 / 1024).toFixed(2)} MB • {doc.fileFormat?.toUpperCase() || ext.toUpperCase()}
+                        {(effectiveDoc.fileSizeBytes / 1024 / 1024).toFixed(2)} MB • {effectiveDoc.fileFormat?.toUpperCase() || ext.toUpperCase()}
                       </span>
                     </div>
 
