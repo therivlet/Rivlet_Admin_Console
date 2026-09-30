@@ -10,7 +10,7 @@ const TYPES: WorkItemType[] = ['Epic', 'Feature', 'User Story', 'Task', 'Bug'];
 const STATES: WorkItemState[] = ['New', 'Active', 'In Review', 'Resolved', 'Closed'];
 
 function emptyItem(parentId?: string): Omit<WorkItem, 'createdAt' | 'updatedAt'> {
-  return { id: `wi-${Date.now()}`, type: 'User Story', title: '', state: 'New', priority: 2, tags: [], parentId, comments: [] };
+  return { id: `wi-${Date.now()}`, type: 'User Story', title: '', state: 'New', priority: 2, tags: [], parentId, assignee: 'Dasani', comments: [] };
 }
 
 export default function BacklogView() {
@@ -63,6 +63,11 @@ export default function BacklogView() {
 
           <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium flex-shrink-0 ${TYPE_COLOR[item.type]}`}>{item.type}</span>
           <span className="text-sm text-white truncate flex-1 group-hover:text-[#cda052]">{item.title}</span>
+          {item.assignee && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#131b2c] border border-[#202d48] text-[#cda052] flex-shrink-0 hidden md:inline font-semibold">
+              {item.assignee}
+            </span>
+          )}
           {item.storyPoints !== undefined && <span className="text-[10px] font-mono text-[#7c869d] flex-shrink-0">{item.storyPoints} pts</span>}
           <span className="text-[10px] text-[#7c869d] flex-shrink-0 hidden sm:inline">{sprintName(item.sprintId) || 'Backlog'}</span>
           <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium flex-shrink-0 ${STATE_COLOR[item.state]}`}>{item.state}</span>

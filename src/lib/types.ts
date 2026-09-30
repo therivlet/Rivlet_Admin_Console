@@ -396,7 +396,9 @@ export interface WorkItem {
   parentId?: string; // Epic -> Feature -> User Story -> Task/Bug
   sprintId?: string; // links to Sprint.id ("Unscheduled" if omitted / backlog)
   linkedVendorId?: string; // cross-link to a Manufacturer/Vendor record
-  linkedPipelineItemId?: string; // cross-link to a Sampling & Production style
+  linkedPipelineItemId?: string; // cross-link to a single Sampling & Production style (legacy/compatibility)
+  linkedPipelineItemIds?: string[]; // cross-link to multiple Sampling & Production styles (or ['all'])
+  operationCategory?: string; // e.g. "Operations", "Sourcing & Fabrics", "Sampling & Fit", "Production QC", etc.
   startDate?: string;
   targetDate?: string;
   completedDate?: string;

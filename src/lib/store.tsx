@@ -58,6 +58,7 @@ interface AdminStoreContextType {
   saveSprint: (sprint: Sprint) => Promise<void>;
   deleteSprint: (id: string) => Promise<void>;
   saveWorkItem: (item: WorkItem) => Promise<void>;
+  saveWorkItemsBulk: (items: WorkItem[]) => Promise<void>;
   deleteWorkItem: (id: string) => Promise<void>;
   addWorkItemComment: (id: string, text: string, author: string) => Promise<void>;
   saveTeamMember: (member: TeamMember) => Promise<void>;
@@ -457,6 +458,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           sprintId: r.sprint_id || undefined,
           linkedVendorId: r.linked_vendor_id || undefined,
           linkedPipelineItemId: r.linked_pipeline_item_id || undefined,
+          linkedPipelineItemIds: Array.isArray(r.linkedPipelineItemIds) ? r.linkedPipelineItemIds : (r.linked_pipeline_item_id ? [r.linked_pipeline_item_id] : []),
+          operationCategory: r.operationCategory || r.operation_category || undefined,
           startDate: r.start_date || undefined,
           targetDate: r.target_date || undefined,
           completedDate: r.completed_date || undefined,
@@ -1241,6 +1244,56 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     }
   };
 
+  const saveWorkItemsBulk = async (newItems: WorkItem[]) => {
+    if (!newItems || newItems.length === 0) return;
+    const now = new Date().toISOString();
+    const updatedList = newItems.map((item) => ({ ...item, updatedAt: now }));
+
+    setWorkItems((prev) => {
+      const copy = [...prev];
+      for (const item of updatedList) {
+        const idx = copy.findIndex((w) => w.id === item.id);
+        if (idx >= 0) {
+          copy[idx] = item;
+        } else {
+          copy.unshift(item);
+        }
+      }
+      return copy;
+    });
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const records = updatedList.map((updated) => ({
+          id: updated.id,
+          type: updated.type,
+          title: updated.title,
+          description: updated.description || null,
+          acceptance_criteria: updated.acceptanceCriteria || null,
+          state: updated.state,
+          priority: updated.priority,
+          story_points: updated.storyPoints ?? null,
+          assignee: updated.assignee || null,
+          tags: updated.tags || [],
+          parent_id: updated.parentId || null,
+          sprint_id: updated.sprintId || null,
+          linked_vendor_id: updated.linkedVendorId || null,
+          linked_pipeline_item_id: updated.linkedPipelineItemId || (updated.linkedPipelineItemIds && updated.linkedPipelineItemIds[0] !== 'all' ? updated.linkedPipelineItemIds[0] : null) || null,
+          start_date: updated.startDate || null,
+          target_date: updated.targetDate || null,
+          completed_date: updated.completedDate || null,
+          comments: updated.comments || [],
+          created_at: updated.createdAt || now,
+          updated_at: now,
+        }));
+        const { error: writeErr } = await supabase.from('work_items').upsert(records);
+        if (writeErr) throw writeErr;
+      } catch (e) {
+        reportWriteFailure('Saving bulk work items', e);
+      }
+    }
+  };
+
   const deleteWorkItem = async (id: string) => {
     setWorkItems((prev) => prev.filter((w) => w.id !== id && w.parentId !== id));
     if (isSupabaseConfigured && supabase) {
@@ -1413,6 +1466,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         saveSprint,
         deleteSprint,
         saveWorkItem,
+        saveWorkItemsBulk,
         deleteWorkItem,
         addWorkItemComment,
         saveTeamMember,

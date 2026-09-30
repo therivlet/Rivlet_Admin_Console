@@ -2,18 +2,20 @@
 
 import React, { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ListTree, KanbanSquare, CalendarRange, Settings2 } from 'lucide-react';
+import { ListTree, KanbanSquare, CalendarRange, Settings2, Sparkles } from 'lucide-react';
 import BacklogView from '@/components/work/BacklogView';
 import BoardView from '@/components/work/BoardView';
 import SprintsView from '@/components/work/SprintsView';
 import SettingsView from '@/components/work/SettingsView';
+import BulkCreationView from '@/components/work/BulkCreationView';
 
-type Tab = 'backlog' | 'board' | 'sprints' | 'settings';
+type Tab = 'backlog' | 'board' | 'sprints' | 'bulk' | 'settings';
 
 const TABS: { key: Tab; label: string; icon: typeof ListTree }[] = [
   { key: 'backlog', label: 'Backlog', icon: ListTree },
   { key: 'board', label: 'Sprint Board', icon: KanbanSquare },
   { key: 'sprints', label: 'Sprints', icon: CalendarRange },
+  { key: 'bulk', label: 'Bulk Creation', icon: Sparkles },
   { key: 'settings', label: 'Settings', icon: Settings2 },
 ];
 
@@ -21,14 +23,14 @@ function WorkPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const tab: Tab = (tabParam === 'board' || tabParam === 'sprints' || tabParam === 'settings') ? tabParam : 'backlog';
+  const tab: Tab = (tabParam === 'board' || tabParam === 'sprints' || tabParam === 'bulk' || tabParam === 'settings') ? tabParam : 'backlog';
   const [boardSprintId, setBoardSprintId] = useState<string | undefined>(undefined);
 
   const setTab = (next: Tab) => {
     router.push(`/work?tab=${next}`);
   };
 
-  const openBoardForSprint = (sprintId: string) => {
+  const openBoardForSprint = (sprintId?: string) => {
     setBoardSprintId(sprintId);
     setTab('board');
   };
@@ -64,6 +66,7 @@ function WorkPageInner() {
       {tab === 'backlog' && <BacklogView />}
       {tab === 'board' && <BoardView initialSprintId={boardSprintId} />}
       {tab === 'sprints' && <SprintsView onOpenBoard={openBoardForSprint} />}
+      {tab === 'bulk' && <BulkCreationView onNavigateToBoard={openBoardForSprint} onNavigateToBacklog={() => setTab('backlog')} />}
       {tab === 'settings' && <SettingsView />}
     </div>
   );

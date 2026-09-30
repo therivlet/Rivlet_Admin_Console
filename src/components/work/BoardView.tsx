@@ -20,11 +20,11 @@ function currentSprintId(sprints: Sprint[]): string | undefined {
 }
 
 function emptyTask(sprintId?: string, parentId?: string, state?: WorkItemState): Omit<WorkItem, 'createdAt' | 'updatedAt'> {
-  return { id: `wi-${Date.now()}`, type: 'Task', title: '', state: state || 'New', priority: 2, tags: [], sprintId, parentId, comments: [] };
+  return { id: `wi-${Date.now()}`, type: 'Task', title: '', state: state || 'New', priority: 2, tags: [], sprintId, parentId, assignee: 'Dasani', comments: [] };
 }
 
 function emptyStory(sprintId?: string): Omit<WorkItem, 'createdAt' | 'updatedAt'> {
-  return { id: `wi-${Date.now()}`, type: 'User Story', title: '', state: 'New', priority: 2, tags: [], sprintId, comments: [] };
+  return { id: `wi-${Date.now()}`, type: 'User Story', title: '', state: 'New', priority: 2, tags: [], sprintId, assignee: 'Dasani', comments: [] };
 }
 
 interface BoardViewProps {
@@ -32,7 +32,7 @@ interface BoardViewProps {
 }
 
 export default function BoardView({ initialSprintId }: BoardViewProps) {
-  const { workItems, sprints, vendors, teamMembers, saveWorkItem } = useAdminStore();
+  const { workItems, sprints, vendors, teamMembers, pipelineItems, saveWorkItem } = useAdminStore();
   const [selectedSprintId, setSelectedSprintId] = useState<string | undefined>(() => initialSprintId ?? currentSprintId(sprints));
   const [modalItem, setModalItem] = useState<WorkItem | Omit<WorkItem, 'createdAt' | 'updatedAt'> | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -166,10 +166,27 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                     {row ? (
                       <>
                         <div>
-                          <span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${TYPE_COLOR[row.type]}`}>{row.type}</span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${TYPE_COLOR[row.type]}`}>{row.type}</span>
+                            {row.assignee && (
+                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#131b2c] border border-[#202d48] text-[#cda052] font-semibold flex items-center gap-0.5">
+                                <User className="w-2.5 h-2.5" /> {row.assignee}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs font-semibold text-white mt-1.5 leading-snug">{row.title}</p>
+                          <div className="flex items-center gap-1 flex-wrap mt-1.5">
+                            {row.linkedPipelineItemIds?.includes('all') ? (
+                              <span className="text-[8px] px-1.5 py-0.5 rounded bg-emerald-950/70 border border-emerald-800/50 text-emerald-300 font-medium">All Styles</span>
+                            ) : row.linkedPipelineItemIds && row.linkedPipelineItemIds.length > 0 ? (
+                              <span className="text-[8px] px-1.5 py-0.5 rounded bg-[#161c28] border border-[#252f44] text-[#cbd5e1] font-medium">{row.linkedPipelineItemIds.length} Styles</span>
+                            ) : null}
+                            {row.operationCategory && (
+                              <span className="text-[8px] px-1.5 py-0.5 rounded bg-indigo-950/50 border border-indigo-800/40 text-indigo-300 truncate max-w-[120px]">{row.operationCategory}</span>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between mt-2">
+                        <div className="flex items-center justify-between mt-2 pt-1 border-t border-[#161b26]">
                           <span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${STATE_COLOR[row.state]}`}>{row.state}</span>
                           {rowTasks.length > 0 && (
                             <span className="text-[10px] font-mono text-[#7c869d] flex items-center gap-1"><ListChecks className="w-2.5 h-2.5" /> {doneCount}/{rowTasks.length}</span>
@@ -201,7 +218,12 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                             className={`rounded-lg border border-[#1f2638] bg-[#0e121b] p-2 cursor-grab active:cursor-grabbing hover:border-[#2a3346] transition-colors ${draggingId === task.id ? 'opacity-40' : ''}`}
                           >
                             <div className="flex items-center justify-between mb-1">
-                              <span className={`text-[8px] px-1 py-0.5 rounded border font-medium ${TYPE_COLOR[task.type]}`}>{task.type}</span>
+                              <div className="flex items-center gap-1">
+                                <span className={`text-[8px] px-1 py-0.5 rounded border font-medium ${TYPE_COLOR[task.type]}`}>{task.type}</span>
+                                {task.operationCategory && (
+                                  <span className="text-[7px] px-1 rounded bg-[#161c2b] text-[#94a3b8] truncate max-w-[80px]">{task.operationCategory}</span>
+                                )}
+                              </div>
                               {task.priority <= 2 && <Flag className={`w-2.5 h-2.5 ${task.priority === 1 ? 'text-rose-400' : 'text-amber-400'}`} />}
                             </div>
                             <p className="text-[11px] font-medium text-white leading-snug">{task.title}</p>
@@ -209,8 +231,12 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                               <p className="text-[9px] text-amber-300/80 flex items-center gap-0.5 mt-1"><Factory className="w-2 h-2" /> {linkedVendor.name}</p>
                             )}
                             <div className="flex items-center justify-between mt-1 text-[9px] text-[#7c869d]">
-                              {task.assignee ? <span className="flex items-center gap-0.5 truncate"><User className="w-2 h-2" /> {task.assignee}</span> : <span />}
-                              {task.storyPoints !== undefined && <span className="font-mono">{task.storyPoints}</span>}
+                              {task.assignee ? (
+                                <span className={`flex items-center gap-0.5 truncate font-medium ${task.assignee === 'Dasani' ? 'text-[#e6c875]' : ''}`}>
+                                  <User className="w-2 h-2" /> {task.assignee}
+                                </span>
+                              ) : <span />}
+                              {task.storyPoints !== undefined && <span className="font-mono text-[#cbd5e1]">{task.storyPoints} pt{task.storyPoints === 1 ? '' : 's'}</span>}
                             </div>
                           </div>
                         );
