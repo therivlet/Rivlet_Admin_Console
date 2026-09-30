@@ -352,3 +352,49 @@ export interface BudgetItem {
   createdAt: string;
   updatedAt: string;
 }
+
+// --- ADO-style Work Tracking: Sprints & Work Items ---
+
+export type WorkItemType = 'Epic' | 'Feature' | 'User Story' | 'Task' | 'Bug';
+export type WorkItemState = 'New' | 'Active' | 'In Review' | 'Resolved' | 'Closed';
+export type WorkItemPriority = 1 | 2 | 3 | 4; // 1 = highest, matches ADO convention
+
+export interface WorkItemComment {
+  id: string;
+  author: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface WorkItem {
+  id: string;
+  type: WorkItemType;
+  title: string;
+  description?: string;
+  acceptanceCriteria?: string;
+  state: WorkItemState;
+  priority: WorkItemPriority;
+  storyPoints?: number;
+  assignee?: string;
+  tags: string[];
+  parentId?: string; // Epic -> Feature -> User Story -> Task/Bug
+  sprintId?: string; // links to Sprint.id ("Unscheduled" if omitted / backlog)
+  startDate?: string;
+  targetDate?: string;
+  completedDate?: string;
+  comments: WorkItemComment[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type SprintStatus = 'future' | 'current' | 'past';
+
+export interface Sprint {
+  id: string;
+  name: string; // e.g. "Sprint 1 - Manufacturer Outreach"
+  goal?: string;
+  startDate: string;
+  endDate: string;
+  createdAt: string;
+  updatedAt: string;
+}

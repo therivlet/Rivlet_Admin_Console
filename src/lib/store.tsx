@@ -1,8 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { ArtifactItem, CostingSheet, DocumentItem, KBArticle, ArtifactStatus, VendorItem, PipelineItem, BudgetItem } from './types';
-import { initialArtifacts, initialCostingSheets, initialDocuments, initialKBArticles, initialVendors, initialPipelineItems, initialBudgetItems } from './initialData';
+import { ArtifactItem, CostingSheet, DocumentItem, KBArticle, ArtifactStatus, VendorItem, PipelineItem, BudgetItem, Sprint, WorkItem } from './types';
+import { initialArtifacts, initialCostingSheets, initialDocuments, initialKBArticles, initialVendors, initialPipelineItems, initialBudgetItems, initialSprints, initialWorkItems } from './initialData';
 import { supabase, isSupabaseConfigured } from './supabase';
 
 const STORAGE_KEYS = {
@@ -13,6 +13,8 @@ const STORAGE_KEYS = {
   VENDORS: 'rivlet_admin_vendors',
   PIPELINE_ITEMS: 'rivlet_admin_pipeline_items',
   BUDGET_ITEMS: 'rivlet_admin_budget_items',
+  SPRINTS: 'rivlet_admin_sprints',
+  WORK_ITEMS: 'rivlet_admin_work_items',
 };
 
 interface AdminStoreContextType {
@@ -27,6 +29,8 @@ interface AdminStoreContextType {
   vendors: VendorItem[];
   pipelineItems: PipelineItem[];
   budgetItems: BudgetItem[];
+  sprints: Sprint[];
+  workItems: WorkItem[];
   syncWithSupabase: () => Promise<void>;
   addArtifact: (item: Omit<ArtifactItem, 'id' | 'createdAt' | 'updatedAt'>) => Promise<ArtifactItem>;
   updateArtifact: (id: string, updates: Partial<ArtifactItem>) => Promise<void>;
@@ -45,6 +49,11 @@ interface AdminStoreContextType {
   deletePipelineItem: (id: string) => Promise<void>;
   saveBudgetItem: (item: BudgetItem) => Promise<void>;
   deleteBudgetItem: (id: string) => Promise<void>;
+  saveSprint: (sprint: Sprint) => Promise<void>;
+  deleteSprint: (id: string) => Promise<void>;
+  saveWorkItem: (item: WorkItem) => Promise<void>;
+  deleteWorkItem: (id: string) => Promise<void>;
+  addWorkItemComment: (id: string, text: string, author: string) => Promise<void>;
   resetToSeed: () => Promise<void>;
 }
 
@@ -58,6 +67,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
   const [vendors, setVendors] = useState<VendorItem[]>([]);
   const [pipelineItems, setPipelineItems] = useState<PipelineItem[]>([]);
   const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
+  const [sprints, setSprints] = useState<Sprint[]>([]);
+  const [workItems, setWorkItems] = useState<WorkItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastWriteError, setLastWriteError] = useState<string | null>(null);
@@ -90,7 +101,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         Promise.resolve(supabase!.from(table).select('*').order('created_at', { ascending: false }))
           .catch(() => ({ data: null, error: null } as any));
 
-      const [artRes, costRes, docRes, kbRes, venRes, pipeRes, budRes] = await Promise.all([
+      const [artRes, costRes, docRes, kbRes, venRes, pipeRes, budRes, sprRes, wiRes] = await Promise.all([
         supabase.from('artifacts').select('*').order('created_at', { ascending: false }),
         supabase.from('costing_sheets').select('*').order('created_at', { ascending: false }),
         supabase.from('documents').select('*').order('created_at', { ascending: false }),
@@ -98,6 +109,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         safeSelect('vendors'),
         safeSelect('pipeline_items'),
         safeSelect('budget_items'),
+        safeSelect('sprints'),
+        safeSelect('work_items'),
       ]);
 
       // 1. Artifacts sync & auto-seed
@@ -347,6 +360,69 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         setBudgetItems(initialBudgetItems);
         try { localStorage.setItem(STORAGE_KEYS.BUDGET_ITEMS, JSON.stringify(initialBudgetItems)); } catch (_) {}
       }
+
+      // 8. Sprints sync & auto-seed
+      if (sprRes.data && sprRes.data.length > 0) {
+        const formatted: Sprint[] = sprRes.data.map((r: any) => ({
+          id: r.id,
+          name: r.name,
+          goal: r.goal || undefined,
+          startDate: r.start_date,
+          endDate: r.end_date,
+          createdAt: r.created_at || new Date().toISOString(),
+          updatedAt: r.updated_at || new Date().toISOString(),
+        }));
+        setSprints(formatted);
+        try { localStorage.setItem(STORAGE_KEYS.SPRINTS, JSON.stringify(formatted)); } catch (_) {}
+      } else if (sprRes.data && sprRes.data.length === 0) {
+        for (const s of initialSprints) {
+          await Promise.resolve(supabase.from('sprints').upsert({
+            id: s.id, name: s.name, goal: s.goal, start_date: s.startDate, end_date: s.endDate,
+            created_at: s.createdAt, updated_at: s.updatedAt,
+          })).catch(() => {});
+        }
+        setSprints(initialSprints);
+        try { localStorage.setItem(STORAGE_KEYS.SPRINTS, JSON.stringify(initialSprints)); } catch (_) {}
+      }
+
+      // 9. Work items sync & auto-seed
+      if (wiRes.data && wiRes.data.length > 0) {
+        const formatted: WorkItem[] = wiRes.data.map((r: any) => ({
+          id: r.id,
+          type: r.type || 'Task',
+          title: r.title,
+          description: r.description || undefined,
+          acceptanceCriteria: r.acceptance_criteria || undefined,
+          state: r.state || 'New',
+          priority: (r.priority ?? 2) as any,
+          storyPoints: r.story_points !== null && r.story_points !== undefined ? Number(r.story_points) : undefined,
+          assignee: r.assignee || undefined,
+          tags: Array.isArray(r.tags) ? r.tags : [],
+          parentId: r.parent_id || undefined,
+          sprintId: r.sprint_id || undefined,
+          startDate: r.start_date || undefined,
+          targetDate: r.target_date || undefined,
+          completedDate: r.completed_date || undefined,
+          comments: Array.isArray(r.comments) ? r.comments : [],
+          createdAt: r.created_at || new Date().toISOString(),
+          updatedAt: r.updated_at || new Date().toISOString(),
+        }));
+        setWorkItems(formatted);
+        try { localStorage.setItem(STORAGE_KEYS.WORK_ITEMS, JSON.stringify(formatted)); } catch (_) {}
+      } else if (wiRes.data && wiRes.data.length === 0) {
+        for (const w of initialWorkItems) {
+          await Promise.resolve(supabase.from('work_items').upsert({
+            id: w.id, type: w.type, title: w.title, description: w.description,
+            acceptance_criteria: w.acceptanceCriteria, state: w.state, priority: w.priority,
+            story_points: w.storyPoints, assignee: w.assignee, tags: w.tags,
+            parent_id: w.parentId, sprint_id: w.sprintId, start_date: w.startDate,
+            target_date: w.targetDate, completed_date: w.completedDate, comments: w.comments,
+            created_at: w.createdAt, updated_at: w.updatedAt,
+          })).catch(() => {});
+        }
+        setWorkItems(initialWorkItems);
+        try { localStorage.setItem(STORAGE_KEYS.WORK_ITEMS, JSON.stringify(initialWorkItems)); } catch (_) {}
+      }
     } catch (err) {
       console.warn('[Rivlet Store] Supabase sync notice:', err);
     } finally {
@@ -366,6 +442,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       const storedVendors = localStorage.getItem(STORAGE_KEYS.VENDORS);
       const storedPipeline = localStorage.getItem(STORAGE_KEYS.PIPELINE_ITEMS);
       const storedBudget = localStorage.getItem(STORAGE_KEYS.BUDGET_ITEMS);
+      const storedSprints = localStorage.getItem(STORAGE_KEYS.SPRINTS);
+      const storedWorkItems = localStorage.getItem(STORAGE_KEYS.WORK_ITEMS);
 
       if (storedArtifacts) {
         const parsed = JSON.parse(storedArtifacts).filter((a: any) => a.id !== 'art-001' && a.id !== 'art-002');
@@ -396,6 +474,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       setVendors(storedVendors ? JSON.parse(storedVendors) : initialVendors);
       setPipelineItems(storedPipeline ? JSON.parse(storedPipeline) : initialPipelineItems);
       setBudgetItems(storedBudget ? JSON.parse(storedBudget) : initialBudgetItems);
+      setSprints(storedSprints ? JSON.parse(storedSprints) : initialSprints);
+      setWorkItems(storedWorkItems ? JSON.parse(storedWorkItems) : initialWorkItems);
     } catch (e) {
       setArtifacts(initialArtifacts);
       setCostingSheets(initialCostingSheets);
@@ -404,6 +484,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       setVendors(initialVendors);
       setPipelineItems(initialPipelineItems);
       setBudgetItems(initialBudgetItems);
+      setSprints(initialSprints);
+      setWorkItems(initialWorkItems);
     }
 
     // Immediately trigger cloud sync from Supabase
@@ -421,8 +503,10 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       localStorage.setItem(STORAGE_KEYS.VENDORS, JSON.stringify(vendors));
       localStorage.setItem(STORAGE_KEYS.PIPELINE_ITEMS, JSON.stringify(pipelineItems));
       localStorage.setItem(STORAGE_KEYS.BUDGET_ITEMS, JSON.stringify(budgetItems));
+      localStorage.setItem(STORAGE_KEYS.SPRINTS, JSON.stringify(sprints));
+      localStorage.setItem(STORAGE_KEYS.WORK_ITEMS, JSON.stringify(workItems));
     } catch (_) {}
-  }, [artifacts, costingSheets, documents, kbArticles, vendors, pipelineItems, budgetItems, isLoaded]);
+  }, [artifacts, costingSheets, documents, kbArticles, vendors, pipelineItems, budgetItems, sprints, workItems, isLoaded]);
 
   // Window Focus & Visibility Listener: Automatically syncs when switching between Laptop and Tab.
   // Realtime Postgres subscriptions (below) handle live cross-device pushes, so we don't also
@@ -478,6 +562,12 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         syncWithSupabase();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'budget_items' }, () => {
+        syncWithSupabase();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sprints' }, () => {
+        syncWithSupabase();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'work_items' }, () => {
         syncWithSupabase();
       })
       .subscribe();
@@ -907,6 +997,112 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     }
   };
 
+  // 8. Sprint Actions
+  const saveSprint = async (sprint: Sprint) => {
+    const now = new Date().toISOString();
+    const updated: Sprint = { ...sprint, updatedAt: now };
+
+    setSprints((prev) => {
+      const idx = prev.findIndex((s) => s.id === sprint.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = updated;
+        return copy;
+      }
+      return [...prev, updated];
+    });
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('sprints').upsert({
+          id: updated.id,
+          name: updated.name,
+          goal: updated.goal || null,
+          start_date: updated.startDate,
+          end_date: updated.endDate,
+          created_at: updated.createdAt || now,
+          updated_at: now,
+        });
+      } catch (e) {
+        reportWriteFailure('Saving sprint', e);
+      }
+    }
+  };
+
+  const deleteSprint = async (id: string) => {
+    setSprints((prev) => prev.filter((s) => s.id !== id));
+    // Unschedule any work items that pointed at this sprint back to the backlog
+    setWorkItems((prev) => prev.map((w) => (w.sprintId === id ? { ...w, sprintId: undefined } : w)));
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('sprints').delete().eq('id', id);
+      } catch (e) {
+        reportWriteFailure('Deleting sprint', e);
+      }
+    }
+  };
+
+  // 9. Work Item Actions
+  const saveWorkItem = async (item: WorkItem) => {
+    const now = new Date().toISOString();
+    const updated: WorkItem = { ...item, updatedAt: now };
+
+    setWorkItems((prev) => {
+      const idx = prev.findIndex((w) => w.id === item.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = updated;
+        return copy;
+      }
+      return [updated, ...prev];
+    });
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('work_items').upsert({
+          id: updated.id,
+          type: updated.type,
+          title: updated.title,
+          description: updated.description || null,
+          acceptance_criteria: updated.acceptanceCriteria || null,
+          state: updated.state,
+          priority: updated.priority,
+          story_points: updated.storyPoints ?? null,
+          assignee: updated.assignee || null,
+          tags: updated.tags || [],
+          parent_id: updated.parentId || null,
+          sprint_id: updated.sprintId || null,
+          start_date: updated.startDate || null,
+          target_date: updated.targetDate || null,
+          completed_date: updated.completedDate || null,
+          comments: updated.comments || [],
+          created_at: updated.createdAt || now,
+          updated_at: now,
+        });
+      } catch (e) {
+        reportWriteFailure('Saving work item', e);
+      }
+    }
+  };
+
+  const deleteWorkItem = async (id: string) => {
+    setWorkItems((prev) => prev.filter((w) => w.id !== id && w.parentId !== id));
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('work_items').delete().eq('id', id);
+      } catch (e) {
+        reportWriteFailure('Deleting work item', e);
+      }
+    }
+  };
+
+  const addWorkItemComment = async (id: string, text: string, author: string) => {
+    const target = workItems.find((w) => w.id === id);
+    if (!target || !text.trim()) return;
+    const comment = { id: `cm-${Date.now()}`, author, text: text.trim(), createdAt: new Date().toISOString() };
+    await saveWorkItem({ ...target, comments: [...target.comments, comment] });
+  };
+
   const resetToSeed = async () => {
     if (isSupabaseConfigured && supabase) {
       try {
@@ -935,6 +1131,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         vendors,
         pipelineItems,
         budgetItems,
+        sprints,
+        workItems,
         syncWithSupabase,
         addArtifact,
         updateArtifact,
@@ -953,6 +1151,11 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         deletePipelineItem,
         saveBudgetItem,
         deleteBudgetItem,
+        saveSprint,
+        deleteSprint,
+        saveWorkItem,
+        deleteWorkItem,
+        addWorkItemComment,
         resetToSeed,
       }}
     >

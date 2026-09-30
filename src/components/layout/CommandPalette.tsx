@@ -12,7 +12,8 @@ import {
   ArrowRight,
   X,
   Factory,
-  GitBranch
+  GitBranch,
+  KanbanSquare
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import ModalPortal from '@/components/ui/ModalPortal';
@@ -25,7 +26,7 @@ interface CommandPaletteProps {
 export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
-  const { artifacts, costingSheets, documents, kbArticles, vendors, pipelineItems } = useAdminStore();
+  const { artifacts, costingSheets, documents, kbArticles, vendors, pipelineItems, workItems } = useAdminStore();
 
   useEffect(() => {
     if (isOpen) {
@@ -87,6 +88,14 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
       p.styleName.toLowerCase().includes(q) ||
       p.stage.toLowerCase().includes(q) ||
       (p.sku || '').toLowerCase().includes(q)
+  );
+
+  const filteredWorkItems = workItems.filter(
+    (w) =>
+      w.title.toLowerCase().includes(q) ||
+      w.type.toLowerCase().includes(q) ||
+      w.state.toLowerCase().includes(q) ||
+      w.tags.some((t) => t.toLowerCase().includes(q))
   );
 
   const navigateTo = (path: string) => {
@@ -306,12 +315,38 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
             </div>
           )}
 
+          {/* Work Items */}
+          {filteredWorkItems.length > 0 && (
+            <div>
+              <div className="px-3 py-1 text-[10px] font-semibold text-[#666f85] uppercase tracking-wider flex items-center gap-1.5">
+                <KanbanSquare className="w-3 h-3 text-indigo-400" />
+                Work Items ({filteredWorkItems.length})
+              </div>
+              <div className="space-y-1 mt-1">
+                {filteredWorkItems.slice(0, 5).map((w) => (
+                  <div
+                    key={w.id}
+                    onClick={() => navigateTo('/work/backlog')}
+                    className="flex items-center justify-between p-2.5 rounded-lg hover:bg-[#181d2a] cursor-pointer group text-xs"
+                  >
+                    <div>
+                      <div className="text-white font-medium group-hover:text-indigo-300">{w.title}</div>
+                      <div className="text-[10px] text-[#747c91]">{w.type} • {w.state}</div>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-[#555d71] group-hover:text-white" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {filteredArtifacts.length === 0 &&
             filteredCosting.length === 0 &&
             filteredDocs.length === 0 &&
             filteredArticles.length === 0 &&
             filteredVendors.length === 0 &&
-            filteredPipeline.length === 0 && (
+            filteredPipeline.length === 0 &&
+            filteredWorkItems.length === 0 && (
               <div className="p-8 text-center text-[#687084] text-xs">
                 No matching records found for "{query}".
               </div>

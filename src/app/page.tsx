@@ -21,12 +21,31 @@ import {
   Factory,
   GitBranch,
   Wallet,
-  AlertTriangle
+  AlertTriangle,
+  KanbanSquare,
+  CalendarClock,
+  Flag
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 
+function isOverdue(item: { targetDate?: string; state: string }) {
+  if (!item.targetDate || item.state === 'Closed' || item.state === 'Resolved') return false;
+  return item.targetDate < new Date().toISOString().slice(0, 10);
+}
+
+function isDueToday(item: { targetDate?: string; state: string }) {
+  if (!item.targetDate || item.state === 'Closed' || item.state === 'Resolved') return false;
+  return item.targetDate === new Date().toISOString().slice(0, 10);
+}
+
 export default function DashboardOverviewPage() {
-  const { artifacts, costingSheets, documents, kbArticles, vendors, pipelineItems, budgetItems } = useAdminStore();
+  const { artifacts, costingSheets, documents, kbArticles, vendors, pipelineItems, budgetItems, workItems, sprints } = useAdminStore();
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const currentSprint = sprints.find((s) => s.startDate <= todayStr && s.endDate >= todayStr);
+  const activeItems = workItems.filter((w) => w.state === 'Active');
+  const overdueItems = workItems.filter(isOverdue);
+  const dueTodayItems = workItems.filter(isDueToday);
 
   const promotedTools = artifacts.filter((a) => a.isPromoted);
   const activeCerts = documents.filter((d) => d.status === 'Active');
@@ -58,6 +77,50 @@ export default function DashboardOverviewPage() {
           <ChevronRight className="w-3.5 h-3.5 text-amber-400 ml-auto flex-shrink-0" />
         </Link>
       )}
+
+      {/* Today's Focus — daily activity snapshot across all work items */}
+      <div className="bg-[#0e121b] border border-[#1e2638] rounded-xl p-5 sm:p-6 shadow-lg">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 rounded-lg bg-indigo-950/60 text-indigo-400">
+              <KanbanSquare className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-white">Today's Focus</h2>
+              <p className="text-xs text-[#94a3b8] mt-0.5">
+                {currentSprint ? `${currentSprint.name} — ${new Date(currentSprint.startDate).toLocaleDateString()} to ${new Date(currentSprint.endDate).toLocaleDateString()}` : 'No active sprint right now.'}
+              </p>
+            </div>
+          </div>
+          <Link href="/work/board" className="text-xs text-[#cda052] hover:underline flex items-center gap-1 font-semibold">
+            Open Sprint Board <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-[#080b12] border border-[#1c2438] rounded-lg p-3.5">
+            <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-sky-300"><Flag className="w-3.5 h-3.5" /> Active Now ({activeItems.length})</div>
+            <div className="space-y-1.5 max-h-32 overflow-y-auto">
+              {activeItems.length === 0 && <p className="text-[11px] text-[#5f6c85]">Nothing in progress.</p>}
+              {activeItems.slice(0, 5).map((w) => <div key={w.id} className="text-xs text-[#cbd5e1] truncate">{w.title}</div>)}
+            </div>
+          </div>
+          <div className="bg-[#080b12] border border-[#1c2438] rounded-lg p-3.5">
+            <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-amber-300"><CalendarClock className="w-3.5 h-3.5" /> Due Today ({dueTodayItems.length})</div>
+            <div className="space-y-1.5 max-h-32 overflow-y-auto">
+              {dueTodayItems.length === 0 && <p className="text-[11px] text-[#5f6c85]">Nothing due today.</p>}
+              {dueTodayItems.slice(0, 5).map((w) => <div key={w.id} className="text-xs text-[#cbd5e1] truncate">{w.title}</div>)}
+            </div>
+          </div>
+          <div className="bg-[#080b12] border border-[#1c2438] rounded-lg p-3.5">
+            <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-rose-300"><AlertTriangle className="w-3.5 h-3.5" /> Overdue ({overdueItems.length})</div>
+            <div className="space-y-1.5 max-h-32 overflow-y-auto">
+              {overdueItems.length === 0 && <p className="text-[11px] text-[#5f6c85]">Nothing overdue.</p>}
+              {overdueItems.slice(0, 5).map((w) => <div key={w.id} className="text-xs text-[#cbd5e1] truncate">{w.title}</div>)}
+            </div>
+          </div>
+        </div>
+      </div>
       {/* Top Welcome & Executive Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#1c2233] pb-6">
         <div>
