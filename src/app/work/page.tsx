@@ -2,24 +2,26 @@
 
 import React, { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ListTree, KanbanSquare, CalendarRange } from 'lucide-react';
+import { ListTree, KanbanSquare, CalendarRange, Settings2 } from 'lucide-react';
 import BacklogView from '@/components/work/BacklogView';
 import BoardView from '@/components/work/BoardView';
 import SprintsView from '@/components/work/SprintsView';
+import SettingsView from '@/components/work/SettingsView';
 
-type Tab = 'backlog' | 'board' | 'sprints';
+type Tab = 'backlog' | 'board' | 'sprints' | 'settings';
 
 const TABS: { key: Tab; label: string; icon: typeof ListTree }[] = [
   { key: 'backlog', label: 'Backlog', icon: ListTree },
   { key: 'board', label: 'Sprint Board', icon: KanbanSquare },
   { key: 'sprints', label: 'Sprints', icon: CalendarRange },
+  { key: 'settings', label: 'Settings', icon: Settings2 },
 ];
 
 function WorkPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const tab: Tab = (tabParam === 'board' || tabParam === 'sprints') ? tabParam : 'backlog';
+  const tab: Tab = (tabParam === 'board' || tabParam === 'sprints' || tabParam === 'settings') ? tabParam : 'backlog';
   const [boardSprintId, setBoardSprintId] = useState<string | undefined>(undefined);
 
   const setTab = (next: Tab) => {
@@ -62,6 +64,7 @@ function WorkPageInner() {
       {tab === 'backlog' && <BacklogView />}
       {tab === 'board' && <BoardView initialSprintId={boardSprintId} />}
       {tab === 'sprints' && <SprintsView onOpenBoard={openBoardForSprint} />}
+      {tab === 'settings' && <SettingsView />}
     </div>
   );
 }

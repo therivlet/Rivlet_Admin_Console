@@ -6,11 +6,18 @@ import { useAdminStore } from '@/lib/store';
 import { Sprint } from '@/lib/types';
 import ModalPortal from '@/components/ui/ModalPortal';
 
-function emptyItem(): Omit<Sprint, 'createdAt' | 'updatedAt'> {
+function emptyItem(defaultDays: number): Omit<Sprint, 'createdAt' | 'updatedAt'> {
   const today = new Date();
-  const in14 = new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000);
-  return { id: `spr-${Date.now()}`, name: '', startDate: today.toISOString().slice(0, 10), endDate: in14.toISOString().slice(0, 10) };
+  const end = new Date(today.getTime() + defaultDays * 24 * 60 * 60 * 1000);
+  return { id: `spr-${Date.now()}`, name: '', startDate: today.toISOString().slice(0, 10), endDate: end.toISOString().slice(0, 10) };
 }
+
+const LENGTH_PRESETS = [
+  { label: '1 Week', days: 7 },
+  { label: '2 Weeks', days: 14 },
+  { label: '3 Weeks', days: 21 },
+  { label: '4 Weeks', days: 28 },
+];
 
 function sprintStatus(s: Sprint): 'future' | 'current' | 'past' {
   const today = new Date().toISOString().slice(0, 10);
@@ -30,7 +37,7 @@ interface SprintsViewProps {
 }
 
 export default function SprintsView({ onOpenBoard }: SprintsViewProps) {
-  const { sprints, workItems, saveSprint, deleteSprint } = useAdminStore();
+  const { sprints, workItems, workSettings, saveSprint, deleteSprint } = useAdminStore();
   const [modalItem, setModalItem] = useState<Sprint | Omit<Sprint, 'createdAt' | 'updatedAt'> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,7 +74,7 @@ export default function SprintsView({ onOpenBoard }: SprintsViewProps) {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
         <p className="text-sm text-[#94a3b8]">Plan work in fixed windows and track burn-down toward each sprint goal.</p>
-        <button onClick={() => { setModalItem(emptyItem()); setError(null); }} title="Create a new sprint"
+        <button onClick={() => { setModalItem(emptyItem(workSettings.defaultSprintLengthDays)); setError(null); }} title="Create a new sprint"
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-sm font-semibold hover:shadow-glow transition-all flex-shrink-0">
           <Plus className="w-4 h-4" /> New Sprint
         </button>
@@ -149,6 +156,25 @@ export default function SprintsView({ onOpenBoard }: SprintsViewProps) {
                     <label className="text-[11px] text-[#94a3b8] block mb-1">End Date</label>
                     <input type="date" value={modalItem.endDate} onChange={(e) => setModalItem({ ...modalItem, endDate: e.target.value })}
                       className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[11px] text-[#94a3b8] block mb-1">Quick Length (recalculates end date from start date)</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {LENGTH_PRESETS.map((p) => (
+                      <button
+                        key={p.days}
+                        type="button"
+                        onClick={() => {
+                          const start = new Date(modalItem.startDate);
+                          const end = new Date(start.getTime() + p.days * 24 * 60 * 60 * 1000);
+                          setModalItem({ ...modalItem, endDate: end.toISOString().slice(0, 10) });
+                        }}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#0e121b] border border-[#1f2638] text-[#cbd5e1] hover:border-[#cda052]/50 hover:text-white transition-colors"
+                      >
+                        {p.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>

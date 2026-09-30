@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { Plus, User, Flag, ListChecks } from 'lucide-react';
+import { Plus, User, Flag, ListChecks, Factory } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { WorkItem, WorkItemState, Sprint } from '@/lib/types';
 import WorkItemModal, { TYPE_COLOR, STATE_COLOR } from '@/components/work/WorkItemModal';
@@ -32,10 +32,11 @@ interface BoardViewProps {
 }
 
 export default function BoardView({ initialSprintId }: BoardViewProps) {
-  const { workItems, sprints, saveWorkItem } = useAdminStore();
+  const { workItems, sprints, vendors, teamMembers, saveWorkItem } = useAdminStore();
   const [selectedSprintId, setSelectedSprintId] = useState<string | undefined>(() => initialSprintId ?? currentSprintId(sprints));
   const [modalItem, setModalItem] = useState<WorkItem | Omit<WorkItem, 'createdAt' | 'updatedAt'> | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [assigneeFilter, setAssigneeFilter] = useState<string>('All');
 
   const activeSprintId = selectedSprintId ?? currentSprintId(sprints);
   const sprint = sprints.find((s) => s.id === activeSprintId);
@@ -53,10 +54,26 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
     [tasksInSprint, rows]
   );
 
-  const tasksFor = (rowId: string) => (rowId === UNPARENTED ? unparentedTasks : tasksInSprint.filter((t) => t.parentId === rowId));
+  const tasksFor = (rowId: string) => {
+    const all = rowId === UNPARENTED ? unparentedTasks : tasksInSprint.filter((t) => t.parentId === rowId);
+    return assigneeFilter === 'All' ? all : all.filter((t) => t.assignee === assigneeFilter);
+  };
+
+  const visibleRowIdsSet = useMemo(() => {
+    if (assigneeFilter === 'All') return null;
+    return new Set(
+      rows.filter((r) => r.assignee === assigneeFilter || tasksInSprint.some((t) => t.parentId === r.id && t.assignee === assigneeFilter)).map((r) => r.id)
+    );
+  }, [rows, tasksInSprint, assigneeFilter]);
 
   const totalPoints = [...rows, ...tasksInSprint].reduce((sum, i) => sum + (i.storyPoints || 0), 0);
   const donePoints = [...rows, ...tasksInSprint].filter((i) => i.state === 'Closed' || i.state === 'Resolved').reduce((sum, i) => sum + (i.storyPoints || 0), 0);
+
+  const assigneeOptions = useMemo(() => {
+    const names = new Set<string>(teamMembers.map((m) => m.name));
+    for (const w of [...rows, ...tasksInSprint]) if (w.assignee) names.add(w.assignee);
+    return Array.from(names);
+  }, [teamMembers, rows, tasksInSprint]);
 
   const handleDrop = async (rowId: string, state: WorkItemState) => {
     if (!draggingId) return;
@@ -74,17 +91,25 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
     });
   };
 
-  const rowIds = [...rows.map((r) => r.id), ...(unparentedTasks.length > 0 ? [UNPARENTED] : [])];
+  const filteredRows = visibleRowIdsSet ? rows.filter((r) => visibleRowIdsSet.has(r.id)) : rows;
+  const filteredUnparented = assigneeFilter === 'All' ? unparentedTasks : unparentedTasks.filter((t) => t.assignee === assigneeFilter);
+  const rowIds = [...filteredRows.map((r) => r.id), ...(filteredUnparented.length > 0 ? [UNPARENTED] : [])];
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-        <p className="text-sm text-[#94a3b8]">{sprint?.goal || 'Drag tasks across states, or into a different story row to re-parent them.'}</p>
-        <div className="flex items-center gap-2.5 flex-shrink-0">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+        <p className="text-sm text-[#94a3b8] lg:max-w-xs lg:flex-1">{sprint?.goal || 'Drag tasks across states, or into a different story row to re-parent them.'}</p>
+        <div className="flex items-center flex-wrap gap-2.5 flex-shrink-0">
           <select value={activeSprintId || ''} onChange={(e) => setSelectedSprintId(e.target.value)}
             className="px-3 py-2.5 rounded-xl bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50">
             {sprints.length === 0 && <option value="">No sprints yet</option>}
             {sprints.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+          <select value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)}
+            title="Filter by assignee"
+            className="px-3 py-2.5 rounded-xl bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50">
+            <option value="All">All Assignees</option>
+            {assigneeOptions.map((name) => <option key={name} value={name}>{name}</option>)}
           </select>
           <button onClick={() => setModalItem(emptyStory(activeSprintId))} disabled={!activeSprintId} title="Add a User Story to this sprint"
             className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[#141724] border border-[#263148] text-[#cbd5e1] text-sm font-medium hover:text-white transition-all disabled:opacity-50">
@@ -164,33 +189,41 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                       onDrop={() => handleDrop(rowId, col)}
                       className="rounded-xl border border-[#161a26] bg-[#07090e] p-1.5 space-y-1.5 min-h-[70px]"
                     >
-                      {rowTasks.filter((t) => t.state === col).map((task) => (
-                        <div
-                          key={task.id}
-                          draggable
-                          onDragStart={() => setDraggingId(task.id)}
-                          onDragEnd={() => setDraggingId(null)}
-                          onClick={() => setModalItem(task)}
-                          className={`rounded-lg border border-[#1f2638] bg-[#0e121b] p-2 cursor-grab active:cursor-grabbing hover:border-[#2a3346] transition-colors ${draggingId === task.id ? 'opacity-40' : ''}`}
+                      {rowTasks.filter((t) => t.state === col).map((task) => {
+                        const linkedVendor = task.linkedVendorId ? vendors.find((v) => v.id === task.linkedVendorId) : undefined;
+                        return (
+                          <div
+                            key={task.id}
+                            draggable
+                            onDragStart={() => setDraggingId(task.id)}
+                            onDragEnd={() => setDraggingId(null)}
+                            onClick={() => setModalItem(task)}
+                            className={`rounded-lg border border-[#1f2638] bg-[#0e121b] p-2 cursor-grab active:cursor-grabbing hover:border-[#2a3346] transition-colors ${draggingId === task.id ? 'opacity-40' : ''}`}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className={`text-[8px] px-1 py-0.5 rounded border font-medium ${TYPE_COLOR[task.type]}`}>{task.type}</span>
+                              {task.priority <= 2 && <Flag className={`w-2.5 h-2.5 ${task.priority === 1 ? 'text-rose-400' : 'text-amber-400'}`} />}
+                            </div>
+                            <p className="text-[11px] font-medium text-white leading-snug">{task.title}</p>
+                            {linkedVendor && (
+                              <p className="text-[9px] text-amber-300/80 flex items-center gap-0.5 mt-1"><Factory className="w-2 h-2" /> {linkedVendor.name}</p>
+                            )}
+                            <div className="flex items-center justify-between mt-1 text-[9px] text-[#7c869d]">
+                              {task.assignee ? <span className="flex items-center gap-0.5 truncate"><User className="w-2 h-2" /> {task.assignee}</span> : <span />}
+                              {task.storyPoints !== undefined && <span className="font-mono">{task.storyPoints}</span>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {col === 'New' && (
+                        <button
+                          onClick={() => setModalItem(emptyTask(activeSprintId, rowId === UNPARENTED ? undefined : rowId, col))}
+                          title="Add task here — new tasks always start in New; drag them forward as work progresses"
+                          className="w-full text-[10px] text-[#5f6c85] hover:text-[#cda052] py-1 rounded border border-dashed border-[#1f2638] hover:border-[#cda052]/40 transition-colors"
                         >
-                          <div className="flex items-center justify-between mb-1">
-                            <span className={`text-[8px] px-1 py-0.5 rounded border font-medium ${TYPE_COLOR[task.type]}`}>{task.type}</span>
-                            {task.priority <= 2 && <Flag className={`w-2.5 h-2.5 ${task.priority === 1 ? 'text-rose-400' : 'text-amber-400'}`} />}
-                          </div>
-                          <p className="text-[11px] font-medium text-white leading-snug">{task.title}</p>
-                          <div className="flex items-center justify-between mt-1 text-[9px] text-[#7c869d]">
-                            {task.assignee ? <span className="flex items-center gap-0.5 truncate"><User className="w-2 h-2" /> {task.assignee}</span> : <span />}
-                            {task.storyPoints !== undefined && <span className="font-mono">{task.storyPoints}</span>}
-                          </div>
-                        </div>
-                      ))}
-                      <button
-                        onClick={() => setModalItem(emptyTask(activeSprintId, rowId === UNPARENTED ? undefined : rowId, col))}
-                        title="Add task here"
-                        className="w-full text-[10px] text-[#5f6c85] hover:text-[#cda052] py-1 rounded border border-dashed border-[#1f2638] hover:border-[#cda052]/40 transition-colors"
-                      >
-                        + Task
-                      </button>
+                          + Task
+                        </button>
+                      )}
                     </div>
                   ))}
                 </React.Fragment>

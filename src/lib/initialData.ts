@@ -1,4 +1,4 @@
-import { ArtifactItem, CostingSheet, DocumentItem, KBArticle, VendorItem, PipelineItem, BudgetItem, Sprint, WorkItem } from './types';
+import { ArtifactItem, CostingSheet, DocumentItem, KBArticle, VendorItem, PipelineItem, BudgetItem, Sprint, WorkItem, TeamMember, WorkSettings } from './types';
 import { defaultPricingInputs } from './pricingEngine';
 import { userPricingHtml } from './userPricingArtifact';
 
@@ -366,3 +366,19 @@ export const initialWorkItems: WorkItem[] = [
     updatedAt: '2026-09-29T09:00:00Z',
   },
 ];
+
+export const initialTeamMembers: TeamMember[] = [
+  {
+    id: 'tm-001',
+    name: 'Harichandru',
+    role: 'Founder',
+    createdAt: '2026-09-29T09:00:00Z',
+    updatedAt: '2026-09-29T09:00:00Z',
+  },
+];
+
+export const initialWorkSettings: WorkSettings = {
+  id: 'default',
+  defaultSprintLengthDays: 14,
+  updatedAt: '2026-09-29T09:00:00Z',
+};

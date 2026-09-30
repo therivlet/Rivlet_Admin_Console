@@ -14,21 +14,29 @@ function emptyItem(parentId?: string): Omit<WorkItem, 'createdAt' | 'updatedAt'>
 }
 
 export default function BacklogView() {
-  const { workItems, sprints } = useAdminStore();
+  const { workItems, sprints, teamMembers } = useAdminStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<'All' | WorkItemType>('All');
   const [stateFilter, setStateFilter] = useState<'All' | WorkItemState>('All');
+  const [assigneeFilter, setAssigneeFilter] = useState('All');
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [modalItem, setModalItem] = useState<WorkItem | Omit<WorkItem, 'createdAt' | 'updatedAt'> | null>(null);
 
   const topLevel = useMemo(() => workItems.filter((w) => !w.parentId), [workItems]);
   const childrenOf = (id: string) => workItems.filter((w) => w.parentId === id);
 
+  const assigneeOptions = useMemo(() => {
+    const names = new Set<string>(teamMembers.map((m) => m.name));
+    for (const w of workItems) if (w.assignee) names.add(w.assignee);
+    return Array.from(names);
+  }, [teamMembers, workItems]);
+
   const matchesFilters = (w: WorkItem) => {
     const matchesSearch = w.title.toLowerCase().includes(searchQuery.toLowerCase()) || w.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesType = typeFilter === 'All' || w.type === typeFilter;
     const matchesState = stateFilter === 'All' || w.state === stateFilter;
-    return matchesSearch && matchesType && matchesState;
+    const matchesAssignee = assigneeFilter === 'All' || w.assignee === assigneeFilter;
+    return matchesSearch && matchesType && matchesState && matchesAssignee;
   };
 
   const sprintName = (id?: string) => sprints.find((s) => s.id === id)?.name;
@@ -90,6 +98,10 @@ export default function BacklogView() {
         <select value={stateFilter} onChange={(e) => setStateFilter(e.target.value as any)} className="px-3 py-2.5 rounded-xl bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50">
           <option value="All">All States</option>
           {STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <select value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)} className="px-3 py-2.5 rounded-xl bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50">
+          <option value="All">All Assignees</option>
+          {assigneeOptions.map((name) => <option key={name} value={name}>{name}</option>)}
         </select>
       </div>
 

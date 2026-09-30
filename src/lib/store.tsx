@@ -1,8 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { ArtifactItem, CostingSheet, DocumentItem, KBArticle, ArtifactStatus, VendorItem, PipelineItem, BudgetItem, Sprint, WorkItem } from './types';
-import { initialArtifacts, initialCostingSheets, initialDocuments, initialKBArticles, initialVendors, initialPipelineItems, initialBudgetItems, initialSprints, initialWorkItems } from './initialData';
+import { ArtifactItem, CostingSheet, DocumentItem, KBArticle, ArtifactStatus, VendorItem, PipelineItem, BudgetItem, Sprint, WorkItem, TeamMember, WorkSettings } from './types';
+import { initialArtifacts, initialCostingSheets, initialDocuments, initialKBArticles, initialVendors, initialPipelineItems, initialBudgetItems, initialSprints, initialWorkItems, initialTeamMembers, initialWorkSettings } from './initialData';
 import { supabase, isSupabaseConfigured } from './supabase';
 
 const STORAGE_KEYS = {
@@ -15,6 +15,8 @@ const STORAGE_KEYS = {
   BUDGET_ITEMS: 'rivlet_admin_budget_items',
   SPRINTS: 'rivlet_admin_sprints',
   WORK_ITEMS: 'rivlet_admin_work_items',
+  TEAM_MEMBERS: 'rivlet_admin_team_members',
+  WORK_SETTINGS: 'rivlet_admin_work_settings',
 };
 
 interface AdminStoreContextType {
@@ -31,6 +33,8 @@ interface AdminStoreContextType {
   budgetItems: BudgetItem[];
   sprints: Sprint[];
   workItems: WorkItem[];
+  teamMembers: TeamMember[];
+  workSettings: WorkSettings;
   syncWithSupabase: () => Promise<void>;
   addArtifact: (item: Omit<ArtifactItem, 'id' | 'createdAt' | 'updatedAt'>) => Promise<ArtifactItem>;
   updateArtifact: (id: string, updates: Partial<ArtifactItem>) => Promise<void>;
@@ -54,6 +58,9 @@ interface AdminStoreContextType {
   saveWorkItem: (item: WorkItem) => Promise<void>;
   deleteWorkItem: (id: string) => Promise<void>;
   addWorkItemComment: (id: string, text: string, author: string) => Promise<void>;
+  saveTeamMember: (member: TeamMember) => Promise<void>;
+  deleteTeamMember: (id: string) => Promise<void>;
+  saveWorkSettings: (settings: Partial<WorkSettings>) => Promise<void>;
   resetToSeed: () => Promise<void>;
 }
 
@@ -69,6 +76,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
   const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
   const [sprints, setSprints] = useState<Sprint[]>([]);
   const [workItems, setWorkItems] = useState<WorkItem[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [workSettings, setWorkSettings] = useState<WorkSettings>(initialWorkSettings);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastWriteError, setLastWriteError] = useState<string | null>(null);
@@ -101,7 +110,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         Promise.resolve(supabase!.from(table).select('*').order('created_at', { ascending: false }))
           .catch(() => ({ data: null, error: null } as any));
 
-      const [artRes, costRes, docRes, kbRes, venRes, pipeRes, budRes, sprRes, wiRes] = await Promise.all([
+      const [artRes, costRes, docRes, kbRes, venRes, pipeRes, budRes, sprRes, wiRes, tmRes, wsRes] = await Promise.all([
         supabase.from('artifacts').select('*').order('created_at', { ascending: false }),
         supabase.from('costing_sheets').select('*').order('created_at', { ascending: false }),
         supabase.from('documents').select('*').order('created_at', { ascending: false }),
@@ -111,6 +120,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         safeSelect('budget_items'),
         safeSelect('sprints'),
         safeSelect('work_items'),
+        safeSelect('team_members'),
+        safeSelect('work_settings'),
       ]);
 
       // 1. Artifacts sync & auto-seed
@@ -400,6 +411,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           tags: Array.isArray(r.tags) ? r.tags : [],
           parentId: r.parent_id || undefined,
           sprintId: r.sprint_id || undefined,
+          linkedVendorId: r.linked_vendor_id || undefined,
+          linkedPipelineItemId: r.linked_pipeline_item_id || undefined,
           startDate: r.start_date || undefined,
           targetDate: r.target_date || undefined,
           completedDate: r.completed_date || undefined,
@@ -423,6 +436,49 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         setWorkItems(initialWorkItems);
         try { localStorage.setItem(STORAGE_KEYS.WORK_ITEMS, JSON.stringify(initialWorkItems)); } catch (_) {}
       }
+
+      // 10. Team members sync & auto-seed
+      if (tmRes.data && tmRes.data.length > 0) {
+        const formatted: TeamMember[] = tmRes.data.map((r: any) => ({
+          id: r.id,
+          name: r.name,
+          role: r.role || undefined,
+          email: r.email || undefined,
+          createdAt: r.created_at || new Date().toISOString(),
+          updatedAt: r.updated_at || new Date().toISOString(),
+        }));
+        setTeamMembers(formatted);
+        try { localStorage.setItem(STORAGE_KEYS.TEAM_MEMBERS, JSON.stringify(formatted)); } catch (_) {}
+      } else if (tmRes.data && tmRes.data.length === 0) {
+        for (const m of initialTeamMembers) {
+          await Promise.resolve(supabase.from('team_members').upsert({
+            id: m.id, name: m.name, role: m.role, email: m.email,
+            created_at: m.createdAt, updated_at: m.updatedAt,
+          })).catch(() => {});
+        }
+        setTeamMembers(initialTeamMembers);
+        try { localStorage.setItem(STORAGE_KEYS.TEAM_MEMBERS, JSON.stringify(initialTeamMembers)); } catch (_) {}
+      }
+
+      // 11. Work settings sync & auto-seed (singleton row)
+      if (wsRes.data && wsRes.data.length > 0) {
+        const r = wsRes.data[0];
+        const formatted: WorkSettings = {
+          id: r.id,
+          defaultSprintLengthDays: Number(r.default_sprint_length_days || 14),
+          updatedAt: r.updated_at || new Date().toISOString(),
+        };
+        setWorkSettings(formatted);
+        try { localStorage.setItem(STORAGE_KEYS.WORK_SETTINGS, JSON.stringify(formatted)); } catch (_) {}
+      } else if (wsRes.data && wsRes.data.length === 0) {
+        await Promise.resolve(supabase.from('work_settings').upsert({
+          id: initialWorkSettings.id,
+          default_sprint_length_days: initialWorkSettings.defaultSprintLengthDays,
+          updated_at: initialWorkSettings.updatedAt,
+        })).catch(() => {});
+        setWorkSettings(initialWorkSettings);
+        try { localStorage.setItem(STORAGE_KEYS.WORK_SETTINGS, JSON.stringify(initialWorkSettings)); } catch (_) {}
+      }
     } catch (err) {
       console.warn('[Rivlet Store] Supabase sync notice:', err);
     } finally {
@@ -444,6 +500,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       const storedBudget = localStorage.getItem(STORAGE_KEYS.BUDGET_ITEMS);
       const storedSprints = localStorage.getItem(STORAGE_KEYS.SPRINTS);
       const storedWorkItems = localStorage.getItem(STORAGE_KEYS.WORK_ITEMS);
+      const storedTeamMembers = localStorage.getItem(STORAGE_KEYS.TEAM_MEMBERS);
+      const storedWorkSettings = localStorage.getItem(STORAGE_KEYS.WORK_SETTINGS);
 
       if (storedArtifacts) {
         const parsed = JSON.parse(storedArtifacts).filter((a: any) => a.id !== 'art-001' && a.id !== 'art-002');
@@ -476,6 +534,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       setBudgetItems(storedBudget ? JSON.parse(storedBudget) : initialBudgetItems);
       setSprints(storedSprints ? JSON.parse(storedSprints) : initialSprints);
       setWorkItems(storedWorkItems ? JSON.parse(storedWorkItems) : initialWorkItems);
+      setTeamMembers(storedTeamMembers ? JSON.parse(storedTeamMembers) : initialTeamMembers);
+      setWorkSettings(storedWorkSettings ? JSON.parse(storedWorkSettings) : initialWorkSettings);
     } catch (e) {
       setArtifacts(initialArtifacts);
       setCostingSheets(initialCostingSheets);
@@ -486,6 +546,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       setBudgetItems(initialBudgetItems);
       setSprints(initialSprints);
       setWorkItems(initialWorkItems);
+      setTeamMembers(initialTeamMembers);
+      setWorkSettings(initialWorkSettings);
     }
 
     // Immediately trigger cloud sync from Supabase
@@ -505,8 +567,10 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       localStorage.setItem(STORAGE_KEYS.BUDGET_ITEMS, JSON.stringify(budgetItems));
       localStorage.setItem(STORAGE_KEYS.SPRINTS, JSON.stringify(sprints));
       localStorage.setItem(STORAGE_KEYS.WORK_ITEMS, JSON.stringify(workItems));
+      localStorage.setItem(STORAGE_KEYS.TEAM_MEMBERS, JSON.stringify(teamMembers));
+      localStorage.setItem(STORAGE_KEYS.WORK_SETTINGS, JSON.stringify(workSettings));
     } catch (_) {}
-  }, [artifacts, costingSheets, documents, kbArticles, vendors, pipelineItems, budgetItems, sprints, workItems, isLoaded]);
+  }, [artifacts, costingSheets, documents, kbArticles, vendors, pipelineItems, budgetItems, sprints, workItems, teamMembers, workSettings, isLoaded]);
 
   // Window Focus & Visibility Listener: Automatically syncs when switching between Laptop and Tab.
   // Realtime Postgres subscriptions (below) handle live cross-device pushes, so we don't also
@@ -568,6 +632,12 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         syncWithSupabase();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'work_items' }, () => {
+        syncWithSupabase();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members' }, () => {
+        syncWithSupabase();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'work_settings' }, () => {
         syncWithSupabase();
       })
       .subscribe();
@@ -1072,6 +1142,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           tags: updated.tags || [],
           parent_id: updated.parentId || null,
           sprint_id: updated.sprintId || null,
+          linked_vendor_id: updated.linkedVendorId || null,
+          linked_pipeline_item_id: updated.linkedPipelineItemId || null,
           start_date: updated.startDate || null,
           target_date: updated.targetDate || null,
           completed_date: updated.completedDate || null,
@@ -1101,6 +1173,67 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     if (!target || !text.trim()) return;
     const comment = { id: `cm-${Date.now()}`, author, text: text.trim(), createdAt: new Date().toISOString() };
     await saveWorkItem({ ...target, comments: [...target.comments, comment] });
+  };
+
+  // 10. Team Member Actions
+  const saveTeamMember = async (member: TeamMember) => {
+    const now = new Date().toISOString();
+    const updated: TeamMember = { ...member, updatedAt: now };
+
+    setTeamMembers((prev) => {
+      const idx = prev.findIndex((m) => m.id === member.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = updated;
+        return copy;
+      }
+      return [...prev, updated];
+    });
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('team_members').upsert({
+          id: updated.id,
+          name: updated.name,
+          role: updated.role || null,
+          email: updated.email || null,
+          created_at: updated.createdAt || now,
+          updated_at: now,
+        });
+      } catch (e) {
+        reportWriteFailure('Saving team member', e);
+      }
+    }
+  };
+
+  const deleteTeamMember = async (id: string) => {
+    setTeamMembers((prev) => prev.filter((m) => m.id !== id));
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('team_members').delete().eq('id', id);
+      } catch (e) {
+        reportWriteFailure('Deleting team member', e);
+      }
+    }
+  };
+
+  // 11. Work Settings Actions
+  const saveWorkSettings = async (settings: Partial<WorkSettings>) => {
+    const now = new Date().toISOString();
+    const updated: WorkSettings = { ...workSettings, ...settings, id: 'default', updatedAt: now };
+    setWorkSettings(updated);
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('work_settings').upsert({
+          id: 'default',
+          default_sprint_length_days: updated.defaultSprintLengthDays,
+          updated_at: now,
+        });
+      } catch (e) {
+        reportWriteFailure('Saving work settings', e);
+      }
+    }
   };
 
   const resetToSeed = async () => {
@@ -1133,6 +1266,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         budgetItems,
         sprints,
         workItems,
+        teamMembers,
+        workSettings,
         syncWithSupabase,
         addArtifact,
         updateArtifact,
@@ -1156,6 +1291,9 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         saveWorkItem,
         deleteWorkItem,
         addWorkItemComment,
+        saveTeamMember,
+        deleteTeamMember,
+        saveWorkSettings,
         resetToSeed,
       }}
     >

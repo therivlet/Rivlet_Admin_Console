@@ -379,6 +379,8 @@ export interface WorkItem {
   tags: string[];
   parentId?: string; // Epic -> Feature -> User Story -> Task/Bug
   sprintId?: string; // links to Sprint.id ("Unscheduled" if omitted / backlog)
+  linkedVendorId?: string; // cross-link to a Manufacturer/Vendor record
+  linkedPipelineItemId?: string; // cross-link to a Sampling & Production style
   startDate?: string;
   targetDate?: string;
   completedDate?: string;
@@ -396,5 +398,22 @@ export interface Sprint {
   startDate: string;
   endDate: string;
   createdAt: string;
+  updatedAt: string;
+}
+
+// --- Team Roster & Work Tracking Settings ---
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  role?: string; // e.g. "Founder", "Sourcing Manager", "Sample Coordinator"
+  email?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkSettings {
+  id: string; // singleton row, always 'default'
+  defaultSprintLengthDays: number; // e.g. 7, 14, 21, 28
   updatedAt: string;
 }

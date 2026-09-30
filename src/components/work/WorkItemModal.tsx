@@ -41,7 +41,7 @@ interface WorkItemModalProps {
 }
 
 export default function WorkItemModal({ item, onClose }: WorkItemModalProps) {
-  const { workItems, sprints, saveWorkItem, deleteWorkItem, addWorkItemComment } = useAdminStore();
+  const { workItems, sprints, teamMembers, vendors, pipelineItems, saveWorkItem, deleteWorkItem, addWorkItemComment } = useAdminStore();
   const { user } = useAuth();
   const [form, setForm] = useState<WorkItem>({
     ...(item as WorkItem),
@@ -148,8 +148,14 @@ export default function WorkItemModal({ item, onClose }: WorkItemModalProps) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-[11px] text-[#94a3b8] block mb-1">Assignee</label>
-                <input value={form.assignee || ''} onChange={(e) => setForm({ ...form, assignee: e.target.value })} placeholder="Harichandru"
-                  className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50" />
+                <select value={form.assignee || ''} onChange={(e) => setForm({ ...form, assignee: e.target.value || undefined })}
+                  className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50">
+                  <option value="">Unassigned</option>
+                  {teamMembers.map((m) => <option key={m.id} value={m.name}>{m.name}{m.role ? ` (${m.role})` : ''}</option>)}
+                  {form.assignee && !teamMembers.some((m) => m.name === form.assignee) && (
+                    <option value={form.assignee}>{form.assignee} (not on roster)</option>
+                  )}
+                </select>
               </div>
               <div>
                 <label className="text-[11px] text-[#94a3b8] block mb-1">Sprint</label>
@@ -157,6 +163,25 @@ export default function WorkItemModal({ item, onClose }: WorkItemModalProps) {
                   className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50">
                   <option value="">Backlog (unscheduled)</option>
                   {sprints.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] text-[#94a3b8] block mb-1">Related Manufacturer</label>
+                <select value={form.linkedVendorId || ''} onChange={(e) => setForm({ ...form, linkedVendorId: e.target.value || undefined })}
+                  className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50">
+                  <option value="">None</option>
+                  {vendors.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-[11px] text-[#94a3b8] block mb-1">Related Pipeline Style</label>
+                <select value={form.linkedPipelineItemId || ''} onChange={(e) => setForm({ ...form, linkedPipelineItemId: e.target.value || undefined })}
+                  className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50">
+                  <option value="">None</option>
+                  {pipelineItems.map((p) => <option key={p.id} value={p.id}>{p.styleName}</option>)}
                 </select>
               </div>
             </div>
