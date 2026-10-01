@@ -187,16 +187,16 @@ body {
 .kb-markdown tbody tr:nth-child(even) { background: #0a0c12; }
 
 /* ==========================================================================
-   RIVLET LUXURY LIGHT THEME SYSTEM
+   RIVLET LUXURY WARM LIGHT THEME SYSTEM
    ========================================================================== */
 
 html.light {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #f7f5f0;
+  --foreground: #1c1917;
   --card-bg: #ffffff;
-  --card-border: #e2e8f0;
-  --gold: #b38536;
-  --gold-glow: rgba(179, 133, 54, 0.2);
+  --card-border: #dfd9cd;
+  --gold: #8c6016;
+  --gold-glow: rgba(140, 96, 22, 0.18);
 }
 
 html.light body {
@@ -206,7 +206,7 @@ html.light body {
 
 /* Warm Light Mode Selection */
 html.light ::selection {
-  background-color: #ebd9be !important;
+  background-color: #e8d9be !important;
   color: #1c1917 !important;
 }
 
@@ -222,156 +222,316 @@ html.light ::-webkit-scrollbar-thumb:hover {
   background: #cda052;
 }
 
-/* Canvas & Recessed Lane Backgrounds (WhatsApp / Edugo / Notion warm cream) */
-html.light .bg-\[\#07090e\],
-html.light .bg-\[\#080a10\],
-html.light .bg-\[\#080b11\],
-html.light .bg-\[\#090b11\],
-html.light .bg-\[\#090b12\],
-html.light .bg-\[\#07090f\],
-html.light .bg-\[\#0a0c12\],
-html.light .bg-\[\#0a0d14\],
-html.light .bg-\[\#0b0d13\],
-html.light .bg-\[\#0b0e16\] {
-  background-color: #ede8de !important;
-}
+/* --------------------------------------------------------------------------
+   1. UNIVERSAL SURFACES & CONTAINERS (Eliminates 100% of Pitch-Black Cards)
+   -------------------------------------------------------------------------- */
 
-/* Main Cards, Surfaces & Elevated Panels (Crisp Warm White) */
-html.light .bg-\[\#0c1018\],
-html.light .bg-\[\#0d101a\],
-html.light .bg-\[\#0d121c\],
-html.light .bg-\[\#0e121b\],
-html.light .bg-\[\#0e1320\],
-html.light .bg-\[\#10131d\],
-html.light .bg-\[\#10131e\],
-html.light .bg-\[\#11141e\],
-html.light .bg-\[\#111420\],
-html.light .bg-\[\#121623\],
-html.light .bg-\[\#121724\],
-html.light .bg-\[\#121826\],
-html.light .bg-\[\#141724\],
-html.light .bg-\[\#141824\],
-html.light .bg-\[\#141a28\],
-html.light .bg-\[\#141a29\],
-html.light .bg-\[\#161a26\],
-html.light .bg-\[\#161c28\],
-html.light .bg-\[\#161c2b\],
-html.light .bg-\[\#171b28\],
-html.light .bg-\[\#181d2c\],
-html.light .bg-\[\#182032\],
-html.light .bg-\[\#1f273b\],
-html.light .bg-\[\#1a2234\],
-html.light .bg-\[\#1e2538\] {
+/* All dark hex cards become crisp elevated warm white surfaces */
+html.light [class*="bg-[#0"],
+html.light [class*="bg-[#1"],
+html.light [class*="bg-[#2"]:not([class*="bg-[#22c55e]"]) {
   background-color: #ffffff !important;
 }
 
-/* Warm Borders */
-html.light .border-\[\#161a26\],
-html.light .border-\[\#161c28\],
-html.light .border-\[\#171d2b\],
-html.light .border-\[\#171e2e\],
-html.light .border-\[\#1a1f2c\],
-html.light .border-\[\#1a2133\],
-html.light .border-\[\#1a2233\],
-html.light .border-\[\#1a2335\],
-html.light .border-\[\#1a2336\],
-html.light .border-\[\#1b2132\],
-html.light .border-\[\#1b2133\],
-html.light .border-\[\#1b2233\],
-html.light .border-\[\#1b2336\],
-html.light .border-\[\#1c2233\],
-html.light .border-\[\#1c2438\],
-html.light .border-\[\#1d263b\],
-html.light .border-\[\#1e2436\],
-html.light .border-\[\#1e2638\],
-html.light .border-\[\#1f2638\],
-html.light .border-\[\#20273a\],
-html.light .border-\[\#20293d\],
-html.light .border-\[\#212b40\],
-html.light .border-\[\#22283a\],
-html.light .border-\[\#22283b\],
-html.light .border-\[\#22293e\],
-html.light .border-\[\#222c42\],
-html.light .border-\[\#242e44\],
-html.light .border-\[\#243048\],
-html.light .border-\[\#252c40\],
-html.light .border-\[\#252f44\],
-html.light .border-\[\#252f48\],
-html.light .border-\[\#262c3e\],
-html.light .border-\[\#263147\],
-html.light .border-\[\#263148\],
-html.light .border-\[\#26334d\],
-html.light .border-\[\#2a3346\],
-html.light .border-\[\#2a364f\],
-html.light .border-\[\#2b3852\],
-html.light .border-\[\#2b3854\],
-html.light .border-\[\#2b3956\],
-html.light .border-\[\#2c3a56\],
-html.light .border-\[\#33415c\],
-html.light .border-\[\#33425f\] {
-  border-color: #dfd9cd !important;
+/* Canvas, App Shell & Deep Layout Backgrounds */
+html.light .bg-\[\#07090e\],
+html.light [class*="bg-[#07090e]"],
+html.light .bg-\[\#080a10\],
+html.light .bg-\[\#080b11\],
+html.light [class*="bg-[#080b11]"],
+html.light .bg-\[\#090b11\],
+html.light [class*="bg-[#090b11]"],
+html.light .bg-\[\#07090f\],
+html.light [class*="bg-[#07090f]"],
+html.light .bg-\[\#090b12\],
+html.light [class*="bg-[#090b12]"] {
+  background-color: #f7f5f0 !important;
 }
 
-/* Warm Typography Contrast */
-html.light .text-white {
-  color: #1c1917 !important;
-}
-html.light .text-\[\#cbd5e1\],
-html.light .text-\[\#cfd5e4\],
-html.light .text-\[\#f1f5f9\] {
-  color: #44403c !important;
-}
-html.light .text-\[\#94a3b8\],
-html.light .text-\[\#8e97ae\],
-html.light .text-\[\#8e97af\],
-html.light .text-\[\#8b94aa\],
-html.light .text-\[\#8594ab\],
-html.light .text-\[\#828ca1\],
-html.light .text-\[\#7c869d\],
-html.light .text-\[\#79839c\],
-html.light .text-\[\#7c859c\],
-html.light .text-\[\#7d879d\],
-html.light .text-\[\#717a90\],
-html.light .text-\[\#64748b\],
-html.light .text-\[\#54627a\],
-html.light .text-\[\#556480\],
-html.light .text-\[\#5f6c85\] {
-  color: #78716c !important;
-}
-
-/* Gold Text Contrast in Light Mode */
-html.light .text-\[\#e6c875\],
-html.light .text-\[\#eed78a\] {
-  color: #8c6016 !important;
+/* Nested Sub-Cards, Inner Rows & Secondary Sections (Today's Focus cards, Costing Rows, Compliance Rows, Sidebar Footer) */
+html.light .bg-\[\#080b12\],
+html.light [class*="bg-[#080b12]"],
+html.light .bg-\[\#07080d\],
+html.light [class*="bg-[#07080d]"],
+html.light .bg-\[\#0a0c12\],
+html.light [class*="bg-[#0a0c12]"],
+html.light .bg-\[\#0a0d14\],
+html.light [class*="bg-[#0a0d14]"],
+html.light .bg-\[\#0b0d13\],
+html.light [class*="bg-[#0b0d13]"],
+html.light .bg-\[\#0b0e16\],
+html.light [class*="bg-[#0b0e16]"],
+html.light .bg-\[\#131824\],
+html.light [class*="bg-[#131824]"],
+html.light .bg-\[\#141824\],
+html.light [class*="bg-[#141824]"],
+html.light .bg-\[\#131b2c\],
+html.light [class*="bg-[#131b2c]"],
+html.light .bg-\[\#171b28\],
+html.light [class*="bg-[#171b28]"],
+html.light .bg-\[\#182030\],
+html.light [class*="bg-[#182030]"],
+html.light .bg-\[\#141724\],
+html.light [class*="bg-[#141724]"],
+html.light .bg-\[\#181d2a\],
+html.light [class*="bg-[#181d2a]"] {
+  background-color: #faf8f5 !important;
 }
 
-/* Light theme cards and surfaces */
+/* Kanban Columns & Recessed Container Lanes */
+html.light .bg-\[\#07090e\]\/60,
+html.light [class*="bg-[#07090e]/60"] {
+  background-color: #f0ebe1 !important;
+}
+
+/* Global App Shell Header & Navigation Aside */
 html.light aside,
 html.light header {
   background-color: #ffffff !important;
   border-color: #dfd9cd !important;
-  box-shadow: 0 1px 3px rgba(35, 25, 15, 0.05);
+  box-shadow: 0 1px 3px rgba(35, 25, 15, 0.05) !important;
 }
 
+/* Glassmorphism in Light Mode */
 html.light .glass-panel {
   background: rgba(255, 255, 255, 0.95) !important;
   border-color: #dfd9cd !important;
-  box-shadow: 0 4px 16px -2px rgba(35, 25, 15, 0.06);
+  box-shadow: 0 4px 16px -2px rgba(35, 25, 15, 0.06) !important;
 }
 
 html.light .glass-panel-gold {
   background: rgba(255, 255, 255, 0.96) !important;
   border-color: rgba(205, 160, 82, 0.45) !important;
-  box-shadow: 0 4px 20px -2px rgba(205, 160, 82, 0.14);
+  box-shadow: 0 4px 20px -2px rgba(205, 160, 82, 0.14) !important;
 }
 
-/* Form inputs & dropdowns in warm light mode */
+/* --------------------------------------------------------------------------
+   2. UNIVERSAL GRADIENTS (Bulk Creation Banner, KPI Hero, & Accent Cards)
+   -------------------------------------------------------------------------- */
+
+/* Bulk Creation & Other Dark Gradients -> Clean Warm Executive Banner */
+html.light [class*="from-[#0"],
+html.light [class*="from-[#1"]:not([class*="from-[#1c1810]"]):not([class*="from-[#cda052]"]) {
+  --tw-gradient-from: #ffffff var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: #f3ede2 var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), #faf7f2 var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+
+/* Contribution Profit KPI Card (Garment Costing Suite Major Highlight) */
+html.light [class*="from-[#1c1810]"],
+html.light .from-\[\#1c1810\] {
+  background: linear-gradient(135deg, #fffcf5 0%, #fef7eb 100%) !important;
+  border-color: #cda052 !important;
+  box-shadow: 0 4px 16px -2px rgba(205, 160, 82, 0.22) !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. UNIVERSAL BORDERS (Crisp Architectural Warm Linen Borders)
+   -------------------------------------------------------------------------- */
+
+html.light [class*="border-[#1"],
+html.light [class*="border-[#2"],
+html.light [class*="border-[#3"] {
+  border-color: #dfd9cd !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. EXECUTIVE STATUS BADGES & PILLS (Replaces Muddy Dark Blobs with Pastels)
+   -------------------------------------------------------------------------- */
+
+/* Emerald / Green Badges (Resolved, Active, Supabase Live, On Track) */
+html.light [class*="bg-emerald-950"],
+html.light [class*="bg-emerald-900"],
+html.light [class*="bg-green-950"] {
+  background-color: #ecfdf5 !important;
+  border-color: #a7f3d0 !important;
+  color: #065f46 !important;
+}
+html.light [class*="bg-emerald-950"] *,
+html.light [class*="bg-emerald-900"] *,
+html.light [class*="bg-green-950"] * {
+  color: #065f46 !important;
+}
+
+/* Amber / Yellow Badges (In Review, Due Today, Below Target, Warning) */
+html.light [class*="bg-amber-950"],
+html.light [class*="bg-amber-900"],
+html.light [class*="bg-yellow-950"],
+html.light [class*="bg-yellow-900"] {
+  background-color: #fffbeb !important;
+  border-color: #fde68a !important;
+  color: #92400e !important;
+}
+html.light [class*="bg-amber-950"] *,
+html.light [class*="bg-amber-900"] *,
+html.light [class*="bg-yellow-950"] *,
+html.light [class*="bg-yellow-900"] * {
+  color: #92400e !important;
+}
+
+/* Rose / Red Badges (Overdue, Critical, Bug, Below Break-Even, Error) */
+html.light [class*="bg-rose-950"],
+html.light [class*="bg-rose-900"],
+html.light [class*="bg-red-950"],
+html.light [class*="bg-red-900"] {
+  background-color: #fff1f2 !important;
+  border-color: #fecdd3 !important;
+  color: #9f1239 !important;
+}
+html.light [class*="bg-rose-950"] *,
+html.light [class*="bg-rose-900"] *,
+html.light [class*="bg-red-950"] *,
+html.light [class*="bg-red-900"] * {
+  color: #9f1239 !important;
+}
+
+/* Blue & Sky Badges (User Story, Saved Product, Active Sprint, In Progress) */
+html.light [class*="bg-blue-950"],
+html.light [class*="bg-blue-900"],
+html.light [class*="bg-sky-950"],
+html.light [class*="bg-sky-900"],
+html.light [class*="bg-cyan-950"],
+html.light [class*="bg-cyan-900"] {
+  background-color: #f0f9ff !important;
+  border-color: #bae6fd !important;
+  color: #0369a1 !important;
+}
+html.light [class*="bg-blue-950"] *,
+html.light [class*="bg-blue-900"] *,
+html.light [class*="bg-sky-950"] *,
+html.light [class*="bg-sky-900"] *,
+html.light [class*="bg-cyan-950"] *,
+html.light [class*="bg-cyan-900"] * {
+  color: #0369a1 !important;
+}
+
+/* Indigo & Purple Badges (Epic, Feature, Knowledge Base, SOPs) */
+html.light [class*="bg-indigo-950"],
+html.light [class*="bg-indigo-900"],
+html.light [class*="bg-purple-950"],
+html.light [class*="bg-purple-900"] {
+  background-color: #faf5ff !important;
+  border-color: #e9d5ff !important;
+  color: #6b21a8 !important;
+}
+html.light [class*="bg-indigo-950"] *,
+html.light [class*="bg-indigo-900"] *,
+html.light [class*="bg-purple-950"] *,
+html.light [class*="bg-purple-900"] * {
+  color: #6b21a8 !important;
+}
+
+/* Neutral Slate / Dark Badges */
+html.light [class*="bg-slate-900"],
+html.light [class*="bg-slate-950"] {
+  background-color: #f1ede4 !important;
+  border-color: #dfd9cd !important;
+  color: #44403c !important;
+}
+html.light [class*="bg-slate-900"] *,
+html.light [class*="bg-slate-950"] * {
+  color: #44403c !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. HIGH-CONTRAST TYPOGRAPHY & SEMANTIC ICONS
+   -------------------------------------------------------------------------- */
+
+/* Headings and primary titles */
+html.light .text-white {
+  color: #1c1917 !important;
+}
+
+/* Secondary & Body Text */
+html.light [class*="text-[#cbd5e1]"],
+html.light [class*="text-[#cfd5e4]"],
+html.light [class*="text-[#f1f5f9]"],
+html.light [class*="text-[#e2e8f0]"] {
+  color: #292524 !important;
+}
+
+/* Tertiary & Muted Labels */
+html.light [class*="text-[#94a3b8]"],
+html.light [class*="text-[#8e97ae]"],
+html.light [class*="text-[#8e97af]"],
+html.light [class*="text-[#8b94aa]"],
+html.light [class*="text-[#8594ab]"],
+html.light [class*="text-[#828ca1]"],
+html.light [class*="text-[#7c869d]"],
+html.light [class*="text-[#79839c]"],
+html.light [class*="text-[#7c859c]"],
+html.light [class*="text-[#7d879d]"],
+html.light [class*="text-[#717a90]"],
+html.light [class*="text-[#64748b]"],
+html.light [class*="text-[#54627a]"],
+html.light [class*="text-[#556480]"],
+html.light [class*="text-[#5f6c85]"],
+html.light [class*="text-[#4b5563]"],
+html.light [class*="text-[#848d9f]"],
+html.light [class*="text-[#8493ab]"] {
+  color: #6c655e !important;
+}
+
+/* Executive Gold Text */
+html.light [class*="text-[#e6c875]"],
+html.light [class*="text-[#eed78a]"],
+html.light [class*="text-[#e8ca78]"],
+html.light [class*="text-[#f6d896]"] {
+  color: #8c6016 !important;
+}
+
+/* Semantic Status Accents */
+html.light .text-emerald-300,
+html.light .text-emerald-400 {
+  color: #047857 !important;
+}
+html.light .text-amber-300,
+html.light .text-amber-400 {
+  color: #b45309 !important;
+}
+html.light .text-rose-300,
+html.light .text-rose-400 {
+  color: #be123c !important;
+}
+html.light .text-sky-300,
+html.light .text-sky-400 {
+  color: #0369a1 !important;
+}
+html.light .text-cyan-300,
+html.light .text-cyan-400 {
+  color: #0e7490 !important;
+}
+html.light .text-purple-300,
+html.light .text-purple-400 {
+  color: #7e22ce !important;
+}
+html.light .text-indigo-300,
+html.light .text-indigo-400 {
+  color: #4338ca !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. FORM INPUTS, TEXTAREAS, SELECTS & BUTTONS
+   -------------------------------------------------------------------------- */
+
 html.light input:not([type="checkbox"]):not([type="radio"]),
 html.light select,
 html.light textarea {
   background-color: #ffffff !important;
   color: #1c1917 !important;
-  border-color: #dcd6ca !important;
+  border-color: #dfd9cd !important;
+}
+
+html.light input:focus,
+html.light select:focus,
+html.light textarea:focus {
+  border-color: #cda052 !important;
+  box-shadow: 0 0 0 2px rgba(205, 160, 82, 0.15) !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: #a8a29e !important;
 }
 
 html.light select option {
@@ -381,29 +541,30 @@ html.light select option {
 
 html.light select option:checked,
 html.light select option:hover {
-  background-color: #ebdcc6 !important;
+  background-color: #f7ede0 !important;
   color: #8c6016 !important;
-}
-
-html.light input::placeholder,
-html.light textarea::placeholder {
-  color: #a8a29e !important;
 }
 
 html.light kbd {
   background-color: #ede8de !important;
-  border-color: #dcd6ca !important;
+  border-color: #dfd9cd !important;
   color: #44403c !important;
 }
 
-/* Gradient Panels in Warm Light Mode */
-html.light .from-\[\#0d121c\] {
-  --tw-gradient-from: #ffffff var(--tw-gradient-from-position) !important;
-  --tw-gradient-to: #f3eee5 var(--tw-gradient-to-position) !important;
-  --tw-gradient-stops: var(--tw-gradient-from), #fbf9f5 var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+/* Code Blocks & Pre Elements in Light Mode (Bulk Creation, Sandbox, KB) */
+html.light pre {
+  background-color: #f5f1e8 !important;
+  border-color: #dfd9cd !important;
+  color: #1c1917 !important;
+}
+
+html.light pre code {
+  color: #292524 !important;
 }
 
 /* Dialog overlays & modals in light mode */
+html.light [class*="bg-black/"],
+html.light .bg-black\/85,
 html.light .bg-black\/80,
 html.light .bg-black\/70,
 html.light .bg-black\/60 {
@@ -411,55 +572,76 @@ html.light .bg-black\/60 {
   backdrop-filter: blur(8px) !important;
 }
 
-/* Pills, tabs & subtle badges in light mode */
-html.light .bg-\[\#131824\],
-html.light .bg-\[\#141824\],
-html.light .bg-\[\#131b2c\] {
-  background-color: #ede8de !important;
-  border-color: #dfd9cd !important;
-}
+/* --------------------------------------------------------------------------
+   7. INTERACTIVE HOVER STATES (Zero Unreadable Black Boxes on Hover)
+   -------------------------------------------------------------------------- */
 
-html.light .bg-\[\#07090e\]\/60 {
-  background-color: rgba(237, 232, 222, 0.8) !important;
-}
-
-/* Universal Hover Fixes for Warm Light Mode (eliminates all black unreadable boxes) */
 html.light [class*="hover:bg-[#0"]:hover,
 html.light [class*="hover:bg-[#1"]:hover,
 html.light [class*="hover:bg-[#2"]:hover,
-html.light .hover\:bg-\[\#0a0c12\]\/60:hover,
-html.light .hover\:bg-\[\#0e121b\]:hover,
-html.light .hover\:bg-\[\#111520\]:hover,
-html.light .hover\:bg-\[\#111622\]:hover,
-html.light .hover\:bg-\[\#141724\]:hover,
-html.light .hover\:bg-\[\#141824\]:hover,
-html.light .hover\:bg-\[\#141926\]:hover,
-html.light .hover\:bg-\[\#151a28\]:hover,
-html.light .hover\:bg-\[\#161a26\]:hover,
-html.light .hover\:bg-\[\#161d2b\]:hover,
-html.light .hover\:bg-\[\#161d2d\]:hover,
-html.light .hover\:bg-\[\#181d2a\]:hover,
-html.light .hover\:bg-\[\#182030\]:hover,
-html.light .hover\:bg-\[\#182032\]:hover,
-html.light .hover\:bg-\[\#1a2030\]:hover,
-html.light .hover\:bg-\[\#1a2130\]:hover,
-html.light .hover\:bg-\[\#1a2133\]:hover,
-html.light .hover\:bg-\[\#1a2236\]:hover,
-html.light .hover\:bg-\[\#1c2336\]:hover,
-html.light .hover\:bg-\[\#1f2536\]:hover,
-html.light .hover\:bg-\[\#1f273b\]:hover {
-  background-color: #e5dfd2 !important;
+html.light [class*="hover:bg-[#3"]:hover {
+  background-color: #ede5d7 !important;
   color: #1c1917 !important;
 }
 
-/* Hover text color override in light mode (prevents text from disappearing on light backgrounds) */
-html.light [class*="hover:text-white"]:hover,
-html.light .hover\:text-white:hover {
+html.light [class*="hover:text-white"]:hover {
   color: #1c1917 !important;
 }
 
-html.light .hover\:text-\[\#cda052\]:hover {
+html.light [class*="hover:text-[#cda052]"]:hover {
   color: #8c6016 !important;
+}
+
+html.light [class*="hover:border-[#cda052]"]:hover {
+  border-color: #cda052 !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. KNOWLEDGE BASE MARKDOWN IN LIGHT MODE
+   -------------------------------------------------------------------------- */
+
+html.light .kb-markdown {
+  color: #292524 !important;
+}
+html.light .kb-markdown h1,
+html.light .kb-markdown h2,
+html.light .kb-markdown h3,
+html.light .kb-markdown h4,
+html.light .kb-markdown strong {
+  color: #1c1917 !important;
+}
+html.light .kb-markdown h1 {
+  border-bottom: 1px solid #dfd9cd !important;
+}
+html.light .kb-markdown h2 {
+  color: #8c6016 !important;
+}
+html.light .kb-markdown code {
+  background: #f1ede4 !important;
+  border-color: #dfd9cd !important;
+  color: #8c6016 !important;
+}
+html.light .kb-markdown pre {
+  background: #f5f1e8 !important;
+  border-color: #dfd9cd !important;
+}
+html.light .kb-markdown thead {
+  background: #f1ede4 !important;
+}
+html.light .kb-markdown tbody tr:nth-child(even) {
+  background: #faf8f5 !important;
+}
+html.light .kb-markdown th,
+html.light .kb-markdown td {
+  border-color: #dfd9cd !important;
+  color: #292524 !important;
+}
+html.light .kb-markdown blockquote {
+  border-left: 3px solid #cda052 !important;
+  color: #6c655e !important;
+}
+html.light .kb-markdown hr {
+  border-top: 1px solid #dfd9cd !important;
 }
 
 
