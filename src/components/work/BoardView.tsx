@@ -60,13 +60,13 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
   // Rows (User Stories) in active sprint, sorted by order
   const rows = useMemo(() => {
     const list = workItems.filter((w) => w.sprintId === activeSprintId && ROW_TYPES.includes(w.type));
-    return list.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    return [...list].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   }, [workItems, activeSprintId]);
 
   // Tasks in active sprint, sorted by order
   const tasksInSprint = useMemo(() => {
     const list = workItems.filter((w) => w.sprintId === activeSprintId && w.type === 'Task');
-    return list.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    return [...list].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   }, [workItems, activeSprintId]);
 
   const unparentedTasks = useMemo(
@@ -444,7 +444,7 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
 
                   {/* Task Cells per State Column */}
                   {COLUMNS.map((col) => {
-                    const cellTasks = rowTasks.filter((t) => t.state === col);
+                    const cellTasks = [...rowTasks.filter((t) => t.state === col)].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
                     return (
                       <div

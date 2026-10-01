@@ -82,6 +82,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [validationAttempted, setValidationAttempted] = useState(false);
+  const [showNewCalcWindow, setShowNewCalcWindow] = useState(() => !initialSheet);
 
   // Sync defaults whenever user metadata loads
   useEffect(() => {
@@ -104,12 +105,13 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
     if (initialSheet) {
       setInputs(initialSheet.inputs);
       setCurrentSheetId(initialSheet.id);
+      setShowNewCalcWindow(false);
     } else {
       setInputs(mergeDefaultsIntoInputs(makeBlankProduct(), activeDefaultsRef.current));
       setCurrentSheetId(null);
+      setShowNewCalcWindow(true);
     }
   }, [initialSheet]);
-
 
   const handleStartNewCalculation = () => {
     setCurrentSheetId(null);
@@ -119,6 +121,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
       activeDefaults
     ));
     setActiveScenario('mid');
+    setShowNewCalcWindow(true);
     setNewCalcAlert(true);
     setTimeout(() => setNewCalcAlert(false), 3500);
     if (onNewCalculation) onNewCalculation();
@@ -281,17 +284,26 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
       {/* Top Banner & Control Actions */}
       <div className="bg-[#10131d] border border-[#1e2436] p-5 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-[rgba(205,160,82,0.15)] text-[#cda052] border border-[rgba(205,160,82,0.3)]">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[rgba(205,160,82,0.15)] text-[#cda052] border border-[rgba(205,160,82,0.3)]">
               Rivlet Pricing & Unit Economics Engine
             </span>
-            <span className="text-xs text-[#717a90]">• Live Indian GST & Forecast Suite</span>
+            {currentSheetId ? (
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-950/80 text-blue-300 border border-blue-800/60 flex items-center gap-1">
+                📁 Saved Product: {inputs.productCode}
+              </span>
+            ) : (
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-950/90 to-yellow-950/90 text-[#f6d896] border border-[#cda052]/50 flex items-center gap-1 shadow-sm">
+                ✨ New Calculator Mode
+              </span>
+            )}
+            <span className="text-xs text-[#94a3b8]">• Live Indian GST & Forecast Suite</span>
           </div>
-          <h2 className="text-lg font-bold text-white font-serif">
-            {inputs.productName || 'Garment Pricing Studio'}
+          <h2 className="text-xl font-bold text-white font-serif tracking-wide flex items-center gap-2">
+            {inputs.productName || (currentSheetId ? 'Saved Garment Style' : 'New Product Calculation')}
           </h2>
-          <p className="text-xs text-[#79839c]">
-            Real sales price, automatic step-function output GST (5% ≤ ₹2,500, 18% &gt; ₹2,500), factory ITC, and 3-scenario forecasting.
+          <p className="text-xs text-[#cbd5e1] mt-0.5">
+            Real customer selling price, automatic step-function output GST (5% ≤ ₹2,500, 18% &gt; ₹2,500), factory ITC, and 3-scenario forecasting.
           </p>
         </div>
 
@@ -401,6 +413,161 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
           </button>
         </div>
       </div>
+
+      {/* Prominent Welcome & Setup Window: "You can start with your new calculator" */}
+      {(!currentSheetId || showNewCalcWindow) && (
+        <div className="rounded-2xl border-2 border-[#cda052]/70 bg-gradient-to-br from-[#161c2b] via-[#101420] to-[#0c0f18] p-5 sm:p-6 shadow-2xl space-y-4 animate-fade-in relative overflow-hidden">
+          {/* Subtle background glow effect */}
+          <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-[#cda052]/10 blur-3xl pointer-events-none" />
+
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#252f48] pb-4">
+            <div className="flex items-start gap-3.5">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#cda052] to-[#8d6a26] text-black flex items-center justify-center font-bold shadow-glow flex-shrink-0">
+                <Calculator className="w-6 h-6 stroke-[2.2]" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#cda052]/20 text-[#cda052] border border-[#cda052]/40">
+                    Fresh Calculation Active
+                  </span>
+                  <span className="text-xs text-[#94a3b8] flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-[#cda052]" /> Brand defaults & Indian retail GST rules pre-loaded
+                  </span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-white font-serif tracking-wide">
+                  You can start with your new calculator
+                </h2>
+                <p className="text-xs text-[#cbd5e1] mt-0.5 max-w-2xl leading-relaxed">
+                  Enter your product style name and code below. Standard manufacturing, sales, and overhead defaults are pre-populated so you can immediately analyze gross margins and GST cash outlay.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  const sampleSku = `RIV-${Math.floor(1000 + Math.random() * 9000)}`;
+                  updateField('productCode', sampleSku);
+                }}
+                className="px-3.5 py-2 rounded-xl bg-[#141a29] border border-[#2b3854] text-[#cbd5e1] hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
+                title="Generate fresh SKU code"
+              >
+                <span>🎲 Generate SKU</span>
+              </button>
+              {currentSheetId && (
+                <button
+                  type="button"
+                  onClick={() => setShowNewCalcWindow(false)}
+                  className="px-3.5 py-2 rounded-xl bg-[#1f273b] hover:bg-[#2a3550] text-[#94a3b8] hover:text-white text-xs transition-colors"
+                >
+                  Dismiss Window
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Quick Setup Fields inside the Big Window */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-1">
+            {/* 1. Product Name */}
+            <div className="bg-[#0b0e16] p-3.5 rounded-xl border border-[#20293d] focus-within:border-[#cda052]/80 transition-all shadow-sm">
+              <label className="text-[11px] font-bold text-[#cda052] uppercase tracking-wider block mb-1.5 flex items-center justify-between">
+                <span>1. Product Style Name</span>
+                <span className="text-[10px] text-[#94a3b8] font-normal">Required</span>
+              </label>
+              <input
+                type="text"
+                value={inputs.productName}
+                onChange={(e) => updateField('productName', e.target.value)}
+                placeholder="e.g. Heavyweight Boxy Tee"
+                className="w-full bg-[#121724] border border-[#26334d] rounded-lg px-3 py-2 text-sm text-white font-medium placeholder:text-[#556480] focus:outline-none focus:border-[#cda052]"
+              />
+            </div>
+
+            {/* 2. Product Code */}
+            <div className="bg-[#0b0e16] p-3.5 rounded-xl border border-[#20293d] focus-within:border-[#cda052]/80 transition-all shadow-sm">
+              <label className="text-[11px] font-bold text-[#cbd5e1] uppercase tracking-wider block mb-1.5">
+                2. Style SKU / Code
+              </label>
+              <input
+                type="text"
+                value={inputs.productCode}
+                onChange={(e) => updateField('productCode', e.target.value)}
+                placeholder="RIV-2041"
+                className="w-full bg-[#121724] border border-[#26334d] rounded-lg px-3 py-2 text-sm font-mono text-[#cda052] font-bold focus:outline-none focus:border-[#cda052]"
+              />
+            </div>
+
+            {/* 3. Listed MRP */}
+            <div className="bg-[#0b0e16] p-3.5 rounded-xl border border-[#20293d] focus-within:border-[#cda052]/80 transition-all shadow-sm">
+              <label className="text-[11px] font-bold text-[#cbd5e1] uppercase tracking-wider block mb-1.5 flex items-center justify-between">
+                <span>3. Customer MRP</span>
+                <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-semibold ${
+                  inputs.mrp > 2500 ? 'bg-amber-950/80 text-amber-300' : 'bg-emerald-950/80 text-emerald-300'
+                }`}>
+                  {inputs.mrp > 2500 ? '18% GST' : '5% GST'}
+                </span>
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-2 text-sm font-bold text-[#71809a]">{curr}</span>
+                <input
+                  type="number"
+                  min="1"
+                  value={inputs.mrp}
+                  onChange={(e) => updateField('mrp', Number(e.target.value) || 0)}
+                  className="w-full bg-[#121724] border border-[#26334d] rounded-lg pl-7 pr-3 py-2 text-sm font-mono text-white font-bold focus:outline-none focus:border-[#cda052]"
+                />
+              </div>
+            </div>
+
+            {/* 4. Target Margin */}
+            <div className="bg-[#0b0e16] p-3.5 rounded-xl border border-[#20293d] focus-within:border-[#cda052]/80 transition-all shadow-sm">
+              <label className="text-[11px] font-bold text-[#cbd5e1] uppercase tracking-wider block mb-1.5 flex items-center justify-between">
+                <span>4. Target Margin</span>
+                <span className="text-[10px] text-emerald-400 font-semibold font-mono">
+                  {currentResult.contributionMargin >= inputs.targetMargin / 100 ? '✓ Viable' : 'Below Target'}
+                </span>
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={inputs.targetMargin}
+                  onChange={(e) => updateField('targetMargin', Number(e.target.value) || 0)}
+                  className="w-full bg-[#121724] border border-[#26334d] rounded-lg px-3 pr-7 py-2 text-sm font-mono text-white font-bold focus:outline-none focus:border-[#cda052]"
+                />
+                <span className="absolute right-3 top-2 text-sm font-bold text-[#71809a]">%</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Preset Selector for Garment Categories */}
+          <div className="flex items-center gap-2 flex-wrap pt-1 text-xs">
+            <span className="text-[#94a3b8] font-medium text-[11px]">Quick Style Presets:</span>
+            {[
+              { name: 'Oversized Fleece Hoodie', mrp: 3499, factory: 850, margin: 25 },
+              { name: 'Heavyweight Boxy Tee', mrp: 1899, factory: 420, margin: 28 },
+              { name: 'Acid Wash Sweatshirt', mrp: 2799, factory: 680, margin: 25 },
+              { name: 'Relaxed Fit Cargo Sweatpants', mrp: 2999, factory: 720, margin: 24 },
+            ].map((preset) => (
+              <button
+                key={preset.name}
+                type="button"
+                onClick={() => {
+                  updateField('productName', preset.name);
+                  updateField('mrp', preset.mrp);
+                  updateField('factory', preset.factory);
+                  updateField('targetMargin', preset.margin);
+                }}
+                className="px-2.5 py-1 rounded-lg bg-[#121826] border border-[#243048] hover:border-[#cda052]/60 hover:text-white text-[#cbd5e1] text-[11px] transition-all"
+              >
+                + {preset.name} ({curr}{preset.mrp})
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {newCalcAlert && (
         <div className="p-3.5 bg-blue-950/80 border border-blue-700/60 rounded-lg text-blue-200 text-xs flex items-center gap-2 animate-fade-in shadow-md">

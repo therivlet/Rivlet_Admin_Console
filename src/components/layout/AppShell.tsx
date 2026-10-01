@@ -44,20 +44,28 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Register PWA Service Worker for Chrome Desktop & Mobile installation
+  // Clean up any stale Service Workers / Caches to guarantee newest code is always loaded
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .register('/sw.js')
-        .then((reg) => {
-          // Service worker active
-        })
-        .catch((err) => {
-          console.warn('[Rivlet PWA] SW registration notice:', err);
-        });
+    if (typeof window !== 'undefined') {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          for (const registration of registrations) {
+            registration.unregister();
+          }
+        }).catch(() => {});
+      }
+      if ('caches' in window) {
+        caches.keys().then((names) => {
+          for (const name of names) {
+            caches.delete(name);
+          }
+        }).catch(() => {});
+      }
     }
+  }, []);
 
-    // Capture Chrome beforeinstallprompt event
+  // Capture Chrome beforeinstallprompt event
+  useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       (window as any).__rivletInstallPrompt = e;

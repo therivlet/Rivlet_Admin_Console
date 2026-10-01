@@ -71,6 +71,79 @@ interface AdminStoreContextType {
   resetToSeed: () => Promise<void>;
 }
 
+function buildWorkItemPayload(item: WorkItem, now: string, includeDirectExtendedCols: boolean = true) {
+  const cleanTags = (item.tags || []).filter((t: string) => !t.startsWith('_'));
+  const systemTags: string[] = [
+    item.order !== undefined && item.order !== null ? `_order:${item.order}` : null,
+    item.operationCategory ? `_opcat:${item.operationCategory}` : null,
+    ...(item.linkedPipelineItemIds || []).map((id: string) => `_pipeid:${id}`)
+  ].filter(Boolean) as string[];
+
+  const tagsToSave = [...cleanTags, ...systemTags];
+
+  const payload: any = {
+    id: item.id,
+    type: item.type,
+    title: item.title,
+    description: item.description || null,
+    acceptance_criteria: item.acceptanceCriteria || null,
+    state: item.state,
+    priority: item.priority,
+    story_points: item.storyPoints ?? null,
+    assignee: item.assignee || null,
+    tags: tagsToSave,
+    parent_id: item.parentId || null,
+    sprint_id: item.sprintId || null,
+    linked_vendor_id: item.linkedVendorId || null,
+    linked_pipeline_item_id: item.linkedPipelineItemId || (item.linkedPipelineItemIds && item.linkedPipelineItemIds[0] !== 'all' ? item.linkedPipelineItemIds[0] : null) || null,
+    start_date: item.startDate || null,
+    target_date: item.targetDate || null,
+    completed_date: item.completedDate || null,
+    comments: item.comments || [],
+    created_at: item.createdAt || now,
+    updated_at: now,
+  };
+
+  if (includeDirectExtendedCols) {
+    if (item.order !== undefined && item.order !== null) {
+      payload.order = item.order;
+    }
+    if (item.operationCategory) {
+      payload.operation_category = item.operationCategory;
+    }
+    if (item.linkedPipelineItemIds && item.linkedPipelineItemIds.length > 0) {
+      payload.linked_pipeline_item_ids = item.linkedPipelineItemIds;
+    }
+  }
+
+  return payload;
+}
+
+async function upsertWorkItemsSafe(supabaseClient: any, items: WorkItem[]) {
+  if (!items || items.length === 0) return;
+  const now = new Date().toISOString();
+  try {
+    const fullRecords = items.map((w) => buildWorkItemPayload(w, now, true));
+    const { error } = await supabaseClient.from('work_items').upsert(fullRecords);
+    if (!error) return;
+    if (error.code === '42703' || error.message?.includes('column')) {
+      const safeRecords = items.map((w) => buildWorkItemPayload(w, now, false));
+      const { error: safeErr } = await supabaseClient.from('work_items').upsert(safeRecords);
+      if (safeErr) throw safeErr;
+      return;
+    }
+    throw error;
+  } catch (err: any) {
+    if (err?.code === '42703' || err?.message?.includes('column')) {
+      const safeRecords = items.map((w) => buildWorkItemPayload(w, now, false));
+      const { error: safeErr } = await supabaseClient.from('work_items').upsert(safeRecords);
+      if (safeErr) throw safeErr;
+      return;
+    }
+    throw err;
+  }
+}
+
 const AdminStoreContext = createContext<AdminStoreContextType | null>(null);
 
 export function AdminStoreProvider({ children }: { children: React.ReactNode }) {
@@ -444,31 +517,49 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
       // 9. Work items sync & auto-seed
       if (wiRes.data && wiRes.data.length > 0) {
-        const formatted: WorkItem[] = wiRes.data.map((r: any) => ({
-          id: r.id,
-          type: r.type || 'Task',
-          title: r.title,
-          description: r.description || undefined,
-          acceptanceCriteria: r.acceptance_criteria || undefined,
-          state: r.state || 'New',
-          priority: (r.priority ?? 2) as any,
-          storyPoints: r.story_points !== null && r.story_points !== undefined ? Number(r.story_points) : undefined,
-          assignee: r.assignee || undefined,
-          tags: Array.isArray(r.tags) ? r.tags : [],
-          parentId: r.parent_id || undefined,
-          sprintId: r.sprint_id || undefined,
-          linkedVendorId: r.linked_vendor_id || undefined,
-          linkedPipelineItemId: r.linked_pipeline_item_id || undefined,
-          linkedPipelineItemIds: Array.isArray(r.linkedPipelineItemIds) ? r.linkedPipelineItemIds : (r.linked_pipeline_item_id ? [r.linked_pipeline_item_id] : []),
-          operationCategory: r.operationCategory || r.operation_category || undefined,
-          order: r.order !== undefined && r.order !== null ? Number(r.order) : undefined,
-          startDate: r.start_date || undefined,
-          targetDate: r.target_date || undefined,
-          completedDate: r.completed_date || undefined,
-          comments: Array.isArray(r.comments) ? r.comments : [],
-          createdAt: r.created_at || new Date().toISOString(),
-          updatedAt: r.updated_at || new Date().toISOString(),
-        }));
+        const formatted: WorkItem[] = wiRes.data.map((r: any) => {
+          const rawTags: string[] = Array.isArray(r.tags) ? r.tags : [];
+          const userTags = rawTags.filter((t: string) => !t.startsWith('_'));
+          const tagOrder = rawTags.find((t: string) => t.startsWith('_order:'));
+          const tagOpcat = rawTags.find((t: string) => t.startsWith('_opcat:'));
+          const tagPipeIds = rawTags.filter((t: string) => t.startsWith('_pipeid:')).map((t: string) => t.replace('_pipeid:', ''));
+
+          const parsedOrder = r.order !== undefined && r.order !== null
+            ? Number(r.order)
+            : (tagOrder ? Number(tagOrder.replace('_order:', '')) : undefined);
+
+          const parsedOpcat = r.operationCategory || r.operation_category || (tagOpcat ? tagOpcat.replace('_opcat:', '') : undefined);
+
+          const parsedPipeIds = Array.isArray(r.linked_pipeline_item_ids) && r.linked_pipeline_item_ids.length > 0
+            ? r.linked_pipeline_item_ids
+            : (tagPipeIds.length > 0 ? tagPipeIds : (r.linked_pipeline_item_id ? [r.linked_pipeline_item_id] : []));
+
+          return {
+            id: r.id,
+            type: r.type || 'Task',
+            title: r.title,
+            description: r.description || undefined,
+            acceptanceCriteria: r.acceptance_criteria || undefined,
+            state: r.state || 'New',
+            priority: (r.priority ?? 2) as any,
+            storyPoints: r.story_points !== null && r.story_points !== undefined ? Number(r.story_points) : undefined,
+            assignee: r.assignee || undefined,
+            tags: userTags,
+            parentId: r.parent_id || undefined,
+            sprintId: r.sprint_id || undefined,
+            linkedVendorId: r.linked_vendor_id || undefined,
+            linkedPipelineItemId: r.linked_pipeline_item_id || (parsedPipeIds[0] !== 'all' ? parsedPipeIds[0] : undefined),
+            linkedPipelineItemIds: parsedPipeIds,
+            operationCategory: parsedOpcat,
+            order: parsedOrder,
+            startDate: r.start_date || undefined,
+            targetDate: r.target_date || undefined,
+            completedDate: r.completed_date || undefined,
+            comments: Array.isArray(r.comments) ? r.comments : [],
+            createdAt: r.created_at || new Date().toISOString(),
+            updatedAt: r.updated_at || new Date().toISOString(),
+          };
+        });
         setWorkItems(formatted);
         try { localStorage.setItem(STORAGE_KEYS.WORK_ITEMS, JSON.stringify(formatted)); } catch (_) {}
       } else if (wiRes.data && wiRes.data.length === 0) {
@@ -1217,29 +1308,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     if (isSupabaseConfigured && supabase) {
       try {
-        const { error: writeErr } = await supabase.from('work_items').upsert({
-          id: updated.id,
-          type: updated.type,
-          title: updated.title,
-          description: updated.description || null,
-          acceptance_criteria: updated.acceptanceCriteria || null,
-          state: updated.state,
-          priority: updated.priority,
-          story_points: updated.storyPoints ?? null,
-          assignee: updated.assignee || null,
-          tags: updated.tags || [],
-          parent_id: updated.parentId || null,
-          sprint_id: updated.sprintId || null,
-          linked_vendor_id: updated.linkedVendorId || null,
-          linked_pipeline_item_id: updated.linkedPipelineItemId || null,
-          start_date: updated.startDate || null,
-          target_date: updated.targetDate || null,
-          completed_date: updated.completedDate || null,
-          comments: updated.comments || [],
-          created_at: updated.createdAt || now,
-          updated_at: now,
-        });
-        if (writeErr) throw writeErr;
+        await upsertWorkItemsSafe(supabase, [updated]);
       } catch (e) {
         reportWriteFailure('Saving work item', e);
       }
@@ -1266,30 +1335,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     if (isSupabaseConfigured && supabase) {
       try {
-        const records = updatedList.map((updated) => ({
-          id: updated.id,
-          type: updated.type,
-          title: updated.title,
-          description: updated.description || null,
-          acceptance_criteria: updated.acceptanceCriteria || null,
-          state: updated.state,
-          priority: updated.priority,
-          story_points: updated.storyPoints ?? null,
-          assignee: updated.assignee || null,
-          tags: updated.tags || [],
-          parent_id: updated.parentId || null,
-          sprint_id: updated.sprintId || null,
-          linked_vendor_id: updated.linkedVendorId || null,
-          linked_pipeline_item_id: updated.linkedPipelineItemId || (updated.linkedPipelineItemIds && updated.linkedPipelineItemIds[0] !== 'all' ? updated.linkedPipelineItemIds[0] : null) || null,
-          start_date: updated.startDate || null,
-          target_date: updated.targetDate || null,
-          completed_date: updated.completedDate || null,
-          comments: updated.comments || [],
-          created_at: updated.createdAt || now,
-          updated_at: now,
-        }));
-        const { error: writeErr } = await supabase.from('work_items').upsert(records);
-        if (writeErr) throw writeErr;
+        await upsertWorkItemsSafe(supabase, updatedList);
       } catch (e) {
         reportWriteFailure('Saving bulk work items', e);
       }
@@ -1301,6 +1347,14 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     try {
       localStorage.setItem(STORAGE_KEYS.WORK_ITEMS, JSON.stringify(reordered));
     } catch (_) {}
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await upsertWorkItemsSafe(supabase, reordered);
+      } catch (e) {
+        reportWriteFailure('Reordering work items', e);
+      }
+    }
   };
 
   const deleteWorkItem = async (id: string) => {
@@ -1319,7 +1373,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     const target = workItems.find((w) => w.id === id);
     if (!target || !text.trim()) return;
     const comment = { id: `cm-${Date.now()}`, author, text: text.trim(), createdAt: new Date().toISOString() };
-    await saveWorkItem({ ...target, comments: [...target.comments, comment] });
+    await saveWorkItem({ ...target, comments: [comment, ...(target.comments || [])] });
   };
 
   // 10. Team Member Actions

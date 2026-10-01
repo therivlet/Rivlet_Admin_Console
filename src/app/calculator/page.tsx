@@ -22,6 +22,7 @@ export default function CalculatorPage() {
   const { costingSheets, deleteCostingSheet, addArtifact } = useAdminStore();
   const [activeTab, setActiveTab] = useState<'studio' | 'saved' | 'raw-html'>('studio');
   const [selectedSheet, setSelectedSheet] = useState<CostingSheet | null>(costingSheets[0] || null);
+  const [calcKey, setCalcKey] = useState(0);
 
   const handleDeleteSheet = async (sheet: CostingSheet) => {
     const ok = await confirm({
@@ -116,17 +117,18 @@ export default function CalculatorPage() {
             </button>
           </div>
 
-          {/* Quick New Product Action */}
+          {/* Quick New Calculator Action */}
           <button
             onClick={() => {
               setSelectedSheet(null);
+              setCalcKey((k) => k + 1);
               setActiveTab('studio');
             }}
             title="Start fresh calculation for a brand new product style"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#182032] border border-[#2c3a56] text-[#cda052] hover:text-white hover:border-[#cda052] font-semibold text-xs transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-bold text-xs hover:brightness-110 shadow-glow transition-all"
           >
             <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span>＋ New Calculation</span>
+            <span>New Calculator</span>
           </button>
         </div>
       </div>
@@ -134,6 +136,7 @@ export default function CalculatorPage() {
       {/* Tab 1: Studio */}
       {activeTab === 'studio' && (
         <CostingCalculator
+          key={selectedSheet ? selectedSheet.id : `new-calc-${calcKey}`}
           initialSheet={selectedSheet || undefined}
           onSaveSuccess={() => {}}
         />

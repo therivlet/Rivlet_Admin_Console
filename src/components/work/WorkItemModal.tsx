@@ -116,6 +116,12 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
   const liveItem = workItems.find((w) => w.id === form.id);
   const currentItem = liveItem || form;
   const liveComments = currentItem.comments || [];
+  // Stack order: Newest comments at the top, older comments below
+  const sortedComments = useMemo(() => {
+    return [...liveComments].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }, [liveComments]);
 
   // Child items (e.g. Tasks under this Story, or Stories under this Feature)
   const childItems = useMemo(
@@ -564,16 +570,23 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                       </div>
                     </div>
 
-                    {/* Comment list — Appears at the bottom of the text box */}
+                    {/* Comment list — Appears at the bottom of the text box, stacked newest first */}
                     <div className="space-y-2 pt-1 border-t border-[#171d2b]">
-                      <span className="text-[11px] font-medium text-[#64748b] block mb-1">Comment History</span>
-                      {liveComments.length === 0 ? (
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[11px] font-medium text-[#64748b]">Comment History</span>
+                        {sortedComments.length > 0 && (
+                          <span className="text-[10px] text-[#cda052] font-semibold bg-[#cda052]/10 px-2 py-0.5 rounded border border-[#cda052]/20">
+                            Newest at top (Stack)
+                          </span>
+                        )}
+                      </div>
+                      {sortedComments.length === 0 ? (
                         <p className="text-xs text-[#54627a] italic p-3 rounded-lg bg-[#080b11] border border-[#171e2e]">
                           No comments yet. Type in the box above to add a comment.
                         </p>
                       ) : (
                         <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
-                          {liveComments.map((c) => (
+                          {sortedComments.map((c, idx) => (
                             <div key={c.id} className="p-3 rounded-lg bg-[#0e1320] border border-[#1a2336] text-xs">
                               <div className="flex items-center justify-between mb-1">
                                 <span className="font-semibold text-white flex items-center gap-1.5">
@@ -581,6 +594,11 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                                     {c.author ? c.author[0]?.toUpperCase() : '?'}
                                   </span>
                                   {c.author}
+                                  {idx === 0 && (
+                                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-950/70 border border-emerald-700/50 text-emerald-300 font-medium">
+                                      Latest
+                                    </span>
+                                  )}
                                 </span>
                                 <span className="text-[10px] text-[#64748b]">{new Date(c.createdAt).toLocaleString()}</span>
                               </div>
