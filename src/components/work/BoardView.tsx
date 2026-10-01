@@ -390,7 +390,7 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
         </div>
       ) : (
         <div className="overflow-x-auto pb-4">
-          <div className="grid gap-2" style={{ gridTemplateColumns: `280px repeat(${COLUMNS.length}, minmax(210px, 1fr))`, minWidth: `${280 + COLUMNS.length * 210}px` }}>
+          <div className="grid gap-2" style={{ gridTemplateColumns: `320px repeat(${COLUMNS.length}, minmax(210px, 1fr))`, minWidth: `${320 + COLUMNS.length * 210}px` }}>
             {/* Header row */}
             <div className="text-[10px] font-bold text-[#7c869d] uppercase tracking-wider px-3 py-2 sticky top-0 bg-[#090b11]/90 rounded-lg">
               Stories & Milestones
@@ -413,52 +413,88 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                 <React.Fragment key={rowId}>
                   {/* Story / Row Header Cell */}
                   {isCollapsed ? (
-                    /* COLLAPSED STORY CELL (Compact 1-line strip, ADO style) */
+                    /* COLLAPSED STORY CELL (Spacious box: full story name & sprint clearly visible) */
                     <div
                       onClick={() => row && setModalItem(row)}
-                      className={`rounded-xl border px-3 py-2 flex items-center justify-between transition-all min-h-[46px] select-none ${
+                      className={`rounded-xl border p-3 flex flex-col justify-between transition-all min-h-[78px] select-none ${
                         row
                           ? 'border-[#1f2638] bg-[#0c1018] cursor-pointer hover:border-[#33415c] shadow-sm'
                           : 'border-dashed border-[#263148] bg-transparent'
                       }`}
                     >
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        {/* Expand Icon */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleRowCollapse(rowId);
-                          }}
-                          title="Expand story swimlane"
-                          className="p-1 rounded-md bg-[#141824] border border-[#263148] text-[#cda052] hover:bg-[#1f273b] hover:text-white transition-colors flex-shrink-0 cursor-pointer"
-                        >
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
+                      {row ? (
+                        <>
+                          <div className="space-y-1.5">
+                            {/* Top row: Chevron expand button, Story badge, Type, State badge, and Task Count */}
+                            <div className="flex items-center justify-between gap-1.5">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleRowCollapse(rowId);
+                                  }}
+                                  title="Expand story swimlane"
+                                  className="p-1 rounded-md bg-[#141824] border border-[#263148] text-[#cda052] hover:bg-[#1f273b] hover:text-white transition-colors flex-shrink-0 cursor-pointer"
+                                >
+                                  <ChevronRight className="w-3.5 h-3.5" />
+                                </button>
+                                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#cda052]/20 text-[#cda052] border border-[#cda052]/40 flex-shrink-0">
+                                  Story #{storyNumber}
+                                </span>
+                                <span className={`text-[9px] px-1.5 py-0.5 rounded border font-semibold flex-shrink-0 ${TYPE_COLOR[row.type]}`}>
+                                  {row.type}
+                                </span>
+                                <span className={`text-[8px] px-1.5 py-0.2 rounded border font-medium flex-shrink-0 ${STATE_COLOR[row.state]}`}>
+                                  {row.state}
+                                </span>
+                              </div>
 
-                        {row ? (
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#cda052]/20 text-[#cda052] border border-[#cda052]/40 flex-shrink-0">
-                              Story #{storyNumber}
-                            </span>
-                            <span className="text-xs font-bold text-white truncate" title={row.title}>
+                              {rowTasks.length > 0 && (
+                                <span className="text-[10px] font-mono text-[#7c869d] flex items-center gap-1 flex-shrink-0">
+                                  <ListChecks className="w-2.5 h-2.5 text-[#cda052]" /> {doneCount}/{rowTasks.length}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Full Story Name - clearly readable, not truncated */}
+                            <p className="text-xs font-bold text-white leading-snug break-words" title={row.title}>
+                              <span className="text-[#cda052] font-mono font-bold mr-1">#{storyNumber}</span>
                               {row.title}
-                            </span>
-                            <span className={`text-[8px] px-1 py-0.2 rounded border font-medium flex-shrink-0 ${STATE_COLOR[row.state]}`}>
-                              {row.state}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-[#7c869d] italic truncate">Unparented tasks</span>
-                        )}
-                      </div>
+                            </p>
 
-                      <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                        {rowTasks.length > 0 && (
-                          <span className="text-[10px] font-mono text-[#7c869d] flex items-center gap-1">
-                            <ListChecks className="w-2.5 h-2.5 text-[#cda052]" /> {doneCount}/{rowTasks.length}
-                          </span>
-                        )}
-                      </div>
+                            {/* Sprint Name & Operations Info */}
+                            {sprint && (
+                              <div className="flex items-center gap-2 text-[9px] text-[#7c869d] pt-0.5 flex-wrap">
+                                <span className="flex items-center gap-1 text-[#a5b4fc] font-medium">
+                                  <Calendar className="w-2.5 h-2.5 text-[#cda052]" /> {sprint.name}
+                                </span>
+                                {row.operationCategory && (
+                                  <span className="text-[8px] px-1.5 py-0.2 rounded bg-indigo-950/50 border border-indigo-800/40 text-indigo-300">
+                                    {row.operationCategory}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleRowCollapse(rowId);
+                              }}
+                              title="Expand unparented tasks"
+                              className="p-1 rounded-md bg-[#141824] border border-[#263148] text-[#cda052] hover:bg-[#1f273b] hover:text-white transition-colors cursor-pointer"
+                            >
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                            <p className="text-xs text-[#7c869d] font-semibold italic">Unparented tasks</p>
+                          </div>
+                          <span className="text-[10px] font-mono text-[#7c869d]">{rowTasks.length} tasks</span>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     /* EXPANDED STORY CELL */
@@ -606,15 +642,18 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                           onDrop={() => handleDrop(rowId, col)}
                           onClick={() => toggleRowCollapse(rowId)}
                           title={`${cellTasks.length} task${cellTasks.length === 1 ? '' : 's'} in ${col}. Click to expand.`}
-                          className="rounded-xl border border-[#161a26] bg-[#07090e]/60 px-2 py-1 flex items-center justify-center min-h-[46px] cursor-pointer hover:border-[#2b3956] transition-colors"
+                          className="rounded-xl border border-[#161a26] bg-[#07090e]/60 p-2 flex flex-col items-center justify-center min-h-[78px] cursor-pointer hover:border-[#2b3956] transition-colors"
                         >
                           {cellTasks.length > 0 ? (
-                            <span className="text-[10px] font-mono font-semibold px-2.5 py-0.5 rounded-full bg-[#121724] border border-[#232e44] text-[#cbd5e1] hover:text-white flex items-center gap-1.5 shadow-sm">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#cda052]" />
-                              {cellTasks.length} {cellTasks.length === 1 ? 'task' : 'tasks'}
-                            </span>
+                            <div className="flex flex-col items-center gap-1">
+                              <span className="text-[11px] font-mono font-semibold px-2.5 py-1 rounded-full bg-[#121724] border border-[#232e44] text-[#cbd5e1] hover:text-white flex items-center gap-1.5 shadow-sm">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#cda052]" />
+                                {cellTasks.length} {cellTasks.length === 1 ? 'task' : 'tasks'}
+                              </span>
+                              <span className="text-[8px] text-[#64748b]">expand story</span>
+                            </div>
                           ) : (
-                            <span className="text-[#3b4760] text-xs font-mono select-none">—</span>
+                            <span className="text-[#3b4760] text-sm font-mono select-none">—</span>
                           )}
                         </div>
                       );
