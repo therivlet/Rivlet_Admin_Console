@@ -596,6 +596,62 @@ html.light [class*="hover:border-[#cda052]"]:hover {
   border-color: #cda052 !important;
 }
 
+/* Delete and Destructive Action Buttons Hover in Light Mode (vivid bright crimson feedback) */
+html.light [class*="hover:text-rose-400"]:hover,
+html.light [class*="hover:text-rose-300"]:hover,
+html.light [class*="hover:text-rose-500"]:hover,
+html.light [class*="hover:bg-rose-950"]:hover,
+html.light [class*="hover:bg-rose-900"]:hover,
+html.light [class*="hover:border-rose-800"]:hover,
+html.light [class*="hover:border-rose-900"]:hover,
+html.light button[title*="Delete"]:hover,
+html.light button[title*="Remove"]:hover,
+html.light button[title*="Sign Out"]:hover,
+html.light button[title*="Sign out"]:hover,
+html.light button[aria-label*="Delete"]:hover,
+html.light button[aria-label*="Remove"]:hover,
+html.light button[aria-label*="Sign Out"]:hover,
+html.light button[aria-label*="Sign out"]:hover,
+html.light button:has(svg.lucide-trash-2):hover,
+html.light button:has(svg.lucide-trash):hover,
+html.light button:has(svg.lucide-log-out):hover,
+html.light a:has(svg.lucide-log-out):hover {
+  background-color: #fee2e2 !important;
+  color: #dc2626 !important;
+  border-color: #f87171 !important;
+  box-shadow: 0 2px 8px -1px rgba(220, 38, 38, 0.22) !important;
+  transform: translateY(-1px);
+}
+
+html.light [class*="hover:text-rose-400"]:hover svg,
+html.light [class*="hover:text-rose-300"]:hover svg,
+html.light [class*="hover:text-rose-500"]:hover svg,
+html.light [class*="hover:bg-rose-950"]:hover svg,
+html.light [class*="hover:bg-rose-900"]:hover svg,
+html.light button[title*="Delete"]:hover svg,
+html.light button[title*="Remove"]:hover svg,
+html.light button[title*="Sign Out"]:hover svg,
+html.light button[title*="Sign out"]:hover svg,
+html.light button[aria-label*="Delete"]:hover svg,
+html.light button[aria-label*="Remove"]:hover svg,
+html.light button[aria-label*="Sign Out"]:hover svg,
+html.light button[aria-label*="Sign out"]:hover svg,
+html.light button:has(svg.lucide-trash-2):hover svg,
+html.light button:has(svg.lucide-trash):hover svg,
+html.light button:has(svg.lucide-log-out):hover svg {
+  color: #dc2626 !important;
+  stroke: #dc2626 !important;
+}
+
+html.light [class*="hover:text-rose-400"]:hover span,
+html.light [class*="hover:text-rose-300"]:hover span,
+html.light button[title*="Delete"]:hover span,
+html.light button[title*="Sign Out"]:hover span,
+html.light button[title*="Sign out"]:hover span {
+  color: #dc2626 !important;
+  font-weight: 600 !important;
+}
+
 /* --------------------------------------------------------------------------
    8. KNOWLEDGE BASE MARKDOWN IN LIGHT MODE
    -------------------------------------------------------------------------- */

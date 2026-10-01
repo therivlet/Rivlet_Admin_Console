@@ -39,7 +39,7 @@ function isDueToday(item: { targetDate?: string; state: string }) {
 }
 
 export default function DashboardOverviewPage() {
-  const { artifacts, costingSheets, documents, kbArticles, vendors, pipelineItems, budgetItems, budgetSettings, workItems, sprints } = useAdminStore();
+  const { artifacts, costingSheets, documents, kbArticles, vendors, pipelineItems, budgetItems, budgetSettings, workItems, sprints, activeSeason } = useAdminStore();
   const [showAllTools, setShowAllTools] = useState(false);
 
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -132,7 +132,7 @@ export default function DashboardOverviewPage() {
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded bg-[rgba(205,160,82,0.15)] text-[#cda052] border border-[rgba(205,160,82,0.3)] uppercase tracking-wider font-mono">
               Rivlet Operations
             </span>
-            <span className="text-xs text-[#94a3b8] font-medium">• Season FW26 / SS27</span>
+            <span className="text-xs text-[#94a3b8] font-medium">• Season {activeSeason}</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight font-serif">
             Executive Admin Command Center

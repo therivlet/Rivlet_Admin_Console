@@ -18,6 +18,7 @@ const STORAGE_KEYS = {
   TEAM_MEMBERS: 'rivlet_admin_team_members',
   WORK_SETTINGS: 'rivlet_admin_work_settings',
   BUDGET_SETTINGS: 'rivlet_admin_budget_settings',
+  ACTIVE_SEASON: 'rivlet_admin_active_season',
 };
 
 interface AdminStoreContextType {
@@ -25,6 +26,8 @@ interface AdminStoreContextType {
   isSyncing: boolean;
   lastWriteError: string | null;
   clearWriteError: () => void;
+  activeSeason: string;
+  setActiveSeason: (season: string) => void;
   artifacts: ArtifactItem[];
   costingSheets: CostingSheet[];
   documents: DocumentItem[];
@@ -159,9 +162,17 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [workSettings, setWorkSettings] = useState<WorkSettings>(initialWorkSettings);
   const [budgetSettings, setBudgetSettings] = useState<BudgetSettings>(initialBudgetSettings);
+  const [activeSeason, setActiveSeasonState] = useState<string>('FW26 / SS27');
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastWriteError, setLastWriteError] = useState<string | null>(null);
+
+  const setActiveSeason = useCallback((season: string) => {
+    setActiveSeasonState(season);
+    try {
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_SEASON, season);
+    } catch (_) {}
+  }, []);
 
   const isSyncingRef = useRef(false);
   const clearWriteError = useCallback(() => setLastWriteError(null), []);
@@ -643,6 +654,11 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       const storedTeamMembers = localStorage.getItem(STORAGE_KEYS.TEAM_MEMBERS);
       const storedWorkSettings = localStorage.getItem(STORAGE_KEYS.WORK_SETTINGS);
       const storedBudgetSettings = localStorage.getItem(STORAGE_KEYS.BUDGET_SETTINGS);
+      const storedSeason = localStorage.getItem(STORAGE_KEYS.ACTIVE_SEASON);
+
+      if (storedSeason) {
+        setActiveSeasonState(storedSeason);
+      }
 
       if (storedArtifacts) {
         const parsed = JSON.parse(storedArtifacts).filter((a: any) => a.id !== 'art-001' && a.id !== 'art-002');
@@ -1496,6 +1512,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         isSyncing,
         lastWriteError,
         clearWriteError,
+        activeSeason,
+        setActiveSeason,
         artifacts,
         costingSheets,
         documents,

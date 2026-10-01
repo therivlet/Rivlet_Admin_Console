@@ -3,23 +3,23 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Search, 
-  Plus, 
   Tag, 
   Menu, 
   User, 
   Settings, 
   LogOut, 
   ShieldCheck, 
-  Sparkles,
-  ChevronDown,
-  Info,
-  X,
-  Sun,
-  Moon
+  Sparkles, 
+  ChevronDown, 
+  Check, 
+  Calendar, 
+  Sun, 
+  Moon 
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/authContext';
 import { useTheme } from '@/lib/themeContext';
+import { useAdminStore } from '@/lib/store';
 import RivletLogo from '@/components/brand/RivletLogo';
 
 interface TopbarProps {
@@ -28,21 +28,51 @@ interface TopbarProps {
   onToggleMobileMenu?: () => void;
 }
 
+const SEASON_OPTIONS = [
+  {
+    code: 'FW26 / SS27',
+    fiscalYear: 'FY 2026–27',
+    description: 'Active Merchandising & Sourcing (Current Cycle)',
+  },
+  {
+    code: 'SS26 / FW26',
+    fiscalYear: 'FY 2025–26',
+    description: 'Past Production & Final Inventory',
+  },
+  {
+    code: 'FW27 / SS28',
+    fiscalYear: 'FY 2027–28',
+    description: 'Upcoming Range Forecasting & Mill Outreaches',
+  },
+  {
+    code: 'SS25 / FW25',
+    fiscalYear: 'FY 2024–25',
+    description: 'Historical Benchmark Archive',
+  },
+];
+
 export default function Topbar({ 
   onOpenCommand, 
-  onNewArtifact, 
   onToggleMobileMenu 
 }: TopbarProps) {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { activeSeason, setActiveSeason } = useAdminStore();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
+  const [customSeasonInput, setCustomSeasonInput] = useState('');
+  const [showCustomInput, setShowCustomInput] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const seasonDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setProfileDropdownOpen(false);
+      }
+      if (seasonDropdownRef.current && !seasonDropdownRef.current.contains(event.target as Node)) {
+        setSeasonDropdownOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -99,35 +129,126 @@ export default function Topbar({
 
         {/* Right controls */}
         <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-          {/* Season Indicator */}
-          <div 
-            className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#121623] border border-[#242e44] text-xs text-[#cda052] cursor-default"
-            title="Active Merchandising Season: FW26 / SS27"
-          >
-            <Tag className="w-3 h-3 text-[#cda052]" />
-            <span className="font-semibold tracking-wider font-mono">FW26 / SS27</span>
-          </div>
-
-          {/* Quick action: Add Artifact */}
-          {onNewArtifact ? (
+          {/* Interactive Season & Financial Year Selector */}
+          <div className="relative" ref={seasonDropdownRef}>
             <button
-              onClick={onNewArtifact}
-              title="Create or import Claude Artifact"
-              className="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 transition-all shadow-glow flex-shrink-0"
+              onClick={() => setSeasonDropdownOpen(!seasonDropdownOpen)}
+              title="Change active merchandising season / financial year"
+              aria-label="Change active merchandising season and financial year"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#121623] hover:bg-[#182030] border border-[#242e44] hover:border-[#cda052]/60 text-xs text-[#cda052] transition-all shadow-sm cursor-pointer group"
             >
-              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span className="hidden sm:inline">Add Artifact</span>
+              <Tag className="w-3.5 h-3.5 text-[#cda052] group-hover:scale-110 transition-transform" />
+              <span className="font-semibold tracking-wider font-mono">{activeSeason}</span>
+              <ChevronDown className={`w-3 h-3 text-[#94a3b8] transition-transform duration-200 ${seasonDropdownOpen ? 'rotate-180 text-[#cda052]' : ''}`} />
             </button>
-          ) : (
-            <Link
-              href="/artifacts?action=new"
-              title="Create or import Claude Artifact"
-              className="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 transition-all shadow-glow flex-shrink-0"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span className="hidden sm:inline">Add Artifact</span>
-            </Link>
-          )}
+
+            {/* Season & Financial Year Dropdown Modal */}
+            {seasonDropdownOpen && (
+              <div className="absolute right-0 sm:left-0 sm:right-auto mt-2 w-80 sm:w-96 bg-[#0d101a] border border-[#22293e] rounded-2xl shadow-2xl p-4 z-50 animate-fade-in text-xs space-y-3.5">
+                {/* Header with Apparel Cycle Explanation */}
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-white text-sm flex items-center gap-1.5">
+                      <Calendar className="w-4 h-4 text-[#cda052]" />
+                      Season & Financial Year
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-[rgba(205,160,82,0.12)] text-[#cda052] border border-[rgba(205,160,82,0.25)] font-mono font-semibold">
+                      Merchandising Cycle
+                    </span>
+                  </div>
+
+                  {/* Educational Note explaining FW and SS */}
+                  <div className="mt-2.5 p-2.5 rounded-xl bg-[#07090e] border border-[#1b2133] text-[11px] text-[#94a3b8] leading-relaxed">
+                    <p className="font-medium text-[#cbd5e1] mb-1">What do FW and SS mean?</p>
+                    <div className="grid grid-cols-2 gap-1.5 text-[10px] font-mono">
+                      <div><strong className="text-[#cda052]">FW:</strong> Fall / Winter (Autumn)</div>
+                      <div><strong className="text-[#cda052]">SS:</strong> Spring / Summer</div>
+                    </div>
+                    <p className="text-[10px] text-[#717a90] mt-1.5">
+                      In the apparel industry, each financial year consists of two primary collection drops (e.g. FW26 + SS27 = FY 2026–27).
+                    </p>
+                  </div>
+                </div>
+
+                {/* Season Options */}
+                <div className="space-y-1.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-[#64748b]">Select Active Cycle:</p>
+                  {SEASON_OPTIONS.map((opt) => {
+                    const isSelected = activeSeason === opt.code;
+                    return (
+                      <button
+                        key={opt.code}
+                        onClick={() => {
+                          setActiveSeason(opt.code);
+                          setSeasonDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-left transition-all ${
+                          isSelected
+                            ? 'bg-[rgba(205,160,82,0.12)] border-[#cda052] text-white shadow-sm'
+                            : 'bg-[#121623] border-[#1e2638] text-[#cbd5e1] hover:bg-[#182030] hover:border-[#2b3854]'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-xs text-[#cda052]">{opt.code}</span>
+                            <span className="text-[10px] text-[#94a3b8] font-mono font-semibold">({opt.fiscalYear})</span>
+                          </div>
+                          <div className="text-[11px] text-[#8e97af] mt-0.5">{opt.description}</div>
+                        </div>
+                        {isSelected && <Check className="w-4 h-4 text-[#cda052] flex-shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Custom Season Input */}
+                <div className="pt-2 border-t border-[#1a2133]">
+                  {!showCustomInput ? (
+                    <button
+                      onClick={() => {
+                        setShowCustomInput(true);
+                        setCustomSeasonInput(activeSeason);
+                      }}
+                      className="text-[11px] text-[#cda052] hover:underline flex items-center gap-1 font-medium"
+                    >
+                      + Enter custom season or financial year
+                    </button>
+                  ) : (
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-semibold text-[#8e97af] uppercase">Custom Season / FY Name:</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={customSeasonInput}
+                          onChange={(e) => setCustomSeasonInput(e.target.value)}
+                          placeholder="e.g. FY 2026-27 or Drop 1 / SS27"
+                          className="flex-1 px-2.5 py-1.5 rounded-lg bg-[#07090e] border border-[#232d42] text-xs text-white outline-none focus:border-[#cda052]"
+                        />
+                        <button
+                          onClick={() => {
+                            if (customSeasonInput.trim()) {
+                              setActiveSeason(customSeasonInput.trim());
+                              setShowCustomInput(false);
+                              setSeasonDropdownOpen(false);
+                            }
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-[#cda052] text-black font-semibold text-xs hover:brightness-110"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setShowCustomInput(false)}
+                          className="px-2 py-1.5 text-xs text-[#8e97af] hover:text-white"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Theme Toggle Button (Light / Dark) */}
           <button
