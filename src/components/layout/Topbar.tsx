@@ -13,10 +13,13 @@ import {
   Sparkles,
   ChevronDown,
   Info,
-  X
+  X,
+  Sun,
+  Moon
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/authContext';
+import { useTheme } from '@/lib/themeContext';
 import RivletLogo from '@/components/brand/RivletLogo';
 
 interface TopbarProps {
@@ -31,6 +34,7 @@ export default function Topbar({
   onToggleMobileMenu 
 }: TopbarProps) {
   const { user, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -125,6 +129,26 @@ export default function Topbar({
             </Link>
           )}
 
+          {/* Theme Toggle Button (Light / Dark) */}
+          <button
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
+            aria-label="Toggle interface theme"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg border border-[#242e44] bg-[#0e121b] hover:border-[#cda052]/60 text-xs font-semibold text-[#cbd5e1] hover:text-white transition-all shadow-sm"
+          >
+            {theme === 'dark' ? (
+              <>
+                <Sun className="w-3.5 h-3.5 text-[#cda052]" />
+                <span className="hidden md:inline text-[11px]">Light Mode</span>
+              </>
+            ) : (
+              <>
+                <Moon className="w-3.5 h-3.5 text-[#cda052]" />
+                <span className="hidden md:inline text-[11px]">Dark Mode</span>
+              </>
+            )}
+          </button>
+
           {/* User Profile Avatar & Dropdown */}
           <div className="relative" ref={dropdownRef}>
             <button
@@ -177,6 +201,23 @@ export default function Topbar({
                     <Settings className="w-3.5 h-3.5 text-[#cda052]" />
                     <span>Pricing Engine & BOM</span>
                   </Link>
+
+                  <button
+                    onClick={() => {
+                      toggleTheme();
+                      setProfileDropdownOpen(false);
+                    }}
+                    title="Toggle light or dark interface theme"
+                    className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[#cbd5e1] hover:text-white hover:bg-[#151a28] transition-colors text-left"
+                  >
+                    <span className="flex items-center gap-2">
+                      {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-[#cda052]" /> : <Moon className="w-3.5 h-3.5 text-[#cda052]" />}
+                      <span>Theme: {theme === 'dark' ? 'Dark' : 'Light'}</span>
+                    </span>
+                    <span className="text-[10px] text-[#94a3b8] uppercase font-mono">
+                      {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                    </span>
+                  </button>
                 </div>
 
                 {/* Sign Out */}

@@ -8,12 +8,14 @@ import CommandPalette from '@/components/layout/CommandPalette';
 import { AuthProvider, useAuth } from '@/lib/authContext';
 import { AdminStoreProvider } from '@/lib/store';
 import { ConfirmProvider } from '@/lib/confirmContext';
+import { ThemeProvider, useTheme } from '@/lib/themeContext';
 import { RivletWatermark } from '@/components/brand/RivletLogo';
 import RivletLoader from '@/components/brand/RivletLoader';
 import WriteErrorToast from '@/components/ui/WriteErrorToast';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
+  const { theme } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -147,15 +149,17 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <AuthProvider>
-      <AdminStoreProvider>
-        <ConfirmProvider>
-          <AuthGuard>
-            {children}
-          </AuthGuard>
-        </ConfirmProvider>
-      </AdminStoreProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AdminStoreProvider>
+          <ConfirmProvider>
+            <AuthGuard>
+              {children}
+            </AuthGuard>
+          </ConfirmProvider>
+        </AdminStoreProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

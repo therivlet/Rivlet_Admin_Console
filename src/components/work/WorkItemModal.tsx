@@ -173,15 +173,23 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
       return idx >= 0 ? `Story #${idx + 1}` : null;
     }
     if (currentItem.type === 'Task') {
+      if (currentItem.taskNumber) {
+        return `Task #${currentItem.taskNumber}`;
+      }
       const siblingTasks = workItems
         .filter(
           (w) =>
             w.sprintId === currentItem.sprintId &&
             w.type === 'Task' &&
-            w.parentId === currentItem.parentId &&
-            w.state === currentItem.state
+            w.parentId === currentItem.parentId
         )
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        .sort((a, b) => {
+          if (a.taskNumber && b.taskNumber) return a.taskNumber - b.taskNumber;
+          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          if (dateA !== dateB) return dateA - dateB;
+          return a.id.localeCompare(b.id);
+        });
       const idx = siblingTasks.findIndex((t) => t.id === currentItem.id);
       return idx >= 0 ? `Task #${idx + 1}` : null;
     }

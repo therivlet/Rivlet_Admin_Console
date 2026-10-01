@@ -400,6 +400,7 @@ export interface WorkItem {
   linkedPipelineItemIds?: string[]; // cross-link to multiple Sampling & Production styles (or ['all'])
   operationCategory?: string; // e.g. "Operations", "Sourcing & Fabrics", "Sampling & Fit", "Production QC", etc.
   order?: number; // Sorting/display order within sprint or board
+  taskNumber?: number; // Persistent task sequence number within parent story / workflow
   startDate?: string;
   targetDate?: string;
   completedDate?: string;
