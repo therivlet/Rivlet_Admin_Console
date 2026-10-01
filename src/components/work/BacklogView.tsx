@@ -51,8 +51,8 @@ export default function BacklogView() {
     return (
       <React.Fragment key={item.id}>
         <div
-          className="flex items-center gap-2 px-3 py-2.5 hover:bg-[#0e121b] rounded-lg cursor-pointer group border-b border-[#161a26]/60"
-          style={{ paddingLeft: `${12 + depth * 24}px` }}
+          className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 sm:py-2.5 hover:bg-[#0e121b] rounded-lg cursor-pointer group border-b border-[#161a26]/60"
+          style={{ paddingLeft: `${6 + depth * 12}px` }}
           onClick={() => setModalItem(item)}
         >
           {children.length > 0 ? (
@@ -62,7 +62,7 @@ export default function BacklogView() {
           ) : <span className="w-3.5 flex-shrink-0" />}
 
           <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium flex-shrink-0 ${TYPE_COLOR[item.type]}`}>{item.type}</span>
-          <span className="text-sm text-white truncate flex-1 group-hover:text-[#cda052]">{item.title}</span>
+          <span className="text-xs sm:text-sm text-white truncate flex-1 group-hover:text-[#cda052]">{item.title}</span>
           {item.assignee && (
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#131b2c] border border-[#202d48] text-[#cda052] flex-shrink-0 hidden md:inline font-semibold">
               {item.assignee}
@@ -79,14 +79,16 @@ export default function BacklogView() {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-        <p className="text-sm text-[#94a3b8]">Epics, Features, User Stories, Tasks & Bugs — the full work hierarchy.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4">
+        <p className="text-xs sm:text-sm text-[#94a3b8]">Epics, Features, User Stories, Tasks & Bugs — the full work hierarchy.</p>
         <button
           onClick={() => setModalItem(emptyItem())}
           title="Create a new work item"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-sm font-semibold hover:shadow-glow transition-all flex-shrink-0"
+          className="flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-xs sm:text-sm font-semibold hover:shadow-glow transition-all flex-shrink-0 self-start sm:self-auto"
         >
-          <Plus className="w-4 h-4" /> New Work Item
+          <Plus className="w-4 h-4" />
+          <span className="hidden xs:inline">New Work Item</span>
+          <span className="xs:hidden">New Item</span>
         </button>
       </div>
 

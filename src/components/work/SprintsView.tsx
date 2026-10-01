@@ -85,11 +85,13 @@ export default function SprintsView({ onOpenBoard }: SprintsViewProps) {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-        <p className="text-sm text-[#94a3b8]">Plan work in fixed windows and track burn-down toward each sprint goal.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4">
+        <p className="text-xs sm:text-sm text-[#94a3b8]">Plan work in fixed windows and track burn-down toward each sprint goal.</p>
         <button onClick={() => { setModalItem(emptyItem(workSettings.defaultSprintLengthDays)); setError(null); }} title="Create a new sprint"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-sm font-semibold hover:shadow-glow transition-all flex-shrink-0">
-          <Plus className="w-4 h-4" /> New Sprint
+          className="flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-xs sm:text-sm font-semibold hover:shadow-glow transition-all flex-shrink-0 self-start sm:self-auto">
+          <Plus className="w-4 h-4" />
+          <span className="hidden xs:inline">New Sprint</span>
+          <span className="xs:hidden">Sprint</span>
         </button>
       </div>
 
@@ -104,7 +106,7 @@ export default function SprintsView({ onOpenBoard }: SprintsViewProps) {
             const stats = statsFor(s.id);
             const pct = stats.points > 0 ? Math.round((stats.donePoints / stats.points) * 100) : 0;
             return (
-              <div key={s.id} className="rounded-2xl border border-[#1a1f2c] bg-[#0e121b] p-4 sm:p-5">
+              <div key={s.id} className="rounded-2xl border border-[#1a1f2c] bg-[#0e121b] p-3.5 sm:p-5">
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
@@ -124,14 +126,16 @@ export default function SprintsView({ onOpenBoard }: SprintsViewProps) {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 mt-3">
-                  <div className="flex-1 h-1.5 rounded-full bg-[#1a1f2c] overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 mt-3">
+                  <div className="w-full sm:flex-1 h-1.5 rounded-full bg-[#1a1f2c] overflow-hidden">
                     <div className="h-full bg-gradient-to-r from-[#cda052] to-emerald-500" style={{ width: `${pct}%` }} />
                   </div>
-                  <span className="text-[11px] font-mono text-[#94a3b8] flex-shrink-0">{stats.done}/{stats.total} items · {stats.donePoints}/{stats.points} pts</span>
-                  <button onClick={() => onOpenBoard?.(s.id)} className="text-[11px] text-[#cda052] hover:underline flex items-center gap-0.5 flex-shrink-0">
-                    Board <ArrowRight className="w-3 h-3" />
-                  </button>
+                  <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+                    <span className="text-[11px] font-mono text-[#94a3b8]">{stats.done}/{stats.total} items · {stats.donePoints}/{stats.points} pts</span>
+                    <button onClick={() => onOpenBoard?.(s.id)} className="text-[11px] text-[#cda052] hover:underline flex items-center gap-0.5 flex-shrink-0 font-medium">
+                      Board <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
               </div>
             );

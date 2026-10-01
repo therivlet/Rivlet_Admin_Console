@@ -19,6 +19,7 @@ import {
   User,
   X,
   Settings,
+  Settings2,
   Factory,
   GitBranch,
   Wallet,
@@ -61,9 +62,11 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
   ];
 
   const workNavItems = [
-    { label: 'Backlog', href: '/work?tab=backlog', tab: 'backlog', icon: ListTree },
+    { label: 'Backlogs', href: '/work?tab=backlog', tab: 'backlog', icon: ListTree },
     { label: 'Sprint Board', href: '/work?tab=board', tab: 'board', icon: KanbanSquare },
     { label: 'Sprints', href: '/work?tab=sprints', tab: 'sprints', icon: CalendarRange },
+    { label: 'Sprint Bug Creation', href: '/work?tab=bulk', tab: 'bulk', icon: Sparkles },
+    { label: 'Settings', href: '/work?tab=settings', tab: 'settings', icon: Settings2 },
   ];
 
   const handleLinkClick = () => {

@@ -18,6 +18,7 @@ import {
   Layers,
   CheckCircle2,
   Tag,
+  ArrowRight,
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { WorkItem, WorkItemState, Sprint } from '@/lib/types';
@@ -344,7 +345,7 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
             </div>
 
             {/* Quick Metrics Badges */}
-            <div className="flex items-center gap-2.5 flex-wrap">
+            <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-2.5">
               <div className="px-3 py-1.5 rounded-xl bg-[#080b11] border border-[#1d263b] text-center">
                 <span className="text-[10px] text-[#64748b] block font-medium uppercase">Stories</span>
                 <span className="text-xs font-bold text-white">{rows.length}</span>
@@ -389,12 +390,17 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
           <p className="text-sm text-[#94a3b8]">No User Stories or Bugs in this sprint yet. Add one, or assign one from the Backlog tab.</p>
         </div>
       ) : (
-        <div className="overflow-x-auto pb-4">
-          <div className="grid gap-2" style={{ gridTemplateColumns: `320px repeat(${COLUMNS.length}, minmax(210px, 1fr))`, minWidth: `${320 + COLUMNS.length * 210}px` }}>
-            {/* Header row */}
-            <div className="text-[10px] font-bold text-[#7c869d] uppercase tracking-wider px-3 py-2 sticky top-0 bg-[#090b11]/90 rounded-lg">
-              Stories & Milestones
-            </div>
+        <div className="space-y-1.5">
+          <div className="sm:hidden flex items-center gap-1.5 text-[11px] text-[#8e9cb5] px-1">
+            <ArrowRight className="w-3.5 h-3.5 text-[#cda052] flex-shrink-0" />
+            <span>Swipe horizontally to view all Kanban swimlane columns</span>
+          </div>
+          <div className="overflow-x-auto pb-4 custom-scrollbar">
+            <div className="grid gap-2" style={{ gridTemplateColumns: `320px repeat(${COLUMNS.length}, minmax(210px, 1fr))`, minWidth: `${320 + COLUMNS.length * 210}px` }}>
+              {/* Header row */}
+              <div className="text-[10px] font-bold text-[#7c869d] uppercase tracking-wider px-3 py-2 sticky top-0 bg-[#090b11]/90 rounded-lg">
+                Stories & Milestones
+              </div>
             {COLUMNS.map((col) => (
               <div key={col} className="text-[10px] font-bold text-[#cbd5e1] uppercase tracking-wider px-3 py-2 rounded-lg bg-[#0e121b] sticky top-0 text-center border border-[#1a2335]">
                 {col}
@@ -775,6 +781,7 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
             })}
           </div>
         </div>
+      </div>
       )}
 
       {modalItem && <WorkItemModal item={modalItem} onClose={() => setModalItem(null)} />}
