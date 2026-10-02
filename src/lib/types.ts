@@ -363,9 +363,19 @@ export interface BudgetItem {
   updatedAt: string;
 }
 
+export interface CashInflowEntry {
+  id: string;
+  amount: number;
+  date: string; // ISO date (YYYY-MM-DD) when funds are injected / scheduled
+  source: string; // e.g. "Founder Investment", "Working Capital", "Angel Partner"
+  note?: string;
+  createdAt?: string;
+}
+
 export interface BudgetSettings {
   id: string; // singleton row, always 'default'
   totalPlannedOverride?: number; // fixed ceiling independent of the sum of line items
+  inflows?: CashInflowEntry[]; // Capital injections / funds added
   updatedAt: string;
 }
 

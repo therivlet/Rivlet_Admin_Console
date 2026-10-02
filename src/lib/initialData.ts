@@ -1,4 +1,4 @@
-import { ArtifactItem, CostingSheet, DocumentItem, KBArticle, VendorItem, PipelineItem, BudgetItem, Sprint, WorkItem, TeamMember, WorkSettings, BudgetSettings } from './types';
+import { ArtifactItem, CostingSheet, DocumentItem, KBArticle, VendorItem, PipelineItem, BudgetItem, Sprint, WorkItem, TeamMember, WorkSettings, BudgetSettings, CashInflowEntry } from './types';
 import { defaultPricingInputs } from './pricingEngine';
 import { userPricingHtml } from './userPricingArtifact';
 
@@ -224,9 +224,45 @@ export const initialPipelineItems: PipelineItem[] = [
 ];
 
 export const initialBudgetItems: BudgetItem[] = [
-  { id: 'bud-001', category: 'Legal / Registration', plannedAmount: 35000, actualAmount: 0, spendLog: [], currency: '₹', phase: 'Phase 1', createdAt: '2026-09-01T09:00:00Z', updatedAt: '2026-09-01T09:00:00Z' },
-  { id: 'bud-002', category: 'Brand Identity + Photography', plannedAmount: 85000, actualAmount: 0, spendLog: [], currency: '₹', phase: 'Phase 4', createdAt: '2026-09-01T09:00:00Z', updatedAt: '2026-09-01T09:00:00Z' },
-  { id: 'bud-003', category: 'Manufacturer Approach + Sampling', plannedAmount: 95000, actualAmount: 0, spendLog: [], currency: '₹', phase: 'Phase 3', createdAt: '2026-09-01T09:00:00Z', updatedAt: '2026-09-01T09:00:00Z' },
+  {
+    id: 'bud-001',
+    category: 'Legal / Registration',
+    plannedAmount: 35000,
+    actualAmount: 25000,
+    spendLog: [
+      { id: 'spend-001', amount: 25000, date: '2026-09-05', note: 'LLC incorporation & trademark filing' }
+    ],
+    currency: '₹',
+    phase: 'Phase 1',
+    createdAt: '2026-09-01T09:00:00Z',
+    updatedAt: '2026-09-05T10:00:00Z'
+  },
+  {
+    id: 'bud-002',
+    category: 'Brand Identity + Photography',
+    plannedAmount: 85000,
+    actualAmount: 40000,
+    spendLog: [
+      { id: 'spend-002', amount: 40000, date: '2026-09-15', note: 'Visual pitch deck & packaging design deposit' }
+    ],
+    currency: '₹',
+    phase: 'Phase 4',
+    createdAt: '2026-09-01T09:00:00Z',
+    updatedAt: '2026-09-15T11:00:00Z'
+  },
+  {
+    id: 'bud-003',
+    category: 'Manufacturer Approach + Sampling',
+    plannedAmount: 95000,
+    actualAmount: 30000,
+    spendLog: [
+      { id: 'spend-003', amount: 30000, date: '2026-09-22', note: 'Tirupur mill courier, lab dips & proto fabric' }
+    ],
+    currency: '₹',
+    phase: 'Phase 3',
+    createdAt: '2026-09-01T09:00:00Z',
+    updatedAt: '2026-09-22T14:00:00Z'
+  },
   { id: 'bud-004', category: 'First Production (1,580 pieces)', plannedAmount: 738900, actualAmount: 0, spendLog: [], currency: '₹', phase: 'Phase 3', createdAt: '2026-09-01T09:00:00Z', updatedAt: '2026-09-01T09:00:00Z' },
   { id: 'bud-005', category: 'E-commerce + Packaging + Logistics', plannedAmount: 125000, actualAmount: 0, spendLog: [], currency: '₹', phase: 'Phase 4', createdAt: '2026-09-01T09:00:00Z', updatedAt: '2026-09-01T09:00:00Z' },
   { id: 'bud-006', category: 'Digital Marketing (3 months)', plannedAmount: 180000, actualAmount: 0, spendLog: [], currency: '₹', phase: 'Phase 5', createdAt: '2026-09-01T09:00:00Z', updatedAt: '2026-09-01T09:00:00Z' },
@@ -235,9 +271,37 @@ export const initialBudgetItems: BudgetItem[] = [
   { id: 'bud-009', category: 'Emergency Buffer (Untouched)', plannedAmount: 200000, actualAmount: 0, spendLog: [], currency: '₹', notes: 'Do not draw down except for true emergencies.', createdAt: '2026-09-01T09:00:00Z', updatedAt: '2026-09-01T09:00:00Z' },
 ];
 
+export const initialCashInflows: CashInflowEntry[] = [
+  {
+    id: 'inf-001',
+    amount: 350000,
+    date: '2026-09-01',
+    source: 'Founder Investment (Tranche 1)',
+    note: 'Initial capital injection for legal, registration, brand setup and tech packs',
+    createdAt: '2026-09-01T09:00:00Z'
+  },
+  {
+    id: 'inf-002',
+    amount: 250000,
+    date: '2026-09-20',
+    source: 'Founder Investment (Tranche 2)',
+    note: 'Sampling tranche & mill visit commitments',
+    createdAt: '2026-09-20T09:00:00Z'
+  },
+  {
+    id: 'inf-003',
+    amount: 400000,
+    date: '2026-10-10',
+    source: 'Scheduled Partner Capital',
+    note: 'Advance tranche for bulk fabric procurement & factory PO deposit',
+    createdAt: '2026-09-25T09:00:00Z'
+  }
+];
+
 export const initialBudgetSettings: BudgetSettings = {
   id: 'default',
   totalPlannedOverride: 1500000,
+  inflows: initialCashInflows,
   updatedAt: '2026-09-01T09:00:00Z',
 };
 

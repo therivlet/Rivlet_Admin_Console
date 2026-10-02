@@ -1,8 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { ArtifactItem, CostingSheet, DocumentItem, KBArticle, ArtifactStatus, VendorItem, PipelineItem, BudgetItem, Sprint, WorkItem, TeamMember, WorkSettings, BudgetSettings } from './types';
-import { initialArtifacts, initialCostingSheets, initialDocuments, initialKBArticles, initialVendors, initialPipelineItems, initialBudgetItems, initialSprints, initialWorkItems, initialTeamMembers, initialWorkSettings, initialBudgetSettings } from './initialData';
+import { ArtifactItem, CostingSheet, DocumentItem, KBArticle, ArtifactStatus, VendorItem, PipelineItem, BudgetItem, Sprint, WorkItem, TeamMember, WorkSettings, BudgetSettings, CashInflowEntry } from './types';
+import { initialArtifacts, initialCostingSheets, initialDocuments, initialKBArticles, initialVendors, initialPipelineItems, initialBudgetItems, initialSprints, initialWorkItems, initialTeamMembers, initialWorkSettings, initialBudgetSettings, initialCashInflows } from './initialData';
 import { supabase, isSupabaseConfigured } from './supabase';
 
 const STORAGE_KEYS = {
@@ -69,6 +69,9 @@ interface AdminStoreContextType {
   deleteTeamMember: (id: string) => Promise<void>;
   saveWorkSettings: (settings: Partial<WorkSettings>) => Promise<void>;
   saveBudgetSettings: (settings: Partial<BudgetSettings>) => Promise<void>;
+  cashInflows: CashInflowEntry[];
+  saveCashInflow: (inflow: CashInflowEntry) => Promise<void>;
+  deleteCashInflow: (id: string) => Promise<void>;
   logBudgetSpend: (budgetItemId: string, amount: number, date: string, note?: string) => Promise<void>;
   deleteBudgetSpend: (budgetItemId: string, spendId: string) => Promise<void>;
   resetToSeed: () => Promise<void>;
@@ -488,6 +491,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         const formatted: BudgetSettings = {
           id: r.id,
           totalPlannedOverride: r.total_planned_override !== null && r.total_planned_override !== undefined ? Number(r.total_planned_override) : undefined,
+          inflows: Array.isArray(r.inflows) ? r.inflows : initialCashInflows,
           updatedAt: r.updated_at || new Date().toISOString(),
         };
         setBudgetSettings(formatted);
@@ -693,7 +697,15 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       setWorkItems(storedWorkItems ? JSON.parse(storedWorkItems) : initialWorkItems);
       setTeamMembers(storedTeamMembers ? JSON.parse(storedTeamMembers) : initialTeamMembers);
       setWorkSettings(storedWorkSettings ? JSON.parse(storedWorkSettings) : initialWorkSettings);
-      setBudgetSettings(storedBudgetSettings ? JSON.parse(storedBudgetSettings) : initialBudgetSettings);
+      if (storedBudgetSettings) {
+        const parsed = JSON.parse(storedBudgetSettings);
+        if (!parsed.inflows || !Array.isArray(parsed.inflows) || parsed.inflows.length === 0) {
+          parsed.inflows = initialCashInflows;
+        }
+        setBudgetSettings(parsed);
+      } else {
+        setBudgetSettings(initialBudgetSettings);
+      }
     } catch (e) {
       setArtifacts(initialArtifacts);
       setCostingSheets(initialCostingSheets);
@@ -1456,7 +1468,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     }
   };
 
-  // 12. Budget Settings & Spend Ledger Actions
+  // 12. Budget Settings, Cash Inflows & Spend Ledger Actions
   const saveBudgetSettings = async (settings: Partial<BudgetSettings>) => {
     const now = new Date().toISOString();
     const updated: BudgetSettings = { ...budgetSettings, ...settings, id: 'default', updatedAt: now };
@@ -1464,16 +1476,49 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     if (isSupabaseConfigured && supabase) {
       try {
-        const { error: writeErr } = await supabase.from('budget_settings').upsert({
+        const payload: any = {
           id: 'default',
           total_planned_override: updated.totalPlannedOverride ?? null,
+          inflows: updated.inflows ?? [],
           updated_at: now,
-        });
-        if (writeErr) throw writeErr;
+        };
+        const { error: writeErr } = await supabase.from('budget_settings').upsert(payload);
+        if (writeErr) {
+          if (writeErr.code === '42703' || writeErr.message?.includes('column')) {
+            const fallbackPayload = {
+              id: 'default',
+              total_planned_override: updated.totalPlannedOverride ?? null,
+              updated_at: now,
+            };
+            const { error: fallbackErr } = await supabase.from('budget_settings').upsert(fallbackPayload);
+            if (fallbackErr) throw fallbackErr;
+          } else {
+            throw writeErr;
+          }
+        }
       } catch (e) {
         reportWriteFailure('Saving budget settings', e);
       }
     }
+  };
+
+  const saveCashInflow = async (inflow: CashInflowEntry) => {
+    const currentInflows = budgetSettings.inflows || initialCashInflows;
+    const idx = currentInflows.findIndex((i) => i.id === inflow.id);
+    let next: CashInflowEntry[];
+    if (idx >= 0) {
+      next = [...currentInflows];
+      next[idx] = inflow;
+    } else {
+      next = [inflow, ...currentInflows];
+    }
+    await saveBudgetSettings({ inflows: next });
+  };
+
+  const deleteCashInflow = async (id: string) => {
+    const currentInflows = budgetSettings.inflows || initialCashInflows;
+    const next = currentInflows.filter((i) => i.id !== id);
+    await saveBudgetSettings({ inflows: next });
   };
 
   const logBudgetSpend = async (budgetItemId: string, amount: number, date: string, note?: string) => {
@@ -1555,6 +1600,9 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         deleteTeamMember,
         saveWorkSettings,
         saveBudgetSettings,
+        cashInflows: budgetSettings.inflows || initialCashInflows,
+        saveCashInflow,
+        deleteCashInflow,
         logBudgetSpend,
         deleteBudgetSpend,
         resetToSeed,
