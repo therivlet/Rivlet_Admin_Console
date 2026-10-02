@@ -202,7 +202,7 @@ export default function DashboardOverviewPage() {
           </div>
           <div className="text-3xl font-bold text-white font-mono tabular-nums">{kbArticles.length}</div>
           <div className="flex items-center justify-between text-xs mt-2.5 text-[#94a3b8]">
-            <span className="text-purple-300 font-semibold">Tirupur Sourcing Wiki</span>
+            <span className="text-purple-300 font-semibold">Brand Sourcing Wiki</span>
             <span>AQL 2.5 Standards</span>
           </div>
         </Link>
@@ -223,7 +223,7 @@ export default function DashboardOverviewPage() {
           <div className="text-3xl font-bold text-white font-mono tabular-nums">{vendors.length}</div>
           <div className="flex items-center justify-between text-xs mt-2.5 text-[#94a3b8]">
             <span className="text-amber-300 font-semibold">{approvedVendors} Approved</span>
-            <span>Tirupur outreach pipeline</span>
+            <span>Manufacturer pipeline</span>
           </div>
         </Link>
 

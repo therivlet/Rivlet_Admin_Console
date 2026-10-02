@@ -534,7 +534,7 @@ export default function DocumentsPage() {
                     required
                     value={newTitle}
                     onChange={(e) => setNewTitle(e.target.value)}
-                    placeholder="e.g. Tirupur Fabric Mill GOTS Scope Certificate 2026"
+                    placeholder="e.g. Fabric Mill GOTS Scope Certificate 2026"
                     className="w-full px-3 py-2 rounded bg-[#090b12] border border-[#22283a] text-white outline-none focus:border-[#cda052]"
                   />
                 </div>

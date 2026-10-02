@@ -534,7 +534,7 @@ export default function ProfilePage() {
               <input
                 type="text"
                 value={primaryHub}
-                placeholder="e.g. Tirupur, Tamil Nadu"
+                placeholder="e.g. Production Facility"
                 onChange={(e) => {
                   setPrimaryHub(e.target.value);
                   if (formErrors.primaryHub) setFormErrors(prev => { const n = {...prev}; delete n.primaryHub; return n; });

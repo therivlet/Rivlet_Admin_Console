@@ -94,7 +94,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
       <RivletLoader 
         fullscreen={true}
         message="Authenticating with Supabase Cloud..."
-        subMessage="Master Operations Console • Tirupur Production Hub"
+        subMessage="Master Operations Console • Production Hub"
       />
     );
   }

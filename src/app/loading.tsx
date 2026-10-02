@@ -5,7 +5,7 @@ export default function Loading() {
     <RivletLoader 
       fullscreen={true}
       message="Loading Console Workspace..."
-      subMessage="Rivlet • Tirupur Sourcing Network"
+      subMessage="Rivlet • Production Network"
     />
   );
 }

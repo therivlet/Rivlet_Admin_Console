@@ -387,7 +387,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         const formatted: VendorItem[] = venRes.data.map((r: any) => ({
           id: r.id,
           name: r.name,
-          location: r.location || 'Tirupur, Tamil Nadu',
+          location: r.location || 'Manufacturing Facility',
           contactName: r.contact_name || undefined,
           contactEmail: r.contact_email || undefined,
           contactPhone: r.contact_phone || undefined,

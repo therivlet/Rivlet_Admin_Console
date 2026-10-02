@@ -58,7 +58,7 @@ function emptyVendor(): Omit<VendorItem, 'createdAt' | 'updatedAt'> {
   return {
     id: `ven-${Date.now()}`,
     name: '',
-    location: 'Tirupur, Tamil Nadu',
+    location: '',
     isVerticallyIntegrated: null,
     stage: 'Prospect',
     moqTarget: 175,
@@ -144,7 +144,7 @@ export default function VendorsPage() {
             Manufacturer & Vendor Outreach
           </h1>
           <p className="text-sm text-[#94a3b8] mt-1">
-            Track Tirupur factory outreach, negotiation terms, and the 5-touch follow-up sequence.
+            Track manufacturer factory outreach, negotiation terms, and the 5-touch follow-up sequence.
           </p>
         </div>
         <button

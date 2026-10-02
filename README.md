@@ -29,7 +29,7 @@
 ### 4. Confidential Brand Knowledge Base (`/knowledge-base`)
 - Gitbook/Notion-style documentation center.
 - Pre-seeded with:
-  - *Master Mill & Dye House Directory (Tirupur & Surat)*
+  - *Master Mill & Dye House Directory (Primary Production Facilities)*
   - *AQL 2.5 Quality Inspection & Defect Classification SOP*
   - *Brand Tone, Typography & Packaging Guidelines*
 - **Confidential Lock**: Flags sensitive commercial formulas and supplier agreements.

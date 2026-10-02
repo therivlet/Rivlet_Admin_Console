@@ -92,7 +92,7 @@ export const initialKBArticles: KBArticle[] = [
 
 ---
 
-### 1. Southern Eco Mills (Tirupur, India)
+### 1. Southern Eco Mills (Fabric Production Facility)
 - **Specialty**: Heavyweight French Terry (400–520 GSM), Combed Organic Cotton Jersey (220–300 GSM).
 - **Certifications**: GOTS Scope Certificate, OEKO-TEX Standard 100 Class I.
 - **Minimum Order Quantity (MOQ)**:
@@ -103,7 +103,7 @@ export const initialKBArticles: KBArticle[] = [
 
 ---
 
-### 2. Apex Specialty Dyeing & Wash House (Surat / Tirupur)
+### 2. Apex Specialty Dyeing & Wash House (Dyeing & Wash Facility)
 - **Specialty**: Pigment dyeing, Mineral vintage acid wash, Enzyme bio-polishing.
 - **Capacity**: 15,000 pcs / month.
 - **Lead Time**: 12 days from greige fabric receipt.
@@ -187,7 +187,7 @@ export const initialVendors: VendorItem[] = [
   {
     id: 'ven-001',
     name: 'Techno Sportswear',
-    location: 'Tirupur, Tamil Nadu',
+    location: 'Primary Manufacturing Facility',
     specialty: 'Vertically integrated activewear (yarn to stitching)',
     isVerticallyIntegrated: null,
     stage: 'Prospect',
@@ -201,7 +201,7 @@ export const initialVendors: VendorItem[] = [
   {
     id: 'ven-002',
     name: 'Wings2Fashion',
-    location: 'Tirupur, Tamil Nadu',
+    location: 'Primary Manufacturing Facility',
     specialty: 'Vertically integrated activewear (yarn to stitching)',
     isVerticallyIntegrated: null,
     stage: 'Prospect',
@@ -256,7 +256,7 @@ export const initialBudgetItems: BudgetItem[] = [
     plannedAmount: 95000,
     actualAmount: 30000,
     spendLog: [
-      { id: 'spend-003', amount: 30000, date: '2026-09-22', note: 'Tirupur mill courier, lab dips & proto fabric' }
+      { id: 'spend-003', amount: 30000, date: '2026-09-22', note: 'Manufacturer mill courier, lab dips & proto fabric' }
     ],
     currency: '₹',
     phase: 'Phase 3',
@@ -309,7 +309,7 @@ export const initialSprints: Sprint[] = [
   {
     id: 'spr-001',
     name: 'Sprint 1 — Manufacturer Outreach',
-    goal: 'Days 1–21: contact and qualify Tirupur manufacturers via the 5-touch sequence.',
+    goal: 'Days 1–21: contact and qualify candidate manufacturers via the 5-touch sequence.',
     startDate: '2026-09-29',
     endDate: '2026-10-12',
     createdAt: '2026-09-29T09:00:00Z',
@@ -345,7 +345,7 @@ export const initialWorkItems: WorkItem[] = [
     id: 'wi-feat-001',
     type: 'Feature',
     title: 'Manufacturer Selection & Onboarding',
-    description: 'Identify, audit, and finalize a vertically integrated Tirupur manufacturer for Drop 1 production run.',
+    description: 'Identify, audit, and finalize a vertically integrated manufacturer for Drop 1 production run.',
     acceptanceCriteria: 'A manufacturer is under signed PO with agreed MOQ (175 pcs/style) and payment terms (30/50/20).',
     state: 'Active',
     priority: 1,
@@ -360,7 +360,7 @@ export const initialWorkItems: WorkItem[] = [
     id: 'wi-story-001',
     type: 'User Story',
     title: 'Lead manufacturer qualification & outreach for Techno Sportswear',
-    description: 'Execute and oversee the 5-touch qualification sequence with Techno Sportswear in Tirupur: initial spec email, 48h WhatsApp follow-up, tech-pack sharing on Day 5, phone call on Day 8, and factory visit scheduling.',
+    description: 'Execute and oversee the 5-touch qualification sequence with Techno Sportswear: initial spec email, 48h WhatsApp follow-up, tech-pack sharing on Day 5, phone call on Day 8, and factory visit scheduling.',
     acceptanceCriteria: 'Techno Sportswear vertical integration confirmed (yarn to stitching); MOQ confirmed at 175 pcs; initial payment terms agreed at 30/50/20.',
     state: 'Active',
     priority: 1,

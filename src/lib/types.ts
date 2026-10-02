@@ -289,7 +289,7 @@ export type VendorOutreachStage =
 export interface VendorItem {
   id: string;
   name: string; // e.g. "Techno Sportswear"
-  location: string; // e.g. "Tirupur, Tamil Nadu"
+  location: string; // e.g. "Primary Facility"
   contactName?: string;
   contactEmail?: string;
   contactPhone?: string;

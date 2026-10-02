@@ -54,7 +54,7 @@ create policy "Authenticated delete on vault-files" on storage.objects
 create table if not exists public.vendors (
   id text primary key default ('ven-' || extract(epoch from now())::bigint),
   name text not null,
-  location text default 'Tirupur, Tamil Nadu',
+  location text default 'Manufacturing Facility',
   contact_name text,
   contact_email text,
   contact_phone text,
