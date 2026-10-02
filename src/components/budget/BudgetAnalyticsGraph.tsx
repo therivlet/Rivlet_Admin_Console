@@ -7,10 +7,7 @@ import {
   Wallet,
   Calendar,
   Layers,
-  ArrowUpRight,
-  ArrowDownRight,
   ShieldCheck,
-  Eye,
   BarChart3,
   LineChart as LineChartIcon
 } from 'lucide-react';
@@ -21,7 +18,6 @@ interface BudgetAnalyticsGraphProps {
   totalPlanned: number;
   cashInflows: CashInflowEntry[];
   currency?: string;
-  onOpenInflowModal?: () => void;
 }
 
 function formatINR(n: number) {
@@ -43,16 +39,16 @@ function formatFullINR(n: number) {
 
 // Curated vibrant modern color palette for categories
 const CATEGORY_COLORS = [
-  { stroke: '#818cf8', fill: 'rgba(129, 140, 248, 0.25)', text: 'text-indigo-400', border: 'border-indigo-500/40' },
-  { stroke: '#06b6d4', fill: 'rgba(6, 182, 212, 0.25)', text: 'text-cyan-400', border: 'border-cyan-500/40' },
-  { stroke: '#10b981', fill: 'rgba(16, 185, 129, 0.25)', text: 'text-emerald-400', border: 'border-emerald-500/40' },
-  { stroke: '#f59e0b', fill: 'rgba(245, 158, 11, 0.25)', text: 'text-amber-400', border: 'border-amber-500/40' },
-  { stroke: '#ec4899', fill: 'rgba(236, 72, 153, 0.25)', text: 'text-pink-400', border: 'border-pink-500/40' },
-  { stroke: '#38bdf8', fill: 'rgba(56, 189, 248, 0.25)', text: 'text-sky-400', border: 'border-sky-500/40' },
-  { stroke: '#f43f5e', fill: 'rgba(244, 63, 94, 0.25)', text: 'text-rose-400', border: 'border-rose-500/40' },
-  { stroke: '#a855f7', fill: 'rgba(168, 85, 247, 0.25)', text: 'text-purple-400', border: 'border-purple-500/40' },
-  { stroke: '#14b8a6', fill: 'rgba(20, 184, 166, 0.25)', text: 'text-teal-400', border: 'border-teal-500/40' },
-  { stroke: '#eab308', fill: 'rgba(234, 179, 8, 0.25)', text: 'text-yellow-400', border: 'border-yellow-500/40' },
+  { stroke: '#818cf8', fill: 'rgba(129, 140, 248, 0.25)', text: 'text-indigo-400' },
+  { stroke: '#06b6d4', fill: 'rgba(6, 182, 212, 0.25)', text: 'text-cyan-400' },
+  { stroke: '#10b981', fill: 'rgba(16, 185, 129, 0.25)', text: 'text-emerald-400' },
+  { stroke: '#f59e0b', fill: 'rgba(245, 158, 11, 0.25)', text: 'text-amber-400' },
+  { stroke: '#ec4899', fill: 'rgba(236, 72, 153, 0.25)', text: 'text-pink-400' },
+  { stroke: '#38bdf8', fill: 'rgba(56, 189, 248, 0.25)', text: 'text-sky-400' },
+  { stroke: '#f43f5e', fill: 'rgba(244, 63, 94, 0.25)', text: 'text-rose-400' },
+  { stroke: '#a855f7', fill: 'rgba(168, 85, 247, 0.25)', text: 'text-purple-400' },
+  { stroke: '#14b8a6', fill: 'rgba(20, 184, 166, 0.25)', text: 'text-teal-400' },
+  { stroke: '#eab308', fill: 'rgba(234, 179, 8, 0.25)', text: 'text-yellow-400' },
 ];
 
 export default function BudgetAnalyticsGraph({
@@ -60,7 +56,6 @@ export default function BudgetAnalyticsGraph({
   totalPlanned,
   cashInflows,
   currency = '₹',
-  onOpenInflowModal,
 }: BudgetAnalyticsGraphProps) {
   const [viewMode, setViewMode] = useState<'timeline' | 'categories' | 'combined'>('combined');
   const [hoveredPointIndex, setHoveredPointIndex] = useState<number | null>(null);
@@ -186,10 +181,10 @@ export default function BudgetAnalyticsGraph({
     });
   }, [cashInflows, budgetItems, totalPlanned]);
 
-  // 3. SVG Coordinates Calculation for Multi-Line Graph
+  // 3. SVG Coordinates Calculation for Multi-Line Graph (sleek stroke widths)
   const svgWidth = 800;
-  const svgHeight = 280;
-  const padding = { top: 30, right: 35, bottom: 40, left: 60 };
+  const svgHeight = 260;
+  const padding = { top: 25, right: 35, bottom: 35, left: 60 };
   const graphWidth = svgWidth - padding.left - padding.right;
   const graphHeight = svgHeight - padding.top - padding.bottom;
 
@@ -211,7 +206,6 @@ export default function BudgetAnalyticsGraph({
     return padding.left + (index / (timelineData.length - 1)) * graphWidth;
   };
 
-  // Generate SVG Path definitions
   const budgetLineY = getY(totalPlanned);
 
   const inflowPath = useMemo(() => {
@@ -221,14 +215,6 @@ export default function BudgetAnalyticsGraph({
       ''
     );
   }, [timelineData, maxVal]);
-
-  const inflowAreaPath = useMemo(() => {
-    if (timelineData.length === 0) return '';
-    const firstX = getX(0);
-    const lastX = getX(timelineData.length - 1);
-    const bottomY = padding.top + graphHeight;
-    return `${inflowPath} L ${lastX} ${bottomY} L ${firstX} ${bottomY} Z`;
-  }, [inflowPath, timelineData]);
 
   const spendPath = useMemo(() => {
     if (timelineData.length === 0) return '';
@@ -251,90 +237,77 @@ export default function BudgetAnalyticsGraph({
 
   return (
     <div className="bg-[#0e121b] border border-[#1e2638] rounded-2xl p-4 sm:p-6 shadow-xl mb-6 relative overflow-hidden transition-all">
-      {/* Background ambient glow */}
-      <div className="absolute top-0 right-1/4 w-96 h-48 bg-[#cda052]/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-1/4 w-80 h-40 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+      {/* Background ambient lighting */}
+      <div className="absolute top-0 right-1/4 w-96 h-40 bg-[#cda052]/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-1/4 w-80 h-32 bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
 
       {/* Header & Controls Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-[#182032] relative z-10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#182032] relative z-10">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] px-2 py-0.5 rounded bg-[rgba(205,160,82,0.12)] text-[#cda052] font-mono font-semibold border border-[rgba(205,160,82,0.25)] uppercase tracking-wider">
               Launch Capital Telemetry
             </span>
-            <span className="text-xs text-[#94a3b8] font-medium">• Multi-Stream Financial HUD</span>
+            <span className="text-xs text-[#94a3b8] font-medium">• Multi-Stream Financial Graph</span>
           </div>
-          <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight flex items-center gap-2">
+          <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
             Launch Financial Engine & Cashflow Trajectory
           </h2>
           <p className="text-xs text-[#94a3b8] mt-0.5">
-            Planned Budget Ceiling vs. Capital Injected (Inflows) vs. Cumulative Spend with live Runway on hand.
+            Planned Budget Ceiling vs. Capital Injected (Inflows) vs. Spend vs. Available Liquid Runway.
           </p>
         </div>
 
-        {/* View Mode Switcher & Quick Action */}
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-          <div className="flex items-center p-1 rounded-xl bg-[#080b12] border border-[#1c2438]">
-            <button
-              onClick={() => setViewMode('timeline')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                viewMode === 'timeline'
-                  ? 'bg-[#182032] text-white shadow-sm font-semibold'
-                  : 'text-[#94a3b8] hover:text-white'
-              }`}
-            >
-              <LineChartIcon className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Cashflow Curve</span>
-            </button>
-            <button
-              onClick={() => setViewMode('categories')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                viewMode === 'categories'
-                  ? 'bg-[#182032] text-white shadow-sm font-semibold'
-                  : 'text-[#94a3b8] hover:text-white'
-              }`}
-            >
-              <BarChart3 className="w-3.5 h-3.5 text-amber-400" />
-              <span>Category Share</span>
-            </button>
-            <button
-              onClick={() => setViewMode('combined')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                viewMode === 'combined'
-                  ? 'bg-gradient-to-r from-[rgba(205,160,82,0.25)] to-[rgba(16,185,129,0.2)] text-white shadow-sm font-semibold border border-[rgba(205,160,82,0.4)]'
-                  : 'text-[#94a3b8] hover:text-white'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5 text-[#cda052]" />
-              <span>Combined HUD</span>
-            </button>
-          </div>
-
-          {onOpenInflowModal && (
-            <button
-              onClick={onOpenInflowModal}
-              title="Add capital injection / cash inflow"
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-semibold shadow-sm hover:shadow-glow/20 transition-all flex-shrink-0"
-            >
-              <ArrowDownRight className="w-3.5 h-3.5" />
-              <span>+ Add Inflow</span>
-            </button>
-          )}
+        {/* View Mode Switcher */}
+        <div className="flex items-center p-1 rounded-xl bg-[#080b12] border border-[#1c2438] self-start sm:self-auto">
+          <button
+            onClick={() => setViewMode('timeline')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              viewMode === 'timeline'
+                ? 'bg-[#182032] text-white shadow-sm font-semibold'
+                : 'text-[#94a3b8] hover:text-white'
+            }`}
+          >
+            <LineChartIcon className="w-3.5 h-3.5 text-purple-400" />
+            <span>Cashflow Curve</span>
+          </button>
+          <button
+            onClick={() => setViewMode('categories')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              viewMode === 'categories'
+                ? 'bg-[#182032] text-white shadow-sm font-semibold'
+                : 'text-[#94a3b8] hover:text-white'
+            }`}
+          >
+            <BarChart3 className="w-3.5 h-3.5 text-amber-400" />
+            <span>Category Share</span>
+          </button>
+          <button
+            onClick={() => setViewMode('combined')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              viewMode === 'combined'
+                ? 'bg-gradient-to-r from-[rgba(205,160,82,0.2)] to-[rgba(168,85,247,0.2)] text-white shadow-sm font-semibold border border-[rgba(205,160,82,0.3)]'
+                : 'text-[#94a3b8] hover:text-white'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5 text-[#cda052]" />
+            <span>Combined</span>
+          </button>
         </div>
       </div>
 
-      {/* 4 Multi-colored Live Telemetry Tiles */}
+      {/* 4 Distinctly Color-Coded Telemetry Tiles */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 my-4 relative z-10">
-        {/* Metric 1: Planned Budget Goal */}
+        {/* Metric 1: Planned Budget Goal (Gold) */}
         <div className="bg-[#080b12] border border-[#1a2336] p-3 sm:p-3.5 rounded-xl relative group">
           <div className="flex items-center justify-between text-[11px] text-[#94a3b8] uppercase tracking-wide">
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#cda052] inline-block shadow-sm" />
+              <span className="w-2 h-2 rounded-full bg-[#cda052] inline-block" />
               Planned Cap
             </span>
             <span className="text-[10px] text-[#7c869d] font-mono">100% Target</span>
           </div>
-          <div className="text-lg sm:text-xl font-bold text-white font-mono mt-1">
+          <div className="text-lg sm:text-xl font-bold text-[#e8ca78] font-mono mt-1">
             {formatFullINR(totalPlanned)}
           </div>
           <div className="text-[11px] text-[#94a3b8] mt-1 flex items-center justify-between">
@@ -343,40 +316,40 @@ export default function BudgetAnalyticsGraph({
           </div>
         </div>
 
-        {/* Metric 2: Capital Injected (Inflow) */}
-        <div className="bg-[#080b12] border border-emerald-900/40 p-3 sm:p-3.5 rounded-xl relative group">
+        {/* Metric 2: Capital Injected (Vibrant Emerald Green) */}
+        <div className="bg-[#080b12] border border-emerald-900/50 p-3 sm:p-3.5 rounded-xl relative group">
           <div className="flex items-center justify-between text-[11px] text-emerald-400 uppercase tracking-wide">
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block shadow-[0_0_8px_#10b981]" />
+              <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block shadow-[0_0_6px_#10b981]" />
               Inflows Injected
             </span>
-            <span className="text-[10px] font-mono font-semibold px-1.5 py-0.2 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-800/40">
+            <span className="text-[10px] font-mono font-semibold px-1.5 py-0.2 rounded bg-emerald-950/70 text-emerald-300 border border-emerald-800/40">
               {inflowCoveragePct}% Funded
             </span>
           </div>
-          <div className="text-lg sm:text-xl font-bold text-emerald-300 font-mono mt-1">
+          <div className="text-lg sm:text-xl font-bold text-emerald-400 font-mono mt-1">
             {formatFullINR(totalAllInflows)}
           </div>
           <div className="text-[11px] text-[#94a3b8] mt-1 flex items-center justify-between">
             <span>{cashInflows.length} Tranche{cashInflows.length === 1 ? '' : 's'}</span>
             <span className="text-emerald-400 font-mono">
-              {totalAllInflows >= totalPlanned ? 'Fully Funded' : `${formatINR(totalPlanned - totalAllInflows)} to inject`}
+              {totalAllInflows >= totalPlanned ? 'Fully Funded' : `${formatINR(totalPlanned - totalAllInflows)} left`}
             </span>
           </div>
         </div>
 
-        {/* Metric 3: Total Spent */}
-        <div className="bg-[#080b12] border border-rose-900/40 p-3 sm:p-3.5 rounded-xl relative group">
+        {/* Metric 3: Total Spent (Vivid Rose / Red) */}
+        <div className="bg-[#080b12] border border-rose-900/50 p-3 sm:p-3.5 rounded-xl relative group">
           <div className="flex items-center justify-between text-[11px] text-rose-400 uppercase tracking-wide">
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-rose-400 inline-block shadow-[0_0_8px_#f43f5e]" />
+              <span className="w-2 h-2 rounded-full bg-rose-400 inline-block shadow-[0_0_6px_#f43f5e]" />
               Actual Spent
             </span>
-            <span className="text-[10px] font-mono font-semibold px-1.5 py-0.2 rounded bg-rose-950/60 text-rose-300 border border-rose-800/40">
-              {spendOfInflowPct}% of Inflow
+            <span className="text-[10px] font-mono font-semibold px-1.5 py-0.2 rounded bg-rose-950/70 text-rose-300 border border-rose-800/40">
+              {spendOfInflowPct}% of Inflows
             </span>
           </div>
-          <div className="text-lg sm:text-xl font-bold text-rose-300 font-mono mt-1">
+          <div className="text-lg sm:text-xl font-bold text-rose-400 font-mono mt-1">
             {formatFullINR(totalActualSpend)}
           </div>
           <div className="text-[11px] text-[#94a3b8] mt-1 flex items-center justify-between">
@@ -385,23 +358,23 @@ export default function BudgetAnalyticsGraph({
           </div>
         </div>
 
-        {/* Metric 4: Available Liquid Cash */}
-        <div className="bg-[#080b12] border border-cyan-900/40 p-3 sm:p-3.5 rounded-xl relative group">
-          <div className="flex items-center justify-between text-[11px] text-cyan-400 uppercase tracking-wide">
+        {/* Metric 4: Available Liquid Cash (Distinct Electric Purple) */}
+        <div className="bg-[#080b12] border border-purple-900/50 p-3 sm:p-3.5 rounded-xl relative group">
+          <div className="flex items-center justify-between text-[11px] text-purple-400 uppercase tracking-wide">
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-cyan-400 inline-block shadow-[0_0_8px_#06b6d4]" />
+              <span className="w-2 h-2 rounded-full bg-purple-400 inline-block shadow-[0_0_6px_#a855f7]" />
               Liquid Cash in Bank
             </span>
-            <span className="text-[10px] font-mono font-semibold px-1.5 py-0.2 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-800/40">
-              Runway Ready
+            <span className="text-[10px] font-mono font-semibold px-1.5 py-0.2 rounded bg-purple-950/70 text-purple-300 border border-purple-800/40">
+              Active Runway
             </span>
           </div>
-          <div className="text-lg sm:text-xl font-bold text-cyan-300 font-mono mt-1">
+          <div className="text-lg sm:text-xl font-bold text-purple-300 font-mono mt-1">
             {formatFullINR(currentLiquidCash)}
           </div>
           <div className="text-[11px] text-[#94a3b8] mt-1 flex items-center justify-between">
             <span>Inflows − Spent</span>
-            <span className="text-cyan-400 font-mono">₹ on Hand</span>
+            <span className="text-purple-400 font-mono">Available</span>
           </div>
         </div>
       </div>
@@ -409,7 +382,7 @@ export default function BudgetAnalyticsGraph({
       {/* Main Graph Canvas */}
       {(viewMode === 'timeline' || viewMode === 'combined') && (
         <div className="bg-[#080b12] border border-[#182032] rounded-xl p-3 sm:p-4 my-2 relative">
-          {/* Interactive Legend Bar */}
+          {/* Interactive Legend Bar with Distinct Colors & Shapes */}
           <div className="flex items-center justify-between flex-wrap gap-2 mb-2 pb-2 border-b border-[#141a28] text-xs">
             <div className="flex items-center gap-4 flex-wrap">
               <button
@@ -419,7 +392,7 @@ export default function BudgetAnalyticsGraph({
                 }`}
               >
                 <span className="w-4 h-0.5 border-t-2 border-dashed border-[#cda052] inline-block" />
-                <span className="text-[#cda052] font-semibold text-[11px]">Budget Ceiling ({formatINR(totalPlanned)})</span>
+                <span className="text-[#e8ca78] font-semibold text-[11px]">Budget Ceiling ({formatINR(totalPlanned)})</span>
               </button>
 
               <button
@@ -428,8 +401,8 @@ export default function BudgetAnalyticsGraph({
                   visibleLines.cashInflow ? 'opacity-100' : 'opacity-40 line-through'
                 }`}
               >
-                <span className="w-3.5 h-1 rounded-full bg-emerald-400 inline-block shadow-[0_0_6px_#10b981]" />
-                <span className="text-emerald-300 font-semibold text-[11px]">Cumulative Inflow ({formatINR(totalAllInflows)})</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-[#10b981] inline-block" />
+                <span className="text-emerald-400 font-semibold text-[11px]">Inflows ({formatINR(totalAllInflows)})</span>
               </button>
 
               <button
@@ -438,8 +411,8 @@ export default function BudgetAnalyticsGraph({
                   visibleLines.actualSpend ? 'opacity-100' : 'opacity-40 line-through'
                 }`}
               >
-                <span className="w-3.5 h-1 rounded-full bg-rose-400 inline-block shadow-[0_0_6px_#f43f5e]" />
-                <span className="text-rose-300 font-semibold text-[11px]">Cumulative Spent ({formatINR(totalActualSpend)})</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-[#f43f5e] inline-block" />
+                <span className="text-rose-400 font-semibold text-[11px]">Spent ({formatINR(totalActualSpend)})</span>
               </button>
 
               <button
@@ -448,56 +421,22 @@ export default function BudgetAnalyticsGraph({
                   visibleLines.cashBalance ? 'opacity-100' : 'opacity-40 line-through'
                 }`}
               >
-                <span className="w-3.5 h-1 rounded-full bg-cyan-400 inline-block shadow-[0_0_6px_#06b6d4]" />
-                <span className="text-cyan-300 font-semibold text-[11px]">Liquid Cash ({formatINR(currentLiquidCash)})</span>
+                <span className="w-2.5 h-2.5 rotate-45 bg-[#a855f7] inline-block" />
+                <span className="text-purple-400 font-semibold text-[11px]">Liquid Cash ({formatINR(currentLiquidCash)})</span>
               </button>
             </div>
 
             <div className="text-[11px] text-[#7c869d] font-mono">
-              Hover markers for granular ledger notes
+              Hover points for exact milestone details
             </div>
           </div>
 
-          {/* SVG Viewport */}
+          {/* SVG Viewport — Crisp 1.8px Lines & Distinct Hues */}
           <div className="relative w-full overflow-x-auto">
             <svg
               viewBox={`0 0 ${svgWidth} ${svgHeight}`}
               className="w-full h-auto min-w-[550px] overflow-visible select-none"
             >
-              <defs>
-                {/* Emerald Gradient for Inflow Fill */}
-                <linearGradient id="inflowGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.28" />
-                  <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
-                </linearGradient>
-
-                {/* Cyan Gradient for Balance Fill */}
-                <linearGradient id="balanceGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.2" />
-                  <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.0" />
-                </linearGradient>
-
-                {/* Rose Gradient for Spend Glow */}
-                <linearGradient id="spendGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#f43f5e" stopOpacity="0.25" />
-                  <stop offset="100%" stopColor="#f43f5e" stopOpacity="0.0" />
-                </linearGradient>
-
-                {/* Shadow filters for glowing points */}
-                <filter id="glowGold" x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#cda052" floodOpacity="0.8" />
-                </filter>
-                <filter id="glowEmerald" x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#10b981" floodOpacity="0.8" />
-                </filter>
-                <filter id="glowRose" x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#f43f5e" floodOpacity="0.8" />
-                </filter>
-                <filter id="glowCyan" x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#06b6d4" floodOpacity="0.8" />
-                </filter>
-              </defs>
-
               {/* Horizontal grid lines & Y-Axis labels */}
               {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => {
                 const val = maxVal * pct;
@@ -509,7 +448,7 @@ export default function BudgetAnalyticsGraph({
                       y1={y}
                       x2={svgWidth - padding.right}
                       y2={y}
-                      stroke="#1a2336"
+                      stroke="#182234"
                       strokeDasharray={pct === 0 ? 'none' : '3 3'}
                       strokeWidth={1}
                     />
@@ -527,12 +466,7 @@ export default function BudgetAnalyticsGraph({
                 );
               })}
 
-              {/* Shaded Area for Inflow */}
-              {visibleLines.cashInflow && inflowAreaPath && (
-                <path d={inflowAreaPath} fill="url(#inflowGrad)" />
-              )}
-
-              {/* Budget Ceiling Reference Line */}
+              {/* Budget Ceiling Reference Line (Gold Dashed) */}
               {visibleLines.budgetCeiling && (
                 <g>
                   <line
@@ -541,25 +475,25 @@ export default function BudgetAnalyticsGraph({
                     x2={svgWidth - padding.right}
                     y2={budgetLineY}
                     stroke="#cda052"
-                    strokeWidth={2}
-                    strokeDasharray="6 4"
-                    opacity={0.85}
+                    strokeWidth={1.5}
+                    strokeDasharray="5 4"
+                    opacity={0.8}
                   />
                   <rect
-                    x={svgWidth - padding.right - 95}
-                    y={budgetLineY - 11}
-                    width={90}
-                    height={18}
-                    rx={4}
+                    x={svgWidth - padding.right - 90}
+                    y={budgetLineY - 10}
+                    width={85}
+                    height={16}
+                    rx={3}
                     fill="#18150c"
                     stroke="#cda052"
                     strokeWidth={1}
                   />
                   <text
-                    x={svgWidth - padding.right - 50}
-                    y={budgetLineY + 1.5}
+                    x={svgWidth - padding.right - 47}
+                    y={budgetLineY + 1}
                     textAnchor="middle"
-                    fontSize="9.5"
+                    fontSize="9"
                     fill="#e8ca78"
                     fontFamily="monospace"
                     fontWeight="bold"
@@ -569,42 +503,39 @@ export default function BudgetAnalyticsGraph({
                 </g>
               )}
 
-              {/* Liquid Cash Balance Line */}
+              {/* Liquid Cash Balance Line (Distinct Electric Purple - Sleek 1.8px) */}
               {visibleLines.cashBalance && balancePath && (
                 <path
                   d={balancePath}
                   fill="none"
-                  stroke="#06b6d4"
-                  strokeWidth={2.5}
+                  stroke="#a855f7"
+                  strokeWidth={1.8}
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  filter="url(#glowCyan)"
                 />
               )}
 
-              {/* Cumulative Spend Line */}
+              {/* Cumulative Spend Line (Rose Red - Sleek 1.8px) */}
               {visibleLines.actualSpend && spendPath && (
                 <path
                   d={spendPath}
                   fill="none"
                   stroke="#f43f5e"
-                  strokeWidth={2.5}
+                  strokeWidth={1.8}
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  filter="url(#glowRose)"
                 />
               )}
 
-              {/* Cumulative Cash Inflow Line */}
+              {/* Cumulative Cash Inflow Line (Emerald Green - Sleek 2px) */}
               {visibleLines.cashInflow && inflowPath && (
                 <path
                   d={inflowPath}
                   fill="none"
                   stroke="#10b981"
-                  strokeWidth={3}
+                  strokeWidth={2}
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  filter="url(#glowEmerald)"
                 />
               )}
 
@@ -624,9 +555,9 @@ export default function BudgetAnalyticsGraph({
                   >
                     {/* Invisible hit column */}
                     <rect
-                      x={x - 18}
+                      x={x - 16}
                       y={padding.top}
-                      width={36}
+                      width={32}
                       height={graphHeight}
                       fill="transparent"
                     />
@@ -645,52 +576,51 @@ export default function BudgetAnalyticsGraph({
                       />
                     )}
 
-                    {/* Inflow Marker */}
+                    {/* Inflow Marker (Green Circle) */}
                     {visibleLines.cashInflow && (
                       <circle
                         cx={x}
                         cy={getY(pt.cumInflow)}
-                        r={isHovered ? 5.5 : pt.inflowDelta > 0 ? 4.5 : 3}
-                        fill={isScheduledFuture ? '#092d24' : '#10b981'}
+                        r={isHovered ? 5 : pt.inflowDelta > 0 ? 3.5 : 2.5}
+                        fill={isScheduledFuture ? '#052e16' : '#10b981'}
                         stroke="#080b12"
                         strokeWidth={1.5}
-                        className="transition-all duration-150"
                       />
                     )}
 
-                    {/* Spend Marker */}
+                    {/* Spend Marker (Rose Circle) */}
                     {visibleLines.actualSpend && (
                       <circle
                         cx={x}
                         cy={getY(pt.cumSpend)}
-                        r={isHovered ? 5.5 : pt.spendDelta > 0 ? 4.5 : 2.5}
+                        r={isHovered ? 5 : pt.spendDelta > 0 ? 3.5 : 2}
                         fill="#f43f5e"
                         stroke="#080b12"
                         strokeWidth={1.5}
-                        className="transition-all duration-150"
                       />
                     )}
 
-                    {/* Liquid Balance Marker */}
+                    {/* Liquid Balance Marker (Purple Diamond) */}
                     {visibleLines.cashBalance && (
-                      <circle
-                        cx={x}
-                        cy={getY(pt.balance)}
-                        r={isHovered ? 4.5 : 2.5}
-                        fill="#06b6d4"
+                      <rect
+                        x={x - (isHovered ? 3.5 : 2.5)}
+                        y={getY(pt.balance) - (isHovered ? 3.5 : 2.5)}
+                        width={isHovered ? 7 : 5}
+                        height={isHovered ? 7 : 5}
+                        transform={`rotate(45 ${x} ${getY(pt.balance)})`}
+                        fill="#a855f7"
                         stroke="#080b12"
-                        strokeWidth={1.5}
-                        className="transition-all duration-150"
+                        strokeWidth={1}
                       />
                     )}
 
                     {/* X-axis Date Labels */}
                     <text
                       x={x}
-                      y={svgHeight - 12}
+                      y={svgHeight - 10}
                       textAnchor="middle"
-                      fontSize="9.5"
-                      fill={isHovered ? '#ffffff' : isScheduledFuture ? '#a7f3d0' : '#94a3b8'}
+                      fontSize="9"
+                      fill={isHovered ? '#ffffff' : isScheduledFuture ? '#c4b5fd' : '#94a3b8'}
                       fontWeight={isHovered ? 'bold' : 'normal'}
                       fontFamily="monospace"
                     >
@@ -702,7 +632,7 @@ export default function BudgetAnalyticsGraph({
             </svg>
           </div>
 
-          {/* Interactive Dynamic Hover Card */}
+          {/* Interactive Hover Details Card */}
           {activePoint && (
             <div className="mt-3 p-3 rounded-xl bg-[#0a0e17] border border-[#232f48] shadow-glass flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs animate-fade-in">
               <div className="flex items-center gap-3">
@@ -720,7 +650,7 @@ export default function BudgetAnalyticsGraph({
                       })}
                     </span>
                     {activePoint.isFuture && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-800 font-mono font-semibold">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-800 font-mono font-semibold">
                         Scheduled Future Injection
                       </span>
                     )}
@@ -737,16 +667,16 @@ export default function BudgetAnalyticsGraph({
 
               <div className="flex items-center gap-4 text-right flex-shrink-0">
                 <div>
-                  <div className="text-[10px] text-[#94a3b8] uppercase">Inflow to Date</div>
+                  <div className="text-[10px] text-emerald-400 uppercase font-semibold">Inflow to Date</div>
                   <div className="font-bold text-emerald-400 font-mono">{formatFullINR(activePoint.cumInflow)}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] text-[#94a3b8] uppercase">Spent to Date</div>
+                  <div className="text-[10px] text-rose-400 uppercase font-semibold">Spent to Date</div>
                   <div className="font-bold text-rose-400 font-mono">{formatFullINR(activePoint.cumSpend)}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] text-[#94a3b8] uppercase">Available Cash</div>
-                  <div className="font-bold text-cyan-400 font-mono">{formatFullINR(activePoint.balance)}</div>
+                  <div className="text-[10px] text-purple-400 uppercase font-semibold">Liquid Cash</div>
+                  <div className="font-bold text-purple-300 font-mono">{formatFullINR(activePoint.balance)}</div>
                 </div>
               </div>
             </div>
@@ -769,7 +699,6 @@ export default function BudgetAnalyticsGraph({
             </span>
           </div>
 
-          {/* Comparative Multi-Colored Bars */}
           <div className="space-y-2.5">
             {budgetItems.map((item, index) => {
               const theme = CATEGORY_COLORS[index % CATEGORY_COLORS.length];
@@ -828,8 +757,7 @@ export default function BudgetAnalyticsGraph({
                   </div>
 
                   {/* Dual comparative progress bar */}
-                  <div className="w-full h-2 rounded-full bg-[#141b2a] overflow-hidden flex relative">
-                    {/* Actual Spend filled bar */}
+                  <div className="w-full h-1.5 rounded-full bg-[#141b2a] overflow-hidden flex relative">
                     <div
                       className="h-full transition-all duration-300 rounded-full"
                       style={{

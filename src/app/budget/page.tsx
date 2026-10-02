@@ -17,12 +17,12 @@ import {
   ArrowDownRight,
   Calendar,
   Layers,
-  Sparkles,
   Clock,
-  CheckCircle2
+  CheckCircle2,
+  ArrowUpDown
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
-import { BudgetItem, CashInflowEntry } from '@/lib/types';
+import { BudgetItem, CashInflowEntry, BudgetSpendEntry } from '@/lib/types';
 import ModalPortal from '@/components/ui/ModalPortal';
 import { useConfirm } from '@/lib/confirmContext';
 import BudgetAnalyticsGraph from '@/components/budget/BudgetAnalyticsGraph';
@@ -47,6 +47,7 @@ export default function BudgetPage() {
     saveCashInflow,
     deleteCashInflow,
     logBudgetSpend,
+    updateBudgetSpend,
     deleteBudgetSpend,
   } = useAdminStore();
 
@@ -62,6 +63,13 @@ export default function BudgetPage() {
   const [spendNote, setSpendNote] = useState('');
   const [spendError, setSpendError] = useState<string | null>(null);
 
+  // Spend Edit Modal state
+  const [editingSpend, setEditingSpend] = useState<{ categoryId: string; spend: BudgetSpendEntry; categoryName: string } | null>(null);
+  const [editSpendAmount, setEditSpendAmount] = useState('');
+  const [editSpendDate, setEditSpendDate] = useState('');
+  const [editSpendNote, setEditSpendNote] = useState('');
+  const [editSpendError, setEditSpendError] = useState<string | null>(null);
+
   // Capital Inflow / Injection Modal state
   const [isInflowModalOpen, setIsInflowModalOpen] = useState(false);
   const [inflowAmount, setInflowAmount] = useState('');
@@ -69,7 +77,9 @@ export default function BudgetPage() {
   const [inflowSource, setInflowSource] = useState('Founder Investment');
   const [inflowNote, setInflowNote] = useState('');
   const [inflowError, setInflowError] = useState<string | null>(null);
-  const [showInflowLedger, setShowInflowLedger] = useState(true);
+
+  // Capital Inflow list expand limit (view more / view fewer)
+  const [showAllInflows, setShowAllInflows] = useState(false);
 
   // Total Planned Ceiling Editor
   const [isEditingTotal, setIsEditingTotal] = useState(false);
@@ -130,6 +140,32 @@ export default function BudgetPage() {
     await deleteBudgetSpend(budgetItemId, spendId);
   };
 
+  const handleOpenEditSpend = (categoryId: string, categoryName: string, entry: BudgetSpendEntry) => {
+    setEditingSpend({ categoryId, categoryName, spend: entry });
+    setEditSpendAmount(String(entry.amount));
+    setEditSpendDate(entry.date || new Date().toISOString().slice(0, 10));
+    setEditSpendNote(entry.note || '');
+    setEditSpendError(null);
+  };
+
+  const handleSaveEditSpend = async () => {
+    if (!editingSpend) return;
+    const amount = Number(editSpendAmount);
+    if (!amount || amount <= 0) {
+      setEditSpendError('Enter a valid spend amount greater than zero.');
+      return;
+    }
+    setEditSpendError(null);
+    await updateBudgetSpend(
+      editingSpend.categoryId,
+      editingSpend.spend.id,
+      amount,
+      editSpendDate || new Date().toISOString().slice(0, 10),
+      editSpendNote.trim() || undefined
+    );
+    setEditingSpend(null);
+  };
+
   const handleLogSpend = async () => {
     if (!spendTarget) return;
     const amount = Number(spendAmount);
@@ -185,28 +221,60 @@ export default function BudgetPage() {
 
   const todayStr = new Date().toISOString().slice(0, 10);
 
+  // Sort inflows: newest dates first (scheduled future, then newest past)
+  const sortedInflows = useMemo(() => {
+    return [...cashInflows].sort((a, b) => b.date.localeCompare(a.date));
+  }, [cashInflows]);
+
+  const displayedInflows = showAllInflows ? sortedInflows : sortedInflows.slice(0, 3);
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6 animate-fade-in">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded bg-[rgba(205,160,82,0.15)] text-[#cda052] border border-[rgba(205,160,82,0.3)] uppercase tracking-wider font-mono">
-              Rivlet Financials
-            </span>
-            <span className="text-xs text-[#94a3b8] font-medium">• Drop 1 Launch</span>
-          </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2.5">
-            <Wallet className="w-6 h-6 text-[#cda052]" />
-            Launch Budget & Cashflow Tracker
-          </h1>
-          <p className="text-xs sm:text-sm text-[#94a3b8] mt-1">
-            Track planned budget ceilings, staged capital injections (inflows), and actual production spend.
-          </p>
+      {/* Top Header — Clean & uncluttered without duplicate buttons */}
+      <div>
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-xs font-semibold px-2.5 py-0.5 rounded bg-[rgba(205,160,82,0.15)] text-[#cda052] border border-[rgba(205,160,82,0.3)] uppercase tracking-wider font-mono">
+            Rivlet Financials
+          </span>
+          <span className="text-xs text-[#94a3b8] font-medium">• Drop 1 Launch</span>
         </div>
+        <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2.5">
+          <Wallet className="w-6 h-6 text-[#cda052]" />
+          Launch Budget & Cashflow Tracker
+        </h1>
+        <p className="text-xs sm:text-sm text-[#94a3b8] mt-1">
+          Planned budget ceiling vs. staged capital injections vs. actual production spend.
+        </p>
+      </div>
 
-        {/* Global Action Buttons */}
-        <div className="flex items-center gap-2.5 flex-wrap">
+      {/* Modern Multi-Lined & Multi-Colored Analytics Graph at the Top */}
+      <BudgetAnalyticsGraph
+        budgetItems={budgetItems}
+        totalPlanned={totals.planned}
+        cashInflows={cashInflows}
+      />
+
+      {/* Capital Inflows & Cashflow Staging Section — With Single Consolidated Action Button & Compact View Limit */}
+      <div className="bg-[#0e121b] border border-[#1e2638] rounded-2xl p-4 sm:p-5 shadow-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#182032]">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 rounded-lg bg-emerald-950/60 text-emerald-400">
+              <ArrowDownRight className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                Capital Injections & Cashflow Staging
+                <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-800/40 font-mono">
+                  {cashInflows.length} Record{cashInflows.length === 1 ? '' : 's'}
+                </span>
+              </h2>
+              <p className="text-[11px] text-[#94a3b8] mt-0.5">
+                Staged founder injections (e.g. initial tranche now, subsequent tranche in 5 days).
+              </p>
+            </div>
+          </div>
+
+          {/* SINGLE DEDICATED "+ Record Capital Inflow" BUTTON */}
           <button
             onClick={() => {
               setIsInflowModalOpen(true);
@@ -216,151 +284,97 @@ export default function BudgetPage() {
               setInflowNote('');
               setInflowError(null);
             }}
-            title="Record capital investment or scheduled future tranche"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#141b2a] border border-emerald-500/40 text-emerald-300 hover:text-white hover:bg-emerald-950/40 text-xs font-semibold transition-all shadow-sm"
-          >
-            <ArrowDownRight className="w-3.5 h-3.5 text-emerald-400 stroke-[2.5]" />
-            <span>+ Inject Capital</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setModalItem(emptyItem());
-              setError(null);
-            }}
-            title="Add a new budget category"
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-xs font-bold hover:shadow-glow transition-all"
+            title="Record capital investment or schedule future tranche"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-semibold shadow-sm transition-all self-start sm:self-auto flex-shrink-0"
           >
             <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span>Add Category</span>
+            <span>Record Capital Inflow</span>
           </button>
         </div>
-      </div>
 
-      {/* Modern Multi-Lined & Multi-Colored Analytics Graph at the Top */}
-      <BudgetAnalyticsGraph
-        budgetItems={budgetItems}
-        totalPlanned={totals.planned}
-        cashInflows={cashInflows}
-        onOpenInflowModal={() => {
-          setIsInflowModalOpen(true);
-          setInflowAmount('');
-          setInflowDate(todayStr);
-          setInflowError(null);
-        }}
-      />
-
-      {/* Capital Inflows & Cashflow Staging Section */}
-      <div className="bg-[#0e121b] border border-[#1e2638] rounded-2xl p-4 sm:p-5 shadow-lg">
-        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-          <div className="flex items-center gap-2.5">
-            <div className="p-1.5 rounded-lg bg-emerald-950/60 text-emerald-400">
-              <ArrowDownRight className="w-4 h-4" />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                Capital Injections & Cashflow Staging
-                <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-800/40 font-mono">
-                  {cashInflows.length} Entry{cashInflows.length === 1 ? '' : 's'}
-                </span>
-              </h2>
-              <p className="text-[11px] text-[#94a3b8] mt-0.5">
-                Staged founder tranches & scheduled capital injections (e.g. initial tranche now, subsequent tranche in 5 days).
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                setIsInflowModalOpen(true);
-                setInflowAmount('');
-                setInflowDate(todayStr);
-                setInflowError(null);
-              }}
-              className="text-xs text-[#cda052] hover:underline font-semibold flex items-center gap-1"
-            >
-              <Plus className="w-3.5 h-3.5" /> New Inflow
-            </button>
-            <button
-              onClick={() => setShowInflowLedger((v) => !v)}
-              className="text-xs text-[#94a3b8] hover:text-white p-1 rounded transition-colors"
-            >
-              <ChevronDown className={`w-4 h-4 transition-transform ${showInflowLedger ? 'rotate-180' : ''}`} />
-            </button>
-          </div>
-        </div>
-
-        {showInflowLedger && (
-          <div className="space-y-2 mt-3 pt-3 border-t border-[#182032]">
-            {cashInflows.length === 0 ? (
-              <p className="text-xs text-[#7c869d] text-center py-4">
-                No capital injections logged yet. Click &quot;+ Inject Capital&quot; to add initial capital or schedule upcoming tranches.
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                {[...cashInflows]
-                  .sort((a, b) => b.date.localeCompare(a.date))
-                  .map((inf) => {
-                    const isFuture = inf.date > todayStr;
-                    return (
-                      <div
-                        key={inf.id}
-                        className={`p-3 rounded-xl border flex flex-col justify-between transition-all ${
-                          isFuture
-                            ? 'bg-[#0a1017] border-cyan-900/40'
-                            : 'bg-[#080b12] border-[#1c2438]'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-white text-sm font-mono">
-                                {formatINR(inf.amount)}
+        {/* Compact List of Inflows: Recent at top, older scroll/view more */}
+        <div className="mt-3">
+          {cashInflows.length === 0 ? (
+            <p className="text-xs text-[#7c869d] text-center py-4">
+              No capital injections logged yet. Click &quot;Record Capital Inflow&quot; to add initial capital or schedule upcoming tranches.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-56 overflow-y-auto pr-1">
+                {displayedInflows.map((inf) => {
+                  const isFuture = inf.date > todayStr;
+                  return (
+                    <div
+                      key={inf.id}
+                      className={`p-3 rounded-xl border flex flex-col justify-between transition-all ${
+                        isFuture
+                          ? 'bg-[#0a1017] border-purple-900/40'
+                          : 'bg-[#080b12] border-[#1c2438]'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-white text-sm font-mono">
+                              {formatINR(inf.amount)}
+                            </span>
+                            {isFuture ? (
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-950/80 text-purple-300 border border-purple-800 font-mono font-semibold flex items-center gap-1">
+                                <Clock className="w-2.5 h-2.5" /> Scheduled
                               </span>
-                              {isFuture ? (
-                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-800 font-mono font-semibold flex items-center gap-1">
-                                  <Clock className="w-2.5 h-2.5" /> Scheduled
-                                </span>
-                              ) : (
-                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-800 font-mono font-semibold flex items-center gap-1">
-                                  <CheckCircle2 className="w-2.5 h-2.5" /> Injected
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-[11px] text-[#cda052] font-medium mt-0.5">{inf.source}</p>
+                            ) : (
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-800 font-mono font-semibold flex items-center gap-1">
+                                <CheckCircle2 className="w-2.5 h-2.5" /> Injected
+                              </span>
+                            )}
                           </div>
-
-                          <button
-                            onClick={() => handleDeleteInflow(inf)}
-                            title="Delete inflow entry"
-                            aria-label="Delete inflow entry"
-                            className="text-[#7c869d] hover:text-rose-400 p-1 transition-colors"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          <p className="text-[11px] text-[#cda052] font-medium mt-0.5">{inf.source}</p>
                         </div>
 
-                        <div className="pt-2 border-t border-[#141b2a] flex items-center justify-between text-[11px] text-[#94a3b8]">
-                          <span className="font-mono text-[#cbd5e1]">
-                            {new Date(inf.date + 'T00:00:00').toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })}
-                          </span>
-                          {inf.note && <span className="truncate max-w-[140px] text-[#7c869d]">{inf.note}</span>}
-                        </div>
+                        <button
+                          onClick={() => handleDeleteInflow(inf)}
+                          title="Delete inflow entry"
+                          aria-label="Delete inflow entry"
+                          className="text-[#7c869d] hover:text-rose-400 p-1 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
-                    );
-                  })}
+
+                      <div className="pt-2 border-t border-[#141b2a] flex items-center justify-between text-[11px] text-[#94a3b8]">
+                        <span className="font-mono text-[#cbd5e1]">
+                          {new Date(inf.date + 'T00:00:00').toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
+                        </span>
+                        {inf.note && <span className="truncate max-w-[130px] text-[#7c869d]">{inf.note}</span>}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            )}
-          </div>
-        )}
+
+              {/* View More / View Fewer Toggle Button if more than 3 records */}
+              {sortedInflows.length > 3 && (
+                <div className="pt-2 flex items-center justify-between text-xs text-[#94a3b8]">
+                  <span>Showing {displayedInflows.length} of {sortedInflows.length} staged capital entries</span>
+                  <button
+                    onClick={() => setShowAllInflows((v) => !v)}
+                    className="flex items-center gap-1 text-xs text-[#cda052] hover:underline font-semibold"
+                  >
+                    <span>{showAllInflows ? 'Show Fewer (Top 3)' : `View All (${sortedInflows.length}) Inflows`}</span>
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAllInflows ? 'rotate-180' : ''}`} />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Category Spending Header & Planned Ceiling Override */}
+      {/* Category Spending Header with ADD CATEGORY BUTTON MOVED RIGHT HERE */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
         <div>
           <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
@@ -372,41 +386,57 @@ export default function BudgetPage() {
           </p>
         </div>
 
-        {/* Total Planned inline editor */}
-        <div className="flex items-center gap-2 bg-[#0e121b] border border-[#1e2638] px-3 py-1.5 rounded-xl text-xs">
-          <span className="text-[#94a3b8]">Planned Cap:</span>
-          {isEditingTotal ? (
-            <div className="flex items-center gap-1.5">
-              <input
-                type="number"
-                value={totalInput}
-                onChange={(e) => setTotalInput(e.target.value)}
-                placeholder={String(sumPlanned)}
-                autoFocus
-                className="w-28 px-2 py-0.5 rounded bg-[#07090e] border border-[#2b3752] text-xs text-white font-mono"
-              />
-              <button onClick={handleSaveTotal} className="px-2 py-0.5 rounded bg-[#cda052] text-black font-semibold text-[10px]">
-                Save
-              </button>
-              <button onClick={() => setIsEditingTotal(false)} className="text-[10px] text-[#94a3b8] hover:text-white">
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5 font-mono font-bold text-white">
-              <span>{formatINR(totals.planned)}</span>
-              <button
-                onClick={() => {
-                  setIsEditingTotal(true);
-                  setTotalInput(budgetSettings.totalPlannedOverride !== undefined ? String(budgetSettings.totalPlannedOverride) : '');
-                }}
-                title="Edit total planned ceiling"
-                className="text-[#94a3b8] hover:text-[#cda052] p-0.5"
-              >
-                <Pencil className="w-3 h-3" />
-              </button>
-            </div>
-          )}
+        {/* Action Row: ADD CATEGORY BUTTON MOVED HERE + Planned Cap Editor */}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Add Category Button positioned directly with category section */}
+          <button
+            onClick={() => {
+              setModalItem(emptyItem());
+              setError(null);
+            }}
+            title="Add a new budget category"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-xs font-bold hover:shadow-glow transition-all shadow-sm"
+          >
+            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+            <span>Add Category</span>
+          </button>
+
+          {/* Total Planned inline editor */}
+          <div className="flex items-center gap-2 bg-[#0e121b] border border-[#1e2638] px-3 py-1.5 rounded-xl text-xs">
+            <span className="text-[#94a3b8]">Planned Cap:</span>
+            {isEditingTotal ? (
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="number"
+                  value={totalInput}
+                  onChange={(e) => setTotalInput(e.target.value)}
+                  placeholder={String(sumPlanned)}
+                  autoFocus
+                  className="w-28 px-2 py-0.5 rounded bg-[#07090e] border border-[#2b3752] text-xs text-white font-mono"
+                />
+                <button onClick={handleSaveTotal} className="px-2 py-0.5 rounded bg-[#cda052] text-black font-semibold text-[10px]">
+                  Save
+                </button>
+                <button onClick={() => setIsEditingTotal(false)} className="text-[10px] text-[#94a3b8] hover:text-white">
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 font-mono font-bold text-white">
+                <span>{formatINR(totals.planned)}</span>
+                <button
+                  onClick={() => {
+                    setIsEditingTotal(true);
+                    setTotalInput(budgetSettings.totalPlannedOverride !== undefined ? String(budgetSettings.totalPlannedOverride) : '');
+                  }}
+                  title="Edit total planned ceiling"
+                  className="text-[#94a3b8] hover:text-[#cda052] p-0.5"
+                >
+                  <Pencil className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -521,7 +551,7 @@ export default function BudgetPage() {
                 </div>
               </div>
 
-              {/* Spend Log Drawer Toggle */}
+              {/* Spend Log Drawer with EDIT AND DELETE OPTIONS */}
               {b.spendLog && b.spendLog.length > 0 && (
                 <div className="pt-2 border-t border-[#182032]">
                   <button
@@ -542,7 +572,7 @@ export default function BudgetPage() {
                         .map((entry) => (
                           <div
                             key={entry.id}
-                            className="bg-[#080b12] border border-[#1c2438] rounded-lg p-2 flex items-center justify-between text-xs"
+                            className="bg-[#080b12] border border-[#1c2438] rounded-lg p-2.5 flex items-center justify-between text-xs"
                           >
                             <div className="min-w-0 pr-2">
                               <div className="flex items-center gap-2">
@@ -556,13 +586,24 @@ export default function BudgetPage() {
                               </div>
                               {entry.note && <div className="text-[11px] text-[#94a3b8] truncate mt-0.5">{entry.note}</div>}
                             </div>
-                            <button
-                              onClick={() => handleDeleteSpend(b.id, entry.id, entry.amount, entry.note)}
-                              className="text-[#7c869d] hover:text-rose-400 p-1 flex-shrink-0"
-                              title="Delete entry"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
+
+                            {/* Edit & Delete Actions for Spend */}
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <button
+                                onClick={() => handleOpenEditSpend(b.id, b.category, entry)}
+                                className="text-[#7c869d] hover:text-[#cda052] p-1.5 rounded transition-colors"
+                                title="Edit spend entry"
+                              >
+                                <Pencil className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteSpend(b.id, entry.id, entry.amount, entry.note)}
+                                className="text-[#7c869d] hover:text-rose-400 p-1.5 rounded transition-colors"
+                                title="Delete spend entry"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
                           </div>
                         ))}
                     </div>
@@ -670,7 +711,7 @@ export default function BudgetPage() {
                       </td>
                     </tr>
 
-                    {/* Spend Log Expanded Row */}
+                    {/* Spend Log Expanded Row with EDIT PENCIL */}
                     {isExpanded && b.spendLog.length > 0 && (
                       <tr className="bg-[#07090e] border-b border-[#161a26]">
                         <td></td>
@@ -696,14 +737,25 @@ export default function BudgetPage() {
                                     </span>
                                     {entry.note && <span className="text-[#94a3b8] truncate">{entry.note}</span>}
                                   </div>
-                                  <button
-                                    onClick={() => handleDeleteSpend(b.id, entry.id, entry.amount, entry.note)}
-                                    title="Remove this spend entry"
-                                    aria-label="Remove spend entry"
-                                    className="text-[#7c869d] hover:text-rose-400 flex-shrink-0 p-1"
-                                  >
-                                    <Trash2 className="w-3 h-3" />
-                                  </button>
+
+                                  <div className="flex items-center gap-1 flex-shrink-0">
+                                    <button
+                                      onClick={() => handleOpenEditSpend(b.id, b.category, entry)}
+                                      title="Edit spend entry"
+                                      aria-label="Edit spend entry"
+                                      className="text-[#7c869d] hover:text-[#cda052] p-1 transition-colors"
+                                    >
+                                      <Pencil className="w-3 h-3" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteSpend(b.id, entry.id, entry.amount, entry.note)}
+                                      title="Remove this spend entry"
+                                      aria-label="Remove spend entry"
+                                      className="text-[#7c869d] hover:text-rose-400 p-1 transition-colors"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </button>
+                                  </div>
                                 </div>
                               ))}
                           </div>
@@ -915,6 +967,101 @@ export default function BudgetPage() {
         )}
       </ModalPortal>
 
+      {/* Edit Existing Spend Modal */}
+      <ModalPortal isOpen={!!editingSpend}>
+        {editingSpend && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm"
+            onClick={() => setEditingSpend(null)}
+          >
+            <div
+              className="w-full max-w-sm rounded-2xl border border-[#2b3752] bg-[#0a0c12] p-5 sm:p-6 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Edit spend entry"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-semibold text-white flex items-center gap-2">
+                  <Pencil className="w-4 h-4 text-[#cda052]" /> Edit Spend Entry
+                </h2>
+                <button
+                  onClick={() => setEditingSpend(null)}
+                  aria-label="Close"
+                  title="Close"
+                  className="text-[#94a3b8] hover:text-white"
+                >
+                  <X className="w-4.5 h-4.5" />
+                </button>
+              </div>
+
+              <p className="text-xs text-[#94a3b8] mb-3">
+                In category <strong className="text-white">{editingSpend.categoryName}</strong>
+              </p>
+
+              {editSpendError && (
+                <div className="mb-3 text-xs text-rose-300 bg-rose-950/40 border border-rose-800/50 rounded-lg px-3 py-2">
+                  {editSpendError}
+                </div>
+              )}
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-[11px] text-[#94a3b8] block mb-1">Correct Amount (₹) *</label>
+                  <div className="relative">
+                    <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#7c869d]" />
+                    <input
+                      type="number"
+                      value={editSpendAmount}
+                      onChange={(e) => setEditSpendAmount(e.target.value)}
+                      autoFocus
+                      placeholder="0"
+                      className="w-full pl-8 pr-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white font-mono focus:outline-none focus:border-[#cda052]/50"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[11px] text-[#94a3b8] block mb-1">Date</label>
+                  <input
+                    type="date"
+                    value={editSpendDate}
+                    onChange={(e) => setEditSpendDate(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] text-[#94a3b8] block mb-1">Note</label>
+                  <input
+                    value={editSpendNote}
+                    onChange={(e) => setEditSpendNote(e.target.value)}
+                    placeholder="e.g. Courier or sample deposit note"
+                    className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 mt-5">
+                <button
+                  onClick={() => setEditingSpend(null)}
+                  className="px-4 py-2 rounded-lg text-sm text-[#94a3b8] hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveEditSpend}
+                  title="Save changes"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-sm font-semibold"
+                >
+                  <Save className="w-3.5 h-3.5" /> Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </ModalPortal>
+
       {/* Capital Inflow Modal */}
       <ModalPortal isOpen={isInflowModalOpen}>
         {isInflowModalOpen && (
@@ -931,7 +1078,7 @@ export default function BudgetPage() {
             >
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-semibold text-white flex items-center gap-2">
-                  <ArrowDownRight className="w-4 h-4 text-emerald-400" /> Record Capital Injection (Inflow)
+                  <ArrowDownRight className="w-4 h-4 text-emerald-400" /> Record Capital Inflow
                 </h2>
                 <button
                   onClick={() => setIsInflowModalOpen(false)}
@@ -978,7 +1125,7 @@ export default function BudgetPage() {
                     className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-emerald-500/50"
                   />
                   {inflowDate > todayStr && (
-                    <p className="text-[10px] text-cyan-400 mt-1 font-mono">
+                    <p className="text-[10px] text-purple-400 mt-1 font-mono">
                       📅 Scheduled future injection (in {Math.ceil((new Date(inflowDate).getTime() - new Date(todayStr).getTime()) / (1000 * 3600 * 24))} days)
                     </p>
                   )}

@@ -73,6 +73,7 @@ interface AdminStoreContextType {
   saveCashInflow: (inflow: CashInflowEntry) => Promise<void>;
   deleteCashInflow: (id: string) => Promise<void>;
   logBudgetSpend: (budgetItemId: string, amount: number, date: string, note?: string) => Promise<void>;
+  updateBudgetSpend: (budgetItemId: string, spendId: string, amount: number, date: string, note?: string) => Promise<void>;
   deleteBudgetSpend: (budgetItemId: string, spendId: string) => Promise<void>;
   resetToSeed: () => Promise<void>;
 }
@@ -1529,6 +1530,15 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     await saveBudgetItem({ ...target, spendLog: nextLog, actualAmount: nextLog.reduce((s, e) => s + e.amount, 0) });
   };
 
+  const updateBudgetSpend = async (budgetItemId: string, spendId: string, amount: number, date: string, note?: string) => {
+    const target = budgetItems.find((b) => b.id === budgetItemId);
+    if (!target || !amount) return;
+    const nextLog = target.spendLog.map((e) =>
+      e.id === spendId ? { ...e, amount, date, note: note || undefined } : e
+    );
+    await saveBudgetItem({ ...target, spendLog: nextLog, actualAmount: nextLog.reduce((s, e) => s + e.amount, 0) });
+  };
+
   const deleteBudgetSpend = async (budgetItemId: string, spendId: string) => {
     const target = budgetItems.find((b) => b.id === budgetItemId);
     if (!target) return;
@@ -1604,6 +1614,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         saveCashInflow,
         deleteCashInflow,
         logBudgetSpend,
+        updateBudgetSpend,
         deleteBudgetSpend,
         resetToSeed,
       }}

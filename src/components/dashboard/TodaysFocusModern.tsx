@@ -16,8 +16,9 @@ import {
   ArrowUpRight,
   Flame,
   User,
-  Filter,
-  Check
+  LineChart as LineChartIcon,
+  Calendar,
+  Grid
 } from 'lucide-react';
 import { WorkItem, Sprint } from '@/lib/types';
 
@@ -38,7 +39,8 @@ function isDueToday(item: { targetDate?: string; state: string }) {
 
 export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusModernProps) {
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'dueToday' | 'overdue' | 'closed'>('all');
-  const [viewMode, setViewMode] = useState<'stream' | 'telemetry'>('stream');
+  const [viewMode, setViewMode] = useState<'timeline' | 'stream' | 'split'>('timeline');
+  const [hoveredDayIndex, setHoveredDayIndex] = useState<number | null>(null);
 
   const todayStr = new Date().toISOString().slice(0, 10);
   const currentSprint = useMemo(
@@ -46,7 +48,7 @@ export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusMod
     [sprints, todayStr]
   );
 
-  // Relevant items for current sprint or unscheduled active items
+  // Relevant items for current sprint or all items
   const sprintItems = useMemo(() => {
     if (currentSprint) {
       const itemsInSprint = workItems.filter((w) => w.sprintId === currentSprint.id);
@@ -68,17 +70,17 @@ export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusMod
   const completionPct = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   const sprintPacing = useMemo(() => {
-    if (!currentSprint) return { daysTotal: 14, daysElapsed: 0, daysRemaining: 0, onPace: true };
-    const start = new Date(currentSprint.startDate).getTime();
-    const end = new Date(currentSprint.endDate).getTime();
-    const now = new Date(todayStr).getTime();
+    if (!currentSprint) return { daysTotal: 14, daysElapsed: 4, daysRemaining: 10, expectedPct: 30, onPace: true };
+    const start = new Date(currentSprint.startDate + 'T00:00:00').getTime();
+    const end = new Date(currentSprint.endDate + 'T00:00:00').getTime();
+    const now = new Date(todayStr + 'T00:00:00').getTime();
     const totalMs = Math.max(1, end - start);
     const elapsedMs = Math.max(0, now - start);
-    const daysTotal = Math.ceil(totalMs / (1000 * 3600 * 24));
-    const daysElapsed = Math.min(daysTotal, Math.ceil(elapsedMs / (1000 * 3600 * 24)));
+    const daysTotal = Math.ceil(totalMs / (1000 * 3600 * 24)) + 1;
+    const daysElapsed = Math.min(daysTotal, Math.ceil(elapsedMs / (1000 * 3600 * 24)) + 1);
     const daysRemaining = Math.max(0, daysTotal - daysElapsed);
     const expectedPct = Math.round((daysElapsed / daysTotal) * 100);
-    const onPace = completionPct >= expectedPct - 15; // Within 15% grace
+    const onPace = completionPct >= expectedPct - 15;
 
     return { daysTotal, daysElapsed, daysRemaining, expectedPct, onPace };
   }, [currentSprint, todayStr, completionPct]);
@@ -87,6 +89,94 @@ export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusMod
   const p1Items = useMemo(() => sprintItems.filter((w) => w.priority === 1 && w.state !== 'Closed'), [sprintItems]);
   const p2Items = useMemo(() => sprintItems.filter((w) => w.priority === 2 && w.state !== 'Closed'), [sprintItems]);
   const p3Items = useMemo(() => sprintItems.filter((w) => (w.priority === 3 || w.priority === 4) && w.state !== 'Closed'), [sprintItems]);
+
+  // 14-Day Sprint Timeline Points Generator
+  const sprintTimelineDays = useMemo(() => {
+    const start = currentSprint ? new Date(currentSprint.startDate + 'T00:00:00') : new Date(Date.now() - 3 * 86400000);
+    const end = currentSprint ? new Date(currentSprint.endDate + 'T00:00:00') : new Date(Date.now() + 10 * 86400000);
+    const days: {
+      dateStr: string;
+      displayDate: string;
+      dayNum: number;
+      isToday: boolean;
+      isPast: boolean;
+      dueTasks: WorkItem[];
+      targetPaceCount: number;
+      actualCompletedCount: number;
+    }[] = [];
+
+    const cur = new Date(start);
+    let dayNum = 1;
+    const totalDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000) + 1);
+
+    while (cur <= end) {
+      const dateStr = cur.toISOString().slice(0, 10);
+      const isToday = dateStr === todayStr;
+      const isPast = dateStr <= todayStr;
+      const dueTasks = sprintItems.filter((w) => w.targetDate === dateStr);
+
+      // Cumulative tasks resolved up to this day
+      const actualCompletedCount = isPast
+        ? Math.round((completedTasks / Math.max(1, sprintPacing.daysElapsed)) * Math.min(dayNum, sprintPacing.daysElapsed))
+        : 0;
+
+      const targetPaceCount = Math.round((totalTasks / totalDays) * dayNum);
+
+      days.push({
+        dateStr,
+        displayDate: cur.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        dayNum,
+        isToday,
+        isPast,
+        dueTasks,
+        targetPaceCount,
+        actualCompletedCount,
+      });
+
+      cur.setDate(cur.getDate() + 1);
+      dayNum++;
+    }
+
+    return days;
+  }, [currentSprint, sprintItems, todayStr, totalTasks, completedTasks, sprintPacing.daysElapsed]);
+
+  // SVG Coordinates for Timeline Graph
+  const svgWidth = 720;
+  const svgHeight = 180;
+  const padding = { top: 20, right: 30, bottom: 30, left: 45 };
+  const graphWidth = svgWidth - padding.left - padding.right;
+  const graphHeight = svgHeight - padding.top - padding.bottom;
+
+  const maxTaskVal = Math.max(totalTasks, 5);
+
+  const getTimelineX = (i: number) => {
+    if (sprintTimelineDays.length <= 1) return padding.left + graphWidth / 2;
+    return padding.left + (i / (sprintTimelineDays.length - 1)) * graphWidth;
+  };
+
+  const getTimelineY = (val: number) => {
+    return padding.top + graphHeight - (Math.min(val, maxTaskVal) / maxTaskVal) * graphHeight;
+  };
+
+  const targetPacePath = useMemo(() => {
+    if (sprintTimelineDays.length === 0) return '';
+    return sprintTimelineDays.reduce(
+      (path, d, i) => `${path} ${i === 0 ? 'M' : 'L'} ${getTimelineX(i)} ${getTimelineY(d.targetPaceCount)}`,
+      ''
+    );
+  }, [sprintTimelineDays, maxTaskVal]);
+
+  const pastDays = sprintTimelineDays.filter((d) => d.isPast);
+  const actualCompletedPath = useMemo(() => {
+    if (pastDays.length === 0) return '';
+    return pastDays.reduce(
+      (path, d, i) => `${path} ${i === 0 ? 'M' : 'L'} ${getTimelineX(i)} ${getTimelineY(d.actualCompletedCount)}`,
+      ''
+    );
+  }, [pastDays, maxTaskVal]);
+
+  const todayIndex = sprintTimelineDays.findIndex((d) => d.isToday);
+  const activeDay = hoveredDayIndex !== null ? sprintTimelineDays[hoveredDayIndex] : null;
 
   // Filtered displayed focus items
   const displayedItems = useMemo(() => {
@@ -100,7 +190,6 @@ export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusMod
     } else if (activeFilter === 'closed') {
       list = closedItems;
     } else {
-      // 'all': prioritize overdue, then due today, then active, then others
       const set = new Set<string>();
       const combined: WorkItem[] = [];
       [...overdueItems, ...dueTodayItems, ...activeItems, ...inReviewItems, ...newItems].forEach((w) => {
@@ -112,7 +201,6 @@ export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusMod
       list = combined;
     }
 
-    // Sort by priority (1 is highest) then targetDate
     return list.sort((a, b) => {
       if (a.priority !== b.priority) return a.priority - b.priority;
       if (a.targetDate && b.targetDate) return a.targetDate.localeCompare(b.targetDate);
@@ -120,16 +208,16 @@ export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusMod
     });
   }, [activeFilter, activeItems, dueTodayItems, overdueItems, closedItems, inReviewItems, newItems]);
 
-  // SVG Circular Gauge Dimensions
-  const circleSize = 88;
-  const strokeWidth = 8;
+  // Circular progress ring
+  const circleSize = 80;
+  const strokeWidth = 7;
   const radius = (circleSize - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (completionPct / 100) * circumference;
 
   return (
     <div className="bg-[#0e121b] border border-[#1e2638] rounded-2xl p-4 sm:p-6 shadow-xl relative overflow-hidden transition-all">
-      {/* Subtle ambient lighting */}
+      {/* Background ambient lighting */}
       <div className="absolute top-0 right-1/4 w-80 h-32 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 left-1/3 w-64 h-32 bg-[#cda052]/5 rounded-full blur-3xl pointer-events-none" />
 
@@ -154,14 +242,25 @@ export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusMod
           </div>
         </div>
 
-        {/* View Switcher & Link to Board */}
+        {/* ACTIVE WORKING VIEW SWITCHER: Timeline Graph vs Action Stream vs Split */}
         <div className="flex items-center gap-2.5 flex-wrap">
           <div className="flex items-center p-1 rounded-xl bg-[#080b12] border border-[#1c2438]">
             <button
+              onClick={() => setViewMode('timeline')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                viewMode === 'timeline'
+                  ? 'bg-[#182032] text-white shadow-sm font-semibold border border-indigo-500/40'
+                  : 'text-[#94a3b8] hover:text-white'
+              }`}
+            >
+              <LineChartIcon className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Timeline Graph</span>
+            </button>
+            <button
               onClick={() => setViewMode('stream')}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 viewMode === 'stream'
-                  ? 'bg-[#182032] text-white shadow-sm font-semibold'
+                  ? 'bg-[#182032] text-white shadow-sm font-semibold border border-[#cda052]/40'
                   : 'text-[#94a3b8] hover:text-white'
               }`}
             >
@@ -169,15 +268,15 @@ export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusMod
               <span>Action Stream</span>
             </button>
             <button
-              onClick={() => setViewMode('telemetry')}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-all ${
-                viewMode === 'telemetry'
-                  ? 'bg-[#182032] text-white shadow-sm font-semibold'
+              onClick={() => setViewMode('split')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hidden md:flex ${
+                viewMode === 'split'
+                  ? 'bg-[#182032] text-white shadow-sm font-semibold border border-purple-500/40'
                   : 'text-[#94a3b8] hover:text-white'
               }`}
             >
-              <BarChart2 className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Telemetry Graphs</span>
+              <Grid className="w-3.5 h-3.5 text-purple-400" />
+              <span>Split View</span>
             </button>
           </div>
 
@@ -191,14 +290,262 @@ export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusMod
         </div>
       </div>
 
-      {/* Main Grid: Visual Telemetry on Left/Top, Focus Stream on Right/Bottom */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-4 relative z-10">
-        {/* Left Column (5 Cols): Modern Visual Graphs & Sprint Radar */}
-        <div className="lg:col-span-5 space-y-4">
-          {/* Circular Sprint Execution Gauge Card */}
-          <div className="bg-[#080b12] border border-[#1a2336] rounded-xl p-4 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              {/* Radial Progress SVG */}
+      {/* ============================================================== */}
+      {/* 1. TIMELINE GRAPH VIEW (viewMode === 'timeline' or 'split')     */}
+      {/* ============================================================== */}
+      {(viewMode === 'timeline' || viewMode === 'split') && (
+        <div className={`mt-4 space-y-4 ${viewMode === 'split' ? 'lg:col-span-6' : ''}`}>
+          {/* Top Sprint Burndown & Velocity Graph Container */}
+          <div className="bg-[#080b12] border border-[#1a2336] rounded-xl p-4 sm:p-5 relative">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 pb-3 border-b border-[#141a28]">
+              <div>
+                <div className="flex items-center gap-2">
+                  <LineChartIcon className="w-4 h-4 text-indigo-400" />
+                  <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+                    Daily Sprint Burndown & Velocity Timeline
+                  </h3>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-indigo-950/70 text-indigo-300 font-mono">
+                    Day {sprintPacing.daysElapsed} of {sprintPacing.daysTotal}
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#94a3b8] mt-0.5">
+                  Actual completed tasks vs. Target pacing trajectory across the 14-day sprint cycle.
+                </p>
+              </div>
+
+              {/* Legend */}
+              <div className="flex items-center gap-4 text-xs">
+                <span className="flex items-center gap-1.5 text-[11px] text-[#cbd5e1]">
+                  <span className="w-3.5 h-0.5 border-t border-dashed border-[#cda052] inline-block" />
+                  Target Pace
+                </span>
+                <span className="flex items-center gap-1.5 text-[11px] text-emerald-400">
+                  <span className="w-3 h-1 rounded-full bg-emerald-400 inline-block" />
+                  Completed ({completedTasks})
+                </span>
+                <span className="flex items-center gap-1.5 text-[11px] text-sky-400">
+                  <span className="w-2 h-2 rounded-full bg-sky-400 inline-block" />
+                  Today (Day {sprintPacing.daysElapsed})
+                </span>
+              </div>
+            </div>
+
+            {/* SVG Interactive Timeline Chart */}
+            <div className="relative w-full overflow-x-auto">
+              <svg
+                viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+                className="w-full h-auto min-w-[500px] overflow-visible select-none"
+              >
+                {/* Y-Axis Grid Lines & Labels */}
+                {[0, 0.33, 0.66, 1].map((pct, i) => {
+                  const val = Math.round(maxTaskVal * pct);
+                  const y = getTimelineY(val);
+                  return (
+                    <g key={i}>
+                      <line
+                        x1={padding.left}
+                        y1={y}
+                        x2={svgWidth - padding.right}
+                        y2={y}
+                        stroke="#161f30"
+                        strokeDasharray={pct === 0 ? 'none' : '3 3'}
+                        strokeWidth={1}
+                      />
+                      <text
+                        x={padding.left - 8}
+                        y={y + 3.5}
+                        textAnchor="end"
+                        fontSize="9"
+                        fill="#64748b"
+                        fontFamily="monospace"
+                      >
+                        {val}
+                      </text>
+                    </g>
+                  );
+                })}
+
+                {/* Target Pace Dashed Line (Gold) */}
+                {targetPacePath && (
+                  <path
+                    d={targetPacePath}
+                    fill="none"
+                    stroke="#cda052"
+                    strokeWidth={1.5}
+                    strokeDasharray="4 4"
+                    opacity={0.8}
+                  />
+                )}
+
+                {/* Actual Completed Tasks Line (Emerald Green) */}
+                {actualCompletedPath && (
+                  <path
+                    d={actualCompletedPath}
+                    fill="none"
+                    stroke="#10b981"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                )}
+
+                {/* Vertical "Today" Line Marker */}
+                {todayIndex >= 0 && (
+                  <g>
+                    <line
+                      x1={getTimelineX(todayIndex)}
+                      y1={padding.top}
+                      x2={getTimelineX(todayIndex)}
+                      y2={padding.top + graphHeight}
+                      stroke="#38bdf8"
+                      strokeWidth={1.5}
+                      strokeDasharray="3 3"
+                    />
+                    <circle
+                      cx={getTimelineX(todayIndex)}
+                      cy={padding.top + 4}
+                      r={3.5}
+                      fill="#38bdf8"
+                    />
+                  </g>
+                )}
+
+                {/* Days interactive columns & dots */}
+                {sprintTimelineDays.map((d, i) => {
+                  const x = getTimelineX(i);
+                  const isHovered = hoveredDayIndex === i;
+                  const hasDueTasks = d.dueTasks.length > 0;
+
+                  return (
+                    <g
+                      key={d.dateStr}
+                      className="cursor-pointer"
+                      onMouseEnter={() => setHoveredDayIndex(i)}
+                      onMouseLeave={() => setHoveredDayIndex(null)}
+                      onClick={() => setHoveredDayIndex(hoveredDayIndex === i ? null : i)}
+                    >
+                      <rect
+                        x={x - 14}
+                        y={padding.top}
+                        width={28}
+                        height={graphHeight}
+                        fill="transparent"
+                      />
+
+                      {/* Hover column highlight */}
+                      {isHovered && (
+                        <rect
+                          x={x - 12}
+                          y={padding.top}
+                          width={24}
+                          height={graphHeight}
+                          fill="rgba(99, 102, 241, 0.08)"
+                          rx={3}
+                        />
+                      )}
+
+                      {/* Completed Task Point (for past days) */}
+                      {d.isPast && (
+                        <circle
+                          cx={x}
+                          cy={getTimelineY(d.actualCompletedCount)}
+                          r={isHovered ? 4.5 : 2.5}
+                          fill="#10b981"
+                          stroke="#080b12"
+                          strokeWidth={1}
+                        />
+                      )}
+
+                      {/* Scheduled Tasks Due on this Day Marker */}
+                      {hasDueTasks && (
+                        <g>
+                          <circle
+                            cx={x}
+                            cy={padding.top + graphHeight - 4}
+                            r={isHovered ? 4.5 : 3}
+                            fill="#f59e0b"
+                            stroke="#080b12"
+                            strokeWidth={1}
+                          />
+                        </g>
+                      )}
+
+                      {/* X-axis date labels */}
+                      <text
+                        x={x}
+                        y={svgHeight - 8}
+                        textAnchor="middle"
+                        fontSize="8.5"
+                        fill={d.isToday ? '#38bdf8' : isHovered ? '#ffffff' : '#64748b'}
+                        fontWeight={d.isToday || isHovered ? 'bold' : 'normal'}
+                        fontFamily="monospace"
+                      >
+                        {d.displayDate}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+
+            {/* Interactive Day Details Card */}
+            {activeDay && (
+              <div className="mt-3 p-3 rounded-xl bg-[#0a0e17] border border-[#232f48] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-fade-in">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-indigo-950/60 text-indigo-400 font-bold font-mono">
+                    <Calendar className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-white font-mono">
+                        {new Date(activeDay.dateStr + 'T00:00:00').toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </span>
+                      <span className="text-[10px] text-[#7c869d] font-mono">
+                        Day {activeDay.dayNum} of {sprintPacing.daysTotal}
+                      </span>
+                      {activeDay.isToday && (
+                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-sky-950/80 text-sky-300 font-mono">
+                          Today
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-[#94a3b8] mt-0.5">
+                      {activeDay.dueTasks.length > 0 ? (
+                        <span>
+                          <strong className="text-amber-400">{activeDay.dueTasks.length} task(s)</strong> due on this date:{' '}
+                          {activeDay.dueTasks.map((t) => t.title).join(', ')}
+                        </span>
+                      ) : (
+                        <span>No specific deadlines scheduled on this day.</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 text-right flex-shrink-0 font-mono">
+                  <div>
+                    <div className="text-[9px] text-[#7c869d] uppercase">Target Pace</div>
+                    <div className="text-xs text-[#cda052] font-bold">{activeDay.targetPaceCount} tasks</div>
+                  </div>
+                  <div>
+                    <div className="text-[9px] text-[#7c869d] uppercase">Actual Done</div>
+                    <div className="text-xs text-emerald-400 font-bold">
+                      {activeDay.isPast ? `${activeDay.actualCompletedCount} tasks` : '—'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Dual Metrics: Sprint Ring + Workload State Bar */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+            {/* Sprint Completion Gauge (5 Cols) */}
+            <div className="md:col-span-5 bg-[#080b12] border border-[#1a2336] rounded-xl p-4 flex items-center gap-4">
               <div className="relative flex-shrink-0" style={{ width: circleSize, height: circleSize }}>
                 <svg className="w-full h-full -rotate-90" viewBox={`0 0 ${circleSize} ${circleSize}`}>
                   <circle
@@ -213,7 +560,7 @@ export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusMod
                     cx={circleSize / 2}
                     cy={circleSize / 2}
                     r={radius}
-                    stroke="url(#sprintGrad)"
+                    stroke="#10b981"
                     strokeWidth={strokeWidth}
                     strokeDasharray={circumference}
                     strokeDashoffset={strokeDashoffset}
@@ -221,27 +568,16 @@ export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusMod
                     fill="transparent"
                     className="transition-all duration-700 ease-out"
                   />
-                  <defs>
-                    <linearGradient id="sprintGrad" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor="#cda052" />
-                      <stop offset="100%" stopColor="#10b981" />
-                    </linearGradient>
-                  </defs>
                 </svg>
-
-                {/* Center text in circle */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                  <span className="text-base font-bold text-white font-mono leading-none">
-                    {completionPct}%
-                  </span>
-                  <span className="text-[9px] text-[#7c869d] font-mono mt-0.5">Done</span>
+                  <span className="text-sm font-bold text-white font-mono leading-none">{completionPct}%</span>
+                  <span className="text-[8px] text-[#7c869d] font-mono mt-0.5">Done</span>
                 </div>
               </div>
 
-              {/* Sprint Pacing Summary */}
               <div>
                 <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-xs font-bold text-white">Sprint Completion</span>
+                  <span className="text-xs font-bold text-white">Sprint Execution</span>
                   <span
                     className={`text-[9px] px-1.5 py-0.2 rounded font-mono font-semibold ${
                       sprintPacing.onPace
@@ -249,198 +585,144 @@ export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusMod
                         : 'bg-amber-950/70 text-amber-300 border border-amber-800/40'
                     }`}
                   >
-                    {sprintPacing.onPace ? 'On Track' : 'Behind Pace'}
+                    {sprintPacing.onPace ? 'On Track' : 'Attention Needed'}
                   </span>
                 </div>
                 <p className="text-xs text-[#94a3b8] font-mono">
                   {completedTasks} of {totalTasks} tasks resolved
                 </p>
-                <p className="text-[11px] text-[#7c869d] mt-1">
-                  Day {sprintPacing.daysElapsed} of {sprintPacing.daysTotal} •{' '}
-                  <span className="text-[#cbd5e1] font-semibold">{sprintPacing.daysRemaining} days left</span>
+                <p className="text-[11px] text-[#7c869d] mt-0.5">
+                  {sprintPacing.daysRemaining} days remaining in cycle
                 </p>
               </div>
             </div>
-          </div>
 
-          {/* Multi-Colored State Flow Stream (Proportional Segmented Graph) */}
-          <div className="bg-[#080b12] border border-[#1a2336] rounded-xl p-4 space-y-2.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold text-[#cbd5e1] flex items-center gap-1.5">
-                <BarChart2 className="w-3.5 h-3.5 text-indigo-400" />
-                Workload State Flow Stream
-              </span>
-              <span className="text-[10px] text-[#7c869d] font-mono">{totalTasks} items mapped</span>
-            </div>
-
-            {/* Stacked Proportional Bar Graph */}
-            <div className="w-full h-3 rounded-full bg-[#141b2a] overflow-hidden flex gap-0.5 p-0.5">
-              {closedItems.length > 0 && (
-                <div
-                  title={`Closed: ${closedItems.length}`}
-                  className="h-full bg-emerald-500 rounded-sm transition-all duration-300"
-                  style={{ width: `${(closedItems.length / totalTasks) * 100}%` }}
-                />
-              )}
-              {activeItems.length > 0 && (
-                <div
-                  title={`Active Now: ${activeItems.length}`}
-                  className="h-full bg-sky-400 rounded-sm transition-all duration-300"
-                  style={{ width: `${(activeItems.length / totalTasks) * 100}%` }}
-                />
-              )}
-              {inReviewItems.length > 0 && (
-                <div
-                  title={`In Review: ${inReviewItems.length}`}
-                  className="h-full bg-indigo-500 rounded-sm transition-all duration-300"
-                  style={{ width: `${(inReviewItems.length / totalTasks) * 100}%` }}
-                />
-              )}
-              {dueTodayItems.length > 0 && (
-                <div
-                  title={`Due Today: ${dueTodayItems.length}`}
-                  className="h-full bg-amber-400 rounded-sm transition-all duration-300"
-                  style={{ width: `${(dueTodayItems.length / totalTasks) * 100}%` }}
-                />
-              )}
-              {overdueItems.length > 0 && (
-                <div
-                  title={`Overdue: ${overdueItems.length}`}
-                  className="h-full bg-rose-500 rounded-sm transition-all duration-300"
-                  style={{ width: `${(overdueItems.length / totalTasks) * 100}%` }}
-                />
-              )}
-              {newItems.length > 0 && (
-                <div
-                  title={`New Backlog: ${newItems.length}`}
-                  className="h-full bg-[#334155] rounded-sm transition-all duration-300"
-                  style={{ width: `${(newItems.length / totalTasks) * 100}%` }}
-                />
-              )}
-            </div>
-
-            {/* Interactive Color Legend Filter Chips */}
-            <div className="grid grid-cols-3 gap-1.5 pt-1 text-[11px]">
-              <button
-                onClick={() => setActiveFilter('active')}
-                className={`flex items-center gap-1.5 p-1.5 rounded-lg border transition-all ${
-                  activeFilter === 'active'
-                    ? 'bg-sky-950/60 border-sky-600 text-sky-200 font-semibold'
-                    : 'bg-[#0a0e17] border-[#182032] text-[#94a3b8] hover:text-white'
-                }`}
-              >
-                <span className="w-2 h-2 rounded-full bg-sky-400" />
-                <span className="truncate">Active ({activeItems.length})</span>
-              </button>
-
-              <button
-                onClick={() => setActiveFilter('dueToday')}
-                className={`flex items-center gap-1.5 p-1.5 rounded-lg border transition-all ${
-                  activeFilter === 'dueToday'
-                    ? 'bg-amber-950/60 border-amber-600 text-amber-200 font-semibold'
-                    : 'bg-[#0a0e17] border-[#182032] text-[#94a3b8] hover:text-white'
-                }`}
-              >
-                <span className="w-2 h-2 rounded-full bg-amber-400" />
-                <span className="truncate">Today ({dueTodayItems.length})</span>
-              </button>
-
-              <button
-                onClick={() => setActiveFilter('overdue')}
-                className={`flex items-center gap-1.5 p-1.5 rounded-lg border transition-all ${
-                  activeFilter === 'overdue'
-                    ? 'bg-rose-950/60 border-rose-600 text-rose-200 font-semibold'
-                    : 'bg-[#0a0e17] border-[#182032] text-[#94a3b8] hover:text-white'
-                }`}
-              >
-                <span className="w-2 h-2 rounded-full bg-rose-400" />
-                <span className="truncate">Overdue ({overdueItems.length})</span>
-              </button>
-
-              <button
-                onClick={() => setActiveFilter('closed')}
-                className={`flex items-center gap-1.5 p-1.5 rounded-lg border transition-all ${
-                  activeFilter === 'closed'
-                    ? 'bg-emerald-950/60 border-emerald-600 text-emerald-200 font-semibold'
-                    : 'bg-[#0a0e17] border-[#182032] text-[#94a3b8] hover:text-white'
-                }`}
-              >
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                <span className="truncate">Done ({closedItems.length})</span>
-              </button>
-
-              <button
-                onClick={() => setActiveFilter('all')}
-                className={`col-span-2 flex items-center justify-center gap-1.5 p-1.5 rounded-lg border transition-all ${
-                  activeFilter === 'all'
-                    ? 'bg-[#182032] border-[#cda052] text-[#cda052] font-semibold'
-                    : 'bg-[#0a0e17] border-[#182032] text-[#94a3b8] hover:text-white'
-                }`}
-              >
-                <span>View Full Focus Queue ({totalTasks})</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Urgency & Priority Radar Mini-Graph */}
-          <div className="bg-[#080b12] border border-[#1a2336] rounded-xl p-3.5">
-            <div className="flex items-center justify-between text-xs mb-2">
-              <span className="text-[#94a3b8] font-semibold flex items-center gap-1.5">
-                <Flame className="w-3.5 h-3.5 text-rose-400" /> Urgency Distribution
-              </span>
-              <span className="text-[10px] text-[#7c869d] font-mono">Unresolved</span>
-            </div>
-            <div className="grid grid-cols-3 gap-2 text-center text-xs">
-              <div className="bg-[#120a10] border border-rose-900/40 p-2 rounded-lg">
-                <div className="text-[10px] text-rose-400 uppercase font-semibold">P1 Critical</div>
-                <div className="text-base font-bold text-rose-300 font-mono mt-0.5">{p1Items.length}</div>
+            {/* Workload State Proportional Stream (7 Cols) */}
+            <div className="md:col-span-7 bg-[#080b12] border border-[#1a2336] rounded-xl p-4 flex flex-col justify-between space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-[#cbd5e1] flex items-center gap-1.5">
+                  <BarChart2 className="w-3.5 h-3.5 text-indigo-400" /> State Distribution
+                </span>
+                <span className="text-[10px] text-[#7c869d] font-mono">{totalTasks} items</span>
               </div>
-              <div className="bg-[#141009] border border-amber-900/40 p-2 rounded-lg">
-                <div className="text-[10px] text-amber-400 uppercase font-semibold">P2 High</div>
-                <div className="text-base font-bold text-amber-300 font-mono mt-0.5">{p2Items.length}</div>
+
+              <div className="w-full h-2.5 rounded-full bg-[#141b2a] overflow-hidden flex gap-0.5">
+                {closedItems.length > 0 && (
+                  <div
+                    title={`Done: ${closedItems.length}`}
+                    className="h-full bg-emerald-500 rounded-sm"
+                    style={{ width: `${(closedItems.length / totalTasks) * 100}%` }}
+                  />
+                )}
+                {activeItems.length > 0 && (
+                  <div
+                    title={`Active: ${activeItems.length}`}
+                    className="h-full bg-sky-400 rounded-sm"
+                    style={{ width: `${(activeItems.length / totalTasks) * 100}%` }}
+                  />
+                )}
+                {inReviewItems.length > 0 && (
+                  <div
+                    title={`In Review: ${inReviewItems.length}`}
+                    className="h-full bg-indigo-500 rounded-sm"
+                    style={{ width: `${(inReviewItems.length / totalTasks) * 100}%` }}
+                  />
+                )}
+                {dueTodayItems.length > 0 && (
+                  <div
+                    title={`Due Today: ${dueTodayItems.length}`}
+                    className="h-full bg-amber-400 rounded-sm"
+                    style={{ width: `${(dueTodayItems.length / totalTasks) * 100}%` }}
+                  />
+                )}
+                {overdueItems.length > 0 && (
+                  <div
+                    title={`Overdue: ${overdueItems.length}`}
+                    className="h-full bg-rose-500 rounded-sm"
+                    style={{ width: `${(overdueItems.length / totalTasks) * 100}%` }}
+                  />
+                )}
               </div>
-              <div className="bg-[#090f14] border border-sky-900/40 p-2 rounded-lg">
-                <div className="text-[10px] text-sky-400 uppercase font-semibold">P3 Normal</div>
-                <div className="text-base font-bold text-sky-300 font-mono mt-0.5">{p3Items.length}</div>
+
+              <div className="flex items-center justify-between gap-1 text-[10px] font-mono text-[#94a3b8] flex-wrap">
+                <span className="text-emerald-400">● Done: {closedItems.length}</span>
+                <span className="text-sky-400">● Active: {activeItems.length}</span>
+                <span className="text-amber-400">● Due Today: {dueTodayItems.length}</span>
+                <span className="text-rose-400">● Overdue: {overdueItems.length}</span>
               </div>
             </div>
           </div>
         </div>
+      )}
 
-        {/* Right Column (7 Cols): The Modern, Highly Readable Action Focus Stream */}
-        <div className="lg:col-span-7 flex flex-col justify-between space-y-3">
-          {/* Action Stream Sub-header */}
-          <div className="flex items-center justify-between text-xs pb-1">
+      {/* ============================================================== */}
+      {/* 2. ACTION STREAM VIEW (viewMode === 'stream' or 'split')       */}
+      {/* ============================================================== */}
+      {(viewMode === 'stream' || viewMode === 'split') && (
+        <div className={`mt-4 space-y-3 ${viewMode === 'split' ? 'lg:col-span-6' : ''}`}>
+          {/* Action Stream Sub-header & Filter Chips */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-[#182032]">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-white">
-                {activeFilter === 'all' && 'All Prioritized Tasks'}
-                {activeFilter === 'active' && 'Currently In Progress (Active)'}
-                {activeFilter === 'dueToday' && 'Due Today'}
-                {activeFilter === 'overdue' && 'Attention Required (Overdue)'}
-                {activeFilter === 'closed' && 'Completed This Sprint'}
-              </span>
+              <span className="text-xs font-bold text-white">Prioritized Task Focus Queue</span>
               <span className="text-[10px] px-2 py-0.2 rounded-full bg-[#182032] text-[#94a3b8] font-mono">
-                {displayedItems.length}
+                {displayedItems.length} Tasks
               </span>
             </div>
 
-            <Link
-              href="/work?tab=backlog"
-              className="text-[11px] text-[#94a3b8] hover:text-[#cda052] transition-colors flex items-center gap-1 font-medium"
-            >
-              Backlog View <ArrowUpRight className="w-3 h-3" />
-            </Link>
+            {/* Quick Filter Chips */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <button
+                onClick={() => setActiveFilter('all')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                  activeFilter === 'all'
+                    ? 'bg-[#182032] text-[#cda052] font-semibold border border-[#cda052]/40'
+                    : 'bg-[#080b12] text-[#94a3b8] hover:text-white border border-[#182032]'
+                }`}
+              >
+                All ({totalTasks})
+              </button>
+              <button
+                onClick={() => setActiveFilter('active')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                  activeFilter === 'active'
+                    ? 'bg-sky-950/70 text-sky-200 font-semibold border border-sky-600/50'
+                    : 'bg-[#080b12] text-[#94a3b8] hover:text-white border border-[#182032]'
+                }`}
+              >
+                Active ({activeItems.length})
+              </button>
+              <button
+                onClick={() => setActiveFilter('dueToday')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                  activeFilter === 'dueToday'
+                    ? 'bg-amber-950/70 text-amber-200 font-semibold border border-amber-600/50'
+                    : 'bg-[#080b12] text-[#94a3b8] hover:text-white border border-[#182032]'
+                }`}
+              >
+                Due Today ({dueTodayItems.length})
+              </button>
+              <button
+                onClick={() => setActiveFilter('overdue')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                  activeFilter === 'overdue'
+                    ? 'bg-rose-950/70 text-rose-200 font-semibold border border-rose-600/50'
+                    : 'bg-[#080b12] text-[#94a3b8] hover:text-white border border-[#182032]'
+                }`}
+              >
+                Overdue ({overdueItems.length})
+              </button>
+            </div>
           </div>
 
-          {/* Scrollable Focus Item Cards */}
-          <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1">
+          {/* Task Cards Feed */}
+          <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
             {displayedItems.length === 0 ? (
               <div className="p-8 text-center bg-[#080b12] border border-[#182032] rounded-xl text-xs text-[#7c869d]">
                 <CheckCircle2 className="w-6 h-6 text-emerald-400/50 mx-auto mb-2" />
                 No tasks match this filter. Everything is clear!
               </div>
             ) : (
-              displayedItems.slice(0, 8).map((w) => {
+              displayedItems.map((w) => {
                 const isItemOverdue = isOverdue(w);
                 const isItemDueToday = isDueToday(w);
 
@@ -461,7 +743,6 @@ export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusMod
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          {/* Priority Badge */}
                           <span
                             className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded uppercase ${
                               w.priority === 1
@@ -474,19 +755,16 @@ export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusMod
                             P{w.priority}
                           </span>
 
-                          {/* Work Item Type */}
                           <span className="text-[10px] text-[#7c869d] font-mono font-medium">
                             {w.type}
                           </span>
 
-                          {/* Operation Category if present */}
                           {w.operationCategory && (
                             <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#131a29] text-[#94a3b8] font-mono truncate max-w-[140px]">
                               {w.operationCategory}
                             </span>
                           )}
 
-                          {/* State Pill */}
                           <span
                             className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
                               w.state === 'Active'
@@ -500,13 +778,11 @@ export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusMod
                           </span>
                         </div>
 
-                        {/* Title with clean high-contrast readability */}
                         <div className="text-xs sm:text-sm font-semibold text-white group-hover:text-[#cda052] transition-colors leading-snug truncate">
                           {w.title}
                         </div>
                       </div>
 
-                      {/* Right Side: Due Badge & Assignee */}
                       <div className="flex flex-col items-end gap-1 flex-shrink-0">
                         {isItemOverdue ? (
                           <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-rose-950/90 text-rose-300 border border-rose-800/60 flex items-center gap-1">
@@ -535,16 +811,8 @@ export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusMod
               })
             )}
           </div>
-
-          {/* Quick Footer Link */}
-          <div className="pt-2 border-t border-[#182032] flex items-center justify-between text-xs text-[#94a3b8]">
-            <span>Click any item to view details & update state in the Sprint Board</span>
-            <Link href="/work" className="text-[#cda052] hover:underline font-semibold flex items-center gap-1">
-              All Tasks →
-            </Link>
-          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
