@@ -179,14 +179,24 @@ export function getDifferencesFromDefaults(
     }
   }
 
-  // Forecast Assumptions (Mid baseline)
-  if (Number(inputs.units?.mid) !== Number(defaults.units?.mid)) {
+  // Annual Brand Overheads Allocation
+  if ((inputs.overheadAllocationMode || 'brand_volume') !== (defaults.overheadAllocationMode || 'brand_volume')) {
     diffs.push({
-      key: 'units',
-      label: 'Production Batch Units (Expected)',
-      category: 'Forecast Planning',
-      currentValue: `${inputs.units?.mid?.toLocaleString() || 0}`,
-      defaultValue: `${defaults.units?.mid?.toLocaleString() || 0}`,
+      key: 'overheadAllocationMode',
+      label: 'Overhead Allocation Method',
+      category: 'Annual Overheads',
+      currentValue: (inputs.overheadAllocationMode || 'brand_volume') === 'brand_volume' ? 'All Catalog SKUs' : 'Single SKU Batch',
+      defaultValue: (defaults.overheadAllocationMode || 'brand_volume') === 'brand_volume' ? 'All Catalog SKUs' : 'Single SKU Batch',
+    });
+  }
+
+  if (Number(inputs.brandAnnualUnits?.mid ?? 20000) !== Number(defaults.brandAnnualUnits?.mid ?? 20000)) {
+    diffs.push({
+      key: 'brandAnnualUnits',
+      label: 'Brand Total Annual Sales Units (All SKUs)',
+      category: 'Annual Overheads',
+      currentValue: `${(inputs.brandAnnualUnits?.mid ?? 20000).toLocaleString()} units`,
+      defaultValue: `${(defaults.brandAnnualUnits?.mid ?? 20000).toLocaleString()} units`,
     });
   }
 

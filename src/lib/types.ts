@@ -95,6 +95,10 @@ export interface PricingInputs {
   finance: ScenarioRange;
   brandAmort: ScenarioRange;
 
+  // Overhead Allocation Mode
+  overheadAllocationMode?: 'brand_volume' | 'sku_volume';
+  brandAnnualUnits?: ScenarioRange; // Total annual unit sales comprising all SKUs in the year
+
   // Technical Garment Bill of Materials (BOM)
   bom?: GarmentBOM;
 }
@@ -139,6 +143,10 @@ export interface CalculatorDefaults {
   professional: ScenarioRange;
   finance: ScenarioRange;
   brandAmort: ScenarioRange;
+
+  // Overhead Allocation Mode Defaults
+  overheadAllocationMode?: 'brand_volume' | 'sku_volume';
+  brandAnnualUnits?: ScenarioRange; // Total annual unit sales comprising all SKUs in the year
 
   // Default Forecast Ranges
   units: ScenarioRange;
@@ -211,6 +219,8 @@ export interface CalculationResult {
   baseProductCost: number;
   overheadAnnual: number;
   overheadPerUnit: number;
+  overheadAllocationUnits?: number;
+  overheadAllocationMode?: 'brand_volume' | 'sku_volume';
   fixedOrder: number;
   salesRates: number;
   salesRateCost: number;

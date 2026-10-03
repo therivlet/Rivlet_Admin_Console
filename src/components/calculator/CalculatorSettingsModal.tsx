@@ -111,6 +111,28 @@ export default function CalculatorSettingsModal({
     );
   };
 
+  const updateBrandUnits = (scenario: ScenarioKey, value: number) => {
+    setDefaults(prev => ({
+      ...prev,
+      brandAnnualUnits: {
+        ...(prev.brandAnnualUnits || { low: 10000, mid: 20000, high: 35000 }),
+        [scenario]: Math.max(1, Number(value) || 1),
+      }
+    }));
+  };
+
+  const getBrandUnits = (sc: ScenarioKey) => {
+    return defaults.brandAnnualUnits?.[sc] ?? (sc === 'low' ? 10000 : sc === 'high' ? 35000 : 20000);
+  };
+
+  const getPerUnitOverhead = (sc: ScenarioKey) => {
+    const total = totalOverhead(sc);
+    const units = (defaults.overheadAllocationMode || 'brand_volume') === 'brand_volume'
+      ? getBrandUnits(sc)
+      : (defaults.units?.[sc] || 1200);
+    return units > 0 ? total / units : 0;
+  };
+
   // Inbound & packaging total per unit
   const totalStandardInbound =
     defaults.development +
@@ -313,16 +335,137 @@ export default function CalculatorSettingsModal({
                 {/* Scenario Total Summary Header */}
                 <div className="grid grid-cols-3 gap-3 p-3 bg-[#080a10] border border-[#1b2234] rounded-xl text-center">
                   <div>
-                    <span className="text-[10px] text-[#94a3b8] uppercase font-mono block">Conservative Scenario</span>
+                    <span className="text-[10px] text-[#94a3b8] uppercase font-mono block">Conservative Run-Rate</span>
                     <span className="text-sm font-bold text-white font-mono">{formatMoney(totalOverhead('low'), curr)}</span>
+                    <span className="text-[10px] text-[#94a3b8] block mt-0.5 font-mono">
+                      {curr}{getPerUnitOverhead('low').toFixed(2)}/unit
+                    </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-[#cda052] uppercase font-mono block">Expected Scenario (Base)</span>
+                    <span className="text-[10px] text-[#cda052] uppercase font-mono block">Expected Baseline Run-Rate</span>
                     <span className="text-sm font-bold text-[#e6c875] font-mono">{formatMoney(totalOverhead('mid'), curr)}</span>
+                    <span className="text-[10px] text-[#cda052] block mt-0.5 font-mono font-bold">
+                      {curr}{getPerUnitOverhead('mid').toFixed(2)}/unit
+                    </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-emerald-400 uppercase font-mono block">Upside Scenario</span>
+                    <span className="text-[10px] text-emerald-400 uppercase font-mono block">Upside Scale Run-Rate</span>
                     <span className="text-sm font-bold text-emerald-300 font-mono">{formatMoney(totalOverhead('high'), curr)}</span>
+                    <span className="text-[10px] text-emerald-400 block mt-0.5 font-mono">
+                      {curr}{getPerUnitOverhead('high').toFixed(2)}/unit
+                    </span>
+                  </div>
+                </div>
+
+                {/* Brand Annual Unit Sales Allocation Section */}
+                <div className="p-3.5 bg-[#0a0d14] border border-[#232c42] rounded-xl space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#1b2234] pb-2.5">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-white text-xs">Total Brand Annual Sales Volume (All SKUs Comprising Per Annum)</span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-[#cda052]/15 text-[#e6c875] border border-[#cda052]/30">
+                          Catalog Overhead Absorption
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-[#94a3b8] mt-0.5">
+                        Specify total unit sales across all products sold in the year. The engine divides total fixed overhead by this brand volume so each individual garment absorbs its fair share rather than the entire company run-rate.
+                      </p>
+                    </div>
+
+                    {/* Mode Toggle */}
+                    <div className="flex items-center gap-1 bg-[#111624] p-1 rounded-lg border border-[#232c42] flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => updateField('overheadAllocationMode', 'brand_volume')}
+                        className={`px-2.5 py-1 rounded text-[11px] font-medium transition-all ${
+                          (defaults.overheadAllocationMode || 'brand_volume') === 'brand_volume'
+                            ? 'bg-[#cda052] text-black font-semibold shadow-glow'
+                            : 'text-[#94a3b8] hover:text-white'
+                        }`}
+                      >
+                        All SKUs Annual Volume
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateField('overheadAllocationMode', 'sku_volume')}
+                        className={`px-2.5 py-1 rounded text-[11px] font-medium transition-all ${
+                          defaults.overheadAllocationMode === 'sku_volume'
+                            ? 'bg-[#cda052] text-black font-semibold shadow-glow'
+                            : 'text-[#94a3b8] hover:text-white'
+                        }`}
+                      >
+                        Single SKU Batch Only
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 3 Scenario Brand Units Inputs */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="p-2.5 bg-[#0e121b] border border-[#1e2638] rounded-lg">
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[10px] uppercase font-mono text-[#94a3b8]">Conservative Unit Sales</label>
+                        <span className="text-[10px] font-mono text-[#94a3b8]">
+                          {curr}{getPerUnitOverhead('low').toFixed(2)}/unit
+                        </span>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="1"
+                          value={getBrandUnits('low')}
+                          onChange={(e) => updateBrandUnits('low', Number(e.target.value))}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-[#07090e] border border-[#263147] text-white font-mono text-xs focus:border-[#cda052] outline-none"
+                        />
+                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#94a3b8]">units/yr</span>
+                      </div>
+                      <p className="text-[10px] text-[#717a90] mt-1 font-mono">
+                        {formatMoney(totalOverhead('low'), curr)} ÷ {getBrandUnits('low').toLocaleString()} units
+                      </p>
+                    </div>
+
+                    <div className="p-2.5 bg-[#0e121b] border border-[#cda052]/40 rounded-lg">
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[10px] uppercase font-mono text-[#cda052]">Expected Unit Sales (Base)</label>
+                        <span className="text-[10px] font-mono font-bold text-[#e6c875]">
+                          {curr}{getPerUnitOverhead('mid').toFixed(2)}/unit
+                        </span>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="1"
+                          value={getBrandUnits('mid')}
+                          onChange={(e) => updateBrandUnits('mid', Number(e.target.value))}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-[#07090e] border border-[#cda052]/50 text-[#e6c875] font-mono text-xs focus:border-[#cda052] outline-none"
+                        />
+                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#cda052]">units/yr</span>
+                      </div>
+                      <p className="text-[10px] text-[#94a3b8] mt-1 font-mono">
+                        {formatMoney(totalOverhead('mid'), curr)} ÷ {getBrandUnits('mid').toLocaleString()} units
+                      </p>
+                    </div>
+
+                    <div className="p-2.5 bg-[#0e121b] border border-[#1e2638] rounded-lg">
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[10px] uppercase font-mono text-emerald-400">Upside Unit Sales</label>
+                        <span className="text-[10px] font-mono text-emerald-300">
+                          {curr}{getPerUnitOverhead('high').toFixed(2)}/unit
+                        </span>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="1"
+                          value={getBrandUnits('high')}
+                          onChange={(e) => updateBrandUnits('high', Number(e.target.value))}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-[#07090e] border border-[#263147] text-emerald-300 font-mono text-xs focus:border-[#cda052] outline-none"
+                        />
+                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-emerald-400">units/yr</span>
+                      </div>
+                      <p className="text-[10px] text-[#717a90] mt-1 font-mono">
+                        {formatMoney(totalOverhead('high'), curr)} ÷ {getBrandUnits('high').toLocaleString()} units
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -528,6 +671,78 @@ export default function CalculatorSettingsModal({
                     </div>
                   </div>
 
+                  {/* Influencer / Affiliate Commission */}
+                  <div className="p-3.5 bg-[#0e121b] border border-[#1e2638] rounded-xl space-y-1.5">
+                    <label className="font-semibold text-white block">Influencer / Affiliate Commission</label>
+                    <p className="text-[11px] text-[#94a3b8]">Performance commission paid to creator affiliates on attributed GMV</p>
+                    <div className="relative w-full pt-1">
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="50"
+                        value={defaults.affiliate}
+                        onChange={(e) => updateField('affiliate', Math.max(0, Number(e.target.value) || 0))}
+                        className="w-full px-3 py-1.5 rounded-lg bg-[#07090e] border border-[#263147] text-white font-mono text-xs focus:border-[#cda052] outline-none"
+                      />
+                      <span className="absolute right-3 top-[15px] text-[#94a3b8] font-mono">%</span>
+                    </div>
+                  </div>
+
+                  {/* Brand Promoter Commission */}
+                  <div className="p-3.5 bg-[#0e121b] border border-[#1e2638] rounded-xl space-y-1.5">
+                    <label className="font-semibold text-white block">Brand Promoter Commission</label>
+                    <p className="text-[11px] text-[#94a3b8]">Ambassador or promoter program revenue share</p>
+                    <div className="relative w-full pt-1">
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="50"
+                        value={defaults.promoter}
+                        onChange={(e) => updateField('promoter', Math.max(0, Number(e.target.value) || 0))}
+                        className="w-full px-3 py-1.5 rounded-lg bg-[#07090e] border border-[#263147] text-white font-mono text-xs focus:border-[#cda052] outline-none"
+                      />
+                      <span className="absolute right-3 top-[15px] text-[#94a3b8] font-mono">%</span>
+                    </div>
+                  </div>
+
+                  {/* Marketplace Commission */}
+                  <div className="p-3.5 bg-[#0e121b] border border-[#1e2638] rounded-xl space-y-1.5">
+                    <label className="font-semibold text-white block">Marketplace Commission</label>
+                    <p className="text-[11px] text-[#94a3b8]">Third-party channel take-rate (Amazon, Myntra, Ajio, Nykaa)</p>
+                    <div className="relative w-full pt-1">
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="50"
+                        value={defaults.marketplace}
+                        onChange={(e) => updateField('marketplace', Math.max(0, Number(e.target.value) || 0))}
+                        className="w-full px-3 py-1.5 rounded-lg bg-[#07090e] border border-[#263147] text-white font-mono text-xs focus:border-[#cda052] outline-none"
+                      />
+                      <span className="absolute right-3 top-[15px] text-[#94a3b8] font-mono">%</span>
+                    </div>
+                  </div>
+
+                  {/* Marketplace Ads Provision */}
+                  <div className="p-3.5 bg-[#0e121b] border border-[#1e2638] rounded-xl space-y-1.5">
+                    <label className="font-semibold text-white block">Marketplace Ads Provision</label>
+                    <p className="text-[11px] text-[#94a3b8]">Sponsored brand & product ads budget on marketplace channels</p>
+                    <div className="relative w-full pt-1">
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="50"
+                        value={defaults.marketAds}
+                        onChange={(e) => updateField('marketAds', Math.max(0, Number(e.target.value) || 0))}
+                        className="w-full px-3 py-1.5 rounded-lg bg-[#07090e] border border-[#263147] text-white font-mono text-xs focus:border-[#cda052] outline-none"
+                      />
+                      <span className="absolute right-3 top-[15px] text-[#94a3b8] font-mono">%</span>
+                    </div>
+                  </div>
+
                   {/* COD Fixed Fee */}
                   <div className="p-3.5 bg-[#0e121b] border border-[#1e2638] rounded-xl space-y-1.5">
                     <label className="font-semibold text-white block">Cash on Delivery (COD) Handling</label>
@@ -538,7 +753,39 @@ export default function CalculatorSettingsModal({
                         type="number"
                         min="0"
                         value={defaults.cod}
-                        onChange={(e) => updateField('cod', Number(e.target.value))}
+                        onChange={(e) => updateField('cod', Math.max(0, Number(e.target.value) || 0))}
+                        className="w-full pl-7 pr-3 py-1.5 rounded-lg bg-[#07090e] border border-[#263147] text-white font-mono text-xs focus:border-[#cda052] outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Reverse Logistics Provision */}
+                  <div className="p-3.5 bg-[#0e121b] border border-[#1e2638] rounded-xl space-y-1.5">
+                    <label className="font-semibold text-white block">Reverse Logistics Provision</label>
+                    <p className="text-[11px] text-[#94a3b8]">Estimated courier fee for customer return and RTO parcel transit</p>
+                    <div className="relative w-full pt-1">
+                      <span className="absolute left-2.5 top-[15px] text-[#94a3b8] font-mono">{curr}</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={defaults.reverse}
+                        onChange={(e) => updateField('reverse', Math.max(0, Number(e.target.value) || 0))}
+                        className="w-full pl-7 pr-3 py-1.5 rounded-lg bg-[#07090e] border border-[#263147] text-white font-mono text-xs focus:border-[#cda052] outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Exchange Processing Fee */}
+                  <div className="p-3.5 bg-[#0e121b] border border-[#1e2638] rounded-xl space-y-1.5">
+                    <label className="font-semibold text-white block">Exchange Processing Fee</label>
+                    <p className="text-[11px] text-[#94a3b8]">Warehouse restocking and re-dispatch fee for customer size exchanges</p>
+                    <div className="relative w-full pt-1">
+                      <span className="absolute left-2.5 top-[15px] text-[#94a3b8] font-mono">{curr}</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={defaults.exchange}
+                        onChange={(e) => updateField('exchange', Math.max(0, Number(e.target.value) || 0))}
                         className="w-full pl-7 pr-3 py-1.5 rounded-lg bg-[#07090e] border border-[#263147] text-white font-mono text-xs focus:border-[#cda052] outline-none"
                       />
                     </div>

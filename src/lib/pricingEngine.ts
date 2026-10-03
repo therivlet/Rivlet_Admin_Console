@@ -37,6 +37,9 @@ export const defaultCalculatorDefaults: CalculatorDefaults = {
   finance: { low: 60000, mid: 30000, high: 10000 },
   brandAmort: { low: 180000, mid: 120000, high: 90000 },
 
+  overheadAllocationMode: 'brand_volume',
+  brandAnnualUnits: { low: 10000, mid: 20000, high: 35000 },
+
   units: { low: 600, mid: 1200, high: 2000 },
   discount: { low: 20, mid: 15, high: 8 },
   cac: { low: 350, mid: 250, high: 150 },
@@ -122,6 +125,9 @@ export const defaultPricingInputs: PricingInputs = {
   professional: { low: 120000, mid: 80000, high: 60000 },
   finance: { low: 60000, mid: 30000, high: 10000 },
   brandAmort: { low: 180000, mid: 120000, high: 90000 },
+
+  overheadAllocationMode: 'brand_volume',
+  brandAnnualUnits: { low: 10000, mid: 20000, high: 35000 },
 };
 
 export function factoryGstRate(inputs: PricingInputs): number {
@@ -242,6 +248,20 @@ export function annualOverhead(inputs: PricingInputs, scenario: ScenarioKey): nu
   );
 }
 
+export function overheadPerUnitCost(inputs: PricingInputs, scenario: ScenarioKey): number {
+  const total = annualOverhead(inputs, scenario);
+  const mode = inputs.overheadAllocationMode || 'brand_volume';
+  if (mode === 'brand_volume') {
+    const brandUnits = Math.max(
+      1,
+      inputs.brandAnnualUnits?.[scenario] ?? (scenario === 'low' ? 10000 : scenario === 'high' ? 35000 : 20000)
+    );
+    return total / brandUnits;
+  }
+  const skuUnits = Math.max(1, inputs.units[scenario]);
+  return total / skuUnits;
+}
+
 export function percentageRate(inputs: PricingInputs): number {
   return (
     (inputs.gateway +
@@ -325,7 +345,14 @@ export function calculateScenario(inputs: PricingInputs, scenario: ScenarioKey):
   const baseProductCost = productCost(inputs) + customs.cost;
 
   const overheadTotal = annualOverhead(inputs, scenario);
-  const overheadPerUnit = overheadTotal / units;
+  const mode = inputs.overheadAllocationMode || 'brand_volume';
+  const allocationUnits = mode === 'brand_volume'
+    ? Math.max(
+        1,
+        inputs.brandAnnualUnits?.[scenario] ?? (scenario === 'low' ? 10000 : scenario === 'high' ? 35000 : 20000)
+      )
+    : units;
+  const overheadPerUnit = overheadTotal / allocationUnits;
 
   const fixedOrder = fixedSalesCost(inputs, scenario);
   const salesRates = percentageRate(inputs);
@@ -371,6 +398,8 @@ export function calculateScenario(inputs: PricingInputs, scenario: ScenarioKey):
     baseProductCost,
     overheadAnnual: overheadTotal,
     overheadPerUnit,
+    overheadAllocationUnits: allocationUnits,
+    overheadAllocationMode: mode,
     fixedOrder,
     salesRates,
     salesRateCost,
@@ -502,6 +531,13 @@ export function mergeDefaultsIntoInputs(
     professional: { ...(defaults.professional || defaultCalculatorDefaults.professional), ...(base.professional || {}) },
     finance: { ...(defaults.finance || defaultCalculatorDefaults.finance), ...(base.finance || {}) },
     brandAmort: { ...(defaults.brandAmort || defaultCalculatorDefaults.brandAmort), ...(base.brandAmort || {}) },
+
+    overheadAllocationMode: base.overheadAllocationMode || defaults.overheadAllocationMode || 'brand_volume',
+    brandAnnualUnits: {
+      low: base.brandAnnualUnits?.low ?? defaults.brandAnnualUnits?.low ?? 10000,
+      mid: base.brandAnnualUnits?.mid ?? defaults.brandAnnualUnits?.mid ?? 20000,
+      high: base.brandAnnualUnits?.high ?? defaults.brandAnnualUnits?.high ?? 35000,
+    },
 
     bom: base.bom,
   };

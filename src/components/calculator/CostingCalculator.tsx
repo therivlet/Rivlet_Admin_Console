@@ -166,6 +166,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
           mrp: prev.mrp,
           factory: prev.factory,
           bom: prev.bom,
+          units: prev.units,
         },
         activeDefaults
       ),
@@ -1870,7 +1871,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
               )}
             </div>
             <p className="text-[11px] text-[#717a90] mt-0.5">
-              Enter annual company expenses. The planner divides annual total by planned annual units automatically: {curr}{Math.round(currentResult.overheadPerUnit)}/unit ({formatMoney(currentResult.overheadAnnual, curr)} ÷ {currentResult.units.toLocaleString()} units).
+              Enter annual company expenses. The planner divides annual total by {(inputs.overheadAllocationMode || 'brand_volume') === 'brand_volume' ? 'total brand volume (all catalog SKUs)' : 'batch units'} automatically: <strong className="text-[#e6c875] font-mono">{curr}{Math.round(currentResult.overheadPerUnit)}/unit</strong> ({formatMoney(currentResult.overheadAnnual, curr)} ÷ {(currentResult.overheadAllocationUnits || ((inputs.overheadAllocationMode || 'brand_volume') === 'brand_volume' ? inputs.brandAnnualUnits?.[activeScenario] || 20000 : currentResult.units)).toLocaleString()} {(inputs.overheadAllocationMode || 'brand_volume') === 'brand_volume' ? 'all-SKU annual brand units' : 'batch units'}).
             </p>
           </div>
           <div className="flex items-center gap-2 self-start sm:self-auto">
