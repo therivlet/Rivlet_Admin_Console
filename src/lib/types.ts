@@ -62,10 +62,14 @@ export interface PricingInputs {
 
   // Import Customs
   importMode: 'domestic' | 'imported';
+  freightType?: 'percent' | 'fixed';
+  freightValue?: number;
+  insuranceType?: 'percent' | 'fixed';
+  insuranceValue?: number;
   intlFreight: number;
   insurance: number;
   bcd: number; // %
-  sws: number; // % of BCD
+  sws: number; // %
   importIgst: number; // %
   importIgstRecoverable: boolean;
   clearance: number;
@@ -145,6 +149,10 @@ export interface CalculatorDefaults {
 
   // Import Customs Defaults
   importMode: 'domestic' | 'imported';
+  freightType?: 'percent' | 'fixed';
+  freightValue?: number;
+  insuranceType?: 'percent' | 'fixed';
+  insuranceValue?: number;
   intlFreight: number;
   insurance: number;
   bcd: number;

@@ -31,11 +31,14 @@ import {
   defaultPricingInputs, 
   calculateScenario, 
   formatMoney, 
-  formatPercent,
-  getStoredCalculatorDefaults,
-  mergeDefaultsIntoInputs,
-  validatePricingInputs
+  formatPercent, 
+  getStoredCalculatorDefaults, 
+  mergeDefaultsIntoInputs, 
+  validatePricingInputs,
+  importMath
 } from '@/lib/pricingEngine';
+import { getDifferencesFromDefaults } from '@/lib/defaultsDiff';
+import DefaultsDiffModal, { DiffItem } from './DefaultsDiffModal';
 import { useAdminStore } from '@/lib/store';
 import { useAuth } from '@/lib/authContext';
 import CostingExportModal from './CostingExportModal';
@@ -48,19 +51,20 @@ interface CostingCalculatorProps {
   initialSheet?: CostingSheet;
   onSaveSuccess?: () => void;
   onNewCalculation?: () => void;
+  onSelectSavedProduct?: (sheet: CostingSheet) => void;
 }
 
 function makeBlankProduct(overrides: Partial<Pick<PricingInputs, 'productName' | 'productCode' | 'mrp' | 'targetMargin'>> = {}) {
   return {
     productName: '',
-    productCode: `RIV-${Math.floor(1000 + Math.random() * 9000)}`,
+    productCode: 'RIV-',
     mrp: 2999,
     ...overrides,
   };
 }
 
-export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCalculation }: CostingCalculatorProps) {
-  const { saveCostingSheet } = useAdminStore();
+export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCalculation, onSelectSavedProduct }: CostingCalculatorProps) {
+  const { costingSheets, saveCostingSheet } = useAdminStore();
   const { user } = useAuth();
 
   // Active calculator defaults (synced via Supabase or localStorage)
@@ -81,6 +85,9 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
   const [isBOMModalOpen, setIsBOMModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+  const [isDiffModalOpen, setIsDiffModalOpen] = useState(false);
+  const [diffItems, setDiffItems] = useState<DiffItem[]>([]);
+  const [diffNotification, setDiffNotification] = useState<string | null>(null);
   const [validationAttempted, setValidationAttempted] = useState(false);
   const [showNewCalcWindow, setShowNewCalcWindow] = useState(() => !initialSheet);
 
@@ -133,10 +140,39 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
     setInputs(prev => ({
       ...prev,
       productName: prev.productName ? `${prev.productName} (Copy)` : '',
-      productCode: `RIV-${Math.floor(1000 + Math.random() * 9000)}`,
+      productCode: prev.productCode ? (prev.productCode.endsWith('-COPY') ? prev.productCode : `${prev.productCode}-COPY`) : 'RIV-',
     }));
     setNewCalcAlert(true);
     setTimeout(() => setNewCalcAlert(false), 3500);
+  };
+
+  const handleCheckDefaultsDiff = () => {
+    const diffs = getDifferencesFromDefaults(inputs, activeDefaults);
+    if (diffs.length === 0) {
+      setDiffNotification('Product already matches all standard brand defaults!');
+      setTimeout(() => setDiffNotification(null), 3500);
+      return;
+    }
+    setDiffItems(diffs);
+    setIsDiffModalOpen(true);
+  };
+
+  const handleConfirmApplyDefaults = () => {
+    setInputs(prev => ({
+      ...mergeDefaultsIntoInputs(
+        {
+          productName: prev.productName,
+          productCode: prev.productCode,
+          mrp: prev.mrp,
+          factory: prev.factory,
+          bom: prev.bom,
+        },
+        activeDefaults
+      ),
+    }));
+    setIsDiffModalOpen(false);
+    setDiffNotification('Brand defaults applied successfully to this product!');
+    setTimeout(() => setDiffNotification(null), 3500);
   };
 
   // Accordion section states
@@ -345,22 +381,46 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
             </button>
           </div>
 
-          <button
-            onClick={() => setIsExportModalOpen(true)}
-            className="p-2 rounded-lg bg-[#161a26] border border-[#262c3e] text-[#8e97ae] hover:text-[#cda052] text-xs flex items-center gap-1.5 transition-colors"
-            title="Print or Save PDF Spec Sheet"
-          >
-            <Printer className="w-3.5 h-3.5 text-[#cda052]" />
-            <span className="hidden sm:inline">Print / PDF</span>
-          </button>
+          {/* Saved Products Selector Dropdown */}
+          {costingSheets.length > 0 && (
+            <div className="relative">
+              <select
+                value={currentSheetId || ''}
+                onChange={(e) => {
+                  const id = e.target.value;
+                  if (!id) {
+                    handleStartNewCalculation();
+                    return;
+                  }
+                  const found = costingSheets.find(s => s.id === id);
+                  if (found) {
+                    setInputs(found.inputs);
+                    setCurrentSheetId(found.id);
+                    setShowNewCalcWindow(false);
+                    if (onSelectSavedProduct) onSelectSavedProduct(found);
+                  }
+                }}
+                className="px-2.5 py-1.5 rounded-lg bg-[#121624] border border-[#263147] text-white text-xs font-medium focus:border-[#cda052] outline-none max-w-[170px] truncate"
+                title="Select a saved product to load into Pricing Studio"
+              >
+                <option value="">{currentSheetId ? 'Switch Product...' : 'Load Saved Product...'}</option>
+                {costingSheets.map(s => (
+                  <option key={s.id} value={s.id}>
+                    {s.sku} — {s.styleName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
+          {/* Unified Export / Print Suite */}
           <button
             onClick={() => setIsExportModalOpen(true)}
-            className="p-2 rounded-lg bg-[#161a26] border border-[#262c3e] text-[#8e97ae] hover:text-[#cda052] text-xs flex items-center gap-1.5 transition-colors"
-            title="Open Export Suite & Multi-Scenario CSV"
+            className="p-2 sm:px-3 sm:py-2 rounded-lg bg-[#161a26] border border-[#263147] text-[#8e97ae] hover:text-[#cda052] hover:border-[#cda052]/50 text-xs flex items-center gap-1.5 transition-all shadow-sm"
+            title="Export Suite, Print Spec Sheet & Multi-Scenario CSV"
           >
             <Download className="w-3.5 h-3.5 text-[#cda052]" />
-            <span className="hidden sm:inline">Export Suite</span>
+            <span className="hidden sm:inline">Export / Print</span>
           </button>
 
           {/* Scenario Planning Help */}
@@ -383,7 +443,17 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
             <span>Settings</span>
           </button>
 
-          {/* Duplicate current calculation — useful for costing fabric/GSM variants of the same style */}
+          {/* Apply Brand Defaults with Diff Pop-up */}
+          <button
+            onClick={handleCheckDefaultsDiff}
+            title="Compare and apply brand default values to this style"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#161a26] border border-[#263147] text-[#94a3b8] hover:text-[#cda052] hover:border-[#cda052]/50 font-semibold text-xs transition-all shadow-sm"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-[#cda052]" />
+            <span className="hidden sm:inline">Apply Defaults</span>
+          </button>
+
+          {/* Duplicate current calculation */}
           <button
             onClick={handleDuplicateCalculation}
             title="Duplicate this calculation to try a cost variant (e.g. different fabric or GSM)"
@@ -391,16 +461,6 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
           >
             <Copy className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Duplicate</span>
-          </button>
-
-          {/* New Calculation Button */}
-          <button
-            onClick={handleStartNewCalculation}
-            title="Start a fresh calculation for a new product style"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#182032] border border-[#2b3956] text-[#cda052] hover:text-white hover:border-[#cda052] font-semibold text-xs transition-all shadow-sm"
-          >
-            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span>New Calculation</span>
           </button>
 
           <button
@@ -444,17 +504,6 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0">
-              <button
-                type="button"
-                onClick={() => {
-                  const sampleSku = `RIV-${Math.floor(1000 + Math.random() * 9000)}`;
-                  updateField('productCode', sampleSku);
-                }}
-                className="px-3.5 py-2 rounded-xl bg-[#141a29] border border-[#2b3854] text-[#cbd5e1] hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
-                title="Generate fresh SKU code"
-              >
-                <span>🎲 Generate SKU</span>
-              </button>
               {currentSheetId && (
                 <button
                   type="button"
@@ -493,7 +542,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
                 type="text"
                 value={inputs.productCode}
                 onChange={(e) => updateField('productCode', e.target.value)}
-                placeholder="RIV-2041"
+                placeholder="RIV-"
                 className="w-full bg-[#121724] border border-[#26334d] rounded-lg px-3 py-2 text-sm font-mono text-[#cda052] font-bold focus:outline-none focus:border-[#cda052]"
               />
             </div>
@@ -541,31 +590,13 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
               </div>
             </div>
           </div>
+        </div>
+      )}
 
-          {/* Quick Preset Selector for Garment Categories */}
-          <div className="flex items-center gap-2 flex-wrap pt-1 text-xs">
-            <span className="text-[#94a3b8] font-medium text-[11px]">Quick Style Presets:</span>
-            {[
-              { name: 'Oversized Fleece Hoodie', mrp: 3499, factory: 850, margin: 25 },
-              { name: 'Heavyweight Boxy Tee', mrp: 1899, factory: 420, margin: 28 },
-              { name: 'Acid Wash Sweatshirt', mrp: 2799, factory: 680, margin: 25 },
-              { name: 'Relaxed Fit Cargo Sweatpants', mrp: 2999, factory: 720, margin: 24 },
-            ].map((preset) => (
-              <button
-                key={preset.name}
-                type="button"
-                onClick={() => {
-                  updateField('productName', preset.name);
-                  updateField('mrp', preset.mrp);
-                  updateField('factory', preset.factory);
-                  updateField('targetMargin', preset.margin);
-                }}
-                className="px-2.5 py-1 rounded-lg bg-[#121826] border border-[#243048] hover:border-[#cda052]/60 hover:text-white text-[#cbd5e1] text-[11px] transition-all"
-              >
-                + {preset.name} ({curr}{preset.mrp})
-              </button>
-            ))}
-          </div>
+      {diffNotification && (
+        <div className="p-3.5 bg-[rgba(205,160,82,0.15)] border border-[rgba(205,160,82,0.35)] rounded-lg text-[#e6c875] text-xs flex items-center gap-2 animate-fade-in shadow-md">
+          <Sparkles className="w-4 h-4 text-[#cda052] flex-shrink-0" />
+          <span>{diffNotification}</span>
         </div>
       )}
 
@@ -1382,52 +1413,337 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
             </div>
           </div>
 
-          {/* Import Customs Dropdown / Fields */}
-          <div className="p-3.5 bg-[#090b12] border border-[#1b2132] rounded-lg space-y-3 text-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-white font-semibold">Supply Origin:</span>
-              <select
-                value={inputs.importMode}
-                onChange={(e) => updateField('importMode', e.target.value as any)}
-                className="px-2.5 py-1 rounded bg-[#161a26] border border-[#262c3e] text-white text-xs"
-              >
-                <option value="domestic">Domestic Supply (No Import)</option>
-                <option value="imported">Imported into India</option>
-              </select>
+          {/* Supply Origin & Import to India (Customs & Logistics Engine) */}
+          <div className="p-4 bg-[#090b12] border border-[#1b2132] rounded-xl space-y-4 text-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#181e2e] pb-3">
+              <div>
+                <span className="text-white font-bold text-xs block">Supply Origin & Import Customs</span>
+                <span className="text-[11px] text-[#717d95]">Specify whether this garment is sourced domestically or imported into India.</span>
+              </div>
+              <div className="flex items-center bg-[#131722] p-1 rounded-lg border border-[#21293c]">
+                <button
+                  type="button"
+                  onClick={() => updateField('importMode', 'domestic')}
+                  className={`px-3 py-1 text-xs rounded-md font-semibold transition-all ${
+                    inputs.importMode === 'domestic'
+                      ? 'bg-gradient-to-r from-[#cda052] to-[#b38536] text-black shadow-glow'
+                      : 'text-[#828d9f] hover:text-white'
+                  }`}
+                >
+                  Domestic Supply
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateField('importMode', 'imported')}
+                  className={`px-3 py-1 text-xs rounded-md font-semibold transition-all ${
+                    inputs.importMode === 'imported'
+                      ? 'bg-gradient-to-r from-[#cda052] to-[#b38536] text-black shadow-glow'
+                      : 'text-[#828d9f] hover:text-white'
+                  }`}
+                >
+                  Imported into India
+                </button>
+              </div>
             </div>
 
-            {inputs.importMode === 'imported' && (
-              <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#1b2132]">
-                <div>
-                  <label className="text-[10px] text-[#636c82] block">Intl Freight</label>
-                  <input
-                    type="number"
-                    value={inputs.intlFreight}
-                    onChange={(e) => updateField('intlFreight', Number(e.target.value))}
-                    className="w-full bg-[#10131d] px-2 py-1 rounded border border-[#202638] text-white text-xs"
-                  />
+            {inputs.importMode === 'imported' ? (
+              <div className="space-y-4 pt-1">
+                {/* 1. FOB Garment Supply Base */}
+                <div className="p-3 bg-[#0d101a] border border-[#1c2438] rounded-xl flex items-center justify-between">
+                  <div>
+                    <span className="font-semibold text-white text-xs block">1. Garment FOB Price (Factory Invoice)</span>
+                    <span className="text-[11px] text-[#78849e]">Base cut, make, fabric, trims & factory supply per unit</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-mono font-bold text-[#cda052]">{curr}{inputs.factory.toFixed(2)}</span>
+                    <span className="text-[10px] text-[#6d7890] block">from Factory Cost</span>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-[10px] text-[#636c82] block">BCD %</label>
-                  <input
-                    type="number"
-                    value={inputs.bcd}
-                    onChange={(e) => updateField('bcd', Number(e.target.value))}
-                    className="w-full bg-[#10131d] px-2 py-1 rounded border border-[#202638] text-white text-xs"
-                  />
+
+                {/* 2. Freight & Insurance (Percentage of FOB or Fixed) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* International Freight */}
+                  <div className="p-3.5 bg-[#0d101a] border border-[#1e263a] rounded-xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-white uppercase tracking-wider">
+                        2. International Freight
+                      </label>
+                      <div className="flex items-center bg-[#151a28] rounded p-0.5 border border-[#273248] text-[10px]">
+                        <button
+                          type="button"
+                          onClick={() => updateField('freightType', 'percent')}
+                          className={`px-2 py-0.5 rounded font-semibold ${
+                            (inputs.freightType || 'percent') === 'percent'
+                              ? 'bg-[#cda052] text-black'
+                              : 'text-[#8a96ae]'
+                          }`}
+                        >
+                          % of FOB
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => updateField('freightType', 'fixed')}
+                          className={`px-2 py-0.5 rounded font-semibold ${
+                            inputs.freightType === 'fixed'
+                              ? 'bg-[#cda052] text-black'
+                              : 'text-[#8a96ae]'
+                          }`}
+                        >
+                          Fixed {curr}/unit
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="relative">
+                      {(inputs.freightType === 'fixed') && (
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#7f8ba1] font-mono">{curr}</span>
+                      )}
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        value={inputs.freightValue !== undefined ? inputs.freightValue : (inputs.intlFreight || 1.5)}
+                        onChange={(e) => {
+                          const val = Math.max(0, Number(e.target.value) || 0);
+                          updateField('freightValue', val);
+                          updateField('intlFreight', val);
+                        }}
+                        className={`w-full py-1.5 rounded-lg bg-[#07090e] border border-[#263147] text-white font-mono text-xs focus:border-[#cda052] outline-none ${
+                          inputs.freightType === 'fixed' ? 'pl-7 pr-3' : 'px-3 pr-7'
+                        }`}
+                      />
+                      {(inputs.freightType || 'percent') === 'percent' && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7f8ba1] font-mono">%</span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-[#78849e] flex items-center justify-between">
+                      <span>Calculated Freight:</span>
+                      <strong className="text-white font-mono">
+                        {curr}{((inputs.freightType || 'percent') === 'percent'
+                          ? (inputs.factory * (inputs.freightValue ?? 1.5)) / 100
+                          : (inputs.freightValue ?? 0)).toFixed(2)}
+                      </strong>
+                    </div>
+                  </div>
+
+                  {/* Transit Marine Insurance */}
+                  <div className="p-3.5 bg-[#0d101a] border border-[#1e263a] rounded-xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-white uppercase tracking-wider">
+                        3. Transit Insurance
+                      </label>
+                      <div className="flex items-center bg-[#151a28] rounded p-0.5 border border-[#273248] text-[10px]">
+                        <button
+                          type="button"
+                          onClick={() => updateField('insuranceType', 'percent')}
+                          className={`px-2 py-0.5 rounded font-semibold ${
+                            (inputs.insuranceType || 'percent') === 'percent'
+                              ? 'bg-[#cda052] text-black'
+                              : 'text-[#8a96ae]'
+                          }`}
+                        >
+                          % of FOB
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => updateField('insuranceType', 'fixed')}
+                          className={`px-2 py-0.5 rounded font-semibold ${
+                            inputs.insuranceType === 'fixed'
+                              ? 'bg-[#cda052] text-black'
+                              : 'text-[#8a96ae]'
+                          }`}
+                        >
+                          Fixed {curr}/unit
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="relative">
+                      {(inputs.insuranceType === 'fixed') && (
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#7f8ba1] font-mono">{curr}</span>
+                      )}
+                      <input
+                        type="number"
+                        step="0.05"
+                        min="0"
+                        value={inputs.insuranceValue !== undefined ? inputs.insuranceValue : (inputs.insurance || 0.5)}
+                        onChange={(e) => {
+                          const val = Math.max(0, Number(e.target.value) || 0);
+                          updateField('insuranceValue', val);
+                          updateField('insurance', val);
+                        }}
+                        className={`w-full py-1.5 rounded-lg bg-[#07090e] border border-[#263147] text-white font-mono text-xs focus:border-[#cda052] outline-none ${
+                          inputs.insuranceType === 'fixed' ? 'pl-7 pr-3' : 'px-3 pr-7'
+                        }`}
+                      />
+                      {(inputs.insuranceType || 'percent') === 'percent' && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7f8ba1] font-mono">%</span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-[#78849e] flex items-center justify-between">
+                      <span>Calculated Insurance:</span>
+                      <strong className="text-white font-mono">
+                        {curr}{((inputs.insuranceType || 'percent') === 'percent'
+                          ? (inputs.factory * (inputs.insuranceValue ?? 0.5)) / 100
+                          : (inputs.insuranceValue ?? 0)).toFixed(2)}
+                      </strong>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-[10px] text-[#636c82] block">Clearance</label>
-                  <input
-                    type="number"
-                    value={inputs.clearance}
-                    onChange={(e) => updateField('clearance', Number(e.target.value))}
-                    className="w-full bg-[#10131d] px-2 py-1 rounded border border-[#202638] text-white text-xs"
-                  />
+
+                {/* 3. Assessable CIF Value Callout Banner */}
+                {(() => {
+                  const freightAmt = (inputs.freightType || 'percent') === 'percent'
+                    ? (inputs.factory * (inputs.freightValue ?? 1.5)) / 100
+                    : (inputs.freightValue ?? 0);
+                  const insAmt = (inputs.insuranceType || 'percent') === 'percent'
+                    ? (inputs.factory * (inputs.insuranceValue ?? 0.5)) / 100
+                    : (inputs.insuranceValue ?? 0);
+                  const cif = inputs.factory + freightAmt + insAmt;
+                  const bcdVal = (cif * (inputs.bcd ?? 20)) / 100;
+                  const swsVal = ((cif + bcdVal) * (inputs.sws ?? 6)) / 100;
+                  const igstBase = cif + bcdVal + swsVal;
+                  const igstVal = (igstBase * (inputs.importIgst ?? 5)) / 100;
+
+                  return (
+                    <div className="space-y-3">
+                      <div className="p-3 bg-[rgba(205,160,82,0.08)] border border-[rgba(205,160,82,0.25)] rounded-xl flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] uppercase font-bold text-[#cda052] bg-[rgba(205,160,82,0.15)] px-2 py-0.5 rounded border border-[#cda052]/30">
+                            Assessable CIF
+                          </span>
+                          <span className="text-xs text-[#cbd5e1]">
+                            FOB ({curr}{inputs.factory.toFixed(0)}) + Freight ({curr}{freightAmt.toFixed(1)}) + Ins ({curr}{insAmt.toFixed(1)})
+                          </span>
+                        </div>
+                        <span className="font-mono text-sm font-bold text-[#e6c875]">
+                          {curr}{cif.toFixed(2)}
+                        </span>
+                      </div>
+
+                      {/* 4. Customs Duty, SWS, IGST, Port Clearance */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                        {/* BCD */}
+                        <div className="p-2.5 bg-[#0d101a] border border-[#1e263a] rounded-lg">
+                          <label className="text-[10px] text-[#8e98ad] uppercase font-bold block mb-1">
+                            BCD ({inputs.bcd ?? 20}%)
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={inputs.bcd ?? 20}
+                              onChange={(e) => updateField('bcd', Number(e.target.value) || 0)}
+                              className="w-full px-2 py-1 pr-5 rounded bg-[#07090e] border border-[#252f44] text-white font-mono text-xs focus:border-[#cda052] outline-none"
+                            />
+                            <span className="absolute right-2 top-1 text-[11px] text-[#6d7890] font-mono">%</span>
+                          </div>
+                          <span className="text-[10px] text-[#8e98ad] block mt-1">
+                            Amount: <strong className="text-white font-mono">{curr}{bcdVal.toFixed(2)}</strong>
+                          </span>
+                        </div>
+
+                        {/* SWS */}
+                        <div className="p-2.5 bg-[#0d101a] border border-[#1e263a] rounded-lg">
+                          <label className="text-[10px] text-[#8e98ad] uppercase font-bold block mb-1">
+                            SWS ({inputs.sws ?? 6}%)
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={inputs.sws ?? 6}
+                              onChange={(e) => updateField('sws', Number(e.target.value) || 0)}
+                              className="w-full px-2 py-1 pr-5 rounded bg-[#07090e] border border-[#252f44] text-white font-mono text-xs focus:border-[#cda052] outline-none"
+                            />
+                            <span className="absolute right-2 top-1 text-[11px] text-[#6d7890] font-mono">%</span>
+                          </div>
+                          <span className="text-[10px] text-[#8e98ad] block mt-1">
+                            Amount: <strong className="text-white font-mono">{curr}{swsVal.toFixed(2)}</strong>
+                          </span>
+                        </div>
+
+                        {/* Import IGST */}
+                        <div className="p-2.5 bg-[#0d101a] border border-[#1e263a] rounded-lg">
+                          <label className="text-[10px] text-[#8e98ad] uppercase font-bold block mb-1">
+                            Import IGST ({inputs.importIgst ?? 5}%)
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={inputs.importIgst ?? 5}
+                              onChange={(e) => updateField('importIgst', Number(e.target.value) || 0)}
+                              className="w-full px-2 py-1 pr-5 rounded bg-[#07090e] border border-[#252f44] text-white font-mono text-xs focus:border-[#cda052] outline-none"
+                            />
+                            <span className="absolute right-2 top-1 text-[11px] text-[#6d7890] font-mono">%</span>
+                          </div>
+                          <span className="text-[10px] text-[#8e98ad] block mt-1">
+                            IGST: <strong className="text-white font-mono">{curr}{igstVal.toFixed(2)}</strong>
+                          </span>
+                        </div>
+
+                        {/* Port / CHA Clearance */}
+                        <div className="p-2.5 bg-[#0d101a] border border-[#1e263a] rounded-lg">
+                          <label className="text-[10px] text-[#8e98ad] uppercase font-bold block mb-1">
+                            CHA / Port Clearance
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-2 top-1 text-[11px] text-[#6d7890] font-mono">{curr}</span>
+                            <input
+                              type="number"
+                              min="0"
+                              value={inputs.clearance || 0}
+                              onChange={(e) => updateField('clearance', Number(e.target.value) || 0)}
+                              className="w-full pl-6 pr-2 py-1 rounded bg-[#07090e] border border-[#252f44] text-white font-mono text-xs focus:border-[#cda052] outline-none"
+                            />
+                          </div>
+                          <span className="text-[10px] text-[#8e98ad] block mt-1">
+                            Fixed handling / unit
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 5. Recoverable ITC Checkbox for Import IGST */}
+                      <div className="p-3 bg-[#0a0d16] border border-[#1b2234] rounded-lg flex items-center justify-between">
+                        <label className="flex items-center gap-2.5 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={inputs.importIgstRecoverable ?? true}
+                            onChange={(e) => updateField('importIgstRecoverable', e.target.checked)}
+                            className="w-4 h-4 rounded accent-[#cda052] cursor-pointer"
+                          />
+                          <span className="text-white text-xs font-medium">
+                            Claim Import IGST ({curr}{igstVal.toFixed(2)}) as Input Tax Credit (ITC)
+                          </span>
+                        </label>
+                        <span className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded ${
+                          (inputs.importIgstRecoverable ?? true)
+                            ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-700/50'
+                            : 'bg-amber-950/80 text-amber-300 border border-amber-700/50'
+                        }`}>
+                          {(inputs.importIgstRecoverable ?? true)
+                            ? '✓ Excluded from Landed Cost (ITC Asset)'
+                            : '+ Added to Unit Landed Cost'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Duty & Logistics Summary Callout */}
+                <div className="text-[11px] text-[#717d95] bg-[#070910] p-2.5 rounded-lg border border-[#192032] leading-relaxed">
+                  {currentResult.customsNote}
                 </div>
               </div>
+            ) : (
+              <div className="p-3 bg-[#0d101a] border border-[#1c2438] rounded-xl text-[11px] text-[#7e8b9f]">
+                Domestic supply selected: Garment is sourced within India. International ocean/air freight, Basic Customs Duty (BCD), and Social Welfare Surcharge (SWS) are excluded.
+              </div>
             )}
-            <div className="text-[11px] text-[#636c82]">{currentResult.customsNote}</div>
           </div>
         </div>
 
@@ -1874,6 +2190,16 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
           setActiveDefaults(newDefs);
           setInputs(prev => mergeDefaultsIntoInputs(prev, newDefs));
         }}
+      />
+
+      {/* Brand Defaults Diff Confirmation Pop-up Modal */}
+      <DefaultsDiffModal
+        isOpen={isDiffModalOpen}
+        onClose={() => setIsDiffModalOpen(false)}
+        onConfirm={handleConfirmApplyDefaults}
+        diffItems={diffItems}
+        productName={inputs.productName}
+        productCode={inputs.productCode}
       />
 
       {/* Conservative / Expected / Upside Scenario Planning Guide */}

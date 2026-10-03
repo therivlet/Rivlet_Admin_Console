@@ -1,28 +1,66 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { 
   Calculator, 
   FileSpreadsheet, 
-  Sparkles, 
   Plus, 
-  Check, 
-  ExternalLink,
-  Code,
-  Layers,
-  ArrowRight
+  ArrowRight,
+  Trash2,
+  Edit3
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { CostingSheet } from '@/lib/types';
 import CostingCalculator from '@/components/calculator/CostingCalculator';
 import { useConfirm } from '@/lib/confirmContext';
 
-export default function CalculatorPage() {
+function CalculatorContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const confirm = useConfirm();
-  const { costingSheets, deleteCostingSheet, addArtifact } = useAdminStore();
-  const [activeTab, setActiveTab] = useState<'studio' | 'saved' | 'raw-html'>('studio');
-  const [selectedSheet, setSelectedSheet] = useState<CostingSheet | null>(costingSheets[0] || null);
+  const { costingSheets, deleteCostingSheet } = useAdminStore();
+
+  const tabParam = searchParams.get('tab');
+  const actionParam = searchParams.get('action');
+
+  // Determine active tab from URL or state
+  const [activeTab, setActiveTab] = useState<'studio' | 'saved'>(() => {
+    return tabParam === 'saved' ? 'saved' : 'studio';
+  });
+
+  // By default, selectedSheet is NULL (fresh empty calculator with defaults filled)
+  // unless explicitly chosen from saved products or passed.
+  const [selectedSheet, setSelectedSheet] = useState<CostingSheet | null>(null);
   const [calcKey, setCalcKey] = useState(0);
+
+  // Sync tab and action with URL params
+  useEffect(() => {
+    if (tabParam === 'saved') {
+      setActiveTab('saved');
+    } else {
+      setActiveTab('studio');
+    }
+
+    if (actionParam === 'new') {
+      setSelectedSheet(null);
+      setCalcKey((k) => k + 1);
+      setActiveTab('studio');
+    }
+  }, [tabParam, actionParam]);
+
+  const handleStartNewCalculator = () => {
+    setSelectedSheet(null);
+    setCalcKey((k) => k + 1);
+    setActiveTab('studio');
+    router.replace('/calculator?tab=studio&action=new');
+  };
+
+  const handleOpenSheetInStudio = (sheet: CostingSheet) => {
+    setSelectedSheet(sheet);
+    setActiveTab('studio');
+    router.replace('/calculator?tab=studio');
+  };
 
   const handleDeleteSheet = async (sheet: CostingSheet) => {
     const ok = await confirm({
@@ -33,30 +71,10 @@ export default function CalculatorPage() {
     });
     if (!ok) return;
     deleteCostingSheet(sheet.id);
-  };
-
-  const [rawCode, setRawCode] = useState('');
-  const [rawTitle, setRawTitle] = useState('Custom Pricing Planner');
-  const [rawSaved, setRawSaved] = useState(false);
-
-  const handleImportRawCode = () => {
-    if (!rawCode.trim()) return;
-
-    addArtifact({
-      title: rawTitle || 'Custom Pricing Planner',
-      description: 'Imported pricing and unit economics tool',
-      category: 'Calculators',
-      tags: ['Pricing', 'Planner', 'GST', 'Custom'],
-      htmlContent: rawCode,
-      source: 'Claude HTML Artifact',
-      version: '2.0',
-      isPromoted: true,
-      routeSlug: 'custom-pricing-planner',
-      status: 'promoted',
-    });
-
-    setRawSaved(true);
-    setTimeout(() => setRawSaved(false), 3000);
+    if (selectedSheet?.id === sheet.id) {
+      setSelectedSheet(null);
+      setCalcKey((k) => k + 1);
+    }
   };
 
   return (
@@ -66,14 +84,11 @@ export default function CalculatorPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-xl font-bold text-white tracking-wide font-serif">
-              Rivlet Pricing & Unit Economics Suite
+              Pricing & Unit Economics
             </h1>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[rgba(205,160,82,0.15)] text-[#cda052] border border-[rgba(205,160,82,0.3)] font-semibold">
-              Commercial Engine v2.0
-            </span>
           </div>
           <p className="text-xs text-[#7c859c]">
-            Real sales price, automatic step-function output GST, factory ITC, annual overhead allocation, and 3-scenario range forecast.
+            Comprehensive real sales pricing, automatic step GST, factory ITC, customs import duties, annual overhead allocation, and 3-scenario range forecast.
           </p>
         </div>
 
@@ -81,7 +96,10 @@ export default function CalculatorPage() {
           {/* Tab Navigation */}
           <div className="flex items-center bg-[#111420] p-1 rounded-xl border border-[#20273a] overflow-x-auto max-w-full">
             <button
-              onClick={() => setActiveTab('studio')}
+              onClick={() => {
+                setActiveTab('studio');
+                router.replace('/calculator?tab=studio');
+              }}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
                 activeTab === 'studio'
                   ? 'bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold shadow-glow'
@@ -93,7 +111,10 @@ export default function CalculatorPage() {
             </button>
 
             <button
-              onClick={() => setActiveTab('saved')}
+              onClick={() => {
+                setActiveTab('saved');
+                router.replace('/calculator?tab=saved');
+              }}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
                 activeTab === 'saved'
                   ? 'bg-[#1e2538] text-white font-semibold'
@@ -103,27 +124,11 @@ export default function CalculatorPage() {
               <FileSpreadsheet className="w-3.5 h-3.5 text-[#cda052]" />
               <span>Saved Products ({costingSheets.length})</span>
             </button>
-
-            <button
-              onClick={() => setActiveTab('raw-html')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
-                activeTab === 'raw-html'
-                  ? 'bg-[#1e2538] text-[#cda052] font-semibold'
-                  : 'text-[#94a3b8] hover:text-white'
-              }`}
-            >
-              <Code className="w-3.5 h-3.5" />
-              <span>Import Raw HTML</span>
-            </button>
           </div>
 
           {/* Quick New Calculator Action */}
           <button
-            onClick={() => {
-              setSelectedSheet(null);
-              setCalcKey((k) => k + 1);
-              setActiveTab('studio');
-            }}
+            onClick={handleStartNewCalculator}
             title="Start fresh calculation for a brand new product style"
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-bold text-xs hover:brightness-110 shadow-glow transition-all"
           >
@@ -139,129 +144,94 @@ export default function CalculatorPage() {
           key={selectedSheet ? selectedSheet.id : `new-calc-${calcKey}`}
           initialSheet={selectedSheet || undefined}
           onSaveSuccess={() => {}}
+          onSelectSavedProduct={(sheet) => setSelectedSheet(sheet)}
         />
       )}
 
       {/* Tab 2: Saved Products */}
       {activeTab === 'saved' && (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {costingSheets.map((sheet) => (
-              <div
-                key={sheet.id}
-                className="bg-[#111420] border border-[#1e2436] rounded-xl p-5 hover:border-[#cda052]/50 transition-all flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-mono text-xs font-bold text-[#cda052] px-2 py-0.5 rounded bg-[rgba(205,160,82,0.1)] border border-[rgba(205,160,82,0.2)]">
-                      {sheet.sku}
-                    </span>
-                    <span className="text-xs text-[#94a3b8] font-mono">{new Date(sheet.updatedAt).toLocaleDateString()}</span>
-                  </div>
-                  <h3 className="text-sm font-semibold text-white mb-1">{sheet.styleName}</h3>
-                  <div className="text-xs text-[#cbd5e1] mb-3">
-                    MRP: <strong className="text-white font-mono">{sheet.currency}{sheet.mrp}</strong> • Target Margin: <span className="text-[#cda052] font-semibold">{sheet.inputs.targetMargin}%</span>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 bg-[#090b12] p-2.5 rounded-lg border border-[#1b2132] text-center text-xs mb-3">
-                    <div>
-                      <div className="text-[10px] text-[#94a3b8] uppercase tracking-wider font-semibold">Factory</div>
-                      <div className="font-bold text-white font-mono">{sheet.currency}{sheet.inputs.factory}</div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-[#94a3b8] uppercase tracking-wider font-semibold">Units Plan</div>
-                      <div className="font-bold text-white font-mono">{sheet.inputs.units.mid.toLocaleString()}</div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-[#94a3b8] uppercase tracking-wider font-semibold">Margin</div>
-                      <div className="font-bold text-emerald-400 font-mono">{sheet.expectedMargin.toFixed(1)}%</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-3 border-t border-[#1a1f2e] flex items-center justify-between">
-                  <button
-                    onClick={() => {
-                      setSelectedSheet(sheet);
-                      setActiveTab('studio');
-                    }}
-                    className="text-xs text-[#cda052] hover:text-white font-semibold flex items-center gap-1 transition-colors"
-                  >
-                    Open in Studio <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteSheet(sheet)}
-                    className="text-xs text-[#94a3b8] hover:text-rose-400 px-2 py-1 rounded hover:bg-rose-950/30 transition-colors"
-                    title={`Delete calculation for ${sheet.sku}`}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Tab 3: Raw HTML Importer */}
-      {activeTab === 'raw-html' && (
-        <div className="bg-[#10131d] border border-[#1e2436] rounded-xl p-6 space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-[rgba(205,160,82,0.15)] text-[#cda052]">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-white">Import or Run Raw Claude HTML Artifact</h2>
-              <p className="text-xs text-[#7d879d]">
-                Paste any raw HTML pricing calculator code directly. It will be sandboxed and pinned to your sidebar as a dedicated interactive page.
+          {costingSheets.length === 0 ? (
+            <div className="bg-[#111420] border border-[#1e2436] rounded-2xl p-12 text-center space-y-3">
+              <FileSpreadsheet className="w-10 h-10 text-[#cda052]/60 mx-auto" />
+              <h3 className="text-base font-bold text-white">No Saved Costing Sheets Yet</h3>
+              <p className="text-xs text-[#94a3b8] max-w-md mx-auto">
+                Create and save your first garment calculation from the Pricing Studio to see product comparisons and profit models here.
               </p>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs font-semibold text-[#8b94aa] block mb-1">Tool Title</label>
-              <input
-                type="text"
-                value={rawTitle}
-                onChange={(e) => setRawTitle(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-[#090b12] border border-[#22283a] text-xs text-white outline-none focus:border-[#cda052]"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-[#8b94aa] block mb-1">HTML / CSS / JavaScript Code</label>
-              <textarea
-                value={rawCode}
-                onChange={(e) => setRawCode(e.target.value)}
-                rows={12}
-                placeholder="<!doctype html><html>... Paste raw HTML artifact code here ...</html>"
-                className="w-full bg-[#080a10] border border-[#22283a] text-[#cfd5e4] font-mono text-xs p-4 rounded-lg outline-none leading-relaxed"
-              />
-            </div>
-
-            <div className="flex items-center justify-between pt-2">
-              <span className="text-[11px] text-[#636c80]">
-                Executes safely in sandboxed iframe with no conflicts.
-              </span>
               <button
-                onClick={handleImportRawCode}
-                className="flex items-center gap-1.5 px-5 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow"
+                onClick={handleStartNewCalculator}
+                className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-bold text-xs hover:brightness-110 shadow-glow"
               >
-                <Plus className="w-4 h-4 stroke-[2.5]" />
-                <span>Save to Artifacts & Pin to Sidebar</span>
+                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span>Start New Calculation</span>
               </button>
             </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {costingSheets.map((sheet) => (
+                <div
+                  key={sheet.id}
+                  className="bg-[#111420] border border-[#1e2436] rounded-xl p-5 hover:border-[#cda052]/50 transition-all flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-mono text-xs font-bold text-[#cda052] px-2 py-0.5 rounded bg-[rgba(205,160,82,0.1)] border border-[rgba(205,160,82,0.2)]">
+                        {sheet.sku}
+                      </span>
+                      <span className="text-xs text-[#94a3b8] font-mono">{new Date(sheet.updatedAt).toLocaleDateString()}</span>
+                    </div>
+                    <h3 className="text-sm font-semibold text-white mb-1">{sheet.styleName}</h3>
+                    <div className="text-xs text-[#cbd5e1] mb-3">
+                      MRP: <strong className="text-white font-mono">{sheet.currency}{sheet.mrp}</strong> • Target Margin: <span className="text-[#cda052] font-semibold">{sheet.inputs.targetMargin}%</span>
+                    </div>
 
-            {rawSaved && (
-              <div className="p-3 bg-emerald-950/80 border border-emerald-700/60 rounded-lg text-emerald-300 text-xs flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-400" />
-                <span>Artifact saved and pinned to navigation under <strong>Promoted Claude Tools</strong>!</span>
-              </div>
-            )}
-          </div>
+                    <div className="grid grid-cols-3 gap-2 bg-[#090b12] p-2.5 rounded-lg border border-[#1b2132] text-center text-xs mb-3">
+                      <div>
+                        <div className="text-[10px] text-[#94a3b8] uppercase tracking-wider font-semibold">Factory FOB</div>
+                        <div className="font-bold text-white font-mono">{sheet.currency}{sheet.inputs.factory}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-[#94a3b8] uppercase tracking-wider font-semibold">Units Plan</div>
+                        <div className="font-bold text-white font-mono">{sheet.inputs.units.mid.toLocaleString()}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-[#94a3b8] uppercase tracking-wider font-semibold">Margin</div>
+                        <div className="font-bold text-emerald-400 font-mono">{sheet.expectedMargin.toFixed(1)}%</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-[#1a1f2e] flex items-center justify-between">
+                    <button
+                      onClick={() => handleOpenSheetInStudio(sheet)}
+                      className="text-xs text-[#cda052] hover:text-white font-semibold flex items-center gap-1 transition-colors px-2.5 py-1.5 rounded-lg bg-[rgba(205,160,82,0.1)] hover:bg-[rgba(205,160,82,0.2)] border border-[rgba(205,160,82,0.25)]"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>Edit in Studio</span>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteSheet(sheet)}
+                      className="text-xs text-[#94a3b8] hover:text-rose-400 px-2 py-1 rounded hover:bg-rose-950/30 transition-colors flex items-center gap-1"
+                      title={`Delete calculation for ${sheet.sku}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Delete</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
+  );
+}
+
+export default function CalculatorPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-xs text-[#94a3b8]">Loading Pricing Suite...</div>}>
+      <CalculatorContent />
+    </Suspense>
   );
 }

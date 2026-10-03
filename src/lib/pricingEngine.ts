@@ -44,10 +44,14 @@ export const defaultCalculatorDefaults: CalculatorDefaults = {
   shippingSubsidy: { low: 95, mid: 70, high: 55 },
 
   importMode: 'domestic',
+  freightType: 'percent',
+  freightValue: 1.5,
+  insuranceType: 'percent',
+  insuranceValue: 0.5,
   intlFreight: 0,
   insurance: 0,
-  bcd: 0,
-  sws: 10,
+  bcd: 20,
+  sws: 6,
   importIgst: 5,
   importIgstRecoverable: true,
   clearance: 0,
@@ -89,10 +93,14 @@ export const defaultPricingInputs: PricingInputs = {
   inventory: 15,
 
   importMode: 'domestic',
+  freightType: 'percent',
+  freightValue: 1.5,
+  insuranceType: 'percent',
+  insuranceValue: 0.5,
   intlFreight: 0,
   insurance: 0,
-  bcd: 0,
-  sws: 10,
+  bcd: 20,
+  sws: 6,
   importIgst: 5,
   importIgstRecoverable: true,
   clearance: 0,
@@ -135,41 +143,91 @@ export function importMath(inputs: PricingInputs) {
     return {
       cost: 0,
       assess: 0,
+      fob: inputs.factory,
+      freightAmount: 0,
+      insuranceAmount: 0,
       bcd: 0,
       sws: 0,
       igst: 0,
       igstCost: 0,
+      clearance: 0,
       rows: [] as [string, string, number][],
-      note: 'Domestic supply selected: international freight, duty and import taxes are excluded.',
+      note: 'Domestic supply selected: international freight, customs duty and import IGST are excluded.',
     };
   }
 
-  const assess = inputs.factory + inputs.intlFreight + inputs.insurance;
-  const bcd = (assess * inputs.bcd) / 100;
-  const sws = (bcd * inputs.sws) / 100;
+  // Base factory price as FOB
+  const fob = inputs.factory;
+
+  // Freight: percent of FOB or fixed ₹ / unit (default 1.5%)
+  const freightType = inputs.freightType || 'percent';
+  const freightRate = inputs.freightValue !== undefined ? inputs.freightValue : (inputs.intlFreight || 1.5);
+  const freightAmount = freightType === 'percent' ? (fob * freightRate) / 100 : freightRate;
+
+  // Transit Insurance: percent of FOB or fixed ₹ / unit (default 0.5%)
+  const insuranceType = inputs.insuranceType || 'percent';
+  const insuranceRate = inputs.insuranceValue !== undefined ? inputs.insuranceValue : (inputs.insurance || 0.5);
+  const insuranceAmount = insuranceType === 'percent' ? (fob * insuranceRate) / 100 : insuranceRate;
+
+  // Assessable CIF Value = FOB + Freight + Insurance
+  const assess = fob + freightAmount + insuranceAmount;
+
+  // Basic Customs Duty (BCD) on assessable CIF (default 20%)
+  const bcdRate = inputs.bcd !== undefined ? inputs.bcd : 20;
+  const bcd = (assess * bcdRate) / 100;
+
+  // Social Welfare Surcharge (SWS): ~6% on (CIF + BCD)
+  const swsRate = inputs.sws !== undefined ? inputs.sws : 6;
+  const sws = ((assess + bcd) * swsRate) / 100;
+
+  // Import IGST Base = Assessable CIF + BCD + SWS
   const importBase = assess + bcd + sws;
-  const igst = (importBase * inputs.importIgst) / 100;
-  const igstCost = inputs.importIgstRecoverable ? 0 : igst;
-  const cost = inputs.intlFreight + inputs.insurance + bcd + sws + igstCost + inputs.clearance;
+  const igstRate = inputs.importIgst !== undefined ? inputs.importIgst : (importBase <= 2500 ? 5 : 18);
+  const igst = (importBase * igstRate) / 100;
+
+  // Claimable Input Tax Credit (ITC)
+  const isRecoverable = inputs.importIgstRecoverable ?? true;
+  const igstCost = isRecoverable ? 0 : igst;
+
+  const clearance = inputs.clearance || 0;
+  const cost = freightAmount + insuranceAmount + bcd + sws + igstCost + clearance;
 
   const rows: [string, string, number][] = [
-    ['International freight', 'per unit', inputs.intlFreight],
-    ['Transit insurance', 'per unit', inputs.insurance],
-    ['Basic Customs Duty', 'BCD on assessable value', bcd],
-    ['Social Welfare Surcharge', 'SWS on BCD', sws],
-    ['Import IGST', inputs.importIgstRecoverable ? 'Recoverable ITC (excluded from P&L)' : 'Non-recoverable (in P&L)', igstCost],
-    ['Clearance / port charges', 'per unit', inputs.clearance],
+    ['FOB Garment Base', 'Factory supply invoice cost', fob],
+    [
+      `International Freight (${freightType === 'percent' ? `${freightRate}% of FOB` : 'Fixed ₹/unit'})`,
+      'Port inbound logistics',
+      freightAmount,
+    ],
+    [
+      `Transit Marine Insurance (${insuranceType === 'percent' ? `${insuranceRate}% of FOB` : 'Fixed ₹/unit'})`,
+      'Transit loss coverage',
+      insuranceAmount,
+    ],
+    ['Assessable CIF Value', 'FOB + Freight + Insurance', assess],
+    [`Basic Customs Duty (${bcdRate}%)`, 'BCD on assessable CIF', bcd],
+    [`Social Welfare Surcharge (${swsRate}%)`, 'SWS on CIF + BCD', sws],
+    [
+      `Import IGST (${igstRate}%)`,
+      isRecoverable ? 'Claimable ITC Asset (excluded from unit P&L)' : 'Non-recoverable (in unit cost)',
+      igstCost,
+    ],
+    ['Port & CHA Customs Clearance', 'Fixed per unit fee', clearance],
   ];
 
   return {
     cost,
     assess,
+    fob,
+    freightAmount,
+    insuranceAmount,
     bcd,
     sws,
     igst,
     igstCost,
+    clearance,
     rows,
-    note: `Assessable value ₹${assess.toFixed(2)} = factory + freight + insurance. BCD ₹${bcd.toFixed(2)}; SWS ₹${sws.toFixed(2)}; import IGST ₹${igst.toFixed(2)} ${inputs.importIgstRecoverable ? '(recoverable, excluded from P&L)' : '(included in P&L)'}.`,
+    note: `Assessable CIF ₹${assess.toFixed(2)} (FOB ₹${fob.toFixed(2)} + Freight ₹${freightAmount.toFixed(2)} + Insurance ₹${insuranceAmount.toFixed(2)}). BCD ₹${bcd.toFixed(2)} (${bcdRate}%); SWS ₹${sws.toFixed(2)} (${swsRate}%); Import IGST ₹${igst.toFixed(2)} (${igstRate}%) ${isRecoverable ? '[Claimable ITC Asset]' : '[In Landed Cost]'}. Total landed duties & freight: ₹${cost.toFixed(2)}/unit.`,
   };
 }
 
@@ -385,7 +443,7 @@ export function mergeDefaultsIntoInputs(
 ): PricingInputs {
   return {
     productName: base.productName || '',
-    productCode: base.productCode || `RIV-${Math.floor(1000 + Math.random() * 9000)}`,
+    productCode: base.productCode || 'RIV-',
     mrp: base.mrp !== undefined && base.mrp > 0 ? base.mrp : 2999,
     currency: defaults.currency || '₹',
     targetMargin: defaults.targetMargin ?? 25,
@@ -414,14 +472,18 @@ export function mergeDefaultsIntoInputs(
     pickpack: defaults.pickpack ?? 35,
     inventory: defaults.inventory ?? 15,
 
-    importMode: defaults.importMode || 'domestic',
-    intlFreight: defaults.intlFreight ?? 0,
-    insurance: defaults.insurance ?? 0,
-    bcd: defaults.bcd ?? 0,
-    sws: defaults.sws ?? 10,
-    importIgst: defaults.importIgst ?? 5,
-    importIgstRecoverable: defaults.importIgstRecoverable ?? true,
-    clearance: defaults.clearance ?? 0,
+    importMode: base.importMode || defaults.importMode || 'domestic',
+    freightType: base.freightType || defaults.freightType || 'percent',
+    freightValue: base.freightValue ?? defaults.freightValue ?? 1.5,
+    insuranceType: base.insuranceType || defaults.insuranceType || 'percent',
+    insuranceValue: base.insuranceValue ?? defaults.insuranceValue ?? 0.5,
+    intlFreight: base.intlFreight ?? defaults.intlFreight ?? 0,
+    insurance: base.insurance ?? defaults.insurance ?? 0,
+    bcd: base.bcd ?? defaults.bcd ?? 20,
+    sws: base.sws ?? defaults.sws ?? 6,
+    importIgst: base.importIgst ?? defaults.importIgst ?? 5,
+    importIgstRecoverable: base.importIgstRecoverable ?? defaults.importIgstRecoverable ?? true,
+    clearance: base.clearance ?? defaults.clearance ?? 0,
 
     gateway: defaults.gateway ?? 2,
     shopifyFee: defaults.shopifyFee ?? 0,

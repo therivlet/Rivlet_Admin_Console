@@ -18,7 +18,8 @@ import {
   Sparkles,
   Info,
   HelpCircle,
-  AlertCircle
+  AlertCircle,
+  Globe
 } from 'lucide-react';
 import { CalculatorDefaults, ScenarioKey, PricingInputs } from '@/lib/types';
 import { defaultCalculatorDefaults, formatMoney } from '@/lib/pricingEngine';
@@ -42,7 +43,7 @@ export default function CalculatorSettingsModal({
   const confirm = useConfirm();
   const { user, updateProfile } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<'overheads' | 'inbound' | 'commercial' | 'locks'>('overheads');
+  const [activeTab, setActiveTab] = useState<'overheads' | 'inbound' | 'import' | 'commercial' | 'locks'>('overheads');
   const [defaults, setDefaults] = useState<CalculatorDefaults>(defaultCalculatorDefaults);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccessAlert, setSaveSuccessAlert] = useState(false);
@@ -245,6 +246,17 @@ export default function CalculatorSettingsModal({
             >
               <Truck className="w-3.5 h-3.5" />
               <span>Fixed Inbound & Packaging ({curr}{totalStandardInbound}/unit)</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('import')}
+              className={`px-4 py-2 text-xs font-semibold rounded-t-lg transition-all flex items-center gap-1.5 whitespace-nowrap border-b-2 ${activeTab === 'import'
+                  ? 'border-[#cda052] text-[#e6c875] bg-[#141824]'
+                  : 'border-transparent text-[#94a3b8] hover:text-white'
+                }`}
+            >
+              <Globe className="w-3.5 h-3.5" />
+              <span>Import to India Defaults</span>
             </button>
 
             <button
@@ -564,6 +576,231 @@ export default function CalculatorSettingsModal({
                       />
                       <span className="text-white text-xs">Factory GST is Recoverable Input Tax Credit (ITC)</span>
                     </label>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB: IMPORT TO INDIA DEFAULTS */}
+            {activeTab === 'import' && (
+              <div className="space-y-4">
+                <div className="p-3 bg-[#111624] border border-[#232c42] rounded-xl flex items-start gap-2.5 text-[#94a3b8]">
+                  <Globe className="w-4 h-4 text-[#cda052] flex-shrink-0 mt-0.5" />
+                  <div className="leading-relaxed">
+                    <strong className="text-white">Import Customs & Inbound Logistics Defaults</strong>. Configure standard import parameters for garments imported into India. These defaults automatically populate whenever an imported style is created or when brand defaults are applied.
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {/* Default Supply Origin */}
+                  <div className="p-3.5 bg-[#0e121b] border border-[#1e2638] rounded-xl space-y-1.5">
+                    <label className="font-semibold text-white block">Default Supply Origin</label>
+                    <p className="text-[11px] text-[#94a3b8]">Initial origin selection for newly created product styles</p>
+                    <div className="flex items-center gap-3 pt-1">
+                      <label className="flex items-center gap-2 cursor-pointer text-white text-xs">
+                        <input
+                          type="radio"
+                          name="defaultImportMode"
+                          checked={defaults.importMode !== 'imported'}
+                          onChange={() => updateField('importMode', 'domestic')}
+                          className="accent-[#cda052]"
+                        />
+                        <span>Domestic Supply</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer text-white text-xs">
+                        <input
+                          type="radio"
+                          name="defaultImportMode"
+                          checked={defaults.importMode === 'imported'}
+                          onChange={() => updateField('importMode', 'imported')}
+                          className="accent-[#cda052]"
+                        />
+                        <span>Imported into India</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* International Freight Default */}
+                  <div className="p-3.5 bg-[#0e121b] border border-[#1e2638] rounded-xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="font-semibold text-white block">Default International Freight</span>
+                        <p className="text-[11px] text-[#94a3b8]">Ocean/air freight from overseas manufacturer port to Indian port</p>
+                      </div>
+                      <div className="flex items-center bg-[#07090e] rounded p-0.5 border border-[#242f46] text-[10px]">
+                        <button
+                          type="button"
+                          onClick={() => updateField('freightType', 'percent')}
+                          className={`px-2 py-0.5 rounded font-semibold ${
+                            (defaults.freightType || 'percent') === 'percent'
+                              ? 'bg-[#cda052] text-black'
+                              : 'text-[#8a96ae]'
+                          }`}
+                        >
+                          % of FOB
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => updateField('freightType', 'fixed')}
+                          className={`px-2 py-0.5 rounded font-semibold ${
+                            defaults.freightType === 'fixed'
+                              ? 'bg-[#cda052] text-black'
+                              : 'text-[#8a96ae]'
+                          }`}
+                        >
+                          Fixed {curr}/unit
+                        </button>
+                      </div>
+                    </div>
+                    <div className="relative pt-1">
+                      {defaults.freightType === 'fixed' && (
+                        <span className="absolute left-2.5 top-[14px] text-[#94a3b8] font-mono">{curr}</span>
+                      )}
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        value={defaults.freightValue !== undefined ? defaults.freightValue : 1.5}
+                        onChange={(e) => updateField('freightValue', Math.max(0, Number(e.target.value) || 0))}
+                        className={`w-full py-1.5 rounded-lg bg-[#07090e] border border-[#263147] text-white font-mono text-xs focus:border-[#cda052] outline-none ${
+                          defaults.freightType === 'fixed' ? 'pl-7 pr-3' : 'px-3 pr-7'
+                        }`}
+                      />
+                      {(defaults.freightType || 'percent') === 'percent' && (
+                        <span className="absolute right-3 top-[14px] text-[#94a3b8] font-mono">%</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Transit Marine Insurance Default */}
+                  <div className="p-3.5 bg-[#0e121b] border border-[#1e2638] rounded-xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="font-semibold text-white block">Default Transit Marine Insurance</span>
+                        <p className="text-[11px] text-[#94a3b8]">Transit policy covering loss or damage in transit (default 0.5% of FOB)</p>
+                      </div>
+                      <div className="flex items-center bg-[#07090e] rounded p-0.5 border border-[#242f46] text-[10px]">
+                        <button
+                          type="button"
+                          onClick={() => updateField('insuranceType', 'percent')}
+                          className={`px-2 py-0.5 rounded font-semibold ${
+                            (defaults.insuranceType || 'percent') === 'percent'
+                              ? 'bg-[#cda052] text-black'
+                              : 'text-[#8a96ae]'
+                          }`}
+                        >
+                          % of FOB
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => updateField('insuranceType', 'fixed')}
+                          className={`px-2 py-0.5 rounded font-semibold ${
+                            defaults.insuranceType === 'fixed'
+                              ? 'bg-[#cda052] text-black'
+                              : 'text-[#8a96ae]'
+                          }`}
+                        >
+                          Fixed {curr}/unit
+                        </button>
+                      </div>
+                    </div>
+                    <div className="relative pt-1">
+                      {defaults.insuranceType === 'fixed' && (
+                        <span className="absolute left-2.5 top-[14px] text-[#94a3b8] font-mono">{curr}</span>
+                      )}
+                      <input
+                        type="number"
+                        step="0.05"
+                        min="0"
+                        value={defaults.insuranceValue !== undefined ? defaults.insuranceValue : 0.5}
+                        onChange={(e) => updateField('insuranceValue', Math.max(0, Number(e.target.value) || 0))}
+                        className={`w-full py-1.5 rounded-lg bg-[#07090e] border border-[#263147] text-white font-mono text-xs focus:border-[#cda052] outline-none ${
+                          defaults.insuranceType === 'fixed' ? 'pl-7 pr-3' : 'px-3 pr-7'
+                        }`}
+                      />
+                      {(defaults.insuranceType || 'percent') === 'percent' && (
+                        <span className="absolute right-3 top-[14px] text-[#94a3b8] font-mono">%</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Basic Customs Duty (BCD) Rate */}
+                  <div className="p-3.5 bg-[#0e121b] border border-[#1e2638] rounded-xl space-y-1.5">
+                    <label className="font-semibold text-white block">Default Basic Customs Duty (BCD)</label>
+                    <p className="text-[11px] text-[#94a3b8]">Standard customs tariff percentage applied on Assessable CIF Value (typically 20% for garments)</p>
+                    <div className="relative w-full pt-1">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={defaults.bcd !== undefined ? defaults.bcd : 20}
+                        onChange={(e) => updateField('bcd', Math.max(0, Number(e.target.value) || 0))}
+                        className="w-full px-3 py-1.5 rounded-lg bg-[#07090e] border border-[#263147] text-white font-mono text-xs focus:border-[#cda052] outline-none"
+                      />
+                      <span className="absolute right-3 top-[14px] text-[#94a3b8] font-mono">%</span>
+                    </div>
+                  </div>
+
+                  {/* Social Welfare Surcharge (SWS) Rate */}
+                  <div className="p-3.5 bg-[#0e121b] border border-[#1e2638] rounded-xl space-y-1.5">
+                    <label className="font-semibold text-white block">Default Social Welfare Surcharge (SWS)</label>
+                    <p className="text-[11px] text-[#94a3b8]">SWS percentage applied above BCD and CIF (standard 6%)</p>
+                    <div className="relative w-full pt-1">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={defaults.sws !== undefined ? defaults.sws : 6}
+                        onChange={(e) => updateField('sws', Math.max(0, Number(e.target.value) || 0))}
+                        className="w-full px-3 py-1.5 rounded-lg bg-[#07090e] border border-[#263147] text-white font-mono text-xs focus:border-[#cda052] outline-none"
+                      />
+                      <span className="absolute right-3 top-[14px] text-[#94a3b8] font-mono">%</span>
+                    </div>
+                  </div>
+
+                  {/* Import IGST Rate & ITC Claim */}
+                  <div className="p-3.5 bg-[#0e121b] border border-[#1e2638] rounded-xl space-y-3">
+                    <div>
+                      <label className="font-semibold text-white block">Default Import IGST Rate</label>
+                      <p className="text-[11px] text-[#94a3b8]">Integrated GST percentage applied on Assessable CIF + BCD + SWS (standard 5% or 18%)</p>
+                      <div className="relative w-full pt-1">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={defaults.importIgst !== undefined ? defaults.importIgst : 5}
+                          onChange={(e) => updateField('importIgst', Math.max(0, Number(e.target.value) || 0))}
+                          className="w-full px-3 py-1.5 rounded-lg bg-[#07090e] border border-[#263147] text-white font-mono text-xs focus:border-[#cda052] outline-none"
+                        />
+                        <span className="absolute right-3 top-[14px] text-[#94a3b8] font-mono">%</span>
+                      </div>
+                    </div>
+
+                    <label className="flex items-center gap-2 cursor-pointer pt-1">
+                      <input
+                        type="checkbox"
+                        checked={defaults.importIgstRecoverable ?? true}
+                        onChange={(e) => updateField('importIgstRecoverable', e.target.checked)}
+                        className="rounded accent-[#cda052] w-4 h-4 cursor-pointer"
+                      />
+                      <span className="text-white text-xs">Claim Import IGST as Input Tax Credit (ITC) — excluded from landed P&L cost</span>
+                    </label>
+                  </div>
+
+                  {/* Port & CHA Clearance Handling */}
+                  <div className="p-3.5 bg-[#0e121b] border border-[#1e2638] rounded-xl space-y-1.5">
+                    <label className="font-semibold text-white block">Customs House Agent (CHA) & Port Handling</label>
+                    <p className="text-[11px] text-[#94a3b8]">Fixed CHA clearance, documentation, and port deconsolidation per unit</p>
+                    <div className="relative w-full pt-1">
+                      <span className="absolute left-2.5 top-[14px] text-[#94a3b8] font-mono">{curr}</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={defaults.clearance || 0}
+                        onChange={(e) => updateField('clearance', Math.max(0, Number(e.target.value) || 0))}
+                        className="w-full pl-7 pr-3 py-1.5 rounded-lg bg-[#07090e] border border-[#263147] text-white font-mono text-xs focus:border-[#cda052] outline-none"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

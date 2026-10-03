@@ -41,8 +41,16 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
   const { artifacts } = useAdminStore();
   const { user, signOut } = useAuth();
 
-  const [promotedToolsExpanded, setPromotedToolsExpanded] = useState(true);
+  const [promotedToolsExpanded, setPromotedToolsExpanded] = useState(false);
   const [calculatorExpanded, setCalculatorExpanded] = useState(pathname.startsWith('/calculator'));
+
+  const isCalcPath = pathname === '/calculator';
+  const calcTab = searchParams.get('tab');
+  const calcAction = searchParams.get('action');
+
+  const isStudioActive = isCalcPath && (calcTab === 'studio' || !calcTab) && calcAction !== 'new';
+  const isNewActive = isCalcPath && calcAction === 'new';
+  const isSavedActive = isCalcPath && calcTab === 'saved';
 
   const promotedTools = artifacts.filter(a => a.isPromoted && a.status === 'promoted');
 
@@ -142,7 +150,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                       }`}
                     >
                       <Link
-                        href="/calculator"
+                        href="/calculator?tab=studio"
                         onClick={handleLinkClick}
                         className="flex items-center gap-2.5 flex-1 truncate"
                         title="Navigate to Garment Cost Calculator"
@@ -169,10 +177,10 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                     {calculatorExpanded && (
                       <div className="pl-6 pr-2 py-1 space-y-0.5 border-l border-[#1f2638] ml-4 text-[11px] animate-fade-in">
                         <Link
-                          href="/calculator"
+                          href="/calculator?tab=studio"
                           onClick={handleLinkClick}
                           className={`block px-2.5 py-1.5 rounded-md transition-colors ${
-                            pathname === '/calculator' && !searchParams.get('action')
+                            isStudioActive
                               ? 'text-[#cda052] font-semibold bg-[rgba(205,160,82,0.12)]'
                               : 'text-[#94a3b8] hover:text-white hover:bg-[#141724]'
                           }`}
@@ -180,10 +188,10 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                           • Pricing & Unit Economics
                         </Link>
                         <Link
-                          href="/calculator?action=new"
+                          href="/calculator?tab=studio&action=new"
                           onClick={handleLinkClick}
                           className={`block px-2.5 py-1.5 rounded-md transition-colors ${
-                            searchParams.get('action') === 'new'
+                            isNewActive
                               ? 'text-[#cda052] font-semibold bg-[rgba(205,160,82,0.12)]'
                               : 'text-[#94a3b8] hover:text-white hover:bg-[#141724]'
                           }`}
@@ -191,11 +199,15 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                           • New SKU Calculation
                         </Link>
                         <Link
-                          href="/calculator#saved"
+                          href="/calculator?tab=saved"
                           onClick={handleLinkClick}
-                          className="block px-2.5 py-1.5 rounded-md text-[#94a3b8] hover:text-white hover:bg-[#141724] transition-colors"
+                          className={`block px-2.5 py-1.5 rounded-md transition-colors ${
+                            isSavedActive
+                              ? 'text-[#cda052] font-semibold bg-[rgba(205,160,82,0.12)]'
+                              : 'text-[#94a3b8] hover:text-white hover:bg-[#141724]'
+                          }`}
                         >
-                          • Active Style Sheets
+                          • Saved Products
                         </Link>
                       </div>
                     )}
@@ -233,26 +245,28 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
           </nav>
         </div>
 
-        {/* Promoted Claude Artifacts (Expandable Sub-Navigation Section) */}
+        {/* Promoted Pages (Expandable Section, Collapsed by Default) */}
         <div>
           <button
             type="button"
             onClick={() => setPromotedToolsExpanded(!promotedToolsExpanded)}
             className="w-full px-3 py-1.5 flex items-center justify-between text-left group hover:bg-[#141824] rounded-lg transition-colors cursor-pointer select-none"
-            title="Toggle Promoted Claude Tools sub-navigation"
-            aria-label="Toggle Promoted Claude Tools sub-navigation"
+            title="Toggle Promoted Pages navigation"
+            aria-label="Toggle Promoted Pages navigation"
           >
             <span className="text-[11px] font-semibold tracking-wider text-[#94a3b8] group-hover:text-white uppercase flex items-center gap-1.5">
               <Sparkles className="w-3 h-3 text-[#cda052]" />
-              Promoted Claude Tools
+              Promoted Pages
             </span>
             <div className="flex items-center gap-1.5">
-              <span 
-                title={`${promotedTools.length} promoted Claude tools active as pages`}
-                className="text-[9px] px-1.5 py-0.5 rounded bg-[rgba(205,160,82,0.12)] text-[#cda052] border border-[rgba(205,160,82,0.25)] font-semibold font-mono"
-              >
-                {promotedTools.length} Live
-              </span>
+              {promotedTools.length > 0 && (
+                <span 
+                  title={`${promotedTools.length} promoted pages`}
+                  className="text-[9px] px-1.5 py-0.5 rounded bg-[rgba(205,160,82,0.12)] text-[#cda052] border border-[rgba(205,160,82,0.25)] font-semibold font-mono"
+                >
+                  {promotedTools.length}
+                </span>
+              )}
               <ChevronDown className={`w-3.5 h-3.5 text-[#5f6c85] group-hover:text-[#cda052] transition-transform duration-200 ${promotedToolsExpanded ? '' : '-rotate-90'}`} />
             </div>
           </button>
@@ -260,52 +274,32 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
           {promotedToolsExpanded && (
             <div className="space-y-1 mt-1 animate-fade-in">
               {promotedTools.length === 0 ? (
-                <div className="px-3 py-3 rounded-lg border border-dashed border-[#1f2638] text-center">
-                  <p className="text-xs text-[#94a3b8]">No tools promoted yet.</p>
-                  <Link
-                    href="/artifacts"
-                    onClick={handleLinkClick}
-                    title="Go to Artifact Vault to review or promote Claude tools"
-                    className="text-xs text-[#cda052] hover:underline mt-1 inline-block font-semibold"
-                  >
-                    Review inbox →
-                  </Link>
+                <div className="px-3 py-2 rounded-lg border border-dashed border-[#1f2638] text-center">
+                  <p className="text-xs text-[#94a3b8]">No promoted pages yet.</p>
                 </div>
               ) : (
-                <>
-                  {promotedTools.map((tool) => {
-                    const slug = tool.routeSlug || tool.id;
-                    const toolHref = `/tools/${slug}`;
-                    const isActive = pathname === toolHref;
+                promotedTools.map((tool) => {
+                  const slug = tool.routeSlug || tool.id;
+                  const toolHref = `/tools/${slug}`;
+                  const isActive = pathname === toolHref;
 
-                    return (
-                      <Link
-                        key={tool.id}
-                        href={toolHref}
-                        onClick={handleLinkClick}
-                        title={`Open ${tool.title}`}
-                        className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors group ${
-                          isActive
-                            ? 'bg-[rgba(205,160,82,0.14)] text-[#e6c875] border-l-2 border-[#cda052] font-semibold'
-                            : 'text-[#cbd5e1] hover:text-white hover:bg-[#141724]'
-                        }`}
-                      >
-                        <span className="truncate max-w-[170px]">{tool.title}</span>
-                        <ChevronRight className="w-3 h-3 text-[#5f6c85] group-hover:text-[#cda052] transition-colors flex-shrink-0" />
-                      </Link>
-                    );
-                  })}
-                  <div className="pt-1 px-1">
+                  return (
                     <Link
-                      href="/artifacts"
+                      key={tool.id}
+                      href={toolHref}
                       onClick={handleLinkClick}
-                      className="text-[11px] text-[#cda052] hover:underline flex items-center gap-1 font-medium px-2 py-1"
+                      title={`Open ${tool.title}`}
+                      className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors group ${
+                        isActive
+                          ? 'bg-[rgba(205,160,82,0.14)] text-[#e6c875] border-l-2 border-[#cda052] font-semibold'
+                          : 'text-[#cbd5e1] hover:text-white hover:bg-[#141724]'
+                      }`}
                     >
-                      <span>Manage all in Staging Hub</span>
-                      <ChevronRight className="w-3 h-3" />
+                      <span className="truncate max-w-[170px]">{tool.title}</span>
+                      <ChevronRight className="w-3 h-3 text-[#5f6c85] group-hover:text-[#cda052] transition-colors flex-shrink-0" />
                     </Link>
-                  </div>
-                </>
+                  );
+                })
               )}
             </div>
           )}
