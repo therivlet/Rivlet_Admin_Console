@@ -16,6 +16,8 @@ import {
   Shirt,
   Sparkles,
   Clock,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { WorkItem, WorkItemType, WorkItemState, WorkItemPriority } from '@/lib/types';
@@ -111,6 +113,7 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
   const [isPostingComment, setIsPostingComment] = useState(false);
   const [isCreatingSubTask, setIsCreatingSubTask] = useState(false);
   const [subTaskTitle, setSubTaskTitle] = useState('');
+  const [showAllComments, setShowAllComments] = useState(false);
 
   // Live item & comments from store
   const liveItem = workItems.find((w) => w.id === form.id);
@@ -593,8 +596,8 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                           No comments yet. Type in the box above to add a comment.
                         </p>
                       ) : (
-                        <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
-                          {sortedComments.map((c, idx) => (
+                        <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                          {(showAllComments ? sortedComments : sortedComments.slice(0, 5)).map((c, idx) => (
                             <div key={c.id} className="p-3 rounded-lg bg-[#0e1320] border border-[#1a2336] text-xs">
                               <div className="flex items-center justify-between mb-1">
                                 <span className="font-semibold text-white flex items-center gap-1.5">
@@ -613,6 +616,31 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                               <p className="text-[#cbd5e1] leading-relaxed pl-6 whitespace-pre-wrap">{c.text}</p>
                             </div>
                           ))}
+
+                          {sortedComments.length > 5 && (
+                            <div className="pt-2 flex items-center justify-between border-t border-[#1a2336]">
+                              <span className="text-[11px] text-[#7c869d]">
+                                Showing {showAllComments ? sortedComments.length : 5} of {sortedComments.length} comments
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setShowAllComments(!showAllComments)}
+                                className="flex items-center gap-1.5 text-xs text-[#cda052] hover:text-[#e6c875] font-semibold transition-colors cursor-pointer px-2.5 py-1 rounded-lg hover:bg-[#141a28]"
+                              >
+                                {showAllComments ? (
+                                  <>
+                                    <span>Show fewer (Top 5)</span>
+                                    <ChevronUp className="w-3.5 h-3.5" />
+                                  </>
+                                ) : (
+                                  <>
+                                    <span>Show more ({sortedComments.length - 5} remaining)</span>
+                                    <ChevronDown className="w-3.5 h-3.5" />
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -628,19 +656,25 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
 
                     {/* Assignee */}
                     <div>
-                      <span className="text-[11px] text-[#64748b] block mb-1">Assignee</span>
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#1e293b] to-[#0f172a] text-[#94a3b8] border border-[#334155] flex items-center justify-center text-xs font-bold flex-shrink-0">
-                          {currentItem.assignee ? currentItem.assignee[0]?.toUpperCase() : '?'}
+                      <span className="text-[11px] text-[#7c869d] block mb-1.5 uppercase tracking-wider font-semibold">Assignee</span>
+                      <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-[#080b11] border border-[#1a2233]">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                          currentItem.assignee 
+                            ? 'bg-gradient-to-br from-[#cda052] to-[#8c672b] text-black shadow-glow' 
+                            : 'bg-[#141824] text-[#64748b] border border-[#263148]'
+                        }`}>
+                          {currentItem.assignee ? currentItem.assignee[0]?.toUpperCase() : <User className="w-3.5 h-3.5" />}
                         </div>
-                        <div>
-                          <p className={`text-xs font-semibold ${currentItem.assignee ? 'text-white' : 'text-[#8594ab]'}`}>
+                        <div className="min-w-0">
+                          <p className={`text-xs font-bold truncate ${currentItem.assignee ? 'text-[#f5dfa8]' : 'text-[#8594ab] italic'}`}>
                             {currentItem.assignee || 'Unassigned'}
                           </p>
-                          {currentItem.assignee && (
-                            <p className="text-[10px] text-[#cda052]">
+                          {currentItem.assignee ? (
+                            <p className="text-[10px] text-[#94a3b8] truncate">
                               {teamMembers.find((m) => m.name === currentItem.assignee)?.role || 'Team Member'}
                             </p>
+                          ) : (
+                            <p className="text-[10px] text-[#64748b]">Select below to assign owner</p>
                           )}
                         </div>
                       </div>

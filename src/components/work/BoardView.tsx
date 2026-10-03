@@ -395,17 +395,37 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
             <ArrowRight className="w-3.5 h-3.5 text-[#cda052] flex-shrink-0" />
             <span>Swipe horizontally to view all Kanban swimlane columns</span>
           </div>
-          <div className="overflow-x-auto pb-4 custom-scrollbar">
-            <div className="grid gap-2" style={{ gridTemplateColumns: `320px repeat(${COLUMNS.length}, minmax(210px, 1fr))`, minWidth: `${320 + COLUMNS.length * 210}px` }}>
+          <div className="relative max-h-[calc(100vh-140px)] min-h-[500px] overflow-auto rounded-2xl border border-[#1a2335] bg-[#07090e]/95 custom-scrollbar pb-6 shadow-2xl">
+            <div className="grid gap-2 p-3 min-w-max" style={{ gridTemplateColumns: `340px repeat(${COLUMNS.length}, minmax(220px, 1fr))` }}>
               {/* Header row */}
-              <div className="text-[10px] font-bold text-[#7c869d] uppercase tracking-wider px-3 py-2 sticky top-0 bg-[#090b11]/90 rounded-lg">
-                Stories & Milestones
+              <div className="text-[11px] font-bold text-[#cda052] uppercase tracking-wider px-3.5 py-2.5 sticky top-0 left-0 z-40 bg-[#0a0d14]/98 backdrop-blur-md rounded-xl border border-[#232d44] shadow-md flex items-center justify-between">
+                <span className="flex items-center gap-1.5"><Layers className="w-3.5 h-3.5 text-[#cda052]" /> Stories & Milestones</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#161c2b] text-[#94a3b8] border border-[#232d44]">{rows.length}</span>
               </div>
-            {COLUMNS.map((col) => (
-              <div key={col} className="text-[10px] font-bold text-[#cbd5e1] uppercase tracking-wider px-3 py-2 rounded-lg bg-[#0e121b] sticky top-0 text-center border border-[#1a2335]">
-                {col}
-              </div>
-            ))}
+            {COLUMNS.map((col) => {
+              const colTasksCount = tasksInSprint.filter((t) => t.state === col).length;
+              const dotColor =
+                col === 'New' ? 'bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.5)]' :
+                col === 'Active' ? 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.5)]' :
+                col === 'In Review' ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]' :
+                col === 'Resolved' ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]' :
+                'bg-slate-400';
+
+              return (
+                <div
+                  key={col}
+                  className="text-[11px] font-bold uppercase tracking-wider px-3.5 py-2.5 rounded-xl bg-[#0a0d14]/98 backdrop-blur-md sticky top-0 z-30 text-center border border-[#232d44] shadow-md flex items-center justify-between gap-1 select-none"
+                >
+                  <span className="flex items-center gap-1.5 text-white">
+                    <span className={`w-2 h-2 rounded-full ${dotColor}`} />
+                    {col}
+                  </span>
+                  <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-[#161c2b] text-[#cbd5e1] border border-[#283550]">
+                    {colTasksCount}
+                  </span>
+                </div>
+              );
+            })}
 
             {rowIds.map((rowId, rowIdx) => {
               const row = rowId === UNPARENTED ? null : rows.find((r) => r.id === rowId)!;
@@ -422,10 +442,10 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                     /* COLLAPSED STORY CELL (Spacious box: full story name & sprint clearly visible) */
                     <div
                       onClick={() => row && setModalItem(row)}
-                      className={`rounded-xl border p-3 flex flex-col justify-between transition-all min-h-[78px] select-none ${
+                      className={`rounded-xl border p-3 flex flex-col justify-between transition-all min-h-[78px] select-none sticky left-0 z-20 ${
                         row
                           ? 'border-[#1f2638] bg-[#0c1018] cursor-pointer hover:border-[#33415c] shadow-sm'
-                          : 'border-dashed border-[#263148] bg-transparent'
+                          : 'border-dashed border-[#263148] bg-[#0c1018]'
                       }`}
                     >
                       {row ? (
@@ -468,19 +488,32 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                               {row.title}
                             </p>
 
-                            {/* Sprint Name & Operations Info */}
-                            {sprint && (
-                              <div className="flex items-center gap-2 text-[9px] text-[#7c869d] pt-0.5 flex-wrap">
+                            {/* Sprint Name, Assignee & Operations Info */}
+                            <div className="flex items-center gap-2 text-[9px] text-[#7c869d] pt-1 flex-wrap">
+                              {sprint && (
                                 <span className="flex items-center gap-1 text-[#a5b4fc] font-medium">
                                   <Calendar className="w-2.5 h-2.5 text-[#cda052]" /> {sprint.name}
                                 </span>
-                                {row.operationCategory && (
-                                  <span className="text-[8px] px-1.5 py-0.2 rounded bg-indigo-950/50 border border-indigo-800/40 text-indigo-300">
-                                    {row.operationCategory}
+                              )}
+                              {row.assignee ? (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[rgba(205,160,82,0.18)] border border-[#cda052]/50 text-[#f5dfa8] text-[9px] font-bold">
+                                  <span className="w-3 h-3 rounded-full bg-[#cda052] text-black text-[8px] font-black flex items-center justify-center">
+                                    {row.assignee[0]?.toUpperCase()}
                                   </span>
-                                )}
-                              </div>
-                            )}
+                                  <span>{row.assignee}</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#141824]/60 border border-dashed border-[#3d4b66] text-[#828ca1] text-[9px] font-medium">
+                                  <User className="w-2 h-2 text-[#64748b]" />
+                                  <span>Unassigned</span>
+                                </span>
+                              )}
+                              {row.operationCategory && (
+                                <span className="text-[8px] px-1.5 py-0.2 rounded bg-indigo-950/50 border border-indigo-800/40 text-indigo-300">
+                                  {row.operationCategory}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </>
                       ) : (
@@ -506,10 +539,10 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                     /* EXPANDED STORY CELL */
                     <div
                       onClick={() => row && setModalItem(row)}
-                      className={`rounded-xl border p-3 flex flex-col justify-between transition-all ${
+                      className={`rounded-xl border p-3 flex flex-col justify-between transition-all select-none sticky left-0 z-20 ${
                         row
                           ? 'border-[#1f2638] bg-[#0c1018] cursor-pointer hover:border-[#33415c] shadow-sm'
-                          : 'border-dashed border-[#263148] bg-transparent'
+                          : 'border-dashed border-[#263148] bg-[#0c1018]'
                       }`}
                     >
                       {row ? (
@@ -602,10 +635,20 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                             </span>
 
                             <div className="flex items-center gap-2">
-                              {/* Assignee pill (Unassigned by default) */}
-                              <span className="text-[9px] text-[#7c869d] flex items-center gap-0.5">
-                                <User className="w-2.5 h-2.5" /> {row.assignee || 'Unassigned'}
-                              </span>
+                              {/* Assignee pill - Highlighted & Readable */}
+                              {row.assignee ? (
+                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[rgba(205,160,82,0.18)] border border-[#cda052]/50 text-[#f5dfa8] text-[10px] font-bold shadow-sm" title={`Assigned to ${row.assignee}`}>
+                                  <span className="w-3.5 h-3.5 rounded-full bg-[#cda052] text-black text-[9px] font-black flex items-center justify-center flex-shrink-0">
+                                    {row.assignee[0]?.toUpperCase()}
+                                  </span>
+                                  <span>{row.assignee}</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#141824]/80 border border-dashed border-[#3d4b66] text-[#828ca1] text-[9px] font-medium" title="Unassigned story">
+                                  <User className="w-2.5 h-2.5 text-[#64748b]" />
+                                  <span>Unassigned</span>
+                                </span>
+                              )}
 
                               {rowTasks.length > 0 && (
                                 <span className="text-[10px] font-mono text-[#7c869d] flex items-center gap-1">
@@ -747,13 +790,23 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                                 </span>
                               )}
 
-                              {/* Task Footer: Assignee (defaults to Unassigned) */}
-                              <div className="flex items-center justify-between mt-2 pt-1 border-t border-[#161c28] text-[9px] text-[#7c869d]">
-                                <span className="flex items-center gap-0.5 truncate">
-                                  <User className="w-2.5 h-2.5" /> {task.assignee || 'Unassigned'}
-                                </span>
-                                <div className="flex items-center gap-1 font-mono text-[8px] text-[#54627a]">
-                                  {row && <span className="text-[#cda052]/70 font-semibold">S{storyNumber}</span>}
+                              {/* Task Footer: Assignee - Highlighted and readable */}
+                              <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-[#1a2336] text-[10px]">
+                                {task.assignee ? (
+                                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-gradient-to-r from-[rgba(205,160,82,0.22)] to-[rgba(205,160,82,0.1)] border border-[#cda052]/60 text-[#f5dfa8] font-bold text-[10px] shadow-sm max-w-[130px] truncate" title={`Assigned to ${task.assignee}`}>
+                                    <span className="w-3.5 h-3.5 rounded-full bg-[#cda052] text-black text-[9px] font-black flex items-center justify-center flex-shrink-0">
+                                      {task.assignee[0]?.toUpperCase()}
+                                    </span>
+                                    <span className="truncate">{task.assignee}</span>
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#121622]/80 border border-dashed border-[#3d4b66] text-[#828ca1] text-[9px] font-medium" title="Unassigned task">
+                                    <User className="w-2.5 h-2.5 text-[#64748b]" />
+                                    <span>Unassigned</span>
+                                  </span>
+                                )}
+                                <div className="flex items-center gap-1 font-mono text-[8px] text-[#64748b] flex-shrink-0">
+                                  {row && <span className="text-[#cda052]/80 font-bold">S{storyNumber}</span>}
                                   <span>{task.id.slice(-4)}</span>
                                 </div>
                               </div>

@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Settings2, Users, Plus, X, Save, Trash2, Pencil, Clock } from 'lucide-react';
+import { Settings2, Users, Plus, X, Save, Trash2, Pencil, Clock, Database, ShieldCheck } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
+import { isSupabaseConfigured } from '@/lib/supabase';
 import { TeamMember } from '@/lib/types';
 import ModalPortal from '@/components/ui/ModalPortal';
 import { useConfirm } from '@/lib/confirmContext';
@@ -137,6 +138,41 @@ export default function SettingsView() {
               </div>
             ))
           )}
+        </div>
+      </div>
+
+      {/* Cloud Connectivity & Security Status (Moved from sidebar navigation) */}
+      <div className="rounded-2xl border border-[#1a1f2c] bg-[#0e121b] p-5 sm:p-6">
+        <div className="flex items-center gap-2.5 mb-1">
+          <div className="p-1.5 rounded-lg bg-emerald-950/60 text-emerald-400">
+            <Database className="w-4 h-4" />
+          </div>
+          <h2 className="text-sm font-semibold text-white">System, Backend Sync & Security</h2>
+        </div>
+        <p className="text-xs text-[#94a3b8] mb-4">Cloud infrastructure status, synchronization health, and active encryption protocols.</p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div className="p-3.5 rounded-xl bg-[#07090e] border border-[#1b2234] flex items-center justify-between">
+            <div>
+              <span className="text-[#94a3b8] block text-[11px] font-medium">Backend Sync</span>
+              <span className="text-white font-semibold text-xs mt-0.5 block">Supabase Realtime Sync</span>
+            </div>
+            <span className="text-[10px] font-semibold px-2.5 py-1 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 font-mono flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              {isSupabaseConfigured ? 'Supabase Live' : 'Local / Offline'}
+            </span>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-[#07090e] border border-[#1b2234] flex items-center justify-between">
+            <div>
+              <span className="text-[#94a3b8] block text-[11px] font-medium">Security Protocol</span>
+              <span className="text-white font-semibold text-xs mt-0.5 block">Row-Level Security & AES-256</span>
+            </div>
+            <span className="text-[10px] font-semibold px-2.5 py-1 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 font-medium flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              Protected
+            </span>
+          </div>
         </div>
       </div>
 

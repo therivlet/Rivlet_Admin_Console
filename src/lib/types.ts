@@ -359,6 +359,7 @@ export interface BudgetItem {
   currency: string; // '₹'
   phase?: string; // e.g. "Phase 3: Manufacturing"
   notes?: string;
+  order?: number; // Sorting/display order in budget ledger
   createdAt: string;
   updatedAt: string;
 }

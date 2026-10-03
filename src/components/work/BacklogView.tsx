@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { ListTree, Plus, Search, ChevronDown, ChevronRight as ChevronRightIcon } from 'lucide-react';
+import { ListTree, Plus, Search, ChevronDown, ChevronRight as ChevronRightIcon, User } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { WorkItem, WorkItemType, WorkItemState } from '@/lib/types';
 import WorkItemModal, { TYPE_COLOR, STATE_COLOR } from '@/components/work/WorkItemModal';
@@ -63,9 +63,17 @@ export default function BacklogView() {
 
           <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium flex-shrink-0 ${TYPE_COLOR[item.type]}`}>{item.type}</span>
           <span className="text-xs sm:text-sm text-white truncate flex-1 group-hover:text-[#cda052]">{item.title}</span>
-          {item.assignee && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#131b2c] border border-[#202d48] text-[#cda052] flex-shrink-0 hidden md:inline font-semibold">
-              {item.assignee}
+          {item.assignee ? (
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[rgba(205,160,82,0.18)] border border-[#cda052]/50 text-[#f5dfa8] text-[10px] font-bold flex-shrink-0" title={`Assigned to ${item.assignee}`}>
+              <span className="w-3.5 h-3.5 rounded-full bg-[#cda052] text-black text-[9px] font-black flex items-center justify-center flex-shrink-0">
+                {item.assignee[0]?.toUpperCase()}
+              </span>
+              <span>{item.assignee}</span>
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#141824]/60 border border-dashed border-[#3d4b66] text-[#828ca1] text-[9px] font-medium flex-shrink-0" title="Unassigned item">
+              <User className="w-2.5 h-2.5 text-[#64748b]" />
+              <span>Unassigned</span>
             </span>
           )}
           {item.storyPoints !== undefined && <span className="text-[10px] font-mono text-[#7c869d] flex-shrink-0">{item.storyPoints} pts</span>}

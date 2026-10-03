@@ -58,6 +58,7 @@ interface AdminStoreContextType {
   deletePipelineItem: (id: string) => Promise<void>;
   saveBudgetItem: (item: BudgetItem) => Promise<void>;
   deleteBudgetItem: (id: string) => Promise<void>;
+  reorderBudgetItems: (items: BudgetItem[]) => Promise<void>;
   saveSprint: (sprint: Sprint) => Promise<void>;
   deleteSprint: (id: string) => Promise<void>;
   saveWorkItem: (item: WorkItem) => Promise<void>;
@@ -469,9 +470,13 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           currency: r.currency || '₹',
           phase: r.phase || undefined,
           notes: r.notes || undefined,
+          order: r.order !== undefined ? Number(r.order) : undefined,
           createdAt: r.created_at || new Date().toISOString(),
           updatedAt: r.updated_at || new Date().toISOString(),
         }));
+        if (formatted.some((f) => f.order !== undefined)) {
+          formatted.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        }
         setBudgetItems(formatted);
         try { localStorage.setItem(STORAGE_KEYS.BUDGET_ITEMS, JSON.stringify(formatted)); } catch (_) {}
       } else if (budRes.data && budRes.data.length === 0) {
@@ -1273,6 +1278,35 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     }
   };
 
+  const reorderBudgetItems = async (reordered: BudgetItem[]) => {
+    const withOrder = reordered.map((b, idx) => ({ ...b, order: idx + 1 }));
+    setBudgetItems(withOrder);
+    try {
+      localStorage.setItem(STORAGE_KEYS.BUDGET_ITEMS, JSON.stringify(withOrder));
+    } catch (_) {}
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const rows = withOrder.map((b) => ({
+          id: b.id,
+          category: b.category,
+          planned_amount: b.plannedAmount,
+          actual_amount: b.actualAmount,
+          spend_log: b.spendLog || [],
+          currency: b.currency,
+          phase: b.phase || null,
+          notes: b.notes || null,
+          created_at: b.createdAt,
+          updated_at: new Date().toISOString(),
+        }));
+        const { error: writeErr } = await supabase.from('budget_items').upsert(rows);
+        if (writeErr) throw writeErr;
+      } catch (e) {
+        reportWriteFailure('Reordering budget categories', e);
+      }
+    }
+  };
+
   // 8. Sprint Actions
   const saveSprint = async (sprint: Sprint) => {
     const now = new Date().toISOString();
@@ -1599,6 +1633,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         deletePipelineItem,
         saveBudgetItem,
         deleteBudgetItem,
+        reorderBudgetItems,
         saveSprint,
         deleteSprint,
         saveWorkItem,

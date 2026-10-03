@@ -12,9 +12,7 @@ import {
   Sparkles,
   ChevronRight,
   ChevronDown,
-  Database,
   ExternalLink,
-  ShieldCheck,
   LogOut,
   User,
   X,
@@ -28,7 +26,6 @@ import {
   CalendarRange
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
-import { isSupabaseConfigured } from '@/lib/supabase';
 import { useAuth } from '@/lib/authContext';
 import RivletLogo from '@/components/brand/RivletLogo';
 
@@ -315,33 +312,9 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
         </div>
       </div>
 
-      {/* Footer Info / Backend Status */}
+      {/* Footer User Session Link */}
       <div className="p-3.5 border-t border-[#1a1f2c] bg-[#07080d] text-[11px]">
-        <div 
-          className="flex items-center justify-between text-[#cbd5e1] mb-1.5 cursor-help"
-          title={isSupabaseConfigured ? 'Synchronized with Supabase PostgreSQL and Storage' : 'Operating in local browser storage mode'}
-        >
-          <span className="flex items-center gap-1.5 font-medium">
-            <Database className="w-3.5 h-3.5 text-[#cda052]" />
-            Backend Sync
-          </span>
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-950/70 text-emerald-300 border border-emerald-800/50 font-mono">
-            {isSupabaseConfigured ? 'Supabase Live' : 'Local / Offline'}
-          </span>
-        </div>
-        <div 
-          className="flex items-center justify-between text-[#94a3b8] text-[10px] cursor-help"
-          title="Protected with encrypted session tokens and Row Level Security"
-        >
-          <span>Security Protocol</span>
-          <span className="flex items-center gap-1 text-emerald-400 font-medium">
-            <ShieldCheck className="w-3 h-3" />
-            Protected
-          </span>
-        </div>
-
-        {/* User Session Profile Link */}
-        <div className="pt-2.5 mt-2.5 border-t border-[#182030] flex items-center justify-between">
+        <div className="flex items-center justify-between">
           <Link
             href="/profile"
             onClick={handleLinkClick}

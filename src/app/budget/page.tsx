@@ -11,6 +11,7 @@ import {
   TrendingUp,
   TrendingDown,
   ChevronDown,
+  ChevronUp,
   ChevronRight,
   IndianRupee,
   Receipt,
@@ -43,6 +44,7 @@ export default function BudgetPage() {
     cashInflows,
     saveBudgetItem,
     deleteBudgetItem,
+    reorderBudgetItems,
     saveBudgetSettings,
     saveCashInflow,
     deleteCashInflow,
@@ -55,6 +57,60 @@ export default function BudgetPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+  const [expandedSpendLogs, setExpandedSpendLogs] = useState<Record<string, boolean>>({});
+  const [draggingBudgetId, setDraggingBudgetId] = useState<string | null>(null);
+  const [dragOverBudgetId, setDragOverBudgetId] = useState<string | null>(null);
+
+  const toggleSpendLogExpand = (categoryId: string) => {
+    setExpandedSpendLogs((prev) => ({ ...prev, [categoryId]: !prev[categoryId] }));
+  };
+
+  const handleMoveCategory = async (id: string, direction: 'up' | 'down') => {
+    const idx = budgetItems.findIndex((b) => b.id === id);
+    if (idx < 0) return;
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= budgetItems.length) return;
+
+    const updated = [...budgetItems];
+    const item = updated[idx];
+    updated.splice(idx, 1);
+    updated.splice(targetIdx, 0, item);
+
+    await reorderBudgetItems(updated);
+  };
+
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    setDraggingBudgetId(id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id);
+  };
+
+  const handleDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverBudgetId !== id) {
+      setDragOverBudgetId(id);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    const sourceId = draggingBudgetId || e.dataTransfer.getData('text/plain');
+    setDraggingBudgetId(null);
+    setDragOverBudgetId(null);
+
+    if (!sourceId || sourceId === targetId) return;
+
+    const sourceIdx = budgetItems.findIndex((b) => b.id === sourceId);
+    const targetIdx = budgetItems.findIndex((b) => b.id === targetId);
+    if (sourceIdx < 0 || targetIdx < 0) return;
+
+    const updated = [...budgetItems];
+    const [removed] = updated.splice(sourceIdx, 1);
+    updated.splice(targetIdx, 0, removed);
+
+    await reorderBudgetItems(updated);
+  };
 
   // Category Spend Logging Modal state
   const [spendTarget, setSpendTarget] = useState<BudgetItem | null>(null);
@@ -444,28 +500,74 @@ export default function BudgetPage() {
       {/* MOBILE SCREEN ALIGNED CATEGORY CARDS (< sm)                     */}
       {/* ============================================================== */}
       <div className="block sm:hidden space-y-3">
-        {budgetItems.map((b) => {
+        {budgetItems.map((b, idx) => {
           const pct = b.plannedAmount > 0 ? Math.round((b.actualAmount / b.plannedAmount) * 100) : 0;
           const isOver = pct > 100;
           const isExpanded = expandedRows[b.id];
           const remaining = (b.plannedAmount || 0) - (b.actualAmount || 0);
+          const isDraggedOver = dragOverBudgetId === b.id;
+
+          const sortedSpends = [...(b.spendLog || [])].sort((x, y) => (y.date || '').localeCompare(x.date || '') || y.id.localeCompare(x.id));
+          const isSpendExpanded = expandedSpendLogs[b.id] || false;
+          const visibleSpends = (sortedSpends.length <= 6 || isSpendExpanded) ? sortedSpends : sortedSpends.slice(0, 5);
 
           return (
             <div
               key={b.id}
-              className="bg-[#0e121b] border border-[#1e2638] rounded-xl p-4 shadow-md space-y-3 transition-all"
+              onDragOver={(e) => handleDragOver(e, b.id)}
+              onDrop={(e) => handleDrop(e, b.id)}
+              className={`bg-[#0e121b] border rounded-xl p-4 shadow-md space-y-3 transition-all ${
+                isDraggedOver ? 'border-[#cda052] ring-1 ring-[#cda052]/50' : 'border-[#1e2638]'
+              }`}
             >
               {/* Category Card Header */}
               <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 pr-1">
-                  <h3 className="text-sm font-semibold text-white leading-snug break-words">
-                    {b.category}
-                  </h3>
-                  {b.phase && (
-                    <span className="inline-block text-[10px] px-2 py-0.5 rounded bg-[#131a29] text-[#94a3b8] font-mono mt-1 border border-[#1c2438]">
-                      {b.phase}
-                    </span>
-                  )}
+                <div className="flex items-start gap-2 min-w-0 pr-1">
+                  {/* Two-Line Drag Handle & Up/Down Buttons for Mobile */}
+                  <div className="flex items-center gap-1 flex-shrink-0 pt-0.5">
+                    <div
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, b.id)}
+                      onDragEnd={() => { setDraggingBudgetId(null); setDragOverBudgetId(null); }}
+                      title="Drag two-line handle to move up or down"
+                      aria-label="Drag two-line handle to move category up or down"
+                      className="flex flex-col justify-center items-center gap-[3px] p-1.5 rounded-lg bg-[#141a28] border border-[#222c42] text-[#8e9cb5] hover:text-[#cda052] cursor-grab active:cursor-grabbing select-none"
+                    >
+                      <span className="w-3.5 h-[2px] rounded-full bg-current" />
+                      <span className="w-3.5 h-[2px] rounded-full bg-current" />
+                    </div>
+                    <div className="flex flex-col items-center bg-[#07090e] rounded-md border border-[#1b2336] p-0.5">
+                      <button
+                        disabled={idx === 0}
+                        onClick={() => handleMoveCategory(b.id, 'up')}
+                        title="Move category up"
+                        aria-label="Move category up"
+                        className="p-0.5 rounded text-[#8e9cb5] hover:text-[#cda052] disabled:opacity-25"
+                      >
+                        <ChevronUp className="w-3 h-3" />
+                      </button>
+                      <button
+                        disabled={idx === budgetItems.length - 1}
+                        onClick={() => handleMoveCategory(b.id, 'down')}
+                        title="Move category down"
+                        aria-label="Move category down"
+                        className="p-0.5 rounded text-[#8e9cb5] hover:text-[#cda052] disabled:opacity-25"
+                      >
+                        <ChevronDown className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-semibold text-white leading-snug break-words">
+                      {b.category}
+                    </h3>
+                    {b.phase && (
+                      <span className="inline-block text-[10px] px-2 py-0.5 rounded bg-[#131a29] text-[#94a3b8] font-mono mt-1 border border-[#1c2438]">
+                        {b.phase}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Mobile Action Buttons: Spent, Edit, Delete */}
@@ -551,7 +653,7 @@ export default function BudgetPage() {
                 </div>
               </div>
 
-              {/* Spend Log Drawer with EDIT AND DELETE OPTIONS */}
+              {/* Spend Log Drawer with EDIT AND DELETE OPTIONS & 5-item limit with Show More */}
               {b.spendLog && b.spendLog.length > 0 && (
                 <div className="pt-2 border-t border-[#182032]">
                   <button
@@ -567,45 +669,68 @@ export default function BudgetPage() {
 
                   {isExpanded && (
                     <div className="space-y-1.5 mt-2">
-                      {[...b.spendLog]
-                        .sort((x, y) => y.date.localeCompare(x.date))
-                        .map((entry) => (
-                          <div
-                            key={entry.id}
-                            className="bg-[#080b12] border border-[#1c2438] rounded-lg p-2.5 flex items-center justify-between text-xs"
-                          >
-                            <div className="min-w-0 pr-2">
-                              <div className="flex items-center gap-2">
-                                <span className="font-mono text-white font-bold">{formatINR(entry.amount)}</span>
-                                <span className="text-[#7c869d] font-mono text-[10px]">
-                                  {new Date(entry.date + 'T00:00:00').toLocaleDateString('en-US', {
-                                    month: 'short',
-                                    day: 'numeric',
-                                  })}
-                                </span>
-                              </div>
-                              {entry.note && <div className="text-[11px] text-[#94a3b8] truncate mt-0.5">{entry.note}</div>}
+                      {visibleSpends.map((entry) => (
+                        <div
+                          key={entry.id}
+                          className="bg-[#080b12] border border-[#1c2438] rounded-lg p-2.5 flex items-center justify-between text-xs"
+                        >
+                          <div className="min-w-0 pr-2">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-white font-bold">{formatINR(entry.amount)}</span>
+                              <span className="text-[#7c869d] font-mono text-[10px]">
+                                {new Date(entry.date + 'T00:00:00').toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                })}
+                              </span>
                             </div>
-
-                            {/* Edit & Delete Actions for Spend */}
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              <button
-                                onClick={() => handleOpenEditSpend(b.id, b.category, entry)}
-                                className="text-[#7c869d] hover:text-[#cda052] p-1.5 rounded transition-colors"
-                                title="Edit spend entry"
-                              >
-                                <Pencil className="w-3 h-3" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteSpend(b.id, entry.id, entry.amount, entry.note)}
-                                className="text-[#7c869d] hover:text-rose-400 p-1.5 rounded transition-colors"
-                                title="Delete spend entry"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </button>
-                            </div>
+                            {entry.note && <div className="text-[11px] text-[#94a3b8] truncate mt-0.5">{entry.note}</div>}
                           </div>
-                        ))}
+
+                          {/* Edit & Delete Actions for Spend */}
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <button
+                              onClick={() => handleOpenEditSpend(b.id, b.category, entry)}
+                              className="text-[#7c869d] hover:text-[#cda052] p-1.5 rounded transition-colors"
+                              title="Edit spend entry"
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteSpend(b.id, entry.id, entry.amount, entry.note)}
+                              className="text-[#7c869d] hover:text-rose-400 p-1.5 rounded transition-colors"
+                              title="Delete spend entry"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+
+                      {sortedSpends.length > 5 && (
+                        <div className="pt-2 flex items-center justify-between border-t border-[#1c2438]">
+                          <span className="text-[11px] text-[#7c869d]">
+                            Showing {visibleSpends.length} of {sortedSpends.length} spends (latest first)
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => toggleSpendLogExpand(b.id)}
+                            className="flex items-center gap-1.5 text-xs text-[#cda052] hover:text-[#e6c875] font-semibold transition-colors cursor-pointer px-2 py-1 rounded-lg hover:bg-[#141a28]"
+                          >
+                            {isSpendExpanded ? (
+                              <>
+                                <span>Show fewer (Top 5)</span>
+                                <ChevronUp className="w-3.5 h-3.5" />
+                              </>
+                            ) : (
+                              <>
+                                <span>Show more ({sortedSpends.length - 5} remaining)</span>
+                                <ChevronDown className="w-3.5 h-3.5" />
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -629,7 +754,8 @@ export default function BudgetPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#1a1f2c] text-[11px] text-[#94a3b8] uppercase tracking-wide bg-[#0a0d14]">
-                <th className="text-left px-4 py-3 font-semibold w-8"></th>
+                <th className="text-center px-2 py-3 font-semibold w-12" title="Arrangement handle">Order</th>
+                <th className="text-left px-3 py-3 font-semibold w-8"></th>
                 <th className="text-left px-4 py-3 font-semibold">Category</th>
                 <th className="text-left px-4 py-3 font-semibold">Phase</th>
                 <th className="text-right px-4 py-3 font-semibold">Planned</th>
@@ -640,15 +766,68 @@ export default function BudgetPage() {
               </tr>
             </thead>
             <tbody>
-              {budgetItems.map((b) => {
+              {budgetItems.map((b, idx) => {
                 const pct = b.plannedAmount > 0 ? Math.round((b.actualAmount / b.plannedAmount) * 100) : 0;
                 const isExpanded = expandedRows[b.id];
                 const remaining = (b.plannedAmount || 0) - (b.actualAmount || 0);
+                const isDraggedOver = dragOverBudgetId === b.id;
+
+                const sortedSpends = [...(b.spendLog || [])].sort((x, y) => (y.date || '').localeCompare(x.date || '') || y.id.localeCompare(x.id));
+                const isSpendExpanded = expandedSpendLogs[b.id] || false;
+                const visibleSpends = (sortedSpends.length <= 6 || isSpendExpanded) ? sortedSpends : sortedSpends.slice(0, 5);
 
                 return (
                   <React.Fragment key={b.id}>
-                    <tr className="border-b border-[#161a26] group hover:bg-[#0a0c12]/60 transition-colors">
-                      <td className="px-4 py-3">
+                    <tr
+                      onDragOver={(e) => handleDragOver(e, b.id)}
+                      onDrop={(e) => handleDrop(e, b.id)}
+                      className={`border-b transition-colors group ${
+                        isDraggedOver
+                          ? 'border-t-2 border-t-[#cda052] bg-[#141b28]'
+                          : 'border-[#161a26] hover:bg-[#0a0c12]/60'
+                      }`}
+                    >
+                      {/* Order Column: Two-Line Drag Handle & Move Up/Down Buttons */}
+                      <td className="px-2 py-3">
+                        <div className="flex items-center justify-center gap-1">
+                          {/* Two-Line Drag Handle */}
+                          <div
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, b.id)}
+                            onDragEnd={() => { setDraggingBudgetId(null); setDragOverBudgetId(null); }}
+                            title="Drag two-line handle to move up or down"
+                            aria-label="Drag two-line handle to move category up or down"
+                            className="flex flex-col justify-center items-center gap-[3px] p-1.5 rounded hover:bg-[#1a2335] text-[#64748b] hover:text-[#cda052] cursor-grab active:cursor-grabbing transition-colors select-none group/handle"
+                          >
+                            <span className="w-3.5 h-[2px] rounded-full bg-current group-hover/handle:bg-[#cda052] transition-colors" />
+                            <span className="w-3.5 h-[2px] rounded-full bg-current group-hover/handle:bg-[#cda052] transition-colors" />
+                          </div>
+
+                          {/* Move Up / Down Buttons */}
+                          <div className="flex flex-col items-center">
+                            <button
+                              disabled={idx === 0}
+                              onClick={() => handleMoveCategory(b.id, 'up')}
+                              title="Move category up"
+                              aria-label="Move category up"
+                              className="p-0.5 rounded text-[#64748b] hover:text-[#cda052] hover:bg-[#1a2335] disabled:opacity-20 transition-colors"
+                            >
+                              <ChevronUp className="w-3 h-3" />
+                            </button>
+                            <button
+                              disabled={idx === budgetItems.length - 1}
+                              onClick={() => handleMoveCategory(b.id, 'down')}
+                              title="Move category down"
+                              aria-label="Move category down"
+                              className="p-0.5 rounded text-[#64748b] hover:text-[#cda052] hover:bg-[#1a2335] disabled:opacity-20 transition-colors"
+                            >
+                              <ChevronDown className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="px-3 py-3">
                         {b.spendLog.length > 0 && (
                           <button
                             onClick={() => toggleExpand(b.id)}
@@ -711,53 +890,77 @@ export default function BudgetPage() {
                       </td>
                     </tr>
 
-                    {/* Spend Log Expanded Row with EDIT PENCIL */}
+                    {/* Spend Log Expanded Row with EDIT PENCIL & 5-item limit with Show More */}
                     {isExpanded && b.spendLog.length > 0 && (
                       <tr className="bg-[#07090e] border-b border-[#161a26]">
                         <td></td>
+                        <td></td>
                         <td colSpan={7} className="px-4 py-3">
                           <div className="space-y-1.5">
-                            {[...b.spendLog]
-                              .sort((x, y) => y.date.localeCompare(x.date))
-                              .map((entry) => (
-                                <div
-                                  key={entry.id}
-                                  className="flex items-center justify-between text-xs bg-[#0e121b] border border-[#1c2438] rounded-lg px-3 py-2"
-                                >
-                                  <div className="flex items-center gap-3 min-w-0">
-                                    <span className="text-[#7c869d] font-mono flex-shrink-0">
-                                      {new Date(entry.date + 'T00:00:00').toLocaleDateString('en-US', {
-                                        month: 'short',
-                                        day: 'numeric',
-                                        year: 'numeric',
-                                      })}
-                                    </span>
-                                    <span className="font-mono text-white font-bold flex-shrink-0">
-                                      {formatINR(entry.amount)}
-                                    </span>
-                                    {entry.note && <span className="text-[#94a3b8] truncate">{entry.note}</span>}
-                                  </div>
-
-                                  <div className="flex items-center gap-1 flex-shrink-0">
-                                    <button
-                                      onClick={() => handleOpenEditSpend(b.id, b.category, entry)}
-                                      title="Edit spend entry"
-                                      aria-label="Edit spend entry"
-                                      className="text-[#7c869d] hover:text-[#cda052] p-1 transition-colors"
-                                    >
-                                      <Pencil className="w-3 h-3" />
-                                    </button>
-                                    <button
-                                      onClick={() => handleDeleteSpend(b.id, entry.id, entry.amount, entry.note)}
-                                      title="Remove this spend entry"
-                                      aria-label="Remove spend entry"
-                                      className="text-[#7c869d] hover:text-rose-400 p-1 transition-colors"
-                                    >
-                                      <Trash2 className="w-3 h-3" />
-                                    </button>
-                                  </div>
+                            {visibleSpends.map((entry) => (
+                              <div
+                                key={entry.id}
+                                className="flex items-center justify-between text-xs bg-[#0e121b] border border-[#1c2438] rounded-lg px-3 py-2"
+                              >
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <span className="text-[#7c869d] font-mono flex-shrink-0">
+                                    {new Date(entry.date + 'T00:00:00').toLocaleDateString('en-US', {
+                                      month: 'short',
+                                      day: 'numeric',
+                                      year: 'numeric',
+                                    })}
+                                  </span>
+                                  <span className="font-mono text-white font-bold flex-shrink-0">
+                                    {formatINR(entry.amount)}
+                                  </span>
+                                  {entry.note && <span className="text-[#94a3b8] truncate">{entry.note}</span>}
                                 </div>
-                              ))}
+
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  <button
+                                    onClick={() => handleOpenEditSpend(b.id, b.category, entry)}
+                                    title="Edit spend entry"
+                                    aria-label="Edit spend entry"
+                                    className="text-[#7c869d] hover:text-[#cda052] p-1 transition-colors"
+                                  >
+                                    <Pencil className="w-3 h-3" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteSpend(b.id, entry.id, entry.amount, entry.note)}
+                                    title="Remove this spend entry"
+                                    aria-label="Remove spend entry"
+                                    className="text-[#7c869d] hover:text-rose-400 p-1 transition-colors"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+
+                            {sortedSpends.length > 5 && (
+                              <div className="pt-2 flex items-center justify-between border-t border-[#1a2336]">
+                                <span className="text-[11px] text-[#7c869d]">
+                                  Showing {visibleSpends.length} of {sortedSpends.length} spends (latest at top)
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleSpendLogExpand(b.id)}
+                                  className="flex items-center gap-1.5 text-xs text-[#cda052] hover:text-[#e6c875] font-semibold transition-colors cursor-pointer px-2.5 py-1 rounded-lg hover:bg-[#141a28]"
+                                >
+                                  {isSpendExpanded ? (
+                                    <>
+                                      <span>Show fewer (Top 5)</span>
+                                      <ChevronUp className="w-3.5 h-3.5" />
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span>Show more ({sortedSpends.length - 5} remaining)</span>
+                                      <ChevronDown className="w-3.5 h-3.5" />
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </td>
                       </tr>
