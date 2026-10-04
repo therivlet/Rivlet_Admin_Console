@@ -347,9 +347,9 @@ html.light [class*="bg-green-950"] {
   border-color: #a7f3d0 !important;
   color: #065f46 !important;
 }
-html.light [class*="bg-emerald-950"] *,
-html.light [class*="bg-emerald-900"] *,
-html.light [class*="bg-green-950"] * {
+html.light [class*="bg-emerald-950"] > *,
+html.light [class*="bg-emerald-900"] > *,
+html.light [class*="bg-green-950"] > * {
   color: #065f46 !important;
 }
 
@@ -362,10 +362,10 @@ html.light [class*="bg-yellow-900"] {
   border-color: #fde68a !important;
   color: #92400e !important;
 }
-html.light [class*="bg-amber-950"] *,
-html.light [class*="bg-amber-900"] *,
-html.light [class*="bg-yellow-950"] *,
-html.light [class*="bg-yellow-900"] * {
+html.light [class*="bg-amber-950"] > *,
+html.light [class*="bg-amber-900"] > *,
+html.light [class*="bg-yellow-950"] > *,
+html.light [class*="bg-yellow-900"] > * {
   color: #92400e !important;
 }
 
@@ -378,10 +378,10 @@ html.light [class*="bg-red-900"] {
   border-color: #fecdd3 !important;
   color: #9f1239 !important;
 }
-html.light [class*="bg-rose-950"] *,
-html.light [class*="bg-rose-900"] *,
-html.light [class*="bg-red-950"] *,
-html.light [class*="bg-red-900"] * {
+html.light [class*="bg-rose-950"] > *,
+html.light [class*="bg-rose-900"] > *,
+html.light [class*="bg-red-950"] > *,
+html.light [class*="bg-red-900"] > * {
   color: #9f1239 !important;
 }
 
@@ -396,12 +396,12 @@ html.light [class*="bg-cyan-900"] {
   border-color: #bae6fd !important;
   color: #0369a1 !important;
 }
-html.light [class*="bg-blue-950"] *,
-html.light [class*="bg-blue-900"] *,
-html.light [class*="bg-sky-950"] *,
-html.light [class*="bg-sky-900"] *,
-html.light [class*="bg-cyan-950"] *,
-html.light [class*="bg-cyan-900"] * {
+html.light [class*="bg-blue-950"] > *,
+html.light [class*="bg-blue-900"] > *,
+html.light [class*="bg-sky-950"] > *,
+html.light [class*="bg-sky-900"] > *,
+html.light [class*="bg-cyan-950"] > *,
+html.light [class*="bg-cyan-900"] > * {
   color: #0369a1 !important;
 }
 
@@ -414,10 +414,10 @@ html.light [class*="bg-purple-900"] {
   border-color: #e9d5ff !important;
   color: #6b21a8 !important;
 }
-html.light [class*="bg-indigo-950"] *,
-html.light [class*="bg-indigo-900"] *,
-html.light [class*="bg-purple-950"] *,
-html.light [class*="bg-purple-900"] * {
+html.light [class*="bg-indigo-950"] > *,
+html.light [class*="bg-indigo-900"] > *,
+html.light [class*="bg-purple-950"] > *,
+html.light [class*="bg-purple-900"] > * {
   color: #6b21a8 !important;
 }
 
@@ -428,8 +428,8 @@ html.light [class*="bg-slate-950"] {
   border-color: #dfd9cd !important;
   color: #44403c !important;
 }
-html.light [class*="bg-slate-900"] *,
-html.light [class*="bg-slate-950"] * {
+html.light [class*="bg-slate-900"] > *,
+html.light [class*="bg-slate-950"] > * {
   color: #44403c !important;
 }
 
@@ -562,6 +562,23 @@ html.light pre code {
   color: #292524 !important;
 }
 
+html.light code:not(pre code) {
+  background-color: #f5f1e8 !important;
+  border: 1px solid #dfd9cd !important;
+  color: #8c6016 !important;
+}
+
+/* Table rules in light mode */
+html.light table thead th {
+  color: #57534e !important;
+  background-color: #f1ede4 !important;
+  border-color: #dfd9cd !important;
+}
+
+html.light table tbody td {
+  border-color: #e8e2d5 !important;
+}
+
 /* Dialog overlays & modals in light mode */
 html.light [class*="bg-black/"],
 html.light .bg-black\/85,
@@ -611,11 +628,7 @@ html.light button[title*="Sign out"]:hover,
 html.light button[aria-label*="Delete"]:hover,
 html.light button[aria-label*="Remove"]:hover,
 html.light button[aria-label*="Sign Out"]:hover,
-html.light button[aria-label*="Sign out"]:hover,
-html.light button:has(svg.lucide-trash-2):hover,
-html.light button:has(svg.lucide-trash):hover,
-html.light button:has(svg.lucide-log-out):hover,
-html.light a:has(svg.lucide-log-out):hover {
+html.light button[aria-label*="Sign out"]:hover {
   background-color: #fee2e2 !important;
   color: #dc2626 !important;
   border-color: #f87171 !important;
@@ -635,10 +648,7 @@ html.light button[title*="Sign out"]:hover svg,
 html.light button[aria-label*="Delete"]:hover svg,
 html.light button[aria-label*="Remove"]:hover svg,
 html.light button[aria-label*="Sign Out"]:hover svg,
-html.light button[aria-label*="Sign out"]:hover svg,
-html.light button:has(svg.lucide-trash-2):hover svg,
-html.light button:has(svg.lucide-trash):hover svg,
-html.light button:has(svg.lucide-log-out):hover svg {
+html.light button[aria-label*="Sign out"]:hover svg {
   color: #dc2626 !important;
   stroke: #dc2626 !important;
 }
@@ -699,5 +709,3 @@ html.light .kb-markdown blockquote {
 html.light .kb-markdown hr {
   border-top: 1px solid #dfd9cd !important;
 }
-
-
