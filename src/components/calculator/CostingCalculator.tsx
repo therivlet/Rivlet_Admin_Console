@@ -24,7 +24,8 @@ import {
   Settings,
   Lock,
   Unlock,
-  Copy
+  Copy,
+  ArrowLeft
 } from 'lucide-react';
 import { PricingInputs, CalculationResult, ScenarioKey, CostingSheet, GarmentBOM, CalculatorDefaults } from '@/lib/types';
 import { 
@@ -49,9 +50,11 @@ import InfoTooltip from '@/components/ui/InfoTooltip';
 
 interface CostingCalculatorProps {
   initialSheet?: CostingSheet;
+  initialInputs?: Partial<PricingInputs>;
   onSaveSuccess?: () => void;
   onNewCalculation?: () => void;
   onSelectSavedProduct?: (sheet: CostingSheet) => void;
+  onBackToOverview?: () => void;
 }
 
 function makeBlankProduct(overrides: Partial<Pick<PricingInputs, 'productName' | 'productCode' | 'mrp' | 'targetMargin'>> = {}) {
@@ -63,7 +66,14 @@ function makeBlankProduct(overrides: Partial<Pick<PricingInputs, 'productName' |
   };
 }
 
-export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCalculation, onSelectSavedProduct }: CostingCalculatorProps) {
+export default function CostingCalculator({
+  initialSheet,
+  initialInputs,
+  onSaveSuccess,
+  onNewCalculation,
+  onSelectSavedProduct,
+  onBackToOverview,
+}: CostingCalculatorProps) {
   const { costingSheets, saveCostingSheet } = useAdminStore();
   const { user } = useAuth();
 
@@ -75,6 +85,12 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
   const [currentSheetId, setCurrentSheetId] = useState<string | null>(initialSheet?.id || null);
   const [inputs, setInputs] = useState<PricingInputs>(() => {
     if (initialSheet?.inputs) return initialSheet.inputs;
+    if (initialInputs) {
+      return mergeDefaultsIntoInputs(
+        makeBlankProduct(initialInputs),
+        user?.metadata?.calculator_defaults || getStoredCalculatorDefaults()
+      );
+    }
     return mergeDefaultsIntoInputs(makeBlankProduct(), user?.metadata?.calculator_defaults || getStoredCalculatorDefaults());
   });
 
@@ -89,7 +105,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
   const [diffItems, setDiffItems] = useState<DiffItem[]>([]);
   const [diffNotification, setDiffNotification] = useState<string | null>(null);
   const [validationAttempted, setValidationAttempted] = useState(false);
-  const [showNewCalcWindow, setShowNewCalcWindow] = useState(() => !initialSheet);
+  const [showNewCalcWindow, setShowNewCalcWindow] = useState(() => !initialSheet && !initialInputs);
 
   // Sync defaults whenever user metadata loads
   useEffect(() => {
@@ -107,18 +123,22 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
   const activeDefaultsRef = useRef(activeDefaults);
   useEffect(() => { activeDefaultsRef.current = activeDefaults; }, [activeDefaults]);
 
-  // Sync inputs when initialSheet prop changes from parent
+  // Sync inputs when initialSheet or initialInputs prop changes from parent
   useEffect(() => {
     if (initialSheet) {
       setInputs(initialSheet.inputs);
       setCurrentSheetId(initialSheet.id);
+      setShowNewCalcWindow(false);
+    } else if (initialInputs) {
+      setInputs(mergeDefaultsIntoInputs(makeBlankProduct(initialInputs), activeDefaultsRef.current));
+      setCurrentSheetId(null);
       setShowNewCalcWindow(false);
     } else {
       setInputs(mergeDefaultsIntoInputs(makeBlankProduct(), activeDefaultsRef.current));
       setCurrentSheetId(null);
       setShowNewCalcWindow(true);
     }
-  }, [initialSheet]);
+  }, [initialSheet, initialInputs]);
 
   const handleStartNewCalculation = () => {
     setCurrentSheetId(null);
@@ -327,7 +347,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
             </span>
             {currentSheetId ? (
               <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-950/80 text-blue-300 border border-blue-800/60 flex items-center gap-1">
-                📁 Saved Product: {inputs.productCode}
+                📁 Active Style: {inputs.productCode}
               </span>
             ) : (
               <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-950/90 to-yellow-950/90 text-[#f6d896] border border-[#cda052]/50 flex items-center gap-1 shadow-sm">
@@ -337,7 +357,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
             <span className="text-xs text-[#94a3b8]">• Live Indian GST & Forecast Suite</span>
           </div>
           <h2 className="text-xl font-bold text-white font-serif tracking-wide flex items-center gap-2">
-            {inputs.productName || (currentSheetId ? 'Saved Garment Style' : 'New Product Calculation')}
+            {inputs.productName || (currentSheetId ? 'Active Garment Style' : 'New Product Calculation')}
           </h2>
           <p className="text-xs text-[#cbd5e1] mt-0.5">
             Real customer selling price, automatic step-function output GST (5% ≤ ₹2,500, 18% &gt; ₹2,500), factory ITC, and 3-scenario forecasting.
@@ -345,6 +365,18 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Back to Overview button if provided */}
+          {onBackToOverview && (
+            <button
+              onClick={onBackToOverview}
+              className="px-3 py-1.5 rounded-lg bg-[#141824] hover:bg-[#1e2538] border border-[#252f44] text-[#cbd5e1] hover:text-white text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm"
+              title="Return to Catalog Overview & Dashboards"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Overview</span>
+            </button>
+          )}
+
           {/* Currency Toggle */}
           <div className="flex items-center bg-[#171b28] p-1 rounded-lg border border-[#252c40]" role="tablist" aria-label="Pricing currency">
             <button
@@ -362,10 +394,6 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
               role="tab"
               aria-selected={curr === '$'}
               onClick={() => {
-                // The ₹2,500 Indian retail GST bracket is meaningless against a USD
-                // price, and export sales are typically zero-rated — force manual
-                // mode (defaulting to 0%) so the displayed rule and the actual
-                // computed GST rate never contradict each other.
                 setInputs(prev => ({
                   ...prev,
                   currency: '$',
@@ -382,7 +410,7 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
             </button>
           </div>
 
-          {/* Saved Products Selector Dropdown */}
+          {/* Active Styles Selector Dropdown */}
           {costingSheets.length > 0 && (
             <div className="relative">
               <select
@@ -402,9 +430,9 @@ export default function CostingCalculator({ initialSheet, onSaveSuccess, onNewCa
                   }
                 }}
                 className="px-2.5 py-1.5 rounded-lg bg-[#121624] border border-[#263147] text-white text-xs font-medium focus:border-[#cda052] outline-none max-w-[170px] truncate"
-                title="Select a saved product to load into Pricing Studio"
+                title="Select an active style to load into Pricing Studio"
               >
-                <option value="">{currentSheetId ? 'Switch Product...' : 'Load Saved Product...'}</option>
+                <option value="">{currentSheetId ? 'Switch Style...' : 'Load Active Style...'}</option>
                 {costingSheets.map(s => (
                   <option key={s.id} value={s.id}>
                     {s.sku} — {s.styleName}

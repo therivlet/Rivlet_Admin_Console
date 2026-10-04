@@ -398,7 +398,7 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
           <div className="relative max-h-[calc(100vh-140px)] min-h-[500px] overflow-auto rounded-2xl border border-[#1a2335] bg-[#07090e]/95 custom-scrollbar pb-6 shadow-2xl">
             <div className="grid gap-2 p-3 min-w-max" style={{ gridTemplateColumns: `340px repeat(${COLUMNS.length}, minmax(220px, 1fr))` }}>
               {/* Header row */}
-              <div className="text-[11px] font-bold text-[#cda052] uppercase tracking-wider px-3.5 py-2.5 sticky top-0 left-0 z-40 bg-[#0a0d14]/98 backdrop-blur-md rounded-xl border border-[#232d44] shadow-md flex items-center justify-between">
+              <div className="text-[11px] font-bold text-[#cda052] uppercase tracking-wider px-3.5 py-2.5 sticky top-0 md:left-0 z-30 md:z-40 bg-[#0a0d14]/98 backdrop-blur-md rounded-xl border border-[#232d44] shadow-md flex items-center justify-between">
                 <span className="flex items-center gap-1.5"><Layers className="w-3.5 h-3.5 text-[#cda052]" /> Stories & Milestones</span>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#161c2b] text-[#94a3b8] border border-[#232d44]">{rows.length}</span>
               </div>
@@ -442,7 +442,7 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                     /* COLLAPSED STORY CELL (Spacious box: full story name & sprint clearly visible) */
                     <div
                       onClick={() => row && setModalItem(row)}
-                      className={`rounded-xl border p-3 flex flex-col justify-between transition-all min-h-[78px] select-none sticky left-0 z-20 ${
+                      className={`rounded-xl border p-3 flex flex-col justify-between transition-all min-h-[78px] select-none md:sticky md:left-0 md:z-20 ${
                         row
                           ? 'border-[#1f2638] bg-[#0c1018] cursor-pointer hover:border-[#33415c] shadow-sm'
                           : 'border-dashed border-[#263148] bg-[#0c1018]'
@@ -539,7 +539,7 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                     /* EXPANDED STORY CELL */
                     <div
                       onClick={() => row && setModalItem(row)}
-                      className={`rounded-xl border p-3 flex flex-col justify-between transition-all select-none sticky left-0 z-20 ${
+                      className={`rounded-xl border p-3 flex flex-col justify-between transition-all select-none md:sticky md:left-0 md:z-20 ${
                         row
                           ? 'border-[#1f2638] bg-[#0c1018] cursor-pointer hover:border-[#33415c] shadow-sm'
                           : 'border-dashed border-[#263148] bg-[#0c1018]'

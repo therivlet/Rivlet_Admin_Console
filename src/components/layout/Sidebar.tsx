@@ -48,9 +48,10 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
   const calcTab = searchParams.get('tab');
   const calcAction = searchParams.get('action');
 
-  const isStudioActive = isCalcPath && (calcTab === 'studio' || !calcTab) && calcAction !== 'new';
+  const isOverviewActive = isCalcPath && (calcTab === 'overview' || !calcTab) && calcAction !== 'new';
+  const isStudioActive = isCalcPath && calcTab === 'studio' && calcAction !== 'new';
   const isNewActive = isCalcPath && calcAction === 'new';
-  const isSavedActive = isCalcPath && calcTab === 'saved';
+  const isStylesActive = isCalcPath && (calcTab === 'styles' || calcTab === 'saved');
 
   const promotedTools = artifacts.filter(a => a.isPromoted && a.status === 'promoted');
 
@@ -150,7 +151,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                       }`}
                     >
                       <Link
-                        href="/calculator?tab=studio"
+                        href="/calculator"
                         onClick={handleLinkClick}
                         className="flex items-center gap-2.5 flex-1 truncate"
                         title="Navigate to Garment Cost Calculator"
@@ -177,6 +178,17 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                     {calculatorExpanded && (
                       <div className="pl-6 pr-2 py-1 space-y-0.5 border-l border-[#1f2638] ml-4 text-[11px] animate-fade-in">
                         <Link
+                          href="/calculator?tab=overview"
+                          onClick={handleLinkClick}
+                          className={`block px-2.5 py-1.5 rounded-md transition-colors ${
+                            isOverviewActive
+                              ? 'text-[#cda052] font-semibold bg-[rgba(205,160,82,0.12)]'
+                              : 'text-[#94a3b8] hover:text-white hover:bg-[#141724]'
+                          }`}
+                        >
+                          • Overview Dashboard
+                        </Link>
+                        <Link
                           href="/calculator?tab=studio"
                           onClick={handleLinkClick}
                           className={`block px-2.5 py-1.5 rounded-md transition-colors ${
@@ -185,29 +197,18 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                               : 'text-[#94a3b8] hover:text-white hover:bg-[#141724]'
                           }`}
                         >
-                          • Pricing & Unit Economics
+                          • Pricing & Unit Economy
                         </Link>
                         <Link
-                          href="/calculator?tab=studio&action=new"
+                          href="/calculator?tab=styles"
                           onClick={handleLinkClick}
                           className={`block px-2.5 py-1.5 rounded-md transition-colors ${
-                            isNewActive
+                            isStylesActive
                               ? 'text-[#cda052] font-semibold bg-[rgba(205,160,82,0.12)]'
                               : 'text-[#94a3b8] hover:text-white hover:bg-[#141724]'
                           }`}
                         >
-                          • New SKU Calculation
-                        </Link>
-                        <Link
-                          href="/calculator?tab=saved"
-                          onClick={handleLinkClick}
-                          className={`block px-2.5 py-1.5 rounded-md transition-colors ${
-                            isSavedActive
-                              ? 'text-[#cda052] font-semibold bg-[rgba(205,160,82,0.12)]'
-                              : 'text-[#94a3b8] hover:text-white hover:bg-[#141724]'
-                          }`}
-                        >
-                          • Saved Products
+                          • Active Styles
                         </Link>
                       </div>
                     )}
