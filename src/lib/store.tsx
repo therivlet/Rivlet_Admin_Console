@@ -362,6 +362,28 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           createdAt: r.created_at || new Date().toISOString(),
           updatedAt: r.updated_at || new Date().toISOString(),
         }));
+
+        // Merge any new master articles added to code that don't exist yet in Supabase
+        const existingIds = new Set(formatted.map(k => k.id));
+        const missingInitials = initialKBArticles.filter(k => !existingIds.has(k.id));
+        if (missingInitials.length > 0) {
+          for (const kb of missingInitials) {
+            await supabase.from('kb_articles').upsert({
+              id: kb.id,
+              title: kb.title,
+              slug: kb.slug,
+              category: kb.category,
+              content: kb.content,
+              is_confidential: kb.isConfidential,
+              author: kb.author,
+              tags: kb.tags,
+              created_at: kb.createdAt,
+              updated_at: kb.updatedAt,
+            });
+            formatted.push(kb);
+          }
+        }
+
         setKbArticles(formatted);
         try { localStorage.setItem(STORAGE_KEYS.KB_ARTICLES, JSON.stringify(formatted)); } catch (_) {}
       } else if (kbRes.data && kbRes.data.length === 0) {
@@ -691,7 +713,10 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       }
 
       if (storedArticles) {
-        setKbArticles(JSON.parse(storedArticles));
+        const parsed = JSON.parse(storedArticles);
+        const existingIds = new Set(parsed.map((a: any) => a.id));
+        const missing = initialKBArticles.filter(a => !existingIds.has(a.id));
+        setKbArticles(missing.length > 0 ? [...parsed, ...missing] : parsed);
       } else {
         setKbArticles(initialKBArticles);
       }

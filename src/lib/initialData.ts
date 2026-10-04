@@ -180,6 +180,251 @@ Rivlet is built on understated luxury, structural silhouettes, and uncompromisin
 3. Frosted matte biodegradable 80-micron polybag with gold foil logo.
 4. Sealed with embossed metallic wafer sticker.
 `
+  },
+  {
+    id: 'kb-004',
+    title: 'Master Financial Blueprint: Garment Costing, Indian GST Step Taxation & Unit Economics Methodology',
+    slug: 'garment-costing-and-unit-economics-methodology',
+    category: 'Finance & Unit Economics',
+    isConfidential: true,
+    author: 'Rivlet Financial Engineering & Merchandising Team',
+    tags: ['Pricing', 'Unit Economics', 'GST', 'BOM', 'Overheads', 'Financial Blueprint'],
+    createdAt: '2026-10-04T10:00:00Z',
+    updatedAt: '2026-10-04T10:00:00Z',
+    content: `# Master Financial Blueprint: Garment Costing, Indian GST Step Taxation & Unit Economics
+
+> **CONFIDENTIAL — RIVLET INTERNAL OPERATIONS & MERCHANDISING ONLY**  
+> *Author: Rivlet Financial Engineering & Merchandising Team*  
+> *Effective Season: FW26 / SS27 & Beyond*
+
+---
+
+## 1. Executive Summary & Purpose
+
+The **Rivlet Garment Cost Calculator** is an institutional-grade financial engine designed to protect brand gross margins and EBITDA profitability. Premium garment direct-to-consumer (D2C) brands fail not from lack of demand, but from hidden variable leakages:
+1. Underestimating **shrinkage and cutting wastage** on heavyweight textiles.
+2. Inaccurate **Indian GST step-function liability** (5% vs 18%) and mishandling **Factory Input Tax Credit (ITC)**.
+3. Distorting per-unit economics by dividing total corporate fixed overheads by single-SKU volumes instead of **brand-wide catalog volume**.
+4. Disregarding **reverse logistics, payment gateway surcharges, and customer return buffers**.
+5. Relying on single-point optimistic forecasts rather than **3-scenario stress testing** (Conservative, Expected, Optimistic).
+
+This document serves as the permanent institutional reference for every formula, field dependency, tax regulation, and margin threshold applied in the Rivlet Pricing Suite.
+
+---
+
+## 2. Core Economic Equation & Profit Flow
+
+Every garment calculation progresses through a strict sequential waterfall:
+
+\`\`\`
+[1. Customer Invoice (MRP / Selling Price)]
+       │
+       ▼ (Less Indian Output GST: 5% if ≤₹2,500; 18% if >₹2,500)
+[2. Net Realized Sales Revenue]
+       │
+       ▼ (Less Landed Production Cost / COGS)
+          • Raw Fabric (Body + Rib + Trims) + Shrinkage + Cutting Wastage
+          • Cut, Make & Trim (CMT), Washing, Printing & Embroidery
+          • Packaging, Tags, Woven Labels & Polybags
+          • Less Factory Input Tax Credit (ITC Claimable)
+[3. Factory Gross Profit]
+       │
+       ▼ (Less Variable Commercial Direct Costs)
+          • Outbound Courier Shipping & Packaging Assembly
+          • Payment Gateway Fee (Razorpay/Stripe ~2.0% + GST)
+          • Expected Return Logistics Loss Reserve
+          • Blended Customer Acquisition Cost (Meta/Google Ad Spend)
+          • Influencer / Affiliate Commission
+[4. Contribution Margin (CM2)]
+       │
+       ▼ (Less Allocated Fixed Brand Overheads)
+          • Annual SG&A + Salaries + Tools ÷ Total Brand Annual Unit Sales
+[5. Net Contribution / EBITDA Profit Per Garment]
+\`\`\`
+
+---
+
+## 3. Bill of Materials (BOM) & Factory Production Cost Breakdown
+
+### A. Fabric Consumption, Shrinkage & Cutting Wastage
+Textiles are priced either by kilogram (\`₹/kg\`) or by linear meter (\`₹/m\`). Heavyweight knits (e.g., 450 GSM French Terry) require precise wastage accounting:
+- **Net Consumption**: Actual square meter fabric required for panels.
+- **Shrinkage Allowance (typically 3%–7%)**: Natural cotton shrinks during pre-wash and heat curing.
+- **Cutting Table Wastage (typically 5%–10%)**: Irregular pattern nesting, selvedge loss, and end-of-roll cut-offs.
+
+**Mathematical Formula:**
+$$\\text{Effective Fabric Cost} = \\text{Base Fabric Price} \\times \\text{Consumption} \\times \\left(1 + \\frac{\\text{Shrinkage \\%}}{100}\\right) \\times \\left(1 + \\frac{\\text{Wastage \\%}}{100}\\right)$$
+
+### B. Secondary Fabric & Ribbing
+Heavyweight crewnecks and hoodies require 2x2 heavy cotton/elastane ribbing at the neck, cuffs, and hem. This is tracked independently as:
+$$\\text{Rib Cost} = \\text{Rib Consumption (kg)} \\times \\text{Rib Rate (₹/kg)}$$
+
+### C. Trims, Hardware & Branding Accoutrements
+- **Woven Neck Label**: Micro-damask high-density thread (~₹6–12/pc).
+- **Satin Care & Composition Label**: Mandatory legal label (~₹3–6/pc).
+- **Embossed Hangtag & Waxed Cord**: 400 GSM soft-touch card with safety pin (~₹10–20/pc).
+- **Zippers & Metal Aglets**: Custom engraved brass/matte black hardware (~₹25–65/pc).
+
+### D. CMT, Dyeing, Washing & Embellishment
+- **Cut, Make & Trim (CMT)**: Machine operator assembly cost per garment.
+- **Specialty Wash**: Pigment dyeing, silicone wash, or vintage enzyme wash.
+- **Screenprint / Embroidery**: High-density screenprint or chain-stitch embroidery.
+
+### E. Total Landed Production Cost (COGS)
+$$\\text{COGS} = \\sum(\\text{Fabric}) + \\sum(\\text{Trims}) + \\text{CMT} + \\text{Washing} + \\text{Embellishment} + \\text{Factory QC/Handling}$$
+
+---
+
+## 4. Indian GST Step-Function Taxation & Factory Input Tax Credit (ITC)
+
+India enforces a dual-tier step GST system for apparel under HSN Chapter 61 & 62.
+
+### Step Function Threshold Rule:
+- **MRP / Selling Price $\\le$ ₹2,500**: Taxed at **5% GST** (HSN standard concessional rate).
+- **MRP / Selling Price $>$ ₹2,500**: Taxed at **18% GST** (luxury & high-value apparel bracket).
+
+### Net Realized Revenue Calculation (Reverse Tax Extraction):
+Because the consumer price (MRP) is inclusive of taxes, the output GST must be extracted:
+$$\\text{Net Realized Sales} = \\frac{\\text{Customer MRP}}{1 + \\text{Tax Rate}}$$
+$$\\text{Output GST Collected} = \\text{Customer MRP} - \\text{Net Realized Sales}$$
+
+*Example A (MRP = ₹1,999):*  
+Tax Rate = 5% ($0.05$)  
+$\\text{Net Sales} = \\frac{1999}{1.05} = ₹1,903.81$  
+$\\text{Output GST} = ₹95.19$
+
+*Example B (MRP = ₹4,999):*  
+Tax Rate = 18% ($0.18$)  
+$\\text{Net Sales} = \\frac{4999}{1.18} = ₹4,236.44$  
+$\\text{Output GST} = ₹762.56$
+
+### Factory Input Tax Credit (ITC) Mechanism:
+When our garment factory bills us for fabrication (CMT + fabric), they levy GST (typically 5% on textile job work or 12%/18% on finished garments). Under the Indian GST regime, **this input GST is not an expense**—it is a tax credit asset that offsets the Output GST owed to the government.
+
+- **Net Tax Remitted to Govt**: $\\text{Output GST} - \\text{Eligible Factory ITC}$
+- In the Rivlet Calculator, if factory invoices include claimable ITC, it reduces the net effective tax cash drain.
+
+---
+
+## 5. Fixed Annual Overhead Absorption (The Universal Catalog Rule)
+
+### The Classic Mistake:
+Dividing the entire company's annual overheads (rent, salaries, SaaS tools, Shopify Plus, photoshoot amortizations) by a single product's projected sales. This artificially inflates the per-unit cost of a new SKU to absurd levels and distorts pricing.
+
+### The Institutional Methodology:
+Fixed corporate overheads must be absorbed across the **Total Brand Catalog Projected Unit Volume** across all running SKUs in that fiscal year:
+
+$$\\text{Overhead Burden Per Unit} = \\frac{\\text{Total Annual Company Fixed Overheads (₹)}}{\\text{Total Projected Brand Catalog Unit Sales (All SKUs)}}$$
+
+### Three Tier Sensitivity:
+1. **Conservative Overhead**: Total Overheads $\\div$ Conservative Total Brand Volume (e.g., ₹10,70,000 $\\div$ 12,000 units = ₹89.17/pc).
+2. **Expected Overhead**: Total Overheads $\\div$ Expected Total Brand Volume (e.g., ₹10,70,000 $\\div$ 20,000 units = ₹53.50/pc).
+3. **Optimistic Overhead**: Total Overheads $\\div$ Upside Total Brand Volume (e.g., ₹10,70,000 $\\div$ 32,000 units = ₹33.44/pc).
+
+Every single SKU produced absorbs this standard baseline overhead rate, allowing fair, standardized margin comparisons across hoodies, tees, caps, and trousers.
+
+---
+
+## 6. Commercial Direct Variable Costs (E-Commerce Operations)
+
+### A. Fulfillment & Outbound Logistics
+- Air express courier (BlueDart / Delhivery Surface) based on volumetric deadweight (e.g. 800g hoodie = ~₹120–₹160 across India).
+
+### B. Payment Gateway (PG) Processing
+- Razorpay / Cashfree / Stripe average 2.0% + 18% GST on the fee (~2.36% effective of transaction value).
+- Calculated directly on customer checkout value.
+
+### C. Return / RTO Reserve (Reverse Logistics & Inspection)
+E-commerce fashion in India experiences a 10%–20% return rate on online orders, and up to 35% on COD.
+$$\\text{Return Cost Allowance} = \\text{Expected Return Rate (\\%)} \\times (\\text{Forward Shipping} + \\text{Reverse Shipping} + \\text{Refurbishing/Inspection Fee})$$
+
+### D. Customer Acquisition Cost (Blended CAC)
+- Paid media ad spend (Meta Advantage+, Google Shopping).
+- Target CAC is benchmarked between 15% and 25% of selling price for healthy D2C operations.
+
+### E. Creator / Influencer Commission
+- Tracked affiliate links / creator discounts (typically 8%–12% of Net Sales).
+
+---
+
+## 7. Multi-Scenario Stress Testing: Conservative vs. Expected vs. Optimistic
+
+The calculator runs three parallel balance sheets simultaneously to ensure viability under adverse market conditions:
+
+| Economic Driver | Conservative Scenario (Stress Test) | Expected Scenario (Baseline Plan) | Optimistic Scenario (Best Case) |
+| :--- | :--- | :--- | :--- |
+| **Return & RTO Rate** | 22.0% (High return friction) | 12.0% (Standard premium D2C) | 6.0% (Loyal returning buyers) |
+| **Paid Ad CAC** | ₹1,100 / garment (Ad saturation) | ₹750 / garment (Optimized ROAS) | ₹450 / garment (Organic viral lift) |
+| **Payment Gateway** | 2.5% (High COD + dispute mix) | 2.0% (Standard prepaid gateway) | 1.8% (UPI direct dominance) |
+| **Overhead Burden** | ₹89.17 / unit (Low catalog sales) | ₹53.50 / unit (Target catalog sales) | ₹33.44 / unit (Scale catalog sales) |
+| **Target Net Margin** | **$\ge$ 15%** minimum survival floor | **$\ge$ 28% – 35%** target health | **$\ge$ 45%** hyper-profitable |
+
+> **Decision Rule**: If an SKU cannot achieve at least **15% Net Margin in the Conservative Scenario**, the product is rejected at the prototyping stage.
+
+---
+
+## 8. Real-World Worked Walkthrough: Rivlet Heavyweight Boxy Hoodie
+
+- **Target MRP**: ₹4,999 (Inclusive of tax)
+- **HSN Category**: Above ₹2,500 $\\implies$ 18% GST applies.
+
+### Step 1: Net Revenue
+$$\\text{Net Sales} = \\frac{4,999}{1.18} = ₹4,236.44$$
+$$\\text{Output GST} = ₹762.56$$
+
+### Step 2: Bill of Materials & Landed COGS
+- 450 GSM French Terry (0.85 kg @ ₹650/kg with 5% shrinkage & 6% cut loss): **₹615.00**
+- 2x2 Cotton Ribbing (0.12 kg @ ₹580/kg): **₹69.60**
+- Labels, Tags, Parchment & Matte Polybag: **₹48.00**
+- Heavyweight CMT Stitching: **₹180.00**
+- Pigment Wash & Hand Distressing: **₹95.00**
+- Embroidered Tone-on-Tone Logo: **₹45.00**
+- Less Factory ITC Credit: **-₹42.00**
+- **Total Net Landed COGS**: **₹1,010.60** (23.8% of Net Sales)
+
+### Step 3: Factory Gross Profit
+$$\\text{Factory Gross Profit} = ₹4,236.44 - ₹1,010.60 = ₹3,225.84 \\quad (76.1\\% \\text{ Gross Margin})$$
+
+### Step 4: Variable Commercial Costs (Expected Scenario)
+- Outbound Courier Shipping: **₹145.00**
+- Payment Gateway (2.0% of ₹4,999): **₹99.98**
+- Return Reserve (12% return rate $\\times$ ₹260 reverse cost): **₹31.20**
+- Performance CAC: **₹850.00**
+- Influencer Affiliate (10% of Net Sales): **₹423.64**
+- **Total Commercial Operating Expenses**: **₹1,549.82**
+
+### Step 5: Fixed Overheads
+- Brand Annual Overhead Share: **₹53.50**
+
+### Step 6: Final Net Contribution / EBITDA
+$$\\text{Net Profit Per Unit} = ₹3,225.84 - ₹1,549.82 - ₹53.50 = ₹1,622.52$$
+$$\\text{Net Profit Margin} = \\frac{₹1,622.52}{₹4,236.44} = \\mathbf{38.3\\%}$$
+*Status: Highly Viable. Approved for commercial manufacturing run.*
+
+---
+
+## 9. Comprehensive Field Dictionary & Variable Matrix
+
+| Input Field Name | Calculation / Source | Economic Impact | Optimal Target Range |
+| :--- | :--- | :--- | :--- |
+| **Retail MRP (₹)** | Master consumer selling price | Defines output tax bracket (5% vs 18%) & revenue top line | Determined by competitive luxury benchmark |
+| **Fabric GSM & Consumption** | Weight in grams/m² & consumption in kg/m | Direct BOM cost; heavyweight textiles demand higher allowances | Tees: 220–280 GSM; Hoodies: 400–520 GSM |
+| **Shrinkage Allowance (%)** | Natural dimensional change post wash | Underestimating leads to undersized garments or fabric shortfall | Standard 4% – 7% for premium cotton |
+| **Cutting Wastage (%)** | Marker efficiency & end-loss | Direct fabric cost multiplier | Standard 5% – 8% |
+| **CMT Cost (₹)** | Sewing, thread, labor per unit | Fixed assembly fee charged by primary vendor | Shirts: ₹120–160; Hoodies: ₹170–240 |
+| **Claimable Factory ITC (₹)** | Input tax credit on vendor manufacturing bill | Directly offsets output GST liability | Equals 5%–12% of vendor taxable invoice |
+| **Outbound Courier (₹)** | 3PL shipping rate per package weight | Direct deduction from gross profit | ₹70 (Tee) to ₹150 (Heavy Hoodie) |
+| **PG Rate (%)** | Payment gateway merchant discount rate | Percentage deduction from checkout transaction | 1.8% – 2.2% |
+| **Return Rate (%)** | Projected rate of customer returns/RTO | Dictates reverse logistics reserve cost | $\\le 12\\%$ target for D2C apparel |
+| **Target CAC (₹)** | Blended media spend to acquire 1 purchase | Largest variable expense in D2C | $\\le 20\\%$ of net realized price |
+| **Catalog Annual Volume** | Total units sold across all brand SKUs | Denominator for overhead absorption | 15,000 – 40,000 units/year |
+
+---
+
+## 10. Conclusion & Merchandising Governance
+
+All Rivlet merchandisers and product developers must evaluate new style proposals through this financial framework before issuing Purchase Orders. Any style failing to achieve a **30% Expected Net Margin** or a **15% Conservative Net Margin** must be re-engineered (by optimizing fabric consumption, negotiating bulk mill discounts, or re-evaluating retail pricing).
+`
   }
 ];
 

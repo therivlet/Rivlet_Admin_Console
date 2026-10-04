@@ -52,6 +52,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
   const isStudioActive = isCalcPath && calcTab === 'studio' && calcAction !== 'new';
   const isNewActive = isCalcPath && calcAction === 'new';
   const isStylesActive = isCalcPath && (calcTab === 'styles' || calcTab === 'saved');
+  const isGuideActive = isCalcPath && (calcTab === 'guide' || calcTab === 'help');
 
   const promotedTools = artifacts.filter(a => a.isPromoted && a.status === 'promoted');
 
@@ -209,6 +210,17 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                           }`}
                         >
                           • Active Styles
+                        </Link>
+                        <Link
+                          href="/calculator?tab=guide"
+                          onClick={handleLinkClick}
+                          className={`block px-2.5 py-1.5 rounded-md transition-colors ${
+                            isGuideActive
+                              ? 'text-[#cda052] font-semibold bg-[rgba(205,160,82,0.12)]'
+                              : 'text-[#94a3b8] hover:text-white hover:bg-[#141724]'
+                          }`}
+                        >
+                          • Calculation Guide
                         </Link>
                       </div>
                     )}

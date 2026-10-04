@@ -25,7 +25,8 @@ import {
   Lock,
   Unlock,
   Copy,
-  ArrowLeft
+  ArrowLeft,
+  BookOpen
 } from 'lucide-react';
 import { PricingInputs, CalculationResult, ScenarioKey, CostingSheet, GarmentBOM, CalculatorDefaults } from '@/lib/types';
 import { 
@@ -55,6 +56,7 @@ interface CostingCalculatorProps {
   onNewCalculation?: () => void;
   onSelectSavedProduct?: (sheet: CostingSheet) => void;
   onBackToOverview?: () => void;
+  onOpenGuide?: () => void;
 }
 
 function makeBlankProduct(overrides: Partial<Pick<PricingInputs, 'productName' | 'productCode' | 'mrp' | 'targetMargin'>> = {}) {
@@ -73,6 +75,7 @@ export default function CostingCalculator({
   onNewCalculation,
   onSelectSavedProduct,
   onBackToOverview,
+  onOpenGuide,
 }: CostingCalculatorProps) {
   const { costingSheets, saveCostingSheet } = useAdminStore();
   const { user } = useAuth();
@@ -369,11 +372,23 @@ export default function CostingCalculator({
           {onBackToOverview && (
             <button
               onClick={onBackToOverview}
-              className="px-3 py-1.5 rounded-lg bg-[#141824] hover:bg-[#1e2538] border border-[#252f44] text-[#cbd5e1] hover:text-white text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm"
+              className="px-3 py-1.5 rounded-lg bg-[#141824] hover:bg-[#1e2538] border border-[#252f44] text-[#cbd5e1] hover:text-white text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
               title="Return to Catalog Overview & Dashboards"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to Overview</span>
+            </button>
+          )}
+
+          {/* Guide link if provided */}
+          {onOpenGuide && (
+            <button
+              onClick={onOpenGuide}
+              className="px-3 py-1.5 rounded-lg bg-[#141824] hover:bg-[#1e2538] border border-[#252f44] text-[#cbd5e1] hover:text-[#e6c875] text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+              title="View comprehensive calculation methodology, formulas, Indian GST rules & unit economics guide"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-[#cda052]" />
+              <span>Calculation Guide</span>
             </button>
           )}
 

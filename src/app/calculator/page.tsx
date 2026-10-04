@@ -16,12 +16,14 @@ import {
   ArrowRight,
   TrendingUp,
   Copy,
-  ChevronRight
+  ChevronRight,
+  BookOpen
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { CostingSheet, PricingInputs } from '@/lib/types';
 import CostingCalculator from '@/components/calculator/CostingCalculator';
 import CalculatorOverviewDashboard from '@/components/calculator/CalculatorOverviewDashboard';
+import CalculatorMethodologyGuide from '@/components/calculator/CalculatorMethodologyGuide';
 import { useConfirm } from '@/lib/confirmContext';
 import { calculateScenario, formatMoney } from '@/lib/pricingEngine';
 
@@ -34,10 +36,11 @@ function CalculatorContent() {
   const tabParam = searchParams.get('tab');
   const actionParam = searchParams.get('action');
 
-  // Active Tab: 'overview' (default) | 'studio' (Pricing & Unit Economy) | 'styles' (Active Styles)
-  const [activeTab, setActiveTab] = useState<'overview' | 'studio' | 'styles'>(() => {
+  // Active Tab: 'overview' (default) | 'studio' (Pricing & Unit Economy) | 'styles' (Active Styles) | 'guide' (Calculation Guide)
+  const [activeTab, setActiveTab] = useState<'overview' | 'studio' | 'styles' | 'guide'>(() => {
     if (tabParam === 'studio') return 'studio';
     if (tabParam === 'styles' || tabParam === 'saved') return 'styles';
+    if (tabParam === 'guide' || tabParam === 'help') return 'guide';
     return 'overview';
   });
 
@@ -55,6 +58,8 @@ function CalculatorContent() {
       setActiveTab('studio');
     } else if (tabParam === 'styles' || tabParam === 'saved') {
       setActiveTab('styles');
+    } else if (tabParam === 'guide' || tabParam === 'help') {
+      setActiveTab('guide');
     } else {
       setActiveTab('overview');
     }
@@ -224,6 +229,21 @@ function CalculatorContent() {
                 </span>
               )}
             </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('guide');
+                router.replace('/calculator?tab=guide');
+              }}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeTab === 'guide'
+                  ? 'bg-[#1e2538] text-[#e6c875] font-semibold border border-[#cda052]/30 shadow-sm'
+                  : 'text-[#94a3b8] hover:text-white'
+              }`}
+            >
+              <BookOpen className="w-3.5 h-3.5 text-[#cda052]" />
+              <span>Calculation Guide</span>
+            </button>
           </div>
 
           {/* Quick New Calculator Button */}
@@ -260,6 +280,10 @@ function CalculatorContent() {
           onBackToOverview={() => {
             setActiveTab('overview');
             router.replace('/calculator?tab=overview');
+          }}
+          onOpenGuide={() => {
+            setActiveTab('guide');
+            router.replace('/calculator?tab=guide');
           }}
           onSaveSuccess={() => {}}
           onSelectSavedProduct={(sheet) => setSelectedSheet(sheet)}
@@ -438,6 +462,17 @@ function CalculatorContent() {
             </div>
           )}
         </div>
+      )}
+
+      {/* TAB 4: CALCULATION BLUEPRINT & METHODOLOGY GUIDE */}
+      {activeTab === 'guide' && (
+        <CalculatorMethodologyGuide
+          onBackToCalculator={() => {
+            setActiveTab('studio');
+            router.replace('/calculator?tab=studio');
+          }}
+          onStartNewCalculation={handleStartNewCalculator}
+        />
       )}
     </div>
   );

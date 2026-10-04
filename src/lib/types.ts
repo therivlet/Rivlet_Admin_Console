@@ -280,7 +280,7 @@ export interface KBArticle {
   id: string;
   title: string;
   slug: string;
-  category: 'Vendors & Mills' | 'Quality & AQL' | 'Brand Guidelines' | 'Garment Specs' | 'Business Operations';
+  category: 'Vendors & Mills' | 'Quality & AQL' | 'Brand Guidelines' | 'Garment Specs' | 'Business Operations' | 'Finance & Unit Economics';
   content: string; // Markdown formatted
   isConfidential: boolean;
   author: string;

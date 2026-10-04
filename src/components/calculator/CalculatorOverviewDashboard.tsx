@@ -21,7 +21,8 @@ import {
   Clock,
   ArrowUpRight,
   Building2,
-  ChevronRight
+  ChevronRight,
+  BookOpen
 } from 'lucide-react';
 import { CostingSheet } from '@/lib/types';
 import { calculateScenario, formatMoney, formatPercent } from '@/lib/pricingEngine';
@@ -35,7 +36,7 @@ interface CalculatorOverviewDashboardProps {
     targetMargin: number;
   }) => void;
   onOpenSheet: (sheet: CostingSheet) => void;
-  onNavigateToTab: (tab: 'overview' | 'studio' | 'styles') => void;
+  onNavigateToTab: (tab: 'overview' | 'studio' | 'styles' | 'guide') => void;
 }
 
 export default function CalculatorOverviewDashboard({
@@ -173,15 +174,23 @@ export default function CalculatorOverviewDashboard({
 
           <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
             <button
+              onClick={() => onNavigateToTab('guide')}
+              className="px-3.5 py-2 rounded-xl bg-[#141926] border border-[#232d44] text-[#cbd5e1] hover:text-[#e6c875] hover:border-[#cda052]/50 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+              title="View comprehensive calculation methodology, formulas, Indian GST rules & unit economics guide"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-[#cda052]" />
+              <span>Calculation Guide</span>
+            </button>
+            <button
               onClick={() => onNavigateToTab('styles')}
-              className="px-3.5 py-2 rounded-xl bg-[#141926] border border-[#232d44] text-[#cbd5e1] hover:text-white hover:border-[#cda052]/50 text-xs font-semibold transition-all flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-xl bg-[#141926] border border-[#232d44] text-[#cbd5e1] hover:text-white hover:border-[#cda052]/50 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <Shirt className="w-3.5 h-3.5 text-[#cda052]" />
               <span>Active Styles ({costingSheets.length})</span>
             </button>
             <button
               onClick={() => onNavigateToTab('studio')}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-bold text-xs hover:brightness-110 shadow-glow transition-all flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-bold text-xs hover:brightness-110 shadow-glow transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <Calculator className="w-3.5 h-3.5 stroke-[2.5]" />
               <span>Full Pricing Studio</span>

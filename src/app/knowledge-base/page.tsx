@@ -24,13 +24,23 @@ import { useAdminStore } from '@/lib/store';
 import { KBArticle } from '@/lib/types';
 import { renderMarkdown } from '@/lib/markdown';
 import { useConfirm } from '@/lib/confirmContext';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useEffect } from 'react';
 
-export default function KnowledgeBasePage() {
+function KnowledgeBaseContent() {
   const confirm = useConfirm();
+  const searchParams = useSearchParams();
+  const articleParam = searchParams.get('article') || searchParams.get('id');
   const { kbArticles, saveArticle, deleteArticle } = useAdminStore();
-  const [selectedArticleId, setSelectedArticleId] = useState<string>(kbArticles[0]?.id || '');
+  const [selectedArticleId, setSelectedArticleId] = useState<string>(() => articleParam || kbArticles[0]?.id || '');
   const [searchQuery, setSearchQuery] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    if (articleParam && kbArticles.some(a => a.id === articleParam)) {
+      setSelectedArticleId(articleParam);
+    }
+  }, [articleParam, kbArticles]);
 
   // Editor states
   const [editTitle, setEditTitle] = useState('');
@@ -310,6 +320,7 @@ export default function KnowledgeBasePage() {
                         <option value="Brand Guidelines">Brand Guidelines</option>
                         <option value="Garment Specs">Garment Specs</option>
                         <option value="Business Operations">Business Operations</option>
+                        <option value="Finance & Unit Economics">Finance & Unit Economics</option>
                       </select>
                     </div>
 
@@ -434,5 +445,13 @@ export default function KnowledgeBasePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function KnowledgeBasePage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-xs text-[#94a3b8]">Loading Confidential Brand KB...</div>}>
+      <KnowledgeBaseContent />
+    </Suspense>
   );
 }
