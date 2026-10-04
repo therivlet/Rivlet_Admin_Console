@@ -15,6 +15,7 @@ import {
   ExternalLink,
   LogOut,
   User,
+  Users,
   X,
   Settings,
   Settings2,
@@ -72,8 +73,8 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
     { label: 'Backlogs', href: '/work?tab=backlog', tab: 'backlog', icon: ListTree },
     { label: 'Sprint Board', href: '/work?tab=board', tab: 'board', icon: KanbanSquare },
     { label: 'Sprints', href: '/work?tab=sprints', tab: 'sprints', icon: CalendarRange },
-    { label: 'Sprint Bug Creation', href: '/work?tab=bulk', tab: 'bulk', icon: Sparkles },
-    { label: 'Settings', href: '/work?tab=settings', tab: 'settings', icon: Settings2 },
+    { label: 'Sprint Bulk Creation', href: '/work?tab=bulk', tab: 'bulk', icon: Sparkles },
+    { label: 'Teams', href: '/work?tab=settings', tab: 'settings', icon: Users },
   ];
 
   const handleLinkClick = () => {

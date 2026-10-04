@@ -2,7 +2,7 @@
 
 import React, { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ListTree, KanbanSquare, CalendarRange, Settings2, Sparkles } from 'lucide-react';
+import { ListTree, KanbanSquare, CalendarRange, Users, Sparkles } from 'lucide-react';
 import BacklogView from '@/components/work/BacklogView';
 import BoardView from '@/components/work/BoardView';
 import SprintsView from '@/components/work/SprintsView';
@@ -23,15 +23,15 @@ const TABS: TabItem[] = [
   { key: 'backlog', label: 'Backlogs', shortLabel: 'Backlogs', icon: ListTree, description: 'Work hierarchy & epics' },
   { key: 'board', label: 'Sprint Board', shortLabel: 'Board', icon: KanbanSquare, description: 'Active sprint Kanban' },
   { key: 'sprints', label: 'Sprints', shortLabel: 'Sprints', icon: CalendarRange, description: 'Sprint cadences & schedule' },
-  { key: 'bulk', label: 'Sprint Bug Creation', shortLabel: 'Bugs', icon: Sparkles, description: 'AI story & bug creation' },
-  { key: 'settings', label: 'Settings', shortLabel: 'Settings', icon: Settings2, description: 'Team & cadence rules' },
+  { key: 'bulk', label: 'Sprint Bulk Creation', shortLabel: 'Bulk', icon: Sparkles, description: 'AI bulk story & task importer' },
+  { key: 'settings', label: 'Teams', shortLabel: 'Teams', icon: Users, description: 'Team roster & cadence rules' },
 ];
 
 function WorkPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const tab: Tab = (tabParam === 'board' || tabParam === 'sprints' || tabParam === 'bulk' || tabParam === 'settings') ? tabParam : 'backlog';
+  const tab: Tab = (tabParam === 'board' || tabParam === 'sprints' || tabParam === 'bulk' || tabParam === 'settings' || tabParam === 'teams') ? (tabParam === 'teams' ? 'settings' : tabParam) : 'backlog';
   const [boardSprintId, setBoardSprintId] = useState<string | undefined>(undefined);
 
   const setTab = (next: Tab) => {
