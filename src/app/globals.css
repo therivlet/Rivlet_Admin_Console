@@ -395,58 +395,134 @@ html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"]:hover spa
 }
 
 /* Inactive links, buttons and labels inside aside */
-html.light aside a:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]),
+html.light aside a:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]):not(.brand-logo-link),
 html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]) {
   background-color: transparent !important;
   color: #d7cbbe !important;
 }
 
-html.light aside a:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]) span,
-html.light aside a:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]) svg {
+html.light aside a:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]):not(.brand-logo-link) span,
+html.light aside a:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]):not(.brand-logo-link) svg {
   color: #a99a8b !important;
 }
 
-/* Hover on ANY Nav Link or Button inside aside in Light Mode - Prominent warm cognac highlight tile */
-html.light aside a:hover:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]),
-html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):not([title*="Close"]):not([title*="Sign Out"]):not([title*="Sign out"]):not([aria-label*="Sign Out"]):hover,
-html.light aside .group > div:hover:not([class*="from-[rgba"]):not([class*="bg-[rgba(205,160,82"]) {
+/* Brand Logo Link: NEVER gets button tile backgrounds, borders, shadows or transforms in ANY theme */
+aside a.brand-logo-link,
+aside a.brand-logo-link:hover,
+html.light aside a.brand-logo-link,
+html.light aside a.brand-logo-link:hover,
+html.dark aside a.brand-logo-link,
+html.dark aside a.brand-logo-link:hover,
+html:not(.light) aside a.brand-logo-link,
+html:not(.light) aside a.brand-logo-link:hover {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+  outline: none !important;
+}
+
+/* Inner elements of expandable rows (Business Calculations & Documentation & Vault):
+   The outer .nav-expandable-row gets the tile highlight, NEVER the inner link or button! */
+aside .nav-expandable-row a,
+aside .nav-expandable-row a:hover,
+aside .nav-expandable-row button,
+aside .nav-expandable-row button:hover,
+html.light aside .nav-expandable-row a,
+html.light aside .nav-expandable-row a:hover,
+html.light aside .nav-expandable-row button,
+html.light aside .nav-expandable-row button:hover,
+html.dark aside .nav-expandable-row a,
+html.dark aside .nav-expandable-row a:hover,
+html.dark aside .nav-expandable-row button,
+html.dark aside .nav-expandable-row button:hover,
+html:not(.light) aside .nav-expandable-row a,
+html:not(.light) aside .nav-expandable-row a:hover,
+html:not(.light) aside .nav-expandable-row button,
+html:not(.light) aside .nav-expandable-row button:hover {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+  outline: none !important;
+}
+
+/* Sub-item links in expanded trees: subtle clean highlight, no chunky transforms */
+aside .nav-sub-link:hover,
+html.light aside .nav-sub-link:hover,
+html.dark aside .nav-sub-link:hover,
+html:not(.light) aside .nav-sub-link:hover {
+  background-color: rgba(205, 160, 82, 0.16) !important;
+  border: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+  color: #ffffff !important;
+}
+aside .nav-sub-link:hover svg {
+  color: #f7d88c !important;
+}
+aside .nav-sub-link:hover span {
+  color: #ffffff !important;
+}
+
+/* Hover on ANY Nav Link or Button or Expandable Row inside aside in Light Mode - Prominent warm cognac highlight tile */
+html.light aside a:hover:not(.brand-logo-link):not(.nav-sub-link):not(.nav-expandable-row a):not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]),
+html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):not([title*="Close"]):not([title*="Sign Out"]):not([title*="Sign out"]):not([aria-label*="Sign Out"]):not(.nav-expandable-row button):hover,
+html.light aside .nav-expandable-row:hover:not([class*="from-[rgba"]):not([class*="bg-[rgba(205,160,82"]) {
   background-color: #3e2b20 !important;
   border: 1px solid rgba(205, 160, 82, 0.45) !important;
   color: #ffffff !important;
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.35), 0 0 10px rgba(205, 160, 82, 0.15) !important;
-  transform: scale(1.04);
+  transform: scale(1.02);
 }
 
-html.light aside a:hover svg,
-html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):not([title*="Close"]):hover svg,
-html.light aside .group > div:hover svg {
+html.light aside a:hover:not(.brand-logo-link):not(.nav-sub-link) svg,
+html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):not([title*="Close"]):not(.nav-expandable-row button):hover svg,
+html.light aside .nav-expandable-row:hover svg {
   color: #f7d88c !important;
   filter: drop-shadow(0 0 5px rgba(205, 160, 82, 0.6)) !important;
 }
 
-html.light aside a:hover span,
-html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):not([title*="Close"]):hover span,
-html.light aside .group > div:hover span {
+html.light aside a:hover:not(.brand-logo-link):not(.nav-sub-link) span,
+html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):not([title*="Close"]):not(.nav-expandable-row button):hover span,
+html.light aside .nav-expandable-row:hover span {
   color: #ffffff !important;
 }
 
-/* Hover on ANY Nav Link or Button inside aside in Dark Mode */
-html:not(.light) aside a:hover:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]),
-html.dark aside a:hover:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]),
-html:not(.light) aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):not([title*="Close"]):not([title*="Sign Out"]):not([title*="Sign out"]):hover,
-html.dark aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):not([title*="Close"]):not([title*="Sign Out"]):not([title*="Sign out"]):hover {
+/* Hover on ANY Nav Link or Button or Expandable Row inside aside in Dark Mode */
+html:not(.light) aside a:hover:not(.brand-logo-link):not(.nav-sub-link):not(.nav-expandable-row a):not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]),
+html.dark aside a:hover:not(.brand-logo-link):not(.nav-sub-link):not(.nav-expandable-row a):not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]),
+html:not(.light) aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):not([title*="Close"]):not([title*="Sign Out"]):not([title*="Sign out"]):not(.nav-expandable-row button):hover,
+html.dark aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):not([title*="Close"]):not([title*="Sign Out"]):not([title*="Sign out"]):not(.nav-expandable-row button):hover,
+html:not(.light) aside .nav-expandable-row:hover:not([class*="from-[rgba"]):not([class*="bg-[rgba(205,160,82"]),
+html.dark aside .nav-expandable-row:hover:not([class*="from-[rgba"]):not([class*="bg-[rgba(205,160,82"]) {
   background-color: #151b2a !important;
   border: 1px solid rgba(205, 160, 82, 0.4) !important;
   color: #ffffff !important;
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.45), 0 0 10px rgba(205, 160, 82, 0.15) !important;
-  transform: scale(1.04);
+  transform: scale(1.02);
 }
-html:not(.light) aside a:hover svg,
-html.dark aside a:hover svg,
-html:not(.light) aside button:not([title*="sidebar"]):hover svg,
-html.dark aside button:not([title*="sidebar"]):hover svg {
+html:not(.light) aside a:hover:not(.brand-logo-link):not(.nav-sub-link) svg,
+html.dark aside a:hover:not(.brand-logo-link):not(.nav-sub-link) svg,
+html:not(.light) aside button:not([title*="sidebar"]):not(.nav-expandable-row button):hover svg,
+html.dark aside button:not([title*="sidebar"]):not(.nav-expandable-row button):hover svg,
+html:not(.light) aside .nav-expandable-row:hover svg,
+html.dark aside .nav-expandable-row:hover svg {
   color: #f7d88c !important;
   filter: drop-shadow(0 0 5px rgba(205, 160, 82, 0.6)) !important;
+}
+
+html:not(.light) aside a:hover:not(.brand-logo-link):not(.nav-sub-link) span,
+html.dark aside a:hover:not(.brand-logo-link):not(.nav-sub-link) span,
+html:not(.light) aside button:not([title*="sidebar"]):not(.nav-expandable-row button):hover span,
+html.dark aside button:not([title*="sidebar"]):not(.nav-expandable-row button):hover span,
+html:not(.light) aside .nav-expandable-row:hover span,
+html.dark aside .nav-expandable-row:hover span {
+  color: #ffffff !important;
 }
 
 /* Active Navigation items in aside */

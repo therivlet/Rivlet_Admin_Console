@@ -132,8 +132,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
           <Link
             href="/"
             onClick={handleLinkClick}
-            title="Rivlet Executive Command Center"
-            className="flex items-center group py-0.5"
+            className="brand-logo-link flex items-center group py-0.5 outline-none transition-opacity hover:opacity-90"
           >
             <RivletLogo variant={isLight ? 'white-gold' : 'gold'} size="md" className="h-7 w-auto drop-shadow-sm" />
           </Link>
@@ -141,8 +140,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
           <Link
             href="/"
             onClick={handleLinkClick}
-            title="Rivlet Executive Command Center"
-            className="flex items-center justify-center p-0.5 mx-auto group"
+            className="brand-logo-link flex items-center justify-center p-0.5 mx-auto group outline-none"
           >
             <div className="w-9 h-9 rounded-xl bg-[#34241b] dark:bg-gradient-to-br dark:from-[#1b2234] dark:to-[#0e121b] border border-[#543b2c] dark:border-[#2b3852] flex items-center justify-center shadow-md group-hover:border-[#cda052]/60 transition-colors">
               <RivletWaveIcon
@@ -174,7 +172,6 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
           <Link
             href="/"
             onClick={handleLinkClick}
-            title="Home"
             className={`flex items-center text-xs transition-all duration-200 border ${
               collapsed 
                 ? 'w-9 h-9 rounded-xl justify-center mx-auto' 
@@ -220,7 +217,6 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                   <Link
                     href={item.href}
                     onClick={handleLinkClick}
-                    title={`Work Tracking: ${item.label}`}
                     className={`flex items-center text-xs transition-all duration-200 border ${
                       collapsed 
                         ? 'w-9 h-9 rounded-xl justify-center mx-auto' 
@@ -264,7 +260,6 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
               <Link
                 href="/calculator"
                 onClick={handleLinkClick}
-                title="Business Calculations"
                 className={`w-9 h-9 rounded-xl flex items-center justify-center mx-auto transition-all duration-200 border ${
                   isCalcPath
                     ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
@@ -275,20 +270,19 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
               </Link>
             ) : (
               <div
-                className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all ${
+                className={`nav-expandable-row group/row flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all duration-200 border cursor-pointer ${
                   isCalcPath
-                    ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border border-[#cda052]/60'
-                    : 'text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
+                    ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
+                    : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1]'
                 }`}
               >
                 <Link
                   href="/calculator"
                   onClick={handleLinkClick}
-                  className="flex items-center gap-3 flex-1 truncate"
-                  title="Business Calculations"
+                  className="flex items-center gap-3 flex-1 truncate py-0.5 outline-none"
                 >
-                  <Calculator className={`w-4 h-4 flex-shrink-0 ${isCalcPath ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover:text-white'}`} />
-                  <span className="truncate">Business Calculations</span>
+                  <Calculator className={`w-4 h-4 flex-shrink-0 ${isCalcPath ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/row:text-[#f7d88c]'}`} />
+                  <span className="truncate group-hover/row:text-white">Business Calculations</span>
                 </Link>
                 <button
                   type="button"
@@ -297,8 +291,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                     e.stopPropagation();
                     setCalculatorExpanded((v) => !v);
                   }}
-                  className="p-1 rounded hover:bg-white/[0.08] text-[#a99a8b] hover:text-[#cda052] transition-colors flex-shrink-0 cursor-pointer"
-                  title="Toggle calculation sub-modules"
+                  className="p-1 rounded text-[#a99a8b] hover:text-[#cda052] transition-colors flex-shrink-0 cursor-pointer outline-none"
                   aria-label="Toggle calculation sub-modules"
                 >
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${calculatorExpanded ? '' : '-rotate-90'}`} />
@@ -312,10 +305,10 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                 <Link
                   href="/calculator?tab=overview"
                   onClick={handleLinkClick}
-                  className={`block px-2 py-1 rounded-md transition-colors ${
+                  className={`nav-sub-link block px-2.5 py-1 rounded-md transition-colors ${
                     isOverviewActive
                       ? 'text-[#cda052] font-semibold bg-[rgba(205,160,82,0.14)]'
-                      : 'text-[#d7cbbe] dark:text-[#94a3b8] hover:text-white hover:bg-white/[0.06]'
+                      : 'text-[#d7cbbe] dark:text-[#94a3b8]'
                   }`}
                 >
                   • Overview Dashboard
@@ -323,10 +316,10 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                 <Link
                   href="/calculator?tab=studio"
                   onClick={handleLinkClick}
-                  className={`block px-2 py-1 rounded-md transition-colors ${
+                  className={`nav-sub-link block px-2.5 py-1 rounded-md transition-colors ${
                     isStudioActive
                       ? 'text-[#cda052] font-semibold bg-[rgba(205,160,82,0.14)]'
-                      : 'text-[#d7cbbe] dark:text-[#94a3b8] hover:text-white hover:bg-white/[0.06]'
+                      : 'text-[#d7cbbe] dark:text-[#94a3b8]'
                   }`}
                 >
                   • Pricing & Unit Economy
@@ -334,10 +327,10 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                 <Link
                   href="/calculator?tab=styles"
                   onClick={handleLinkClick}
-                  className={`block px-2 py-1 rounded-md transition-colors ${
+                  className={`nav-sub-link block px-2.5 py-1 rounded-md transition-colors ${
                     isStylesActive
                       ? 'text-[#cda052] font-semibold bg-[rgba(205,160,82,0.14)]'
-                      : 'text-[#d7cbbe] dark:text-[#94a3b8] hover:text-white hover:bg-white/[0.06]'
+                      : 'text-[#d7cbbe] dark:text-[#94a3b8]'
                   }`}
                 >
                   • Active Styles
@@ -345,10 +338,10 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                 <Link
                   href="/calculator?tab=guide"
                   onClick={handleLinkClick}
-                  className={`block px-2 py-1 rounded-md transition-colors ${
+                  className={`nav-sub-link block px-2.5 py-1 rounded-md transition-colors ${
                     isGuideActive
                       ? 'text-[#cda052] font-semibold bg-[rgba(205,160,82,0.14)]'
-                      : 'text-[#d7cbbe] dark:text-[#94a3b8] hover:text-white hover:bg-white/[0.06]'
+                      : 'text-[#d7cbbe] dark:text-[#94a3b8]'
                   }`}
                 >
                   • Calculation Guide
@@ -418,7 +411,6 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
             <Link
               href="/vendors"
               onClick={handleLinkClick}
-              title="Vendors"
               className={`flex items-center text-xs transition-all duration-200 border ${
                 collapsed 
                   ? 'w-9 h-9 rounded-xl justify-center mx-auto' 
@@ -445,7 +437,6 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
             <Link
               href="/pipeline"
               onClick={handleLinkClick}
-              title="Pipeline"
               className={`flex items-center text-xs transition-all duration-200 border ${
                 collapsed 
                   ? 'w-9 h-9 rounded-xl justify-center mx-auto' 
@@ -472,7 +463,6 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
             <Link
               href="/budget"
               onClick={handleLinkClick}
-              title="Budget Tracker"
               className={`flex items-center text-xs transition-all duration-200 border ${
                 collapsed 
                   ? 'w-9 h-9 rounded-xl justify-center mx-auto' 
@@ -506,22 +496,21 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
           )}
 
           {!collapsed ? (
-            <div className="relative group">
+            <div className="relative group w-full">
               <div
-                className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all ${
+                className={`nav-expandable-row group/row flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all duration-200 border cursor-pointer ${
                   isDocsActive
-                    ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border border-[#cda052]/60'
-                    : 'text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
+                    ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
+                    : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1]'
                 }`}
               >
                 <Link
                   href="/documents"
                   onClick={handleLinkClick}
-                  className="flex items-center gap-3 flex-1 truncate"
-                  title="Documentation & Vault"
+                  className="flex items-center gap-3 flex-1 truncate py-0.5 outline-none"
                 >
-                  <FolderOpen className={`w-4 h-4 flex-shrink-0 ${isDocsActive ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover:text-white'}`} />
-                  <span className="truncate">Documentation & Vault</span>
+                  <FolderOpen className={`w-4 h-4 flex-shrink-0 ${isDocsActive ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/row:text-[#f7d88c]'}`} />
+                  <span className="truncate group-hover/row:text-white">Documentation & Vault</span>
                 </Link>
                 <button
                   type="button"
@@ -530,8 +519,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                     e.stopPropagation();
                     setDocsExpanded((v) => !v);
                   }}
-                  className="p-1 rounded hover:bg-white/[0.08] text-[#a99a8b] hover:text-[#cda052] transition-colors flex-shrink-0 cursor-pointer"
-                  title="Toggle documentation sub-items"
+                  className="p-1 rounded text-[#a99a8b] hover:text-[#cda052] transition-colors flex-shrink-0 cursor-pointer outline-none"
                   aria-label="Toggle documentation sub-items"
                 >
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${docsExpanded ? '' : '-rotate-90'}`} />
@@ -549,10 +537,10 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                         key={sub.href}
                         href={sub.href}
                         onClick={handleLinkClick}
-                        className={`flex items-center justify-between px-2.5 py-1.5 rounded-md transition-colors ${
+                        className={`nav-sub-link flex items-center justify-between px-2.5 py-1.5 rounded-md transition-colors ${
                           isSubActive
                             ? 'text-[#cda052] font-semibold bg-[rgba(205,160,82,0.14)]'
-                            : 'text-[#d7cbbe] dark:text-[#94a3b8] hover:text-white hover:bg-white/[0.06]'
+                            : 'text-[#d7cbbe] dark:text-[#94a3b8]'
                         }`}
                       >
                         <div className="flex items-center gap-2 truncate">
@@ -582,7 +570,6 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                     <Link
                       href={sub.href}
                       onClick={handleLinkClick}
-                      title={sub.label}
                       className={`flex items-center justify-center transition-all duration-200 border ${
                         collapsed 
                           ? 'w-9 h-9 rounded-xl mx-auto' 
@@ -652,7 +639,6 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
               <Link
                 href="/profile"
                 onClick={handleLinkClick}
-                title="Profile & Brand Settings"
                 className={`flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs transition-all ${
                   pathname === '/profile'
                     ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold'
@@ -682,7 +668,6 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                 <button
                   onClick={() => signOut()}
                   className="text-[#a89487] dark:text-[#94a3b8] hover:text-rose-400 p-1 rounded-lg hover:bg-rose-950/30 transition-colors flex-shrink-0 cursor-pointer"
-                  title="Sign Out of Rivlet console"
                   aria-label="Sign Out"
                 >
                   <LogOut className="w-3.5 h-3.5" />
@@ -695,7 +680,6 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
             <Link
               href="/profile"
               onClick={handleLinkClick}
-              title="Profile & Brand Settings"
               className={`w-9 h-9 rounded-xl flex items-center justify-center mx-auto transition-all duration-200 border ${
                 pathname === '/profile'
                   ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] border-[#cda052]/60'
@@ -708,7 +692,6 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
             <button
               onClick={() => signOut()}
               className="w-9 h-9 rounded-xl flex items-center justify-center mx-auto text-[#a89487] dark:text-[#94a3b8] hover:text-rose-400 hover:bg-rose-950/30 border border-transparent transition-all duration-200 cursor-pointer"
-              title="Sign Out"
               aria-label="Sign Out"
             >
               <LogOut className="w-[18px] h-[18px]" />
