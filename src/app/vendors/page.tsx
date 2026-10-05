@@ -444,9 +444,9 @@ export default function VendorsPage() {
                 className="bg-[#0e1320] border border-[#1b2336] hover:border-[#2a3854] rounded-2xl transition-all shadow-md overflow-hidden"
               >
                 {/* Main Row Content */}
-                <div className="p-4 sm:p-5 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+                <div className="p-4 sm:p-5 flex flex-col xl:flex-row xl:items-center justify-between gap-4 xl:gap-6">
                   {/* Left Column: Category Badge, Name, Subcategory, Location */}
-                  <div className="xl:w-[280px] flex-shrink-0 space-y-1">
+                  <div className="xl:w-[260px] flex-shrink-0 space-y-1">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-lg bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-[#cda052] flex-shrink-0">
                         <CategoryIcon className="w-4 h-4" />
@@ -506,27 +506,28 @@ export default function VendorsPage() {
                   </div>
 
                   {/* Middle Column: Refined Workflow Stage Controls & Progress */}
-                  <div className="flex-1 min-w-0 bg-[#090d16]/90 p-3 sm:p-3.5 rounded-xl border border-white/[0.05] space-y-2.5">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex-1 min-w-0 bg-[#090d16]/90 p-3 sm:p-3.5 rounded-xl border border-white/[0.05] flex flex-col justify-between space-y-2.5">
+                    {/* Top Row: Category label + Stage Dropdown + Advance Button (Single line, no awkward wrap) */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-[#8a96ae] flex-shrink-0">
-                          {cfg.shortLabel} Lifecycle:
+                          {cfg.shortLabel}:
                         </span>
                         {/* Interactive Stage Dropdown */}
-                        <div className="relative inline-flex items-center">
+                        <div className="relative inline-flex items-center min-w-0 flex-1 max-w-[240px]">
                           <select
                             value={vendor.stage}
                             onChange={(e) => handleUpdateStage(vendor, e.target.value)}
                             aria-label={`Update stage for ${vendor.name}`}
-                            className="appearance-none pl-2.5 pr-7 py-1 rounded-lg bg-[#141b2c] hover:bg-[#1a2338] border border-[#27344e] hover:border-[#cda052]/60 text-xs font-semibold text-[#f5d58d] cursor-pointer outline-none transition-all shadow-sm focus:ring-1 focus:ring-[#cda052]"
+                            className="w-full appearance-none pl-2.5 pr-7 py-1 rounded-lg bg-[#141b2c] hover:bg-[#1a2338] border border-[#27344e] hover:border-[#cda052]/60 text-xs font-semibold text-[#f5d58d] cursor-pointer outline-none transition-all shadow-sm focus:ring-1 focus:ring-[#cda052] truncate"
                           >
                             {cfg.stages.map((stg) => (
                               <option key={stg.id} value={stg.name} className="bg-[#0e121b] text-white py-1">
-                                {stg.shortLabel} — {stg.name} ({stg.progressPercent}%)
+                                {stg.name} ({stg.progressPercent}%)
                               </option>
                             ))}
                           </select>
-                          <ChevronDown className="w-3.5 h-3.5 text-[#cda052] absolute right-2 pointer-events-none" />
+                          <ChevronDown className="w-3.5 h-3.5 text-[#cda052] absolute right-2 pointer-events-none flex-shrink-0" />
                         </div>
                       </div>
 
@@ -540,9 +541,9 @@ export default function VendorsPage() {
                           <ArrowRight className="w-3 h-3 text-[#cda052] group-hover:translate-x-0.5 transition-transform" />
                         </button>
                       ) : (
-                        <div className="flex items-center gap-1 text-[11px] text-emerald-400 font-semibold flex-shrink-0">
+                        <div className="flex items-center gap-1 text-[11px] text-emerald-400 font-semibold flex-shrink-0 px-2 py-0.5 rounded-lg bg-emerald-950/30 border border-emerald-800/40">
                           <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Workflow Complete</span>
+                          <span>Complete</span>
                         </div>
                       )}
                     </div>
@@ -550,10 +551,10 @@ export default function VendorsPage() {
                     {/* Progress Track & Milestones Indicator */}
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between text-[11px]">
-                        <span className="text-[#8a96ae] truncate max-w-[280px]">
+                        <span className="text-[#8a96ae] truncate max-w-[320px]">
                           {cfg.stages.find((s) => s.name.toLowerCase() === vendor.stage.toLowerCase() || s.id.toLowerCase() === vendor.stage.toLowerCase())?.description || vendor.stage}
                         </span>
-                        <span className="font-mono font-semibold text-[#f5d58d] flex-shrink-0">
+                        <span className="font-mono font-semibold text-[#f5d58d] flex-shrink-0 ml-2">
                           {progress}%
                         </span>
                       </div>
@@ -568,7 +569,7 @@ export default function VendorsPage() {
                   </div>
 
                   {/* Commercials & Contact Column */}
-                  <div className="xl:w-[220px] flex-shrink-0 flex flex-col justify-between text-[11px] space-y-1.5">
+                  <div className="xl:w-[210px] flex-shrink-0 flex flex-col justify-between text-[11px] space-y-1.5">
                     <div className="space-y-0.5">
                       <div className="text-white font-semibold truncate flex items-center justify-between">
                         <span className="truncate">{primaryContact.name}</span>
@@ -578,7 +579,7 @@ export default function VendorsPage() {
                             target="_blank"
                             rel="noreferrer"
                             title="Chat on WhatsApp"
-                            className="p-1 rounded bg-emerald-950/40 text-emerald-400 hover:bg-emerald-900/50"
+                            className="p-1 rounded bg-emerald-950/40 text-emerald-400 hover:bg-emerald-900/50 flex-shrink-0 ml-1"
                           >
                             <MessageSquare className="w-3 h-3" />
                           </a>
@@ -594,13 +595,13 @@ export default function VendorsPage() {
 
                     {vendor.nextFollowUpAt ? (
                       <div className="flex items-center gap-1.5 text-amber-300 font-semibold pt-0.5">
-                        <CalendarClock className="w-3.5 h-3.5 text-amber-400" />
-                        <span>Follow-up: {new Date(vendor.nextFollowUpAt).toLocaleDateString()}</span>
+                        <CalendarClock className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                        <span className="truncate">Follow-up: {new Date(vendor.nextFollowUpAt).toLocaleDateString()}</span>
                       </div>
                     ) : vendor.lastContactedAt ? (
                       <div className="flex items-center gap-1.5 text-[#8a96ae] text-[10px]">
-                        <Clock className="w-3 h-3" />
-                        <span>Last touch: {new Date(vendor.lastContactedAt).toLocaleDateString()}</span>
+                        <Clock className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate">Last touch: {new Date(vendor.lastContactedAt).toLocaleDateString()}</span>
                       </div>
                     ) : null}
                   </div>
