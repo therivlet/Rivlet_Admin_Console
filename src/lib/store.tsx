@@ -5,6 +5,7 @@ import { ArtifactItem, CostingSheet, DocumentItem, KBArticle, ArtifactStatus, Ve
 import { initialArtifacts, initialCostingSheets, initialDocuments, initialKBArticles, initialVendors, initialPipelineItems, initialBudgetItems, initialSprints, initialWorkItems, initialTeamMembers, initialWorkSettings, initialBudgetSettings, initialCashInflows } from './initialData';
 import { supabase, isSupabaseConfigured } from './supabase';
 import { notify } from './notificationContext';
+import { getVendorCategory } from './vendorWorkflows';
 
 const STORAGE_KEYS = {
   ARTIFACTS: 'rivlet_admin_artifacts',
@@ -408,35 +409,72 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
       // 5. Vendors sync & auto-seed
       if (venRes.data && venRes.data.length > 0) {
-        const formatted: VendorItem[] = venRes.data.map((r: any) => ({
-          id: r.id,
-          name: r.name,
-          location: r.location || 'Manufacturing Facility',
-          contactName: r.contact_name || undefined,
-          contactEmail: r.contact_email || undefined,
-          contactPhone: r.contact_phone || undefined,
-          isVerticallyIntegrated: r.is_vertically_integrated ?? null,
-          specialty: r.specialty || undefined,
-          stage: r.stage || 'Prospect',
-          moqOffered: r.moq_offered !== null && r.moq_offered !== undefined ? Number(r.moq_offered) : undefined,
-          moqTarget: r.moq_target !== null && r.moq_target !== undefined ? Number(r.moq_target) : undefined,
-          paymentTermsOffered: r.payment_terms_offered || undefined,
-          paymentTermsTarget: r.payment_terms_target || undefined,
-          samplingFee: r.sampling_fee !== null && r.sampling_fee !== undefined ? Number(r.sampling_fee) : undefined,
-          certifications: Array.isArray(r.certifications) ? r.certifications : [],
-          lastContactedAt: r.last_contacted_at || undefined,
-          nextFollowUpAt: r.next_follow_up_at || undefined,
-          notes: r.notes || undefined,
-          createdAt: r.created_at || new Date().toISOString(),
-          updatedAt: r.updated_at || new Date().toISOString(),
-        }));
+        let cachedVendorsMap = new Map<string, Partial<VendorItem>>();
+        try {
+          const cached = JSON.parse(localStorage.getItem(STORAGE_KEYS.VENDORS) || '[]');
+          if (Array.isArray(cached)) {
+            cached.forEach((c: any) => cachedVendorsMap.set(c.id, c));
+          }
+        } catch (_) {}
+        initialVendors.forEach((iv) => {
+          if (!cachedVendorsMap.has(iv.id)) cachedVendorsMap.set(iv.id, iv);
+        });
+
+        const formatted: VendorItem[] = venRes.data.map((r: any) => {
+          const cached = cachedVendorsMap.get(r.id);
+          const category = r.category || cached?.category || getVendorCategory({ name: r.name, specialty: r.specialty, notes: r.notes });
+          return {
+            id: r.id,
+            name: r.name,
+            category: category,
+            subcategory: r.subcategory || cached?.subcategory || undefined,
+            location: r.location || cached?.location || 'Facility',
+            website: r.website || cached?.website || undefined,
+            healthStatus: r.health_status || cached?.healthStatus || 'Good',
+            rating: r.rating !== undefined ? Number(r.rating) : (cached?.rating || 5),
+            contacts: r.contacts || cached?.contacts || (r.contact_name ? [{ id: 'c-1', name: r.contact_name, role: 'Primary Contact', email: r.contact_email || '', phone: r.contact_phone || '', isPrimary: true }] : []),
+            contactName: r.contact_name || cached?.contactName || undefined,
+            contactEmail: r.contact_email || cached?.contactEmail || undefined,
+            contactPhone: r.contact_phone || cached?.contactPhone || undefined,
+            isVerticallyIntegrated: r.is_vertically_integrated ?? cached?.isVerticallyIntegrated ?? null,
+            specialty: r.specialty || cached?.specialty || undefined,
+            stage: r.stage || cached?.stage || 'Prospect',
+            stageProgressPercent: r.stage_progress_percent !== undefined ? Number(r.stage_progress_percent) : cached?.stageProgressPercent,
+            moqOffered: r.moq_offered !== null && r.moq_offered !== undefined ? Number(r.moq_offered) : cached?.moqOffered,
+            moqTarget: r.moq_target !== null && r.moq_target !== undefined ? Number(r.moq_target) : cached?.moqTarget,
+            paymentTermsOffered: r.payment_terms_offered || cached?.paymentTermsOffered,
+            paymentTermsTarget: r.payment_terms_target || cached?.paymentTermsTarget,
+            samplingFee: r.sampling_fee !== null && r.sampling_fee !== undefined ? Number(r.sampling_fee) : cached?.samplingFee,
+            certifications: Array.isArray(r.certifications) ? r.certifications : (cached?.certifications || []),
+            commercials: r.commercials || cached?.commercials,
+            communicationLogs: r.communication_logs || cached?.communicationLogs || [],
+            documents: r.documents || cached?.documents || [],
+            categorySpecs: r.category_specs || cached?.categorySpecs,
+            lastContactedAt: r.last_contacted_at || cached?.lastContactedAt,
+            nextFollowUpAt: r.next_follow_up_at || cached?.nextFollowUpAt,
+            notes: r.notes || cached?.notes,
+            createdAt: r.created_at || cached?.createdAt || new Date().toISOString(),
+            updatedAt: r.updated_at || cached?.updatedAt || new Date().toISOString(),
+          };
+        });
+
+        // Ensure newly added diverse partner categories are present
+        for (const iv of initialVendors) {
+          if (!formatted.some((f) => f.id === iv.id)) {
+            formatted.push(iv);
+          }
+        }
+
         setVendors(formatted);
         try { localStorage.setItem(STORAGE_KEYS.VENDORS, JSON.stringify(formatted)); } catch (_) {}
       } else if (venRes.data && venRes.data.length === 0) {
         for (const v of initialVendors) {
+          const primaryContact = v.contacts?.find((c) => c.isPrimary) || v.contacts?.[0];
           await Promise.resolve(supabase.from('vendors').upsert({
-            id: v.id, name: v.name, location: v.location, contact_name: v.contactName,
-            contact_email: v.contactEmail, contact_phone: v.contactPhone,
+            id: v.id, name: v.name, location: v.location,
+            contact_name: v.contactName || primaryContact?.name || null,
+            contact_email: v.contactEmail || primaryContact?.email || null,
+            contact_phone: v.contactPhone || primaryContact?.phone || null,
             is_vertically_integrated: v.isVerticallyIntegrated, specialty: v.specialty,
             stage: v.stage, moq_offered: v.moqOffered, moq_target: v.moqTarget,
             payment_terms_offered: v.paymentTermsOffered, payment_terms_target: v.paymentTermsTarget,
@@ -722,7 +760,22 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         setKbArticles(initialKBArticles);
       }
 
-      setVendors(storedVendors ? JSON.parse(storedVendors) : initialVendors);
+      if (storedVendors) {
+        try {
+          const parsed = JSON.parse(storedVendors);
+          const merged = Array.isArray(parsed) ? [...parsed] : [];
+          for (const iv of initialVendors) {
+            if (!merged.some((v: any) => v.id === iv.id)) {
+              merged.push(iv);
+            }
+          }
+          setVendors(merged);
+        } catch (_) {
+          setVendors(initialVendors);
+        }
+      } else {
+        setVendors(initialVendors);
+      }
       setPipelineItems(storedPipeline ? JSON.parse(storedPipeline) : initialPipelineItems);
       setBudgetItems(storedBudget ? JSON.parse(storedBudget) : initialBudgetItems);
       setSprints(storedSprints ? JSON.parse(storedSprints) : initialSprints);
@@ -1168,19 +1221,20 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     if (isSupabaseConfigured && supabase) {
       try {
+        const primaryContact = updated.contacts?.find((c) => c.isPrimary) || updated.contacts?.[0];
         const { error: writeErr } = await supabase.from('vendors').upsert({
           id: updated.id,
           name: updated.name,
           location: updated.location,
-          contact_name: updated.contactName || null,
-          contact_email: updated.contactEmail || null,
-          contact_phone: updated.contactPhone || null,
+          contact_name: updated.contactName || primaryContact?.name || null,
+          contact_email: updated.contactEmail || primaryContact?.email || null,
+          contact_phone: updated.contactPhone || primaryContact?.phone || null,
           is_vertically_integrated: updated.isVerticallyIntegrated ?? null,
-          specialty: updated.specialty || null,
+          specialty: updated.specialty || updated.subcategory || null,
           stage: updated.stage,
           moq_offered: updated.moqOffered ?? null,
           moq_target: updated.moqTarget ?? null,
-          payment_terms_offered: updated.paymentTermsOffered || null,
+          payment_terms_offered: updated.paymentTermsOffered || updated.commercials?.paymentTerms || null,
           payment_terms_target: updated.paymentTermsTarget || null,
           sampling_fee: updated.samplingFee ?? null,
           certifications: updated.certifications || [],

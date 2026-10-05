@@ -2,15 +2,20 @@
 
 import React, { useMemo, useState } from 'react';
 import {
+  Building2,
   Factory,
+  Truck,
+  CreditCard,
+  Package,
+  Sparkles,
+  Scale,
+  Cpu,
   Plus,
   Search,
   Phone,
   Mail,
   MapPin,
-  ShieldCheck,
-  ShieldQuestion,
-  ShieldX,
+  Globe,
   Trash2,
   Pencil,
   X,
@@ -19,6 +24,7 @@ import {
   FileText,
   Shirt,
   KanbanSquare,
+  List,
   ChevronDown,
   ChevronUp,
   MessageSquare,
@@ -28,157 +34,123 @@ import {
   Clock,
   ArrowRight,
   ExternalLink,
-  Sparkles,
   Users,
-  Building2,
-  Calendar
+  Calendar,
+  Star,
+  ShieldCheck,
+  ShieldAlert,
+  ShieldQuestion,
+  Filter,
+  Check,
+  Sparkle
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminStore } from '@/lib/store';
-import { VendorItem, VendorOutreachStage } from '@/lib/types';
+import { VendorItem, VendorCategory, VendorHealthStatus } from '@/lib/types';
 import { useConfirm } from '@/lib/confirmContext';
-import ModalPortal from '@/components/ui/ModalPortal';
-
-// The 6 core outreach touchpoints in sequence as requested by user
-const OUTREACH_TOUCHPOINTS: { stage: VendorOutreachStage; label: string; shortLabel: string; icon: any }[] = [
-  { stage: 'Proposed', label: 'Proposed', shortLabel: '1. Proposed', icon: Building2 },
-  { stage: 'Email Sent', label: 'Email Sent', shortLabel: '2. Email', icon: Send },
-  { stage: 'WhatsApp Follow-up', label: 'WhatsApp Follow-Up', shortLabel: '3. WhatsApp', icon: MessageSquare },
-  { stage: 'Second Email', label: 'Second Email', shortLabel: '4. 2nd Email', icon: Mail },
-  { stage: 'Call Attended', label: 'Call Attended', shortLabel: '5. Call Attended', icon: PhoneCall },
-  { stage: 'LinkedIn Referral', label: 'LinkedIn Referral', shortLabel: '6. LinkedIn', icon: Users },
-];
-
-// All stages for full lifecycle
-const ALL_STAGES: VendorOutreachStage[] = [
-  'Proposed',
-  'Prospect',
-  'Email Sent',
-  'WhatsApp Follow-up',
-  'Second Email',
-  'Call Attended',
-  'Call Attempted',
-  'LinkedIn Referral',
-  'Factory Visit Scheduled',
-  'Sampling',
-  'Negotiating',
-  'Approved Partner',
-  'Rejected / Stalled',
-];
-
-const STAGE_COLOR: Record<VendorOutreachStage, { bg: string; text: string; border: string; badge: string }> = {
-  'Proposed': { bg: 'bg-[#141a29]', text: 'text-[#94a3b8]', border: 'border-[#26334d]', badge: 'bg-[#182030] text-[#cbd5e1] border-[#2a3854]' },
-  'Prospect': { bg: 'bg-[#141a29]', text: 'text-[#94a3b8]', border: 'border-[#26334d]', badge: 'bg-[#182030] text-[#cbd5e1] border-[#2a3854]' },
-  'Email Sent': { bg: 'bg-sky-950/40', text: 'text-sky-300', border: 'border-sky-800/40', badge: 'bg-sky-950/60 text-sky-300 border-sky-800/50' },
-  'WhatsApp Follow-up': { bg: 'bg-emerald-950/40', text: 'text-emerald-300', border: 'border-emerald-800/40', badge: 'bg-emerald-950/60 text-emerald-300 border-emerald-800/50' },
-  'Second Email': { bg: 'bg-indigo-950/40', text: 'text-indigo-300', border: 'border-indigo-800/40', badge: 'bg-indigo-950/60 text-indigo-300 border-indigo-800/50' },
-  'Call Attended': { bg: 'bg-cyan-950/40', text: 'text-cyan-300', border: 'border-cyan-800/40', badge: 'bg-cyan-950/60 text-cyan-300 border-cyan-800/50' },
-  'Call Attempted': { bg: 'bg-cyan-950/40', text: 'text-cyan-300', border: 'border-cyan-800/40', badge: 'bg-cyan-950/60 text-cyan-300 border-cyan-800/50' },
-  'LinkedIn Referral': { bg: 'bg-blue-950/40', text: 'text-blue-300', border: 'border-blue-800/40', badge: 'bg-blue-950/60 text-blue-300 border-blue-800/50' },
-  'Factory Visit Scheduled': { bg: 'bg-amber-950/40', text: 'text-amber-300', border: 'border-amber-800/40', badge: 'bg-amber-950/60 text-amber-300 border-amber-800/50' },
-  'Sampling': { bg: 'bg-purple-950/40', text: 'text-purple-300', border: 'border-purple-800/40', badge: 'bg-purple-950/60 text-purple-300 border-purple-800/50' },
-  'Negotiating': { bg: 'bg-amber-950/40', text: 'text-amber-300', border: 'border-amber-800/40', badge: 'bg-amber-950/60 text-amber-300 border-amber-800/50' },
-  'Approved Partner': { bg: 'bg-emerald-950/50', text: 'text-emerald-300', border: 'border-emerald-700/50', badge: 'bg-emerald-950/70 text-emerald-300 border-emerald-600/50' },
-  'Rejected / Stalled': { bg: 'bg-rose-950/40', text: 'text-rose-300', border: 'border-rose-800/40', badge: 'bg-rose-950/60 text-rose-300 border-rose-800/50' },
-};
-
-function emptyVendor(): Omit<VendorItem, 'createdAt' | 'updatedAt'> {
-  return {
-    id: `ven-${Date.now()}`,
-    name: '',
-    location: '',
-    isVerticallyIntegrated: null,
-    stage: 'Proposed',
-    moqTarget: 175,
-    paymentTermsTarget: '30% advance / 50% pre-shipment / 20% on delivery',
-    certifications: [],
-  };
-}
+import {
+  VENDOR_CATEGORIES,
+  ALL_VENDOR_CATEGORIES,
+  getCategoryConfig,
+  getVendorCategory,
+  getStageProgress,
+  getNextStage,
+} from '@/lib/vendorWorkflows';
+import VendorWorkspaceModal from '@/components/vendors/VendorWorkspaceModal';
+import VendorFormModal from '@/components/vendors/VendorFormModal';
 
 export default function VendorsPage() {
   const confirm = useConfirm();
   const { vendors, saveVendor, deleteVendor, documents, pipelineItems, workItems } = useAdminStore();
+
+  // Search & Filtering States
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<'All' | 'Outreach' | 'Sampling' | 'Approved' | 'Stalled'>('All');
+  const [selectedCategory, setSelectedCategory] = useState<'All' | VendorCategory>('All');
+  const [healthFilter, setHealthFilter] = useState<'All' | VendorHealthStatus>('All');
+  const [viewMode, setViewMode] = useState<'rows' | 'board'>('rows');
+
+  // Modals & Drawer States
+  const [workspaceVendor, setWorkspaceVendor] = useState<VendorItem | null>(null);
+  const [formVendor, setFormVendor] = useState<Partial<VendorItem> | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [expandedVendorId, setExpandedVendorId] = useState<string | null>(null);
-  const [modalVendor, setModalVendor] = useState<VendorItem | (Omit<VendorItem, 'createdAt' | 'updatedAt'>) | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [inlineNotes, setInlineNotes] = useState<Record<string, string>>({});
 
-  // Helper to normalize stage comparisons
-  const getStageIndex = (stage: VendorOutreachStage) => {
-    if (stage === 'Proposed' || stage === 'Prospect') return 0;
-    if (stage === 'Email Sent') return 1;
-    if (stage === 'WhatsApp Follow-up') return 2;
-    if (stage === 'Second Email') return 3;
-    if (stage === 'Call Attended' || stage === 'Call Attempted') return 4;
-    if (stage === 'LinkedIn Referral') return 5;
-    if (stage === 'Factory Visit Scheduled') return 6;
-    if (stage === 'Sampling') return 7;
-    if (stage === 'Negotiating') return 8;
-    if (stage === 'Approved Partner') return 9;
-    return -1; // Stalled or other
-  };
-
-  const filteredVendors = useMemo(() => {
-    return vendors.filter((v) => {
-      const q = searchQuery.toLowerCase();
-      const matchesSearch =
-        v.name.toLowerCase().includes(q) ||
-        (v.specialty || '').toLowerCase().includes(q) ||
-        (v.contactName || '').toLowerCase().includes(q) ||
-        (v.location || '').toLowerCase().includes(q);
-
-      if (!matchesSearch) return false;
-
-      if (categoryFilter === 'All') return true;
-      if (categoryFilter === 'Outreach') {
-        const idx = getStageIndex(v.stage);
-        return idx >= 0 && idx <= 5;
-      }
-      if (categoryFilter === 'Sampling') {
-        return v.stage === 'Sampling' || v.stage === 'Factory Visit Scheduled' || v.stage === 'Negotiating';
-      }
-      if (categoryFilter === 'Approved') {
-        return v.stage === 'Approved Partner';
-      }
-      if (categoryFilter === 'Stalled') {
-        return v.stage === 'Rejected / Stalled';
-      }
-      return true;
+  // Category counts
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { All: vendors.length };
+    ALL_VENDOR_CATEGORIES.forEach((cat) => {
+      counts[cat] = vendors.filter((v) => getVendorCategory(v) === cat).length;
     });
-  }, [vendors, searchQuery, categoryFilter]);
-
-  // Quick metrics
-  const metrics = useMemo(() => {
-    const total = vendors.length;
-    const inOutreach = vendors.filter((v) => {
-      const idx = getStageIndex(v.stage);
-      return idx >= 0 && idx <= 5;
-    }).length;
-    const inSampling = vendors.filter((v) => v.stage === 'Sampling' || v.stage === 'Negotiating').length;
-    const approved = vendors.filter((v) => v.stage === 'Approved Partner').length;
-    return { total, inOutreach, inSampling, approved };
+    return counts;
   }, [vendors]);
 
-  const handleUpdateStage = async (vendor: VendorItem, newStage: VendorOutreachStage) => {
+  // Filtered vendors list
+  const filteredVendors = useMemo(() => {
+    return vendors.filter((v) => {
+      const cat = getVendorCategory(v);
+
+      if (selectedCategory !== 'All' && cat !== selectedCategory) {
+        return false;
+      }
+
+      if (healthFilter !== 'All' && v.healthStatus !== healthFilter) {
+        return false;
+      }
+
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchesName = v.name.toLowerCase().includes(q);
+        const matchesSub = (v.subcategory || '').toLowerCase().includes(q);
+        const matchesSpec = (v.specialty || '').toLowerCase().includes(q);
+        const matchesLoc = (v.location || '').toLowerCase().includes(q);
+        const matchesContact = (v.contactName || '').toLowerCase().includes(q) ||
+          (v.contacts || []).some((c) => c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q));
+
+        if (!matchesName && !matchesSub && !matchesSpec && !matchesLoc && !matchesContact) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [vendors, selectedCategory, healthFilter, searchQuery]);
+
+  // Overall KPI Metrics
+  const metrics = useMemo(() => {
+    const total = vendors.length;
+    const inWorkflow = vendors.filter((v) => {
+      const p = getStageProgress(v);
+      return p > 0 && p < 100;
+    }).length;
+    const scheduledTouches = vendors.filter((v) => Boolean(v.nextFollowUpAt)).length;
+    const livePartners = vendors.filter((v) => {
+      const p = getStageProgress(v);
+      return p >= 95 || v.stage.toLowerCase().includes('approved') || v.stage.toLowerCase().includes('live');
+    }).length;
+
+    return { total, inWorkflow, scheduledTouches, livePartners };
+  }, [vendors]);
+
+  // 1-Click Stage Update Handler
+  const handleUpdateStage = async (vendor: VendorItem, newStage: string) => {
     const now = new Date().toISOString();
-    await saveVendor({
+    const updated: VendorItem = {
       ...vendor,
       stage: newStage,
       lastContactedAt: now.split('T')[0],
       updatedAt: now,
-    });
+    };
+    await saveVendor(updated);
+    if (workspaceVendor?.id === vendor.id) {
+      setWorkspaceVendor(updated);
+    }
   };
 
   const handleAdvanceStep = async (vendor: VendorItem) => {
-    const currentIdx = getStageIndex(vendor.stage);
-    if (currentIdx >= 0 && currentIdx < OUTREACH_TOUCHPOINTS.length - 1) {
-      const nextStage = OUTREACH_TOUCHPOINTS[currentIdx + 1].stage;
-      await handleUpdateStage(vendor, nextStage);
-    } else if (currentIdx === OUTREACH_TOUCHPOINTS.length - 1) {
-      await handleUpdateStage(vendor, 'Factory Visit Scheduled');
+    const next = getNextStage(vendor);
+    if (next) {
+      await handleUpdateStage(vendor, next.name);
     }
   };
 
@@ -193,166 +165,266 @@ export default function VendorsPage() {
     }
   };
 
-  const handleSaveModal = async () => {
-    if (!modalVendor) return;
-    if (!modalVendor.name || modalVendor.name.trim().length < 2) {
-      setError('Vendor / manufacturer name is required.');
-      return;
-    }
-    setError(null);
-    setIsSaving(true);
-    const now = new Date().toISOString();
-    const full: VendorItem = {
-      ...(modalVendor as VendorItem),
-      name: modalVendor.name.trim(),
-      createdAt: (modalVendor as VendorItem).createdAt || now,
-      updatedAt: now,
-    };
-    await saveVendor(full);
-    setIsSaving(false);
-    setModalVendor(null);
-  };
-
   const handleDelete = async (id: string, name: string) => {
     const linkedStyles = pipelineItems.filter((p) => p.vendorId === id);
     const linkedDocs = documents.filter((d) => d.vendorId === id);
+    const linkedTasks = workItems.filter((w) => w.linkedVendorId === id);
     const sideEffects: string[] = [];
     if (linkedStyles.length > 0) sideEffects.push(`${linkedStyles.length} sampling pipeline style${linkedStyles.length === 1 ? '' : 's'}`);
     if (linkedDocs.length > 0) sideEffects.push(`${linkedDocs.length} linked document${linkedDocs.length === 1 ? '' : 's'}`);
+    if (linkedTasks.length > 0) sideEffects.push(`${linkedTasks.length} linked work task${linkedTasks.length === 1 ? '' : 's'}`);
 
     const ok = await confirm({
-      title: 'Remove Vendor',
-      message: `Remove "${name}" from the vendor directory?${
+      title: 'Remove Partner',
+      message: `Remove "${name}" from the vendor & manufacturer ecosystem?${
         sideEffects.length > 0
-          ? ` Warning: Linked manufacturer references on ${sideEffects.join(' and ')} will be unlinked.`
+          ? ` Warning: Active references on ${sideEffects.join(', ')} will be unlinked.`
           : ' This action cannot be undone.'
       }`,
-      confirmLabel: 'Remove Vendor',
+      confirmLabel: 'Remove Partner',
       danger: true,
     });
     if (!ok) return;
     await deleteVendor(id);
+    if (workspaceVendor?.id === id) setWorkspaceVendor(null);
   };
+
+  // Open Add Vendor modal
+  const handleOpenAddModal = (defaultCategory?: VendorCategory) => {
+    const cat = defaultCategory || (selectedCategory !== 'All' ? selectedCategory : 'Manufacturer');
+    const cfg = getCategoryConfig(cat);
+    setFormVendor({
+      id: `ven-${Date.now()}`,
+      category: cat,
+      stage: cfg.stages[0]?.name || 'Prospect',
+      healthStatus: 'Good',
+      rating: 5,
+      location: '',
+      certifications: [],
+    });
+    setIsFormOpen(true);
+  };
+
+  // Active Category Stages for Board View
+  const activeBoardStages = useMemo(() => {
+    if (selectedCategory === 'All') {
+      // General stages overview
+      return [
+        { id: 'discovery', name: 'Prospect / Discovery', shortLabel: 'Discovery' },
+        { id: 'eval', name: 'Evaluation / Review', shortLabel: 'Evaluation' },
+        { id: 'terms', name: 'Terms & Negotiation', shortLabel: 'Terms' },
+        { id: 'integration', name: 'Sampling / Integration', shortLabel: 'Active Setup' },
+        { id: 'live', name: 'Live / Approved', shortLabel: 'Approved' },
+        { id: 'stalled', name: 'On Hold', shortLabel: 'Hold' },
+      ];
+    }
+    return getCategoryConfig(selectedCategory).stages;
+  }, [selectedCategory]);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-      {/* Header & Primary CTA */}
+      {/* 1. Header & Primary CTAs */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2.5">
-            <Factory className="w-6 h-6 text-[#cda052]" />
-            Vendors & Manufacturer Outreach
+            <Building2 className="w-6 h-6 text-[#cda052]" />
+            Vendors & Manufacturers
           </h1>
-          <p className="text-sm text-[#94a3b8] mt-1">
-            Row-based manufacturer tracking, commercial terms, and per-vendor 6-touch outreach workflow execution.
+          <p className="text-xs sm:text-sm text-[#8a96ae] mt-1">
+            End-to-end partner ecosystem across garment factories, logistics & 3PL, payment gateways, packaging, collaborations, and finance.
           </p>
         </div>
-        <button
-          onClick={() => { setModalVendor(emptyVendor()); setError(null); }}
-          title="Add a new vendor or manufacturer to track"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-xs font-semibold hover:shadow-glow transition-all whitespace-nowrap self-start sm:self-auto cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Vendor</span>
-        </button>
+
+        <div className="flex items-center gap-2.5 self-start sm:self-auto">
+          {/* View Mode Toggle */}
+          <div className="flex items-center p-1 bg-[#0e121b] border border-[#1e263a] rounded-xl text-xs">
+            <button
+              onClick={() => setViewMode('rows')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                viewMode === 'rows'
+                  ? 'bg-[rgba(205,160,82,0.18)] text-[#f5d58d] font-semibold border border-[#cda052]/40 shadow-sm'
+                  : 'text-[#8a96ae] hover:text-white'
+              }`}
+              title="Detailed High-Density Row View"
+            >
+              <List className="w-3.5 h-3.5" />
+              <span>Rows</span>
+            </button>
+            <button
+              onClick={() => setViewMode('board')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                viewMode === 'board'
+                  ? 'bg-[rgba(205,160,82,0.18)] text-[#f5d58d] font-semibold border border-[#cda052]/40 shadow-sm'
+                  : 'text-[#8a96ae] hover:text-white'
+              }`}
+              title="Workflow Pipeline Board View"
+            >
+              <KanbanSquare className="w-3.5 h-3.5" />
+              <span>Board</span>
+            </button>
+          </div>
+
+          <button
+            onClick={() => handleOpenAddModal()}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#cda052] to-[#b0883d] text-black text-xs font-bold hover:shadow-glow transition-all whitespace-nowrap cursor-pointer"
+            title="Onboard a new vendor, mill, courier, or partner"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Partner</span>
+          </button>
+        </div>
       </div>
 
-      {/* Summary KPI Strip */}
+      {/* 2. Executive Multi-Category KPI Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="p-3.5 rounded-xl bg-[#0e121b] border border-[#1c2438] flex items-center justify-between">
+        <div className="p-3.5 rounded-xl bg-[#0e1320] border border-[#1c2438] flex items-center justify-between">
           <div>
-            <div className="text-[11px] text-[#94a3b8] font-medium">Total Vendors</div>
+            <div className="text-[11px] text-[#8a96ae] font-medium">Total Ecosystem Partners</div>
             <div className="text-xl font-bold text-white font-mono mt-0.5">{metrics.total}</div>
           </div>
-          <div className="p-2 rounded-lg bg-white/[0.04] text-[#cda052]">
+          <div className="p-2.5 rounded-xl bg-white/[0.04] text-[#cda052]">
             <Building2 className="w-4 h-4" />
           </div>
         </div>
 
-        <div className="p-3.5 rounded-xl bg-[#0e121b] border border-[#1c2438] flex items-center justify-between">
+        <div className="p-3.5 rounded-xl bg-[#0e1320] border border-[#1c2438] flex items-center justify-between">
           <div>
-            <div className="text-[11px] text-[#94a3b8] font-medium">In 6-Touch Workflow</div>
-            <div className="text-xl font-bold text-sky-400 font-mono mt-0.5">{metrics.inOutreach}</div>
+            <div className="text-[11px] text-[#8a96ae] font-medium">In Active Lifecycle</div>
+            <div className="text-xl font-bold text-sky-400 font-mono mt-0.5">{metrics.inWorkflow}</div>
           </div>
-          <div className="p-2 rounded-lg bg-sky-950/40 text-sky-400">
-            <Send className="w-4 h-4" />
+          <div className="p-2.5 rounded-xl bg-sky-950/40 text-sky-400">
+            <Clock className="w-4 h-4" />
           </div>
         </div>
 
-        <div className="p-3.5 rounded-xl bg-[#0e121b] border border-[#1c2438] flex items-center justify-between">
+        <div className="p-3.5 rounded-xl bg-[#0e1320] border border-[#1c2438] flex items-center justify-between">
           <div>
-            <div className="text-[11px] text-[#94a3b8] font-medium">Sampling / Negotiation</div>
-            <div className="text-xl font-bold text-purple-400 font-mono mt-0.5">{metrics.inSampling}</div>
+            <div className="text-[11px] text-[#8a96ae] font-medium">Follow-Ups Scheduled</div>
+            <div className="text-xl font-bold text-amber-400 font-mono mt-0.5">{metrics.scheduledTouches}</div>
           </div>
-          <div className="p-2 rounded-lg bg-purple-950/40 text-purple-400">
-            <Shirt className="w-4 h-4" />
+          <div className="p-2.5 rounded-xl bg-amber-950/40 text-amber-400">
+            <CalendarClock className="w-4 h-4" />
           </div>
         </div>
 
-        <div className="p-3.5 rounded-xl bg-[#0e121b] border border-[#1c2438] flex items-center justify-between">
+        <div className="p-3.5 rounded-xl bg-[#0e1320] border border-[#1c2438] flex items-center justify-between">
           <div>
-            <div className="text-[11px] text-[#94a3b8] font-medium">Approved Partners</div>
-            <div className="text-xl font-bold text-emerald-400 font-mono mt-0.5">{metrics.approved}</div>
+            <div className="text-[11px] text-[#8a96ae] font-medium">Live / Approved Partners</div>
+            <div className="text-xl font-bold text-emerald-400 font-mono mt-0.5">{metrics.livePartners}</div>
           </div>
-          <div className="p-2 rounded-lg bg-emerald-950/40 text-emerald-400">
+          <div className="p-2.5 rounded-xl bg-emerald-950/40 text-emerald-400">
             <ShieldCheck className="w-4 h-4" />
           </div>
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#0e121b] p-3 rounded-xl border border-[#1c2438]">
-        {/* Category Filter Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
-          {(['All', 'Outreach', 'Sampling', 'Approved', 'Stalled'] as const).map((tab) => (
+      {/* 3. Category Filter Navigation Bar */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        <button
+          onClick={() => setSelectedCategory('All')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
+            selectedCategory === 'All'
+              ? 'bg-[#cda052] text-black font-bold shadow-glow'
+              : 'bg-[#0e1320] border border-[#1d263b] text-[#8a96ae] hover:text-white hover:border-[#2a3754]'
+          }`}
+        >
+          <Building2 className="w-3.5 h-3.5" />
+          <span>All Partners</span>
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${selectedCategory === 'All' ? 'bg-black/20 text-black font-bold' : 'bg-white/[0.08] text-[#cbd5e1]'}`}>
+            {categoryCounts.All}
+          </span>
+        </button>
+
+        {ALL_VENDOR_CATEGORIES.map((catKey) => {
+          const cfg = VENDOR_CATEGORIES[catKey];
+          const Icon = cfg.icon;
+          const isSelected = selectedCategory === catKey;
+          const count = categoryCounts[catKey] || 0;
+
+          return (
             <button
-              key={tab}
-              onClick={() => setCategoryFilter(tab)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap cursor-pointer ${
-                categoryFilter === tab
-                  ? 'bg-[rgba(205,160,82,0.18)] text-[#e6c875] font-semibold border border-[#cda052]/40'
-                  : 'text-[#94a3b8] hover:text-white hover:bg-white/[0.04]'
+              key={catKey}
+              onClick={() => setSelectedCategory(catKey)}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
+                isSelected
+                  ? 'bg-[rgba(205,160,82,0.22)] border border-[#cda052] text-[#f5d58d] font-bold ring-1 ring-[#cda052]/40 shadow-sm'
+                  : 'bg-[#0e1320] border border-[#1d263b] text-[#8a96ae] hover:text-white hover:border-[#2a3754]'
               }`}
             >
-              {tab === 'All' ? 'All Vendors' : tab === 'Outreach' ? 'Active Outreach (6-Touch)' : tab}
+              <Icon className="w-3.5 h-3.5 text-[#cda052]" />
+              <span>{cfg.shortLabel}</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${isSelected ? 'bg-[#cda052]/30 text-[#f5d58d]' : 'bg-white/[0.06] text-[#cbd5e1]'}`}>
+                {count}
+              </span>
             </button>
-          ))}
-        </div>
+          );
+        })}
+      </div>
 
-        {/* Search */}
-        <div className="relative min-w-[260px]">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#7c869d]" />
+      {/* 4. Search and Filter Bar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#0e1320] p-3 rounded-xl border border-[#1c2438]">
+        <div className="flex-1 relative">
+          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#717d96]" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search vendor, specialty, facility, contact..."
-            className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#080b12] border border-[#222b3e] text-xs text-white placeholder-[#7c869d] outline-none focus:border-[#cda052] transition-colors"
+            placeholder="Search by company name, contact, specialty, location..."
+            className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#07090e] border border-[#202b40] text-xs text-white placeholder-[#717d96] outline-none focus:border-[#cda052] transition-colors"
           />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-[#8a96ae] flex items-center gap-1">
+            <Filter className="w-3 h-3" />
+            <span>Health:</span>
+          </span>
+          <select
+            value={healthFilter}
+            onChange={(e) => setHealthFilter(e.target.value as any)}
+            className="px-2.5 py-1.5 rounded-lg bg-[#07090e] border border-[#202b40] text-xs text-white outline-none focus:border-[#cda052]"
+          >
+            <option value="All">All Health Statuses</option>
+            <option value="Excellent">Excellent</option>
+            <option value="Good">Good</option>
+            <option value="Under Review">Under Review</option>
+            <option value="At Risk">At Risk</option>
+          </select>
         </div>
       </div>
 
-      {/* Vendors Row-Based List */}
+      {/* 5. Main Content: Row View vs Board View */}
       {filteredVendors.length === 0 ? (
-        <div className="text-center py-16 border border-dashed border-[#1f2638] rounded-2xl bg-[#080b12]">
-          <Factory className="w-9 h-9 text-[#434d61] mx-auto mb-3" />
-          <h3 className="text-sm font-semibold text-white mb-1">No vendors found</h3>
-          <p className="text-xs text-[#94a3b8] max-w-sm mx-auto mb-4">
-            No manufacturers match your current search or category filter. Add your first factory target to initiate the 6-touch workflow.
+        <div className="text-center py-16 border border-dashed border-[#1f283c] rounded-2xl bg-[#080b12]">
+          <Building2 className="w-10 h-10 text-[#424e65] mx-auto mb-3" />
+          <h3 className="text-sm font-semibold text-white mb-1">No partners found</h3>
+          <p className="text-xs text-[#8a96ae] max-w-sm mx-auto mb-4">
+            No vendors or manufacturers match your current category or search filters.
           </p>
           <button
-            onClick={() => { setModalVendor(emptyVendor()); setError(null); }}
-            className="px-4 py-2 rounded-xl bg-[#151a28] border border-[#263148] text-xs font-semibold text-[#cda052] hover:bg-[#1a2236] transition-colors cursor-pointer"
+            onClick={() => handleOpenAddModal()}
+            className="px-4 py-2 rounded-xl bg-[#141a29] border border-[#263552] text-xs font-semibold text-[#cda052] hover:bg-[#1a2337] transition-colors cursor-pointer"
           >
-            Add New Vendor
+            Add New Partner
           </button>
         </div>
-      ) : (
+      ) : viewMode === 'rows' ? (
+        /* ROW VIEW */
         <div className="space-y-3">
           {filteredVendors.map((vendor) => {
             const isExpanded = expandedVendorId === vendor.id;
-            const currentStageIdx = getStageIndex(vendor.stage);
-            const styleConfig = STAGE_COLOR[vendor.stage] || STAGE_COLOR['Proposed'];
+            const cat = getVendorCategory(vendor);
+            const cfg = getCategoryConfig(cat);
+            const CategoryIcon = cfg.icon;
+            const progress = getStageProgress(vendor);
+            const next = getNextStage(vendor);
+
+            const primaryContact = vendor.contacts?.find((c) => c.isPrimary) || vendor.contacts?.[0] || {
+              name: vendor.contactName || 'No contact listed',
+              role: 'Primary Contact',
+              email: vendor.contactEmail,
+              phone: vendor.contactPhone,
+            };
 
             const linkedStyles = pipelineItems.filter((p) => p.vendorId === vendor.id);
             const linkedDocs = documents.filter((d) => d.vendorId === vendor.id);
@@ -361,97 +433,116 @@ export default function VendorsPage() {
             return (
               <div
                 key={vendor.id}
-                className="bg-[#0e121b] border border-[#1b2234] hover:border-[#2a3650] rounded-2xl transition-all shadow-md overflow-hidden"
+                className="bg-[#0e1320] border border-[#1b2336] hover:border-[#2a3854] rounded-2xl transition-all shadow-md overflow-hidden"
               >
                 {/* Main Row Content */}
                 <div className="p-4 sm:p-5 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-                  {/* Left Column: Vendor Name, Location & Vertical Integration */}
-                  <div className="xl:w-[260px] flex-shrink-0">
+                  {/* Left Column: Category Badge, Name, Subcategory, Location */}
+                  <div className="xl:w-[280px] flex-shrink-0 space-y-1">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-bold text-white tracking-wide">{vendor.name}</h3>
-                      {vendor.isVerticallyIntegrated === true && (
-                        <span title="Vertically integrated factory" className="inline-flex items-center text-emerald-400">
-                          <ShieldCheck className="w-4 h-4" />
-                        </span>
+                      <div className="w-8 h-8 rounded-lg bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-[#cda052] flex-shrink-0">
+                        <CategoryIcon className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <h3
+                            onClick={() => setWorkspaceVendor(vendor)}
+                            className="text-sm font-bold text-white hover:text-[#cda052] transition-colors cursor-pointer truncate"
+                          >
+                            {vendor.name}
+                          </h3>
+                          {vendor.rating && (
+                            <div className="flex items-center text-amber-400">
+                              <Star className="w-2.5 h-2.5 fill-amber-400" />
+                              <span className="text-[10px] ml-0.5 font-semibold">{vendor.rating}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[11px] text-[#8a96ae] truncate">
+                          <span className={`text-[9px] px-1.5 py-0.2 rounded font-semibold border ${cfg.badgeBg} ${cfg.badgeText} ${cfg.badgeBorder}`}>
+                            {cfg.shortLabel}
+                          </span>
+                          {vendor.subcategory && <span className="truncate">{vendor.subcategory}</span>}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2.5 text-[11px] text-[#8a96ae] pt-1">
+                      <span className="flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-[#64748b] flex-shrink-0" />
+                        <span className="truncate max-w-[130px]">{vendor.location || 'Location pending'}</span>
+                      </span>
+
+                      {vendor.website && (
+                        <a
+                          href={vendor.website}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-1 text-[#cda052] hover:underline"
+                        >
+                          <Globe className="w-3 h-3" />
+                          <span>Site</span>
+                        </a>
                       )}
-                      {vendor.isVerticallyIntegrated === false && (
-                        <span title="Partial / outsourced steps" className="inline-flex items-center text-rose-400">
-                          <ShieldX className="w-4 h-4" />
-                        </span>
-                      )}
-                      {vendor.isVerticallyIntegrated === null && (
-                        <span title="Vertical integration unconfirmed" className="inline-flex items-center text-[#7c869d]">
-                          <ShieldQuestion className="w-4 h-4" />
+
+                      {vendor.healthStatus && (
+                        <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-medium ${
+                          vendor.healthStatus === 'Excellent' ? 'text-emerald-400 bg-emerald-950/40' :
+                          vendor.healthStatus === 'Good' ? 'text-sky-400 bg-sky-950/40' :
+                          'text-amber-400 bg-amber-950/40'
+                        }`}>
+                          ● {vendor.healthStatus}
                         </span>
                       )}
                     </div>
-
-                    <div className="flex items-center gap-1.5 text-[11px] text-[#94a3b8] mt-1">
-                      <MapPin className="w-3 h-3 text-[#7c869d] flex-shrink-0" />
-                      <span className="truncate">{vendor.location || 'Location pending'}</span>
-                    </div>
-
-                    {vendor.specialty && (
-                      <p className="text-[11px] text-[#cbd5e1] mt-1.5 line-clamp-1" title={vendor.specialty}>
-                        {vendor.specialty}
-                      </p>
-                    )}
                   </div>
 
-                  {/* Middle Column: 6-Touch Workflow Pipeline Tracker (Interactive) */}
-                  <div className="flex-1 min-w-0 bg-[#07090f]/70 p-2.5 sm:p-3 rounded-xl border border-white/[0.04]">
-                    <div className="flex items-center justify-between mb-2">
+                  {/* Middle Column: Domain-Specific Workflow Stepper (Interactive) */}
+                  <div className="flex-1 min-w-0 bg-[#07090e]/75 p-3 rounded-xl border border-white/[0.04] space-y-2">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-[#828ea6]">
-                          Outreach Workflow:
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#8a96ae]">
+                          {cfg.shortLabel} Stage:
                         </span>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full border font-semibold ${styleConfig.badge}`}>
+                        <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-[#141b2c] border border-[#27344e] text-[#f5d58d]">
                           {vendor.stage}
                         </span>
+                        <span className="text-[10px] font-mono text-[#8a96ae]">({progress}%)</span>
                       </div>
 
-                      {/* Advance workflow button */}
-                      {currentStageIdx >= 0 && currentStageIdx < OUTREACH_TOUCHPOINTS.length && (
+                      {next && (
                         <button
                           onClick={() => handleAdvanceStep(vendor)}
-                          className="flex items-center gap-1 text-[11px] text-[#cda052] hover:text-[#f3d994] font-medium hover:underline cursor-pointer"
-                          title="Advance to next touchpoint"
+                          className="flex items-center gap-1 text-[11px] text-[#cda052] hover:text-[#f7dda0] font-bold hover:underline cursor-pointer"
+                          title={`Advance to ${next.name}`}
                         >
-                          <span>Advance Step</span>
+                          <span>Advance: {next.shortLabel}</span>
                           <ArrowRight className="w-3 h-3" />
                         </button>
                       )}
                     </div>
 
-                    {/* Step Nodes Row */}
-                    <div className="grid grid-cols-6 gap-1 sm:gap-1.5 relative">
-                      {OUTREACH_TOUCHPOINTS.map((tp, idx) => {
-                        const Icon = tp.icon;
-                        const isDone = currentStageIdx > idx || (currentStageIdx >= 6 && idx <= 5);
-                        const isCurrent = currentStageIdx === idx;
+                    {/* Progress nodes */}
+                    <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-7 gap-1">
+                      {cfg.stages.filter((s) => !s.isTerminalFailure).map((stageItem) => {
+                        const isCurrent = vendor.stage.toLowerCase() === stageItem.name.toLowerCase() || vendor.stage.toLowerCase() === stageItem.id.toLowerCase();
+                        const isDone = progress > stageItem.progressPercent;
 
                         return (
                           <button
-                            key={tp.stage}
-                            onClick={() => handleUpdateStage(vendor, tp.stage)}
-                            title={`Set workflow stage to: ${tp.label}`}
-                            className={`flex flex-col items-center justify-center p-1.5 rounded-lg border text-center transition-all cursor-pointer group ${
+                            key={stageItem.id}
+                            onClick={() => handleUpdateStage(vendor, stageItem.name)}
+                            title={`Set stage to: ${stageItem.name} (${stageItem.description})`}
+                            className={`p-1.5 rounded-lg border text-center transition-all cursor-pointer truncate ${
                               isCurrent
                                 ? 'bg-[rgba(205,160,82,0.18)] border-[#cda052] text-white shadow-sm ring-1 ring-[#cda052]/50'
                                 : isDone
-                                ? 'bg-emerald-950/30 border-emerald-800/40 text-emerald-300 hover:bg-emerald-950/50'
-                                : 'bg-[#0f1422] border-[#1d273a] text-[#7c869d] hover:text-[#cbd5e1] hover:border-[#2f3d59]'
+                                ? 'bg-emerald-950/30 border-emerald-800/40 text-emerald-300'
+                                : 'bg-[#0f1422] border-[#1d273a] text-[#717d96] hover:text-white'
                             }`}
                           >
-                            <div className="flex items-center gap-1 mb-0.5">
-                              {isDone ? (
-                                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                              ) : (
-                                <Icon className={`w-3 h-3 ${isCurrent ? 'text-[#cda052]' : 'text-[#7c869d]'}`} />
-                              )}
-                            </div>
-                            <span className="text-[10px] font-medium truncate w-full block">
-                              {tp.shortLabel}
+                            <span className="text-[9px] font-semibold block truncate">
+                              {stageItem.shortLabel}
                             </span>
                           </button>
                         );
@@ -462,91 +553,71 @@ export default function VendorsPage() {
                   {/* Commercials & Contact Column */}
                   <div className="xl:w-[220px] flex-shrink-0 flex flex-col justify-between text-[11px] space-y-1.5">
                     <div className="space-y-0.5">
-                      <div className="text-[#94a3b8] flex items-center justify-between">
-                        <span>MOQ Target:</span>
-                        <span className="text-white font-mono font-semibold">
-                          {vendor.moqTarget ? `${vendor.moqTarget} pcs` : 'Not set'}
-                        </span>
+                      <div className="text-white font-semibold truncate flex items-center justify-between">
+                        <span className="truncate">{primaryContact.name}</span>
+                        {primaryContact.phone && (
+                          <a
+                            href={`https://wa.me/${primaryContact.phone.replace(/\D/g, '')}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            title="Chat on WhatsApp"
+                            className="p-1 rounded bg-emerald-950/40 text-emerald-400 hover:bg-emerald-900/50"
+                          >
+                            <MessageSquare className="w-3 h-3" />
+                          </a>
+                        )}
                       </div>
-                      {vendor.moqOffered && (
-                        <div className="text-[10px] text-[#8e98ad] flex items-center justify-between">
-                          <span>Factory Offered:</span>
-                          <span className="font-mono">{vendor.moqOffered} pcs</span>
-                        </div>
-                      )}
+                      <div className="text-[10px] text-[#8a96ae] truncate">
+                        {primaryContact.role || 'Partner Representative'}
+                      </div>
+                      <div className="text-[11px] text-[#cbd5e1] truncate pt-0.5">
+                        {vendor.commercials?.ratesSummary || vendor.commercials?.paymentTerms || (vendor.moqTarget ? `MOQ Target: ${vendor.moqTarget} pcs` : 'Standard catalog')}
+                      </div>
                     </div>
 
                     {vendor.nextFollowUpAt ? (
-                      <div className="flex items-center gap-1.5 text-amber-300 font-medium">
+                      <div className="flex items-center gap-1.5 text-amber-300 font-semibold pt-0.5">
                         <CalendarClock className="w-3.5 h-3.5 text-amber-400" />
                         <span>Follow-up: {new Date(vendor.nextFollowUpAt).toLocaleDateString()}</span>
                       </div>
                     ) : vendor.lastContactedAt ? (
-                      <div className="flex items-center gap-1.5 text-[#8895ad]">
+                      <div className="flex items-center gap-1.5 text-[#8a96ae] text-[10px]">
                         <Clock className="w-3 h-3" />
                         <span>Last touch: {new Date(vendor.lastContactedAt).toLocaleDateString()}</span>
                       </div>
                     ) : null}
-
-                    {/* Quick Direct Actions */}
-                    <div className="flex items-center gap-2 pt-1 text-[11px] text-[#94a3b8]">
-                      {vendor.contactEmail && (
-                        <a
-                          href={`mailto:${vendor.contactEmail}`}
-                          title={`Email ${vendor.contactEmail}`}
-                          className="p-1 rounded hover:bg-white/[0.06] text-[#cbd5e1] hover:text-[#cda052]"
-                        >
-                          <Mail className="w-3.5 h-3.5" />
-                        </a>
-                      )}
-                      {vendor.contactPhone && (
-                        <a
-                          href={`https://wa.me/${vendor.contactPhone.replace(/\D/g, '')}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          title={`WhatsApp chat ${vendor.contactPhone}`}
-                          className="p-1 rounded hover:bg-white/[0.06] text-[#cbd5e1] hover:text-emerald-400"
-                        >
-                          <MessageSquare className="w-3.5 h-3.5" />
-                        </a>
-                      )}
-                      {vendor.contactPhone && (
-                        <a
-                          href={`tel:${vendor.contactPhone}`}
-                          title={`Call ${vendor.contactPhone}`}
-                          className="p-1 rounded hover:bg-white/[0.06] text-[#cbd5e1] hover:text-cyan-400"
-                        >
-                          <Phone className="w-3.5 h-3.5" />
-                        </a>
-                      )}
-                    </div>
                   </div>
 
                   {/* Actions Column */}
                   <div className="flex xl:flex-col items-center xl:items-end justify-between xl:justify-center gap-2 pt-2 xl:pt-0 border-t xl:border-t-0 border-white/[0.06]">
                     <button
-                      onClick={() => setExpandedVendorId(isExpanded ? null : vendor.id)}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#141824] hover:bg-[#1a2133] border border-[#242e44] text-[11px] text-[#cbd5e1] hover:text-white transition-colors cursor-pointer"
-                      title="Expand detailed workflow, notes, and connected items"
+                      onClick={() => setWorkspaceVendor(vendor)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#172033] to-[#121927] hover:bg-[#1f2b45] border border-[#263552] text-xs font-semibold text-[#f5d58d] hover:text-white transition-colors cursor-pointer"
+                      title="Open full partner workspace drawer"
                     >
-                      <span>Workflow Details</span>
-                      {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                      <span>Workspace</span>
+                      <ExternalLink className="w-3 h-3" />
                     </button>
 
                     <div className="flex items-center gap-1">
                       <button
-                        onClick={() => { setModalVendor(vendor); setError(null); }}
-                        title="Edit vendor information"
-                        aria-label={`Edit ${vendor.name}`}
-                        className="p-1.5 rounded-lg text-[#94a3b8] hover:text-[#cda052] hover:bg-white/[0.04] transition-colors cursor-pointer"
+                        onClick={() => setExpandedVendorId(isExpanded ? null : vendor.id)}
+                        className="p-1.5 rounded-lg text-[#8a96ae] hover:text-white hover:bg-white/[0.04] transition-colors cursor-pointer"
+                        title={isExpanded ? 'Collapse notes & ecosystem' : 'Expand notes & ecosystem'}
+                      >
+                        {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </button>
+                      <button
+                        onClick={() => { setFormVendor(vendor); setIsFormOpen(true); }}
+                        className="p-1.5 rounded-lg text-[#8a96ae] hover:text-[#cda052] hover:bg-white/[0.04] transition-colors cursor-pointer"
+                        title="Edit partner information"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => handleDelete(vendor.id, vendor.name)}
-                        title="Remove vendor"
-                        aria-label={`Remove ${vendor.name}`}
-                        className="p-1.5 rounded-lg text-[#94a3b8] hover:text-rose-400 hover:bg-rose-950/30 transition-colors cursor-pointer"
+                        className="p-1.5 rounded-lg text-[#8a96ae] hover:text-rose-400 hover:bg-rose-950/30 transition-colors cursor-pointer"
+                        title="Remove partner"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -554,109 +625,91 @@ export default function VendorsPage() {
                   </div>
                 </div>
 
-                {/* Expanded Per-Vendor Workflow Drawer */}
+                {/* Collapsible Inline Quick Drawer */}
                 {isExpanded && (
-                  <div className="px-4 sm:px-6 py-4 bg-[#080a10] border-t border-[#1a2234] text-xs space-y-4 animate-fade-in">
+                  <div className="px-4 sm:px-6 py-4 bg-[#080a11] border-t border-[#1a2336] text-xs space-y-4 animate-fade-in">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {/* 1. Stage & Scheduling Control */}
-                      <div className="space-y-3 bg-[#0e121b] p-3.5 rounded-xl border border-[#1e2638]">
+                      {/* Follow-up scheduler */}
+                      <div className="space-y-2 bg-[#0e1320] p-3.5 rounded-xl border border-[#1e2638]">
                         <div className="font-semibold text-white text-[11px] uppercase tracking-wider flex items-center gap-1.5">
                           <Calendar className="w-3.5 h-3.5 text-[#cda052]" />
-                          <span>Lifecycle & Next Touch</span>
+                          <span>Schedule Follow-Up</span>
                         </div>
-
-                        <div>
-                          <label className="text-[10px] text-[#94a3b8] block mb-1">Current Outreach / Production Stage:</label>
-                          <select
-                            value={vendor.stage}
-                            onChange={(e) => handleUpdateStage(vendor, e.target.value as VendorOutreachStage)}
-                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#07090e] border border-[#222b3e] text-xs text-white outline-none focus:border-[#cda052]"
-                          >
-                            {ALL_STAGES.map((s) => (
-                              <option key={s} value={s}>{s}</option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="text-[10px] text-[#94a3b8] block mb-1">Schedule Next Follow-Up Date:</label>
-                          <input
-                            type="date"
-                            value={vendor.nextFollowUpAt || ''}
-                            onChange={(e) => {
-                              saveVendor({
-                                ...vendor,
-                                nextFollowUpAt: e.target.value,
-                                updatedAt: new Date().toISOString(),
-                              });
-                            }}
-                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#07090e] border border-[#222b3e] text-xs text-white outline-none focus:border-[#cda052]"
-                          />
-                        </div>
+                        <input
+                          type="date"
+                          value={vendor.nextFollowUpAt || ''}
+                          onChange={(e) => {
+                            saveVendor({
+                              ...vendor,
+                              nextFollowUpAt: e.target.value,
+                              updatedAt: new Date().toISOString(),
+                            });
+                          }}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-[#07090e] border border-[#222b3e] text-xs text-white outline-none focus:border-[#cda052]"
+                        />
+                        <p className="text-[10px] text-[#717d96]">
+                          Keep outreach on schedule with calendar tracking.
+                        </p>
                       </div>
 
-                      {/* 2. Communication Notes & Negotiation Log */}
-                      <div className="space-y-2 bg-[#0e121b] p-3.5 rounded-xl border border-[#1e2638]">
+                      {/* Quick notes */}
+                      <div className="space-y-2 bg-[#0e1320] p-3.5 rounded-xl border border-[#1e2638]">
                         <div className="font-semibold text-white text-[11px] uppercase tracking-wider flex items-center justify-between">
                           <span className="flex items-center gap-1.5">
                             <FileText className="w-3.5 h-3.5 text-[#cda052]" />
-                            <span>Workflow Notes & Negotiation</span>
+                            <span>Quick Negotiation Note</span>
                           </span>
                           <button
                             onClick={() => handleSaveInlineNotes(vendor)}
-                            className="text-[10px] text-[#cda052] hover:underline font-semibold"
+                            className="text-[10px] text-[#cda052] hover:underline font-semibold cursor-pointer"
                           >
                             Save Note
                           </button>
                         </div>
-
                         <textarea
-                          rows={3}
+                          rows={2}
                           value={inlineNotes[vendor.id] !== undefined ? inlineNotes[vendor.id] : (vendor.notes || '')}
                           onChange={(e) => setInlineNotes({ ...inlineNotes, [vendor.id]: e.target.value })}
-                          placeholder="Log call takeaways, fabric swatch feedback, quotation notes..."
+                          placeholder="Log discussion takeaways or quote revisions..."
                           className="w-full px-2.5 py-1.5 rounded-lg bg-[#07090e] border border-[#222b3e] text-xs text-white placeholder-[#5a657c] outline-none focus:border-[#cda052] resize-none"
                         />
                       </div>
 
-                      {/* 3. Connected Production Ecosystem */}
-                      <div className="space-y-2 bg-[#0e121b] p-3.5 rounded-xl border border-[#1e2638]">
+                      {/* Connected Ecosystem */}
+                      <div className="space-y-2 bg-[#0e1320] p-3.5 rounded-xl border border-[#1e2638]">
                         <div className="font-semibold text-white text-[11px] uppercase tracking-wider flex items-center gap-1.5">
                           <Shirt className="w-3.5 h-3.5 text-[#cda052]" />
-                          <span>Connected Pipeline & Vault Assets</span>
+                          <span>Connected Ecosystem</span>
                         </div>
-
-                        <div className="space-y-1.5 pt-1">
-                          <div className="flex items-center justify-between text-[11px]">
-                            <span className="text-[#94a3b8]">Sampling Pipeline:</span>
+                        <div className="space-y-1.5 pt-0.5 text-[11px]">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[#8a96ae]">Sampling Styles:</span>
                             {linkedStyles.length > 0 ? (
                               <Link href="/pipeline" className="text-sky-400 hover:underline font-semibold">
                                 {linkedStyles.length} style{linkedStyles.length === 1 ? '' : 's'} assigned
                               </Link>
                             ) : (
-                              <span className="text-[#64748b]">No styles linked</span>
+                              <span className="text-[#64748b]">None</span>
                             )}
                           </div>
-
-                          <div className="flex items-center justify-between text-[11px]">
-                            <span className="text-[#94a3b8]">Document Vault:</span>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[#8a96ae]">Vault Documents:</span>
                             {linkedDocs.length > 0 ? (
                               <Link href="/documents" className="text-emerald-400 hover:underline font-semibold">
                                 {linkedDocs.length} certificate/doc{linkedDocs.length === 1 ? '' : 's'}
                               </Link>
                             ) : (
-                              <span className="text-[#64748b]">No docs filed</span>
+                              <span className="text-[#64748b]">None</span>
                             )}
                           </div>
-
-                          <div className="flex items-center justify-between text-[11px]">
-                            <span className="text-[#94a3b8]">Work Tracking Tasks:</span>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[#8a96ae]">Work Tasks:</span>
                             {linkedTasks.length > 0 ? (
-                              <Link href="/work?tab=backlog" className="text-indigo-400 hover:underline font-semibold">
-                                {linkedTasks.length} linked task{linkedTasks.length === 1 ? '' : 's'}
+                              <Link href="/work" className="text-indigo-400 hover:underline font-semibold">
+                                {linkedTasks.length} task{linkedTasks.length === 1 ? '' : 's'}
                               </Link>
                             ) : (
-                              <span className="text-[#64748b]">No tasks</span>
+                              <span className="text-[#64748b]">None</span>
                             )}
                           </div>
                         </div>
@@ -668,177 +721,129 @@ export default function VendorsPage() {
             );
           })}
         </div>
+      ) : (
+        /* WORKFLOW PIPELINE BOARD VIEW */
+        <div className="overflow-x-auto pb-4 scrollbar-none">
+          <div className="flex items-start gap-4 min-w-[1100px]">
+            {activeBoardStages.map((stageItem) => {
+              const stageVendors = filteredVendors.filter(
+                (v) => v.stage.toLowerCase() === stageItem.name.toLowerCase() || v.stage.toLowerCase() === stageItem.id.toLowerCase()
+              );
+
+              return (
+                <div
+                  key={stageItem.id}
+                  className="w-72 flex-shrink-0 bg-[#0c101b] border border-[#1b2336] rounded-2xl p-3 space-y-3"
+                >
+                  <div className="flex items-center justify-between border-b border-[#182030] pb-2">
+                    <div className="font-bold text-xs text-white truncate">
+                      {stageItem.name}
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-mono bg-white/[0.06] text-[#cda052] font-semibold">
+                      {stageVendors.length}
+                    </span>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {stageVendors.length === 0 ? (
+                      <div className="py-6 text-center text-[#64748b] text-[11px] border border-dashed border-[#1a2336] rounded-xl">
+                        No partners in this stage
+                      </div>
+                    ) : (
+                      stageVendors.map((vendor) => {
+                        const cat = getVendorCategory(vendor);
+                        const cfg = getCategoryConfig(cat);
+                        const CategoryIcon = cfg.icon;
+                        const next = getNextStage(vendor);
+
+                        return (
+                          <div
+                            key={vendor.id}
+                            className="p-3 rounded-xl bg-[#0f1422] border border-[#1e273d] hover:border-[#2a3854] space-y-2 transition-all shadow-sm"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <span className={`text-[9px] px-1.5 py-0.2 rounded font-semibold border ${cfg.badgeBg} ${cfg.badgeText} ${cfg.badgeBorder}`}>
+                                  {cfg.shortLabel}
+                                </span>
+                                <h4
+                                  onClick={() => setWorkspaceVendor(vendor)}
+                                  className="font-bold text-white text-xs hover:text-[#cda052] transition-colors cursor-pointer truncate mt-1"
+                                >
+                                  {vendor.name}
+                                </h4>
+                              </div>
+
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => { setFormVendor(vendor); setIsFormOpen(true); }}
+                                  className="p-1 rounded text-[#8a96ae] hover:text-[#cda052]"
+                                  title="Edit"
+                                >
+                                  <Pencil className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="text-[11px] text-[#cbd5e1] truncate">
+                              {vendor.commercials?.ratesSummary || vendor.specialty || 'General Partner'}
+                            </div>
+
+                            <div className="flex items-center justify-between text-[10px] text-[#8a96ae] pt-1 border-t border-white/[0.04]">
+                              <span className="truncate">{vendor.location || 'Location'}</span>
+                              {next && (
+                                <button
+                                  onClick={() => handleAdvanceStep(vendor)}
+                                  className="flex items-center gap-0.5 text-[#cda052] hover:underline font-semibold cursor-pointer"
+                                  title={`Advance to ${next.name}`}
+                                >
+                                  <span>Advance</span>
+                                  <ArrowRight className="w-2.5 h-2.5" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
 
-      {/* Add / Edit Vendor Modal */}
-      <ModalPortal isOpen={!!modalVendor}>
-        {modalVendor && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm" onClick={() => setModalVendor(null)}>
-            <div
-              className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-[#1f2638] bg-[#0a0c12] p-5 sm:p-6"
-              onClick={(e) => e.stopPropagation()}
-              role="dialog"
-              aria-modal="true"
-              aria-label="Vendor details"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-semibold text-white">{(modalVendor as VendorItem).createdAt ? 'Edit Vendor' : 'Add Vendor'}</h2>
-                <button onClick={() => setModalVendor(null)} aria-label="Close" title="Close" className="text-[#94a3b8] hover:text-white cursor-pointer">
-                  <X className="w-4.5 h-4.5" />
-                </button>
-              </div>
+      {/* 6. Modals */}
+      {/* Comprehensive Partner Workspace Slide-Over Drawer */}
+      <VendorWorkspaceModal
+        vendor={workspaceVendor}
+        onClose={() => setWorkspaceVendor(null)}
+        onSave={async (updated) => {
+          await saveVendor(updated);
+          setWorkspaceVendor(updated);
+        }}
+        onEditBase={(v) => {
+          setFormVendor(v);
+          setIsFormOpen(true);
+        }}
+      />
 
-              {error && <div className="mb-3 text-xs text-rose-300 bg-rose-950/40 border border-rose-800/50 rounded-lg px-3 py-2">{error}</div>}
-
-              <div className="space-y-3">
-                <div>
-                  <label className="text-[11px] text-[#94a3b8] block mb-1">Manufacturer / Vendor Name *</label>
-                  <input
-                    value={modalVendor.name}
-                    onChange={(e) => setModalVendor({ ...modalVendor, name: e.target.value })}
-                    placeholder="e.g. Layo Group"
-                    className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[11px] text-[#94a3b8] block mb-1">Facility Location</label>
-                    <input
-                      value={modalVendor.location}
-                      onChange={(e) => setModalVendor({ ...modalVendor, location: e.target.value })}
-                      placeholder="e.g. Primary Manufacturing Facility"
-                      className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] text-[#94a3b8] block mb-1">Outreach Stage</label>
-                    <select
-                      value={modalVendor.stage}
-                      onChange={(e) => setModalVendor({ ...modalVendor, stage: e.target.value as VendorOutreachStage })}
-                      className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50"
-                    >
-                      {ALL_STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-[11px] text-[#94a3b8] block mb-1">Fabric & Garment Specialty</label>
-                  <input
-                    value={modalVendor.specialty || ''}
-                    onChange={(e) => setModalVendor({ ...modalVendor, specialty: e.target.value })}
-                    placeholder="e.g. 78/22 Nylon-Lycra compression knits"
-                    className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50"
-                  />
-                </div>
-                <div>
-                  <label className="text-[11px] text-[#94a3b8] block mb-1">Vertically integrated? (yarn → knit → dye → stitch in-house)</label>
-                  <select
-                    value={modalVendor.isVerticallyIntegrated === null || modalVendor.isVerticallyIntegrated === undefined ? 'unknown' : String(modalVendor.isVerticallyIntegrated)}
-                    onChange={(e) => setModalVendor({ ...modalVendor, isVerticallyIntegrated: e.target.value === 'unknown' ? null : e.target.value === 'true' })}
-                    className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50"
-                  >
-                    <option value="unknown">Not yet confirmed</option>
-                    <option value="true">Yes - fully vertical</option>
-                    <option value="false">No - partial / outsourced steps</option>
-                  </select>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[11px] text-[#94a3b8] block mb-1">MOQ Target (Rivlet's ask)</label>
-                    <input
-                      type="number"
-                      value={modalVendor.moqTarget ?? ''}
-                      onChange={(e) => setModalVendor({ ...modalVendor, moqTarget: e.target.value ? Number(e.target.value) : undefined })}
-                      className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] text-[#94a3b8] block mb-1">MOQ Offered (Factory)</label>
-                    <input
-                      type="number"
-                      value={modalVendor.moqOffered ?? ''}
-                      onChange={(e) => setModalVendor({ ...modalVendor, moqOffered: e.target.value ? Number(e.target.value) : undefined })}
-                      className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-[11px] text-[#94a3b8] block mb-1">Payment Terms</label>
-                  <input
-                    value={modalVendor.paymentTermsTarget || ''}
-                    onChange={(e) => setModalVendor({ ...modalVendor, paymentTermsTarget: e.target.value })}
-                    placeholder="e.g. 30% advance / 50% pre-shipment / 20% on delivery"
-                    className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[11px] text-[#94a3b8] block mb-1">Contact Name</label>
-                    <input
-                      value={modalVendor.contactName || ''}
-                      onChange={(e) => setModalVendor({ ...modalVendor, contactName: e.target.value })}
-                      placeholder="e.g. Merchandising Director"
-                      className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] text-[#94a3b8] block mb-1">Contact Email</label>
-                    <input
-                      value={modalVendor.contactEmail || ''}
-                      onChange={(e) => setModalVendor({ ...modalVendor, contactEmail: e.target.value })}
-                      placeholder="e.g. info@layogroup.com"
-                      className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[11px] text-[#94a3b8] block mb-1">Contact Phone / WhatsApp</label>
-                    <input
-                      value={modalVendor.contactPhone || ''}
-                      onChange={(e) => setModalVendor({ ...modalVendor, contactPhone: e.target.value })}
-                      placeholder="+91 98765 43210"
-                      className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] text-[#94a3b8] block mb-1">Next Follow-Up</label>
-                    <input
-                      type="date"
-                      value={modalVendor.nextFollowUpAt || ''}
-                      onChange={(e) => setModalVendor({ ...modalVendor, nextFollowUpAt: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-[11px] text-[#94a3b8] block mb-1">Notes</label>
-                  <textarea
-                    value={modalVendor.notes || ''}
-                    onChange={(e) => setModalVendor({ ...modalVendor, notes: e.target.value })}
-                    rows={3}
-                    placeholder="Log manufacturer background, machinery, capabilities..."
-                    className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50 resize-none"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 mt-5">
-                <button onClick={() => setModalVendor(null)} className="px-4 py-2 rounded-lg text-sm text-[#94a3b8] hover:text-white cursor-pointer">Cancel</button>
-                <button
-                  onClick={handleSaveModal}
-                  disabled={isSaving}
-                  title="Save vendor"
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-sm font-semibold disabled:opacity-60 cursor-pointer"
-                >
-                  <Save className="w-3.5 h-3.5" />
-                  <span>{isSaving ? 'Saving...' : 'Save Vendor'}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </ModalPortal>
+      {/* Dynamic Add / Edit Partner Modal */}
+      <VendorFormModal
+        vendor={formVendor}
+        isOpen={isFormOpen}
+        onClose={() => {
+          setIsFormOpen(false);
+          setFormVendor(null);
+        }}
+        onSave={async (updated) => {
+          await saveVendor(updated);
+          if (workspaceVendor?.id === updated.id) {
+            setWorkspaceVendor(updated);
+          }
+        }}
+      />
     </div>
   );
 }

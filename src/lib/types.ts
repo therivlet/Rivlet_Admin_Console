@@ -289,7 +289,57 @@ export interface KBArticle {
   updatedAt: string;
 }
 
-// --- Vendor / Manufacturer Outreach CRM ---
+// --- Vendor & Manufacturer Ecosystem Platform ---
+
+export type VendorCategory =
+  | 'Manufacturer'
+  | 'Logistics'
+  | 'PaymentGateway'
+  | 'Packaging'
+  | 'Collaboration'
+  | 'FinancialLegal'
+  | 'SoftwareTech'
+  | 'General';
+
+export type VendorHealthStatus = 'Excellent' | 'Good' | 'At Risk' | 'Under Review';
+
+export interface VendorContact {
+  id: string;
+  name: string;
+  role: string; // e.g. "Primary Key Account Manager", "Merchandising Lead", "Partner Counsel"
+  email: string;
+  phone?: string;
+  isPrimary?: boolean;
+}
+
+export interface VendorCommunicationEntry {
+  id: string;
+  date: string;
+  channel: 'WhatsApp' | 'Email' | 'Phone Call' | 'In-Person Meeting' | 'Portal' | 'Note';
+  summary: string;
+  outcome?: string;
+  nextFollowUpDate?: string;
+  loggedBy: string;
+}
+
+export interface VendorCommercials {
+  currency?: string; // '₹', '$', '€'
+  paymentTerms?: string; // e.g. "Net 30", "30% Adv / 70% Pre-dispatch", "Monthly Retainer"
+  creditLimit?: number;
+  creditDays?: number;
+  taxId?: string; // GSTIN / PAN / VAT
+  bankDetails?: string;
+  ratesSummary?: string; // e.g. "2% + GST TDR", "₹48/500g Air Metro"
+  slaCommitment?: string; // e.g. "99.2% uptime", "48h metro delivery", "AQL 2.5"
+}
+
+export interface VendorDocumentLink {
+  id: string;
+  title: string;
+  type: 'Contract / NDA' | 'Rate Card' | 'SLA' | 'Invoice' | 'Compliance / Cert' | 'Spec Sheet' | 'Other';
+  urlOrVaultId?: string;
+  validUntil?: string;
+}
 
 export type VendorOutreachStage =
   | 'Prospect'
@@ -308,23 +358,44 @@ export type VendorOutreachStage =
 
 export interface VendorItem {
   id: string;
-  name: string; // e.g. "Layo Group"
-  location: string; // e.g. "Primary Facility"
-  contactName?: string;
-  contactEmail?: string;
-  contactPhone?: string;
+  name: string; // e.g. "Layo Group", "Razorpay", "Blue Dart"
+  category?: VendorCategory; // defaults to 'Manufacturer'
+  subcategory?: string; // e.g. "Yarn & Knit Mill", "3PL Air Courier", "Payment Gateway"
+  location: string; // e.g. "Tirupur, Tamil Nadu", "Bengaluru", "Mumbai"
+  website?: string;
+  healthStatus?: VendorHealthStatus;
+  rating?: number; // 1-5 stars
+
+  // Contacts
+  contactName?: string; // legacy fallback
+  contactEmail?: string; // legacy fallback
+  contactPhone?: string; // legacy fallback
+  contacts?: VendorContact[];
+
+  // Dynamic Workflow State (supports category-specific stages or legacy VendorOutreachStage)
+  stage: string;
+  stageProgressPercent?: number; // 0 to 100
+
+  // Manufacturer-specific specifications
   isVerticallyIntegrated?: boolean | null; // yarn -> knit -> dye -> stitch in-house, null = unknown/unasked
   specialty?: string; // e.g. "78/22 Nylon-Lycra compression knits"
-  stage: VendorOutreachStage;
   moqOffered?: number;
   moqTarget?: number; // Rivlet's ask, e.g. 175
   paymentTermsOffered?: string;
   paymentTermsTarget?: string; // e.g. "30% advance / 50% pre-shipment / 20% on delivery"
   samplingFee?: number;
   certifications?: string[]; // e.g. ['GOTS', 'OEKO-TEX Standard 100']
+
+  // Category Specs & Commercials
+  commercials?: VendorCommercials;
+  communicationLogs?: VendorCommunicationEntry[];
+  documents?: VendorDocumentLink[];
+  categorySpecs?: Record<string, any>;
+
   lastContactedAt?: string;
   nextFollowUpAt?: string;
   notes?: string;
+  totalSpendToDate?: number;
   createdAt: string;
   updatedAt: string;
 }
