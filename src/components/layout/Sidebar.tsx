@@ -64,9 +64,6 @@ export default function Sidebar({
     });
   });
 
-  const [docsExpanded, setDocsExpanded] = useState(
-    pathname === '/documents' || pathname === '/knowledge-base' || pathname === '/artifacts'
-  );
   const [calculatorExpanded, setCalculatorExpanded] = useState(pathname.startsWith('/calculator'));
 
   // Load collapsed preference from localStorage if not controlled externally
@@ -474,7 +471,7 @@ export default function Sidebar({
           </div>
         </div>
 
-        {/* 4. CONSOLIDATED DOCUMENTATION & VAULT MENU */}
+        {/* 4. KNOWLEDGE & ASSETS DIRECT MODULES */}
         <div className="w-full space-y-1">
           <div className="h-6 flex items-center px-1 my-0.5 overflow-hidden relative">
             <span className={`text-[10px] font-semibold tracking-wider uppercase whitespace-nowrap transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
@@ -489,114 +486,52 @@ export default function Sidebar({
             </div>
           </div>
 
-          <div className="relative group w-full">
-            <div
-              className={`nav-expandable-row group/row flex items-center rounded-xl text-xs transition-colors duration-200 border cursor-pointer ${
-                isDocsActive
-                  ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
-                  : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1]'
-              } ${collapsed ? 'w-10 h-10 mx-auto justify-center p-0' : 'w-full h-9 px-2.5 justify-between'}`}
-            >
-              <Link
-                href="/documents"
-                onClick={handleLinkClick}
-                className={`flex items-center h-full min-w-0 outline-none ${collapsed ? 'w-full justify-center' : 'flex-1'}`}
-              >
-                <div className={`flex items-center justify-center flex-shrink-0 ${collapsed ? 'w-full h-full' : 'w-7 h-7'}`}>
-                  <FolderOpen className={`w-4 h-4 flex-shrink-0 transition-transform group-hover/row:scale-110 ${isDocsActive ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/row:text-[#f7d88c]'}`} />
-                </div>
-                <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-                  collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none hidden' : 'max-w-[140px] opacity-100 translate-x-0 ml-1.5 group-hover/row:text-white'
-                }`}>
-                  Documentation & Vault
-                </span>
-              </Link>
-              {!collapsed && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setDocsExpanded((v) => !v);
-                  }}
-                  className="p-1 rounded text-[#a99a8b] hover:text-[#cda052] transition-all flex-shrink-0 cursor-pointer outline-none mr-0.5"
-                  aria-label="Toggle documentation sub-items"
+          {docsSubmenuItems.map((item) => {
+            const ItemIcon = item.icon;
+            const isItemActive = pathname === item.href;
+            return (
+              <div key={item.href} className="relative group w-full">
+                <Link
+                  href={item.href}
+                  onClick={handleLinkClick}
+                  className={`group/link flex items-center rounded-xl text-xs transition-colors duration-200 border ${
+                    isItemActive
+                      ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
+                      : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
+                  } ${collapsed ? 'w-10 h-10 mx-auto justify-center p-0' : 'w-full h-9 px-2.5 justify-start'}`}
                 >
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${docsExpanded ? '' : '-rotate-90'}`} />
-                </button>
-              )}
-            </div>
+                  <div className={`flex items-center justify-center flex-shrink-0 ${collapsed ? 'w-full h-full' : 'w-7 h-7'}`}>
+                    <ItemIcon className={`w-4 h-4 flex-shrink-0 transition-transform group-hover/link:scale-110 ${isItemActive ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/link:text-white'}`} />
+                  </div>
+                  <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                    collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none hidden' : 'max-w-[145px] opacity-100 translate-x-0 ml-1.5 flex-1 truncate'
+                  }`}>
+                    {item.label}
+                  </span>
+                  {!collapsed && item.badge !== undefined && (
+                    <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-black/40 text-[#f7d88c] border border-white/10 font-mono flex-shrink-0">
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
 
-            {/* Subnavigations when expanded */}
-            {!collapsed && docsExpanded && (
-              <div className="ml-4 pl-2.5 py-1 space-y-0.5 border-l border-[#3d2b20] dark:border-[#1f2638] text-[11px] animate-fade-in">
-                {docsSubmenuItems.map((sub) => {
-                  const SubIcon = sub.icon;
-                  const isSubActive = pathname === sub.href;
-                  return (
-                    <Link
-                      key={sub.href}
-                      href={sub.href}
-                      onClick={handleLinkClick}
-                      className={`nav-sub-link flex items-center justify-between px-2.5 py-1.5 rounded-md transition-colors ${
-                        isSubActive
-                          ? 'text-[#cda052] font-semibold bg-[rgba(205,160,82,0.14)]'
-                          : 'text-[#d7cbbe] dark:text-[#94a3b8]'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 truncate">
-                        <SubIcon className={`w-3.5 h-3.5 ${isSubActive ? 'text-[#cda052]' : 'text-[#a99a8b]'}`} />
-                        <span className="truncate">{sub.label}</span>
-                      </div>
-                      {sub.badge !== undefined && (
-                        <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-black/40 text-[#f7d88c] border border-white/10 font-mono">
-                          {sub.badge}
+                {/* Tooltip when collapsed */}
+                {collapsed && (
+                  <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#1e140e] dark:bg-[#0d101a] border border-[#443023] dark:border-[#22293e] rounded-lg shadow-2xl text-xs text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-[90]">
+                    <span className="text-[#a99a8b] dark:text-[#8895ad] text-[10px] block font-normal">Knowledge & Assets</span>
+                    <span className="font-semibold text-[#f7d88c] dark:text-[#e6c875] flex items-center gap-1.5">
+                      {item.label}
+                      {item.badge !== undefined && (
+                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-black/40 text-[#cda052] font-mono border border-white/10">
+                          {item.badge}
                         </span>
                       )}
-                    </Link>
-                  );
-                })}
+                    </span>
+                  </div>
+                )}
               </div>
-            )}
-
-            {/* Hover Floating Dropdown Flyout when collapsed */}
-            {collapsed && (
-              <div className="absolute left-full ml-3 top-0 p-3 bg-[#1e140e] dark:bg-[#0d101a] border border-[#443023] dark:border-[#22293e] rounded-2xl shadow-2xl text-xs whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-[90] min-w-[210px]">
-                <div className="flex items-center gap-2 font-bold text-[#f7d88c] dark:text-[#e6c875] pb-2 mb-2 border-b border-white/[0.08]">
-                  <FolderOpen className="w-4 h-4 text-[#cda052]" />
-                  <span>Documentation & Vault</span>
-                </div>
-                <div className="space-y-1 text-[11px]">
-                  {docsSubmenuItems.map((item) => {
-                    const ItemIcon = item.icon;
-                    const isItemActive = pathname === item.href;
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={handleLinkClick}
-                        className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-colors ${
-                          isItemActive
-                            ? 'bg-[rgba(205,160,82,0.22)] text-[#f7d88c] font-semibold'
-                            : 'text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.06]'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <ItemIcon className={`w-3.5 h-3.5 ${isItemActive ? 'text-[#cda052]' : 'text-[#a99a8b]'}`} />
-                          <span>{item.label}</span>
-                        </div>
-                        {item.badge !== undefined && (
-                          <span className="text-[9px] px-1.5 py-0.2 rounded bg-black/40 text-[#f7d88c] font-mono border border-white/10">
-                            {item.badge}
-                          </span>
-                        )}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
+            );
+          })}
         </div>
       </div>
 

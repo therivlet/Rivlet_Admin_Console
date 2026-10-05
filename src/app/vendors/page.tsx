@@ -467,7 +467,7 @@ export default function VendorsPage() {
                           )}
                         </div>
                         <div className="flex items-center gap-1.5 text-[11px] text-[#8a96ae] truncate">
-                          <span className={`text-[9px] px-1.5 py-0.2 rounded font-semibold border ${cfg.badgeBg} ${cfg.badgeText} ${cfg.badgeBorder}`}>
+                          <span className={`text-[9px] px-2 py-0.5 rounded-md font-semibold border ${cfg.badgeBg} ${cfg.badgeText} ${cfg.badgeBorder}`}>
                             {cfg.shortLabel}
                           </span>
                           {vendor.subcategory && <span className="truncate">{vendor.subcategory}</span>}
@@ -739,95 +739,190 @@ export default function VendorsPage() {
             );
           })}
         </div>
-      ) : (
-        /* WORKFLOW PIPELINE BOARD VIEW */
-        <div className="overflow-x-auto pb-4 scrollbar-none">
-          <div className="flex items-start gap-4 min-w-[1100px]">
-            {activeBoardStages.map((stageItem) => {
-              const stageVendors = filteredVendors.filter(
-                (v) => v.stage.toLowerCase() === stageItem.name.toLowerCase() || v.stage.toLowerCase() === stageItem.id.toLowerCase()
-              );
+      ) : selectedCategory === 'All' ? (
+        /* DOMAIN-SPECIFIC PIPELINE BOARD SELECTOR FOR ALL PARTNERS */
+        <div className="bg-[#0c101b] border border-[#1b2336] rounded-2xl p-6 space-y-6">
+          <div className="max-w-2xl space-y-1.5">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#cda052]/10 border border-[#cda052]/25 text-[#cda052] text-xs font-mono font-semibold">
+              <KanbanSquare className="w-3.5 h-3.5" />
+              <span>Domain-Specific Workflow Pipelines</span>
+            </div>
+            <h3 className="text-lg font-bold text-white tracking-tight">
+              Select a Partner Category to View Pipeline Board
+            </h3>
+            <p className="text-xs sm:text-sm text-[#8a96ae] leading-relaxed">
+              Workflow lifecycles and milestone stages are customized per operational domain (e.g. Sampling & Fit for Garment Factories, AWB Integration for 3PLs, Shoots for Collaborations, Retainers for Legal). Select a partner category below to view and manage its specialized pipeline board:
+            </p>
+          </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {ALL_VENDOR_CATEGORIES.map((catKey) => {
+              const cfg = getCategoryConfig(catKey);
+              const CatIcon = cfg.icon;
+              const count = categoryCounts[catKey] || 0;
               return (
-                <div
-                  key={stageItem.id}
-                  className="w-72 flex-shrink-0 bg-[#0c101b] border border-[#1b2336] rounded-2xl p-3 space-y-3"
+                <button
+                  key={catKey}
+                  type="button"
+                  onClick={() => setSelectedCategory(catKey)}
+                  className="p-4 rounded-xl bg-[#0f1422] border border-[#1e273d] hover:border-[#cda052]/60 hover:bg-[#131929] text-left transition-all group cursor-pointer flex flex-col justify-between space-y-3 shadow-sm"
                 >
-                  <div className="flex items-center justify-between border-b border-[#182030] pb-2">
-                    <div className="font-bold text-xs text-white truncate">
-                      {stageItem.name}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`p-2 rounded-lg ${cfg.badgeBg} ${cfg.badgeText} border ${cfg.badgeBorder}`}>
+                        <CatIcon className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-white text-xs group-hover:text-[#cda052] transition-colors">
+                          {cfg.label}
+                        </h4>
+                        <span className="text-[10px] text-[#64748b] font-mono">
+                          {cfg.stages.length} lifecycle stages
+                        </span>
+                      </div>
                     </div>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full font-mono bg-white/[0.06] text-[#cda052] font-semibold">
-                      {stageVendors.length}
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-mono bg-white/[0.06] text-[#cda052] font-semibold flex-shrink-0">
+                      {count} {count === 1 ? 'partner' : 'partners'}
                     </span>
                   </div>
 
-                  <div className="space-y-2.5">
-                    {stageVendors.length === 0 ? (
-                      <div className="py-6 text-center text-[#64748b] text-[11px] border border-dashed border-[#1a2336] rounded-xl">
-                        No partners in this stage
-                      </div>
-                    ) : (
-                      stageVendors.map((vendor) => {
-                        const cat = getVendorCategory(vendor);
-                        const cfg = getCategoryConfig(cat);
-                        const CategoryIcon = cfg.icon;
-                        const next = getNextStage(vendor);
+                  <p className="text-[11px] text-[#8a96ae] line-clamp-2 leading-relaxed">
+                    {cfg.description}
+                  </p>
 
-                        return (
-                          <div
-                            key={vendor.id}
-                            className="p-3 rounded-xl bg-[#0f1422] border border-[#1e273d] hover:border-[#2a3854] space-y-2 transition-all shadow-sm"
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0">
-                                <span className={`text-[9px] px-1.5 py-0.2 rounded font-semibold border ${cfg.badgeBg} ${cfg.badgeText} ${cfg.badgeBorder}`}>
-                                  {cfg.shortLabel}
-                                </span>
-                                <h4
-                                  onClick={() => setWorkspaceVendor(vendor)}
-                                  className="font-bold text-white text-xs hover:text-[#cda052] transition-colors cursor-pointer truncate mt-1"
-                                >
-                                  {vendor.name}
-                                </h4>
-                              </div>
-
-                              <div className="flex items-center gap-1">
-                                <button
-                                  onClick={() => { setFormVendor(vendor); setIsFormOpen(true); }}
-                                  className="p-1 rounded text-[#8a96ae] hover:text-[#cda052]"
-                                  title="Edit"
-                                >
-                                  <Pencil className="w-3 h-3" />
-                                </button>
-                              </div>
-                            </div>
-
-                            <div className="text-[11px] text-[#cbd5e1] truncate">
-                              {vendor.commercials?.ratesSummary || vendor.specialty || 'General Partner'}
-                            </div>
-
-                            <div className="flex items-center justify-between text-[10px] text-[#8a96ae] pt-1 border-t border-white/[0.04]">
-                              <span className="truncate">{vendor.location || 'Location'}</span>
-                              {next && (
-                                <button
-                                  onClick={() => handleAdvanceStep(vendor)}
-                                  className="flex items-center gap-0.5 text-[#cda052] hover:underline font-semibold cursor-pointer"
-                                  title={`Advance to ${next.name}`}
-                                >
-                                  <span>Advance</span>
-                                  <ArrowRight className="w-2.5 h-2.5" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
+                  <div className="pt-2 border-t border-white/[0.04] flex items-center justify-between text-xs text-[#cda052] font-semibold group-hover:translate-x-0.5 transition-transform">
+                    <span>Open Pipeline Board</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </div>
-                </div>
+                </button>
               );
             })}
+          </div>
+        </div>
+      ) : (
+        /* WORKFLOW PIPELINE BOARD VIEW FOR SELECTED CATEGORY */
+        <div className="space-y-4">
+          {/* Active Category Header Strip with Quick Switcher */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0c101b] border border-[#1b2336] rounded-xl px-4 py-2.5">
+            <div className="flex items-center gap-2.5">
+              <span className="text-xs text-[#8a96ae]">Active Pipeline:</span>
+              <span className={`text-xs px-2.5 py-1 rounded-md font-semibold border ${getCategoryConfig(selectedCategory).badgeBg} ${getCategoryConfig(selectedCategory).badgeText} ${getCategoryConfig(selectedCategory).badgeBorder} flex items-center gap-1.5`}>
+                {React.createElement(getCategoryConfig(selectedCategory).icon, { className: 'w-3.5 h-3.5' })}
+                {getCategoryConfig(selectedCategory).label}
+              </span>
+              <span className="text-xs font-mono text-[#8a96ae]">
+                ({filteredVendors.length} {filteredVendors.length === 1 ? 'partner' : 'partners'})
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedCategory('All')}
+                className="text-xs text-[#8a96ae] hover:text-white px-2.5 py-1 rounded-lg border border-[#1e273d] hover:border-[#2a3854] transition-all cursor-pointer"
+              >
+                ← Back to Category Picker
+              </button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto pb-4 scrollbar-none">
+            <div className="flex items-start gap-4 min-w-[1100px]">
+              {activeBoardStages.map((stageItem) => {
+                const stageVendors = filteredVendors.filter((v) => {
+                  const vStage = (v.stage || '').toLowerCase().trim();
+                  const sName = stageItem.name.toLowerCase().trim();
+                  const sId = stageItem.id.toLowerCase().trim();
+                  const sShort = (stageItem.shortLabel || '').toLowerCase().trim();
+                  return (
+                    vStage === sName ||
+                    vStage === sId ||
+                    vStage === sShort ||
+                    vStage.includes(sName) ||
+                    sName.includes(vStage)
+                  );
+                });
+
+                return (
+                  <div
+                    key={stageItem.id}
+                    className="w-72 flex-shrink-0 bg-[#0c101b] border border-[#1b2336] rounded-2xl p-3 space-y-3"
+                  >
+                    <div className="flex items-center justify-between border-b border-[#182030] pb-2">
+                      <div className="font-bold text-xs text-white truncate" title={stageItem.name}>
+                        {stageItem.name}
+                      </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-mono bg-white/[0.06] text-[#cda052] font-semibold">
+                        {stageVendors.length}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {stageVendors.length === 0 ? (
+                        <div className="py-6 text-center text-[#64748b] text-[11px] border border-dashed border-[#1a2336] rounded-xl">
+                          No partners in this stage
+                        </div>
+                      ) : (
+                        stageVendors.map((vendor) => {
+                          const cat = getVendorCategory(vendor);
+                          const cfg = getCategoryConfig(cat);
+                          const next = getNextStage(vendor);
+
+                          return (
+                            <div
+                              key={vendor.id}
+                              className="p-3 rounded-xl bg-[#0f1422] border border-[#1e273d] hover:border-[#2a3854] space-y-2 transition-all shadow-sm"
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <span className={`text-[9px] px-1.5 py-0.2 rounded font-semibold border ${cfg.badgeBg} ${cfg.badgeText} ${cfg.badgeBorder}`}>
+                                    {cfg.shortLabel}
+                                  </span>
+                                  <h4
+                                    onClick={() => setWorkspaceVendor(vendor)}
+                                    className="font-bold text-white text-xs hover:text-[#cda052] transition-colors cursor-pointer truncate mt-1"
+                                  >
+                                    {vendor.name}
+                                  </h4>
+                                </div>
+
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={() => { setFormVendor(vendor); setIsFormOpen(true); }}
+                                    className="p-1 rounded text-[#8a96ae] hover:text-[#cda052] cursor-pointer"
+                                    title="Edit"
+                                  >
+                                    <Pencil className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="text-[11px] text-[#cbd5e1] truncate">
+                                {vendor.commercials?.ratesSummary || vendor.specialty || 'General Partner'}
+                              </div>
+
+                              <div className="flex items-center justify-between text-[10px] text-[#8a96ae] pt-1 border-t border-white/[0.04]">
+                                <span className="truncate">{vendor.location || 'Location'}</span>
+                                {next && (
+                                  <button
+                                    onClick={() => handleAdvanceStep(vendor)}
+                                    className="flex items-center gap-0.5 text-[#cda052] hover:underline font-semibold cursor-pointer"
+                                    title={`Advance to ${next.name}`}
+                                  >
+                                    <span>Advance</span>
+                                    <ArrowRight className="w-2.5 h-2.5" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}

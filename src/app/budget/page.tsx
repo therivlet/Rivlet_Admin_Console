@@ -145,7 +145,8 @@ export default function BudgetPage() {
   const totals = useMemo(() => {
     const planned = budgetSettings.totalPlannedOverride ?? sumPlanned;
     const actual = budgetItems.reduce((sum, b) => sum + b.actualAmount, 0);
-    return { planned, actual, remaining: planned - actual };
+    const percentage = planned > 0 ? Math.round((actual / planned) * 100) : 0;
+    return { planned, actual, spent: actual, remaining: planned - actual, percentage };
   }, [budgetItems, budgetSettings, sumPlanned]);
 
   const toggleExpand = (id: string) => setExpandedRows((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -355,57 +356,54 @@ export default function BudgetPage() {
               No capital injections logged yet. Click &quot;Record Capital Inflow&quot; to add initial capital or schedule upcoming tranches.
             </p>
           ) : (
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-56 overflow-y-auto pr-1">
+            <div className="space-y-2">
+              <div className="space-y-2">
                 {displayedInflows.map((inf) => {
                   const isFuture = inf.date > todayStr;
                   return (
                     <div
                       key={inf.id}
-                      className={`p-3 rounded-xl border flex flex-col justify-between transition-all ${
+                      className={`px-3.5 py-2.5 rounded-xl border flex items-center justify-between gap-3 transition-all ${
                         isFuture
-                          ? 'bg-[#0a1017] border-purple-900/40'
-                          : 'bg-[#080b12] border-[#1c2438]'
+                          ? 'bg-[#0a1017] border-purple-900/40 hover:border-purple-800/60'
+                          : 'bg-[#080b12] border-[#1c2438] hover:border-[#2a364f]'
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-white text-sm font-mono">
-                              {formatINR(inf.amount)}
-                            </span>
-                            {isFuture ? (
-                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-950/80 text-purple-300 border border-purple-800 font-mono font-semibold flex items-center gap-1">
-                                <Clock className="w-2.5 h-2.5" /> Scheduled
-                              </span>
-                            ) : (
-                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-800 font-mono font-semibold flex items-center gap-1">
-                                <CheckCircle2 className="w-2.5 h-2.5" /> Injected
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[11px] text-[#cda052] font-medium mt-0.5">{inf.source}</p>
-                        </div>
-
-                        <button
-                          onClick={() => handleDeleteInflow(inf)}
-                          title="Delete inflow entry"
-                          aria-label="Delete inflow entry"
-                          className="text-[#7c869d] hover:text-rose-400 p-1 transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-
-                      <div className="pt-2 border-t border-[#141b2a] flex items-center justify-between text-[11px] text-[#94a3b8]">
-                        <span className="font-mono text-[#cbd5e1]">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="font-mono text-xs text-[#cbd5e1] flex-shrink-0 w-24">
                           {new Date(inf.date + 'T00:00:00').toLocaleDateString('en-US', {
                             month: 'short',
                             day: 'numeric',
                             year: 'numeric',
                           })}
                         </span>
-                        {inf.note && <span className="truncate max-w-[130px] text-[#7c869d]">{inf.note}</span>}
+                        {isFuture ? (
+                          <span className="text-[9px] px-2 py-0.5 rounded-full bg-purple-950/80 text-purple-300 border border-purple-800 font-mono font-semibold flex items-center gap-1 flex-shrink-0">
+                            <Clock className="w-2.5 h-2.5" /> Scheduled
+                          </span>
+                        ) : (
+                          <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-800 font-mono font-semibold flex items-center gap-1 flex-shrink-0">
+                            <CheckCircle2 className="w-2.5 h-2.5" /> Injected
+                          </span>
+                        )}
+                        <div className="min-w-0 flex items-center gap-2">
+                          <span className="text-xs text-[#cda052] font-semibold">{inf.source}</span>
+                          {inf.note && <span className="text-[11px] text-[#7c869d] truncate hidden sm:inline">• {inf.note}</span>}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <span className="font-mono font-bold text-white text-sm">
+                          {formatINR(inf.amount)}
+                        </span>
+                        <button
+                          onClick={() => handleDeleteInflow(inf)}
+                          title="Delete inflow entry"
+                          aria-label="Delete inflow entry"
+                          className="text-[#7c869d] hover:text-rose-400 p-1 rounded hover:bg-rose-500/10 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
                   );
@@ -415,7 +413,7 @@ export default function BudgetPage() {
               {/* View More / View Fewer Toggle Button if more than 3 records */}
               {sortedInflows.length > 3 && (
                 <div className="pt-2 flex items-center justify-between text-xs text-[#94a3b8]">
-                  <span>Showing {displayedInflows.length} of {sortedInflows.length} staged capital entries</span>
+                  <span>Showing {displayedInflows.length} of {sortedInflows.length} staged capital entries (recent first)</span>
                   <button
                     onClick={() => setShowAllInflows((v) => !v)}
                     className="flex items-center gap-1 text-xs text-[#cda052] hover:underline font-semibold"
@@ -442,7 +440,7 @@ export default function BudgetPage() {
           </p>
         </div>
 
-        {/* Action Row: ADD CATEGORY BUTTON MOVED HERE + Planned Cap Editor */}
+        {/* Action Row: ADD CATEGORY BUTTON + Planned Cap Editor + Category Sum Comparison */}
         <div className="flex items-center gap-2.5 flex-wrap">
           {/* Add Category Button positioned directly with category section */}
           <button
@@ -451,7 +449,7 @@ export default function BudgetPage() {
               setError(null);
             }}
             title="Add a new budget category"
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-xs font-bold hover:shadow-glow transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-xs font-bold hover:shadow-glow transition-all shadow-sm cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
             <span>Add Category</span>
@@ -493,6 +491,63 @@ export default function BudgetPage() {
               </div>
             )}
           </div>
+
+          {/* Overall sum of planned distribution for each category & balance comparison */}
+          <div className="flex items-center gap-2 bg-[#0e121b] border border-[#1e2638] px-3 py-1.5 rounded-xl text-xs">
+            <span className="text-[#94a3b8]">Category Distribution Sum:</span>
+            <span className="font-mono font-bold text-[#e6c875]">{formatINR(sumPlanned)}</span>
+            <span
+              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full font-mono ${
+                sumPlanned === totals.planned
+                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                  : sumPlanned < totals.planned
+                  ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                  : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
+              }`}
+            >
+              {sumPlanned === totals.planned
+                ? '✓ Balanced'
+                : sumPlanned < totals.planned
+                ? `₹${(totals.planned - sumPlanned).toLocaleString('en-IN')} Under Cap`
+                : `₹${(sumPlanned - totals.planned).toLocaleString('en-IN')} Over Cap`}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Overall Totals List Summary Strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#0a0d14] border border-[#1b2234] rounded-2xl p-3 sm:p-4 shadow-sm">
+        <div className="p-2.5 rounded-xl bg-[#0e121b] border border-[#1a2133]">
+          <span className="text-[10px] uppercase font-mono tracking-wider text-[#7c869d] block">Planned Total</span>
+          <span className="font-mono font-bold text-white text-sm sm:text-base mt-0.5 block">{formatINR(totals.planned)}</span>
+          <span className="text-[10px] text-[#94a3b8] mt-0.5 block">{budgetItems.length} active categories</span>
+        </div>
+        <div className="p-2.5 rounded-xl bg-[#0e121b] border border-[#1a2133]">
+          <span className="text-[10px] uppercase font-mono tracking-wider text-[#7c869d] block">Spent Total</span>
+          <span className="font-mono font-bold text-white text-sm sm:text-base mt-0.5 block">{formatINR(totals.spent)}</span>
+          <span className="text-[10px] text-[#94a3b8] mt-0.5 block">Actual disbursements</span>
+        </div>
+        <div className="p-2.5 rounded-xl bg-[#0e121b] border border-[#1a2133]">
+          <span className="text-[10px] uppercase font-mono tracking-wider text-[#7c869d] block">Remaining Total</span>
+          <span className={`font-mono font-bold text-sm sm:text-base mt-0.5 block ${totals.remaining >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+            {formatINR(Math.abs(totals.remaining))}
+          </span>
+          <span className="text-[10px] text-[#94a3b8] mt-0.5 block">{totals.remaining >= 0 ? 'Surplus buffer' : 'Over budget'}</span>
+        </div>
+        <div className="p-2.5 rounded-xl bg-[#0e121b] border border-[#1a2133]">
+          <span className="text-[10px] uppercase font-mono tracking-wider text-[#7c869d] block">Used Percentage</span>
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className={`font-mono font-bold text-sm sm:text-base ${totals.percentage > 100 ? 'text-rose-400' : totals.percentage > 80 ? 'text-amber-400' : 'text-emerald-400'}`}>
+              {totals.percentage}%
+            </span>
+            <div className="flex-1 h-1.5 rounded-full bg-[#1b2336] overflow-hidden">
+              <div
+                className={`h-full rounded-full ${totals.percentage > 100 ? 'bg-rose-500' : totals.percentage > 80 ? 'bg-amber-400' : 'bg-emerald-400'}`}
+                style={{ width: `${Math.min(totals.percentage, 100)}%` }}
+              />
+            </div>
+          </div>
+          <span className="text-[10px] text-[#94a3b8] mt-0.5 block">Of total planned cap</span>
         </div>
       </div>
 
@@ -970,12 +1025,38 @@ export default function BudgetPage() {
               })}
               {budgetItems.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-10 text-center text-[#94a3b8] text-sm">
+                  <td colSpan={9} className="px-4 py-10 text-center text-[#94a3b8] text-sm">
                     No budget categories yet.
                   </td>
                 </tr>
               )}
             </tbody>
+            {budgetItems.length > 0 && (
+              <tfoot className="border-t-2 border-[#222d42] bg-[#07090f] font-semibold text-xs">
+                <tr>
+                  <td colSpan={4} className="px-4 py-3.5 text-white font-bold tracking-wide uppercase text-[11px]">
+                    Total Ledger Balance ({budgetItems.length} Categories)
+                  </td>
+                  <td className="px-4 py-3.5 text-right font-mono text-[#e6c875] font-bold whitespace-nowrap">
+                    {formatINR(totals.planned)}
+                  </td>
+                  <td className="px-4 py-3.5 text-right font-mono text-white font-bold whitespace-nowrap">
+                    {formatINR(totals.spent)}
+                  </td>
+                  <td className="px-4 py-3.5 text-right font-mono font-bold whitespace-nowrap">
+                    <span className={totals.remaining >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                      {formatINR(Math.abs(totals.remaining))}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3.5 text-right font-mono font-bold whitespace-nowrap">
+                    <span className={totals.percentage > 100 ? 'text-rose-400' : totals.percentage > 80 ? 'text-amber-400' : 'text-emerald-400'}>
+                      {totals.percentage}%
+                    </span>
+                  </td>
+                  <td className="px-4 py-3.5"></td>
+                </tr>
+              </tfoot>
+            )}
           </table>
         </div>
       </div>
