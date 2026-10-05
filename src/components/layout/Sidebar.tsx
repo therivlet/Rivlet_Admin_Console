@@ -107,11 +107,11 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
 
   const renderNavContent = (collapsed: boolean) => (
     <aside
-      className={`relative flex flex-col h-full bg-[#241812] dark:bg-[#0a0c12]/95 backdrop-blur-xl select-none z-40 transition-[width] duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] shadow-[6px_0_30px_rgba(0,0,0,0.45)] border-r border-[#3d2b20] dark:border-[#1a2233] ${
-        collapsed ? 'w-[68px]' : 'w-72 lg:w-64'
+      className={`relative flex flex-col h-full bg-[#241812] dark:bg-[#0a0c12]/95 backdrop-blur-xl select-none z-40 transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[6px_0_30px_rgba(0,0,0,0.45)] border-r border-[#3d2b20] dark:border-[#1a2233] overflow-x-hidden ${
+        collapsed ? 'w-[68px]' : 'w-64'
       }`}
     >
-      {/* Modern Edge Seam Collapse / Expand Toggle Arrow - Soft muted/duller tone in light mode */}
+      {/* Modern Edge Seam Collapse / Expand Toggle Arrow - Smooth rotating chevron */}
       <button
         type="button"
         onClick={toggleCollapsed}
@@ -119,24 +119,32 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
         aria-label={collapsed ? 'Expand sidebar navigation' : 'Collapse sidebar navigation'}
         className="hidden lg:flex absolute -right-3 top-[290px] z-[80] w-6 h-6 rounded-full bg-[#ede7dd] dark:bg-[#182030] hover:bg-[#e4dcce] dark:hover:bg-[#222d42] border border-[#d2c7b5] dark:border-[#2e3b52] hover:border-[#cda052] text-[#8a7b6e] dark:text-[#94a3b8] hover:text-[#cda052] shadow-sm items-center justify-center transition-all duration-200 hover:scale-110 cursor-pointer group"
       >
-        {collapsed ? (
-          <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
-        ) : (
-          <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
-        )}
+        <ChevronLeft className={`w-3.5 h-3.5 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${collapsed ? 'rotate-180' : 'rotate-0'}`} />
       </button>
 
       {/* Brand Header: Expanded shows combined logo+wordmark; Collapsed shows wave logo centered without offset */}
-      <div className={`flex items-center ${collapsed ? 'h-14 justify-center w-full px-0' : 'h-14 px-4 justify-between min-h-[56px]'}`}>
-        {!collapsed ? (
+      <div className="h-14 flex items-center min-h-[56px] px-3.5 overflow-hidden relative justify-center">
+        {/* Expanded logo with wordmark */}
+        <div className={`transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] flex items-center ${
+          collapsed 
+            ? 'opacity-0 scale-95 pointer-events-none -translate-x-3 absolute' 
+            : 'opacity-100 scale-100 translate-x-0 relative w-full'
+        }`}>
           <Link
             href="/"
             onClick={handleLinkClick}
             className="brand-logo-link flex items-center group py-0.5 outline-none transition-opacity hover:opacity-90"
           >
-            <RivletLogo variant={isLight ? 'white-gold' : 'gold'} size="md" className="h-7 w-auto drop-shadow-sm" />
+            <RivletLogo variant={isLight ? 'white-gold' : 'gold'} size="md" className="h-7 w-auto" />
           </Link>
-        ) : (
+        </div>
+
+        {/* Collapsed wave icon */}
+        <div className={`transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] flex items-center justify-center ${
+          collapsed 
+            ? 'opacity-100 scale-100 translate-x-0 relative w-full' 
+            : 'opacity-0 scale-95 pointer-events-none translate-x-3 absolute'
+        }`}>
           <Link
             href="/"
             onClick={handleLinkClick}
@@ -146,19 +154,18 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
               <RivletWaveIcon
                 variant={isLight ? 'white-gold' : 'gold'}
                 size={20}
-                className="group-hover:scale-110 transition-transform drop-shadow-[0_0_6px_rgba(205,160,82,0.45)]"
+                className="group-hover:scale-105 transition-transform"
               />
             </div>
           </Link>
-        )}
+        </div>
 
         {/* Mobile close button */}
         {onCloseMobile && (
           <button
             onClick={onCloseMobile}
-            title="Close navigation drawer"
             aria-label="Close navigation drawer"
-            className="lg:hidden p-1.5 rounded-lg text-[#b3a496] hover:text-white hover:bg-white/[0.08] transition-colors"
+            className="lg:hidden p-1.5 rounded-lg text-[#b3a496] hover:text-white hover:bg-white/[0.08] transition-colors absolute right-2"
           >
             <X className="w-5 h-5" />
           </button>
@@ -166,24 +173,26 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
       </div>
 
       {/* Main Navigation Scroll Area - Zero scroller, clean fixed icon set */}
-      <div className={`flex-1 overflow-hidden px-2 py-1 flex flex-col justify-start ${collapsed ? 'items-center space-y-1' : 'space-y-1.5 overflow-y-auto scrollbar-thin'}`}>
+      <div className="flex-1 overflow-x-hidden overflow-y-auto scrollbar-thin px-2 py-1 flex flex-col justify-start space-y-1">
         {/* 1. HOME BUTTON */}
         <div className="relative group w-full">
           <Link
             href="/"
             onClick={handleLinkClick}
-            className={`flex items-center text-xs transition-all duration-200 border ${
-              collapsed 
-                ? 'w-9 h-9 rounded-xl justify-center mx-auto' 
-                : 'gap-3 px-3 py-2 rounded-xl'
-            } ${
+            className={`group/link flex items-center h-9 w-full rounded-xl text-xs transition-colors duration-200 border ${
               pathname === '/'
                 ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold shadow-sm border-[#cda052]/60'
                 : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
             }`}
           >
-            <Home className={`${collapsed ? 'w-[18px] h-[18px]' : 'w-4 h-4'} flex-shrink-0 ${pathname === '/' ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover:text-white'}`} />
-            {!collapsed && <span className="animate-fade-in">Home</span>}
+            <div className="w-9 h-9 flex items-center justify-center flex-shrink-0">
+              <Home className={`w-4 h-4 flex-shrink-0 transition-transform group-hover/link:scale-110 ${pathname === '/' ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/link:text-white'}`} />
+            </div>
+            <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+              collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[160px] opacity-100 translate-x-0 ml-1'
+            }`}>
+              Home
+            </span>
           </Link>
 
           {/* Hover Tooltip when collapsed */}
@@ -194,21 +203,23 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
           )}
         </div>
 
-        {/* 2. WORK TRACKING (Always expanded, clean header without submenu text) */}
+        {/* 2. WORK TRACKING */}
         <div className="w-full">
-          {!collapsed ? (
-            <div className="px-2 mt-1.5 mb-1 flex items-center justify-between text-[10px] font-semibold tracking-wider text-[#a89487] dark:text-[#94a3b8] uppercase">
-              <span className="flex items-center gap-1.5">
-                <ListTree className="w-3.5 h-3.5 text-[#cda052]" />
-                Work Tracking
-              </span>
+          <div className="h-6 flex items-center px-1 my-0.5 overflow-hidden relative">
+            <div className={`flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase whitespace-nowrap transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+              collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[180px] opacity-100 translate-x-0 text-[#a89487] dark:text-[#94a3b8]'
+            }`}>
+              <ListTree className="w-3.5 h-3.5 text-[#cda052] flex-shrink-0" />
+              <span>Work Tracking</span>
             </div>
-          ) : (
-            <div className="w-7 border-t border-[#3d2b20] dark:border-white/[0.08] my-1 mx-auto" />
-          )}
+            <div className={`transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] w-full ${
+              collapsed ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}>
+              <div className="w-7 border-t border-[#3d2b20] dark:border-white/[0.08] mx-auto" />
+            </div>
+          </div>
 
-          {/* Submenu Items visible outside with clear indented structure */}
-          <div className={collapsed ? 'space-y-1' : 'ml-2 pl-2 border-l-2 border-[#3d2b20] dark:border-[#1c2336] space-y-1 my-0.5'}>
+          <div className="space-y-1">
             {workSubmenuItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeWorkTab === item.tab;
@@ -217,18 +228,20 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                   <Link
                     href={item.href}
                     onClick={handleLinkClick}
-                    className={`flex items-center text-xs transition-all duration-200 border ${
-                      collapsed 
-                        ? 'w-9 h-9 rounded-xl justify-center mx-auto' 
-                        : 'gap-2 px-2.5 py-1.5 rounded-lg'
-                    } ${
+                    className={`group/link flex items-center h-9 w-full rounded-xl text-xs transition-colors duration-200 border ${
                       isActive
                         ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
                         : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
                     }`}
                   >
-                    <Icon className={`${collapsed ? 'w-[18px] h-[18px]' : 'w-3.5 h-3.5'} flex-shrink-0 ${isActive ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover:text-white'}`} />
-                    {!collapsed && <span className="truncate animate-fade-in">{item.label}</span>}
+                    <div className="w-9 h-9 flex items-center justify-center flex-shrink-0">
+                      <Icon className={`w-3.5 h-3.5 flex-shrink-0 transition-transform group-hover/link:scale-110 ${isActive ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/link:text-white'}`} />
+                    </div>
+                    <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                      collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[160px] opacity-100 translate-x-0 ml-1'
+                    }`}>
+                      {item.label}
+                    </span>
                   </Link>
 
                   {/* Tooltip when collapsed */}
@@ -245,59 +258,58 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
         </div>
 
         {/* 3. BUSINESS & OPERATIONS MODULES */}
-        <div className={`w-full ${collapsed ? 'space-y-1' : 'space-y-1'}`}>
-          {!collapsed ? (
-            <div className="px-2 mt-1.5 mb-1 text-[10px] font-semibold tracking-wider text-[#a89487] dark:text-[#94a3b8] uppercase">
+        <div className="w-full space-y-1">
+          <div className="h-6 flex items-center px-1 my-0.5 overflow-hidden relative">
+            <span className={`text-[10px] font-semibold tracking-wider uppercase whitespace-nowrap transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+              collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[180px] opacity-100 translate-x-0 text-[#a89487] dark:text-[#94a3b8]'
+            }`}>
               Operations & Planning
+            </span>
+            <div className={`transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] w-full ${
+              collapsed ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}>
+              <div className="w-7 border-t border-[#3d2b20] dark:border-white/[0.08] mx-auto" />
             </div>
-          ) : (
-            <div className="w-7 border-t border-[#3d2b20] dark:border-white/[0.08] my-1 mx-auto" />
-          )}
+          </div>
 
-          {/* Business Calculations (Single direct link when collapsed; expandable when opened) */}
+          {/* Business Calculations */}
           <div className="relative group w-full">
-            {collapsed ? (
+            <div
+              className={`nav-expandable-row group/row flex items-center h-9 w-full rounded-xl text-xs transition-colors duration-200 border cursor-pointer ${
+                isCalcPath
+                  ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
+                  : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1]'
+              }`}
+            >
               <Link
                 href="/calculator"
                 onClick={handleLinkClick}
-                className={`w-9 h-9 rounded-xl flex items-center justify-center mx-auto transition-all duration-200 border ${
-                  isCalcPath
-                    ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
-                    : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
-                }`}
+                className="flex items-center flex-1 h-full min-w-0 outline-none"
               >
-                <Calculator className={`w-[18px] h-[18px] flex-shrink-0 ${isCalcPath ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover:text-white'}`} />
+                <div className="w-9 h-9 flex items-center justify-center flex-shrink-0">
+                  <Calculator className={`w-4 h-4 flex-shrink-0 transition-transform group-hover/row:scale-110 ${isCalcPath ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/row:text-[#f7d88c]'}`} />
+                </div>
+                <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                  collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[140px] opacity-100 translate-x-0 ml-1 group-hover/row:text-white'
+                }`}>
+                  Business Calculations
+                </span>
               </Link>
-            ) : (
-              <div
-                className={`nav-expandable-row group/row flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all duration-200 border cursor-pointer ${
-                  isCalcPath
-                    ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
-                    : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1]'
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setCalculatorExpanded((v) => !v);
+                }}
+                className={`p-1.5 rounded text-[#a99a8b] hover:text-[#cda052] transition-all duration-300 flex-shrink-0 cursor-pointer outline-none mr-1.5 ${
+                  collapsed ? 'max-w-0 opacity-0 pointer-events-none p-0 mr-0' : 'max-w-6 opacity-100'
                 }`}
+                aria-label="Toggle calculation sub-modules"
               >
-                <Link
-                  href="/calculator"
-                  onClick={handleLinkClick}
-                  className="flex items-center gap-3 flex-1 truncate py-0.5 outline-none"
-                >
-                  <Calculator className={`w-4 h-4 flex-shrink-0 ${isCalcPath ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/row:text-[#f7d88c]'}`} />
-                  <span className="truncate group-hover/row:text-white">Business Calculations</span>
-                </Link>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setCalculatorExpanded((v) => !v);
-                  }}
-                  className="p-1 rounded text-[#a99a8b] hover:text-[#cda052] transition-colors flex-shrink-0 cursor-pointer outline-none"
-                  aria-label="Toggle calculation sub-modules"
-                >
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${calculatorExpanded ? '' : '-rotate-90'}`} />
-                </button>
-              </div>
-            )}
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${calculatorExpanded ? '' : '-rotate-90'}`} />
+              </button>
+            </div>
 
             {/* Submodules in expanded view */}
             {!collapsed && calculatorExpanded && (
@@ -411,18 +423,20 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
             <Link
               href="/vendors"
               onClick={handleLinkClick}
-              className={`flex items-center text-xs transition-all duration-200 border ${
-                collapsed 
-                  ? 'w-9 h-9 rounded-xl justify-center mx-auto' 
-                  : 'gap-3 px-3 py-2 rounded-xl'
-              } ${
+              className={`group/link flex items-center h-9 w-full rounded-xl text-xs transition-colors duration-200 border ${
                 pathname === '/vendors'
                   ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
                   : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
               }`}
             >
-              <Factory className={`${collapsed ? 'w-[18px] h-[18px]' : 'w-4 h-4'} flex-shrink-0 ${pathname === '/vendors' ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover:text-white'}`} />
-              {!collapsed && <span className="animate-fade-in">Vendors</span>}
+              <div className="w-9 h-9 flex items-center justify-center flex-shrink-0">
+                <Factory className={`w-4 h-4 flex-shrink-0 transition-transform group-hover/link:scale-110 ${pathname === '/vendors' ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/link:text-white'}`} />
+              </div>
+              <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[160px] opacity-100 translate-x-0 ml-1'
+              }`}>
+                Vendors
+              </span>
             </Link>
 
             {collapsed && (
@@ -437,18 +451,20 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
             <Link
               href="/pipeline"
               onClick={handleLinkClick}
-              className={`flex items-center text-xs transition-all duration-200 border ${
-                collapsed 
-                  ? 'w-9 h-9 rounded-xl justify-center mx-auto' 
-                  : 'gap-3 px-3 py-2 rounded-xl'
-              } ${
+              className={`group/link flex items-center h-9 w-full rounded-xl text-xs transition-colors duration-200 border ${
                 pathname === '/pipeline'
                   ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
                   : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
               }`}
             >
-              <GitBranch className={`${collapsed ? 'w-[18px] h-[18px]' : 'w-4 h-4'} flex-shrink-0 ${pathname === '/pipeline' ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover:text-white'}`} />
-              {!collapsed && <span className="animate-fade-in">Pipeline</span>}
+              <div className="w-9 h-9 flex items-center justify-center flex-shrink-0">
+                <GitBranch className={`w-4 h-4 flex-shrink-0 transition-transform group-hover/link:scale-110 ${pathname === '/pipeline' ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/link:text-white'}`} />
+              </div>
+              <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[160px] opacity-100 translate-x-0 ml-1'
+              }`}>
+                Pipeline
+              </span>
             </Link>
 
             {collapsed && (
@@ -463,18 +479,20 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
             <Link
               href="/budget"
               onClick={handleLinkClick}
-              className={`flex items-center text-xs transition-all duration-200 border ${
-                collapsed 
-                  ? 'w-9 h-9 rounded-xl justify-center mx-auto' 
-                  : 'gap-3 px-3 py-2 rounded-xl'
-              } ${
+              className={`group/link flex items-center h-9 w-full rounded-xl text-xs transition-colors duration-200 border ${
                 pathname === '/budget'
                   ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
                   : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
               }`}
             >
-              <Wallet className={`${collapsed ? 'w-[18px] h-[18px]' : 'w-4 h-4'} flex-shrink-0 ${pathname === '/budget' ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover:text-white'}`} />
-              {!collapsed && <span className="animate-fade-in">Budget Tracker</span>}
+              <div className="w-9 h-9 flex items-center justify-center flex-shrink-0">
+                <Wallet className={`w-4 h-4 flex-shrink-0 transition-transform group-hover/link:scale-110 ${pathname === '/budget' ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/link:text-white'}`} />
+              </div>
+              <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[160px] opacity-100 translate-x-0 ml-1'
+              }`}>
+                Budget Tracker
+              </span>
             </Link>
 
             {collapsed && (
@@ -486,228 +504,213 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
         </div>
 
         {/* 4. CONSOLIDATED DOCUMENTATION & VAULT MENU */}
-        <div className="space-y-1 w-full">
-          {!collapsed ? (
-            <div className="px-2 mt-1.5 mb-1 text-[10px] font-semibold tracking-wider text-[#a89487] dark:text-[#94a3b8] uppercase">
+        <div className="w-full space-y-1">
+          <div className="h-6 flex items-center px-1 my-0.5 overflow-hidden relative">
+            <span className={`text-[10px] font-semibold tracking-wider uppercase whitespace-nowrap transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+              collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[180px] opacity-100 translate-x-0 text-[#a89487] dark:text-[#94a3b8]'
+            }`}>
               Knowledge & Assets
+            </span>
+            <div className={`transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] w-full ${
+              collapsed ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}>
+              <div className="w-7 border-t border-[#3d2b20] dark:border-white/[0.08] mx-auto" />
             </div>
-          ) : (
-            <div className="w-7 border-t border-[#3d2b20] dark:border-white/[0.08] my-1 mx-auto" />
-          )}
+          </div>
 
-          {!collapsed ? (
-            <div className="relative group w-full">
-              <div
-                className={`nav-expandable-row group/row flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all duration-200 border cursor-pointer ${
-                  isDocsActive
-                    ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
-                    : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1]'
-                }`}
+          <div className="relative group w-full">
+            <div
+              className={`nav-expandable-row group/row flex items-center h-9 w-full rounded-xl text-xs transition-colors duration-200 border cursor-pointer ${
+                isDocsActive
+                  ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
+                  : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1]'
+              }`}
+            >
+              <Link
+                href="/documents"
+                onClick={handleLinkClick}
+                className="flex items-center flex-1 h-full min-w-0 outline-none"
               >
-                <Link
-                  href="/documents"
-                  onClick={handleLinkClick}
-                  className="flex items-center gap-3 flex-1 truncate py-0.5 outline-none"
-                >
-                  <FolderOpen className={`w-4 h-4 flex-shrink-0 ${isDocsActive ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/row:text-[#f7d88c]'}`} />
-                  <span className="truncate group-hover/row:text-white">Documentation & Vault</span>
-                </Link>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setDocsExpanded((v) => !v);
-                  }}
-                  className="p-1 rounded text-[#a99a8b] hover:text-[#cda052] transition-colors flex-shrink-0 cursor-pointer outline-none"
-                  aria-label="Toggle documentation sub-items"
-                >
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${docsExpanded ? '' : '-rotate-90'}`} />
-                </button>
-              </div>
+                <div className="w-9 h-9 flex items-center justify-center flex-shrink-0">
+                  <FolderOpen className={`w-4 h-4 flex-shrink-0 transition-transform group-hover/row:scale-110 ${isDocsActive ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/row:text-[#f7d88c]'}`} />
+                </div>
+                <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                  collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[140px] opacity-100 translate-x-0 ml-1 group-hover/row:text-white'
+                }`}>
+                  Documentation & Vault
+                </span>
+              </Link>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setDocsExpanded((v) => !v);
+                }}
+                className={`p-1.5 rounded text-[#a99a8b] hover:text-[#cda052] transition-all duration-300 flex-shrink-0 cursor-pointer outline-none mr-1.5 ${
+                  collapsed ? 'max-w-0 opacity-0 pointer-events-none p-0 mr-0' : 'max-w-6 opacity-100'
+                }`}
+                aria-label="Toggle documentation sub-items"
+              >
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${docsExpanded ? '' : '-rotate-90'}`} />
+              </button>
+            </div>
 
-              {/* Subnavigations when expanded */}
-              {docsExpanded && (
-                <div className="ml-4 pl-2.5 py-1 space-y-0.5 border-l border-[#3d2b20] dark:border-[#1f2638] text-[11px] animate-fade-in">
-                  {docsSubmenuItems.map((sub) => {
-                    const SubIcon = sub.icon;
-                    const isSubActive = pathname === sub.href;
+            {/* Subnavigations when expanded */}
+            {!collapsed && docsExpanded && (
+              <div className="ml-4 pl-2.5 py-1 space-y-0.5 border-l border-[#3d2b20] dark:border-[#1f2638] text-[11px] animate-fade-in">
+                {docsSubmenuItems.map((sub) => {
+                  const SubIcon = sub.icon;
+                  const isSubActive = pathname === sub.href;
+                  return (
+                    <Link
+                      key={sub.href}
+                      href={sub.href}
+                      onClick={handleLinkClick}
+                      className={`nav-sub-link flex items-center justify-between px-2.5 py-1.5 rounded-md transition-colors ${
+                        isSubActive
+                          ? 'text-[#cda052] font-semibold bg-[rgba(205,160,82,0.14)]'
+                          : 'text-[#d7cbbe] dark:text-[#94a3b8]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <SubIcon className={`w-3.5 h-3.5 ${isSubActive ? 'text-[#cda052]' : 'text-[#a99a8b]'}`} />
+                        <span className="truncate">{sub.label}</span>
+                      </div>
+                      {sub.badge !== undefined && (
+                        <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-black/40 text-[#f7d88c] border border-white/10 font-mono">
+                          {sub.badge}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Hover Floating Dropdown Flyout when collapsed */}
+            {collapsed && (
+              <div className="absolute left-full ml-3 top-0 p-3 bg-[#1e140e] dark:bg-[#0d101a] border border-[#443023] dark:border-[#22293e] rounded-2xl shadow-2xl text-xs whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-[90] min-w-[210px]">
+                <div className="flex items-center gap-2 font-bold text-[#f7d88c] dark:text-[#e6c875] pb-2 mb-2 border-b border-white/[0.08]">
+                  <FolderOpen className="w-4 h-4 text-[#cda052]" />
+                  <span>Documentation & Vault</span>
+                </div>
+                <div className="space-y-1 text-[11px]">
+                  {docsSubmenuItems.map((item) => {
+                    const ItemIcon = item.icon;
+                    const isItemActive = pathname === item.href;
                     return (
                       <Link
-                        key={sub.href}
-                        href={sub.href}
+                        key={item.href}
+                        href={item.href}
                         onClick={handleLinkClick}
-                        className={`nav-sub-link flex items-center justify-between px-2.5 py-1.5 rounded-md transition-colors ${
-                          isSubActive
-                            ? 'text-[#cda052] font-semibold bg-[rgba(205,160,82,0.14)]'
-                            : 'text-[#d7cbbe] dark:text-[#94a3b8]'
+                        className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-colors ${
+                          isItemActive
+                            ? 'bg-[rgba(205,160,82,0.22)] text-[#f7d88c] font-semibold'
+                            : 'text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.06]'
                         }`}
                       >
-                        <div className="flex items-center gap-2 truncate">
-                          <SubIcon className={`w-3.5 h-3.5 ${isSubActive ? 'text-[#cda052]' : 'text-[#a99a8b]'}`} />
-                          <span className="truncate">{sub.label}</span>
+                        <div className="flex items-center gap-2">
+                          <ItemIcon className={`w-3.5 h-3.5 ${isItemActive ? 'text-[#cda052]' : 'text-[#a99a8b]'}`} />
+                          <span>{item.label}</span>
                         </div>
-                        {sub.badge !== undefined && (
-                          <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-black/40 text-[#f7d88c] border border-white/10 font-mono">
-                            {sub.badge}
+                        {item.badge !== undefined && (
+                          <span className="text-[9px] px-1.5 py-0.2 rounded bg-black/40 text-[#f7d88c] font-mono border border-white/10">
+                            {item.badge}
                           </span>
                         )}
                       </Link>
                     );
                   })}
                 </div>
-              )}
-            </div>
-          ) : (
-            /* COLLAPSED MODE: Show all 3 icons (FileText, BookOpen, Layers) in navigation rail + hover flyout */
-            <div className="space-y-1">
-              {docsSubmenuItems.map((sub) => {
-                const SubIcon = sub.icon;
-                const isSubActive = pathname === sub.href;
-
-                return (
-                  <div key={sub.href} className="relative group w-full">
-                    <Link
-                      href={sub.href}
-                      onClick={handleLinkClick}
-                      className={`flex items-center justify-center transition-all duration-200 border ${
-                        collapsed 
-                          ? 'w-9 h-9 rounded-xl mx-auto' 
-                          : 'px-3 py-2 rounded-xl text-xs'
-                      } ${
-                        isSubActive
-                          ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
-                          : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
-                      }`}
-                    >
-                      <SubIcon className={`${collapsed ? 'w-[18px] h-[18px]' : 'w-4 h-4'} flex-shrink-0 ${isSubActive ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover:text-white'}`} />
-                    </Link>
-
-                    {/* Floating Dropdown / Tooltip when hovering any of the 3 docs icons */}
-                    <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 p-3 bg-[#1e140e] dark:bg-[#0d101a] border border-[#443023] dark:border-[#22293e] rounded-2xl shadow-2xl text-xs whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-[90] min-w-[210px]">
-                      <div className="flex items-center gap-2 font-bold text-[#f7d88c] dark:text-[#e6c875] pb-2 mb-2 border-b border-white/[0.08]">
-                        <FolderOpen className="w-4 h-4 text-[#cda052]" />
-                        <span>Documentation & Vault</span>
-                      </div>
-                      <div className="space-y-1 text-[11px]">
-                        {docsSubmenuItems.map((item) => {
-                          const ItemIcon = item.icon;
-                          const isItemActive = pathname === item.href;
-                          return (
-                            <Link
-                              key={item.href}
-                              href={item.href}
-                              onClick={handleLinkClick}
-                              className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-colors ${
-                                isItemActive
-                                  ? 'bg-[rgba(205,160,82,0.22)] text-[#f7d88c] font-semibold'
-                                  : 'text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.06]'
-                              }`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <ItemIcon className={`w-3.5 h-3.5 ${isItemActive ? 'text-[#cda052]' : 'text-[#a99a8b]'}`} />
-                                <span>{item.label}</span>
-                              </div>
-                              {item.badge !== undefined && (
-                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-black/40 text-[#f7d88c] font-mono border border-white/10">
-                                  {item.badge}
-                                </span>
-                              )}
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* 5. ACCOUNTS & USER FOOTER */}
-      <div className={`p-2 bg-black/25 dark:bg-[#07080d]/80 text-[11px] border-t border-[#3d2b20] dark:border-[#1a2233] ${collapsed ? 'text-center' : ''}`}>
-        {!collapsed ? (
-          <div>
-            <div className="px-2 mb-1 text-[10px] font-semibold tracking-wider text-[#a89487] dark:text-[#94a3b8] uppercase flex items-center justify-between">
-              <span>Account</span>
-              <UserCheck className="w-3 h-3 text-[#cda052]" />
-            </div>
+      <div className="p-2 bg-black/25 dark:bg-[#07080d]/80 text-[11px] border-t border-[#3d2b20] dark:border-[#1a2233] transition-all duration-300 overflow-hidden flex-shrink-0">
+        <div className="px-1 mb-1 flex items-center justify-between overflow-hidden h-4">
+          <span className={`text-[10px] font-semibold tracking-wider text-[#a89487] dark:text-[#94a3b8] uppercase transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+            collapsed ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[100px] opacity-100'
+          }`}>
+            Account
+          </span>
+          <UserCheck className={`w-3 h-3 text-[#cda052] transition-opacity duration-300 ${collapsed ? 'opacity-0' : 'opacity-100'}`} />
+        </div>
 
-            <div className="space-y-1">
-              <Link
-                href="/profile"
-                onClick={handleLinkClick}
-                className={`flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs transition-all ${
-                  pathname === '/profile'
-                    ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold'
-                    : 'text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
-                }`}
-              >
-                <div className="flex items-center gap-2.5 truncate">
-                  <Settings className="w-4 h-4 text-[#cda052]" />
-                  <span className="truncate">Profile & Brand Settings</span>
-                </div>
-              </Link>
-
-              <div className="pt-1.5 flex items-center justify-between px-1">
-                <div className="flex items-center gap-2 truncate">
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#cda052] to-[#8c672b] text-black flex items-center justify-center text-xs font-bold shadow-glow flex-shrink-0">
-                    {user?.name?.[0]?.toUpperCase() || 'R'}
-                  </div>
-                  <div className="truncate text-left">
-                    <span className="text-xs text-[#f1f5f9] truncate font-semibold block">
-                      {user?.name || 'Rivlet Admin'}
-                    </span>
-                    <span className="text-[10px] text-[#a89487] dark:text-[#94a3b8] block -mt-0.5 truncate">
-                      {user?.email || 'admin@therivlet.com'}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => signOut()}
-                  className="text-[#a89487] dark:text-[#94a3b8] hover:text-rose-400 p-1 rounded-lg hover:bg-rose-950/30 transition-colors flex-shrink-0 cursor-pointer"
-                  aria-label="Sign Out"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-1 relative group w-full">
+        <div className="space-y-1">
+          {/* Profile & Brand Settings */}
+          <div className="relative group w-full">
             <Link
               href="/profile"
               onClick={handleLinkClick}
-              className={`w-9 h-9 rounded-xl flex items-center justify-center mx-auto transition-all duration-200 border ${
+              className={`group/link flex items-center h-9 w-full rounded-xl text-xs transition-colors duration-200 border ${
                 pathname === '/profile'
-                  ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] border-[#cda052]/60'
-                  : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-[#cda052] hover:bg-white/[0.08]'
+                  ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
+                  : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
               }`}
             >
-              <Settings className="w-[18px] h-[18px]" />
+              <div className="w-9 h-9 flex items-center justify-center flex-shrink-0">
+                <Settings className="w-4 h-4 text-[#cda052] transition-transform group-hover/link:scale-110" />
+              </div>
+              <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[150px] opacity-100 translate-x-0 ml-1'
+              }`}>
+                Profile & Brand Settings
+              </span>
             </Link>
 
-            <button
-              onClick={() => signOut()}
-              className="w-9 h-9 rounded-xl flex items-center justify-center mx-auto text-[#a89487] dark:text-[#94a3b8] hover:text-rose-400 hover:bg-rose-950/30 border border-transparent transition-all duration-200 cursor-pointer"
-              aria-label="Sign Out"
-            >
-              <LogOut className="w-[18px] h-[18px]" />
-            </button>
+            {collapsed && (
+              <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#1e140e] dark:bg-[#0d101a] border border-[#443023] dark:border-[#22293e] rounded-lg shadow-2xl text-xs text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-[90]">
+                Profile & Brand Settings
+              </div>
+            )}
+          </div>
+
+          {/* User Profile Card & Sign Out */}
+          <div className="relative group w-full">
+            <div className="flex items-center h-9 w-full rounded-xl transition-colors duration-200">
+              <div className="w-9 h-9 flex items-center justify-center flex-shrink-0">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#cda052] to-[#8c672b] text-black flex items-center justify-center text-xs font-bold shadow-glow">
+                  {user?.name?.[0]?.toUpperCase() || 'R'}
+                </div>
+              </div>
+              <div className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] flex-1 min-w-0 ${
+                collapsed ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[130px] opacity-100 ml-1'
+              }`}>
+                <span className="text-xs text-[#f1f5f9] truncate font-semibold block leading-tight">
+                  {user?.name || 'Rivlet Admin'}
+                </span>
+                <span className="text-[10px] text-[#a89487] dark:text-[#94a3b8] block truncate leading-tight">
+                  {user?.email || 'admin@therivlet.com'}
+                </span>
+              </div>
+              <button
+                onClick={() => signOut()}
+                className={`p-1.5 rounded-lg text-[#a89487] dark:text-[#94a3b8] hover:text-rose-400 hover:bg-rose-950/30 transition-all duration-300 flex-shrink-0 cursor-pointer ${
+                  collapsed ? 'max-w-0 opacity-0 pointer-events-none p-0 overflow-hidden' : 'max-w-8 opacity-100'
+                }`}
+                aria-label="Sign Out"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
 
             {/* Account Tooltip when collapsed */}
-            <div className="absolute left-full ml-3 bottom-0 p-2.5 bg-[#1e140e] dark:bg-[#0d101a] border border-[#443023] dark:border-[#22293e] rounded-xl shadow-2xl text-xs whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-[90]">
-              <div className="font-semibold text-white">{user?.name || 'Rivlet Admin'}</div>
-              <div className="text-[10px] text-[#a99a8b] dark:text-[#94a3b8]">{user?.email || 'admin@therivlet.com'}</div>
-              <div className="mt-2 pt-2 border-t border-white/[0.08] flex items-center justify-between gap-4">
-                <Link href="/profile" className="text-[11px] text-[#cda052] hover:underline">Settings</Link>
-                <button onClick={() => signOut()} className="text-[11px] text-rose-400 hover:underline">Sign Out</button>
+            {collapsed && (
+              <div className="absolute left-full ml-3 bottom-0 p-2.5 bg-[#1e140e] dark:bg-[#0d101a] border border-[#443023] dark:border-[#22293e] rounded-xl shadow-2xl text-xs whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-[90]">
+                <div className="font-semibold text-white">{user?.name || 'Rivlet Admin'}</div>
+                <div className="text-[10px] text-[#a99a8b] dark:text-[#94a3b8]">{user?.email || 'admin@therivlet.com'}</div>
+                <div className="mt-2 pt-2 border-t border-white/[0.08] flex items-center justify-between gap-4">
+                  <Link href="/profile" className="text-[11px] text-[#cda052] hover:underline">Settings</Link>
+                  <button onClick={() => signOut()} className="text-[11px] text-rose-400 hover:underline">Sign Out</button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </aside>
   );

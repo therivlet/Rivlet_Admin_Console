@@ -50,7 +50,8 @@ export default function RivletLogo({
         return { filter: 'brightness(0) invert(1)' };
       case 'white-gold':
         return {
-          filter: 'brightness(0) invert(1) drop-shadow(0 0 5px rgba(205, 160, 82, 0.85)) drop-shadow(0 0 1px #cda052)',
+          // Softened luxury champagne-ivory tone (reduced glare/brightness, no harsh light-bulb halo)
+          filter: 'brightness(0) invert(82%) sepia(18%) saturate(220%) hue-rotate(5deg) brightness(92%) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4))',
         };
       case 'dark':
         return { filter: 'brightness(0)' };
@@ -110,7 +111,8 @@ export function RivletWaveIcon({
         return { filter: 'brightness(0) invert(1)' };
       case 'white-gold':
         return {
-          filter: 'brightness(0) invert(1) drop-shadow(0 0 5px rgba(205, 160, 82, 0.85)) drop-shadow(0 0 1px #cda052)',
+          // Softened luxury champagne-ivory tone (reduced glare/brightness, no harsh light-bulb halo)
+          filter: 'brightness(0) invert(82%) sepia(18%) saturate(220%) hue-rotate(5deg) brightness(92%) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4))',
         };
       case 'dark':
         return { filter: 'brightness(0)' };
