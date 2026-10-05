@@ -1222,7 +1222,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     if (isSupabaseConfigured && supabase) {
       try {
         const primaryContact = updated.contacts?.find((c) => c.isPrimary) || updated.contacts?.[0];
-        const { error: writeErr } = await supabase.from('vendors').upsert({
+        const basePayload: any = {
           id: updated.id,
           name: updated.name,
           location: updated.location,
@@ -1243,8 +1243,34 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           notes: updated.notes || null,
           created_at: updated.createdAt || now,
           updated_at: now,
-        });
-        if (writeErr) throw writeErr;
+        };
+
+        const fullPayload: any = {
+          ...basePayload,
+          category: updated.category || 'Manufacturer',
+          subcategory: updated.subcategory || null,
+          website: updated.website || null,
+          health_status: updated.healthStatus || 'Good',
+          rating: updated.rating ?? 5,
+          stage_progress_percent: updated.stageProgressPercent ?? 0,
+          contacts: updated.contacts || [],
+          commercials: updated.commercials || {},
+          communication_logs: updated.communicationLogs || [],
+          documents: updated.documents || [],
+          category_specs: updated.categorySpecs || {},
+          total_spend_to_date: updated.totalSpendToDate ?? 0,
+        };
+
+        const { error: fullErr } = await supabase.from('vendors').upsert(fullPayload);
+        if (fullErr) {
+          if (fullErr.code === '42703' || fullErr.message?.includes('column')) {
+            // Columns not yet added in Supabase; fallback safely to base columns
+            const { error: baseErr } = await supabase.from('vendors').upsert(basePayload);
+            if (baseErr) throw baseErr;
+          } else {
+            throw fullErr;
+          }
+        }
       } catch (e) {
         reportWriteFailure('Saving vendor', e);
       }
