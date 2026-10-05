@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { ArtifactItem, CostingSheet, DocumentItem, KBArticle, ArtifactStatus, VendorItem, PipelineItem, BudgetItem, Sprint, WorkItem, TeamMember, WorkSettings, BudgetSettings, CashInflowEntry } from './types';
 import { initialArtifacts, initialCostingSheets, initialDocuments, initialKBArticles, initialVendors, initialPipelineItems, initialBudgetItems, initialSprints, initialWorkItems, initialTeamMembers, initialWorkSettings, initialBudgetSettings, initialCashInflows } from './initialData';
 import { supabase, isSupabaseConfigured } from './supabase';
+import { notify } from './notificationContext';
 
 const STORAGE_KEYS = {
   ARTIFACTS: 'rivlet_admin_artifacts',
@@ -999,6 +1000,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         reportWriteFailure('Saving costing sheet', e);
       }
     }
+    notify.success('Costing Sheet Saved', `"${updatedSheet.styleName}" updated.`);
   };
 
   const deleteCostingSheet = async (id: string) => {
@@ -1012,6 +1014,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         reportWriteFailure('Deleting costing sheet', e);
       }
     }
+    notify.info('Costing Sheet Removed', 'Costing record removed.');
   };
 
   // 3. Document Actions
@@ -1051,6 +1054,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       }
     }
 
+    notify.success('Document Vault Upload', `"${newDoc.title}" stored securely.`);
     return newDoc;
   };
 
@@ -1081,6 +1085,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         reportWriteFailure('Updating document', e);
       }
     }
+    notify.success('Document Saved', 'Metadata and file index updated.');
   };
 
   const deleteDocument = async (id: string) => {
@@ -1094,6 +1099,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         reportWriteFailure('Deleting document', e);
       }
     }
+    notify.info('Document Removed', 'File deleted from vault.');
   };
 
   // 4. Knowledge Base Article Actions
@@ -1189,6 +1195,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         reportWriteFailure('Saving vendor', e);
       }
     }
+    notify.success('Vendor Saved', `"${updated.name}" details updated.`);
   };
 
   const deleteVendor = async (id: string) => {
@@ -1201,6 +1208,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         reportWriteFailure('Deleting vendor', e);
       }
     }
+    notify.info('Vendor Removed', 'Vendor deleted from directory.');
   };
 
   // 6. Sampling & Production Pipeline Actions
@@ -1241,6 +1249,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         reportWriteFailure('Saving pipeline item', e);
       }
     }
+    notify.success('Pipeline Item Saved', `"${updated.styleName}" updated.`);
   };
 
   const deletePipelineItem = async (id: string) => {
@@ -1253,6 +1262,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         reportWriteFailure('Deleting pipeline item', e);
       }
     }
+    notify.info('Pipeline Item Removed', 'Style deleted from pipeline.');
   };
 
   // 7. Launch Budget Tracker Actions
@@ -1289,6 +1299,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         reportWriteFailure('Saving budget item', e);
       }
     }
+    notify.success('Budget Item Saved', `"${updated.category}" updated.`);
   };
 
   const deleteBudgetItem = async (id: string) => {
@@ -1301,6 +1312,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         reportWriteFailure('Deleting budget item', e);
       }
     }
+    notify.info('Budget Item Removed', 'Expense item deleted.');
   };
 
   const reorderBudgetItems = async (reordered: BudgetItem[]) => {
@@ -1363,6 +1375,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         reportWriteFailure('Saving sprint', e);
       }
     }
+    notify.success('Sprint Saved', `"${updated.name}" updated.`);
   };
 
   const deleteSprint = async (id: string) => {
@@ -1377,6 +1390,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         reportWriteFailure('Deleting sprint', e);
       }
     }
+    notify.info('Sprint Removed', 'Sprint deleted.');
   };
 
   // 9. Work Item Actions
@@ -1401,6 +1415,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         reportWriteFailure('Saving work item', e);
       }
     }
+    notify.success('Work Item Saved', `"${updated.title}" updated.`);
   };
 
   const saveWorkItemsBulk = async (newItems: WorkItem[]) => {
@@ -1428,6 +1443,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         reportWriteFailure('Saving bulk work items', e);
       }
     }
+    notify.success('Sprint Workload Applied', `Created ${newItems.length} work items.`);
   };
 
   const reorderWorkItems = async (reordered: WorkItem[]) => {
@@ -1455,6 +1471,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         reportWriteFailure('Deleting work item', e);
       }
     }
+    notify.info('Work Item Removed', 'Item removed from sprint backlog.');
   };
 
   const addWorkItemComment = async (id: string, text: string, author: string) => {

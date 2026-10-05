@@ -20,11 +20,13 @@ import {
   FileText,
   ChevronDown,
   ChevronUp,
+  Printer,
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { WorkItem, WorkItemPriority, WorkItemType } from '@/lib/types';
 import { TYPE_COLOR, STATE_COLOR, PRIORITY_BADGE_COLOR, PRIORITY_LABEL } from '@/components/work/WorkItemModal';
 import ModalPortal from '@/components/ui/ModalPortal';
+import { notify } from '@/lib/notificationContext';
 
 const SAMPLE_YAML = `
 - user_story: "Finalize proto sample fit & sizing specs for Drop 1 Leggings"
@@ -1018,7 +1020,375 @@ JSON Schema:
     const text = generateConsolidatedContent();
     navigator.clipboard.writeText(text);
     setCopiedUnified(true);
+    notify.success(
+      'Workload Context Copied',
+      includeExistingWorkload
+        ? 'Full workload breakdown with acceptance criteria and target JSON schema copied to clipboard.'
+        : 'Target JSON delivery schema copied to clipboard.'
+    );
     setTimeout(() => setCopiedUnified(false), 2500);
+  };
+
+  const handleGenerateReport = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      notify.error('Pop-up Blocked', 'Please allow pop-ups to open the printable executive report.');
+      return;
+    }
+
+    const targetSprintName =
+      selectedConsolidateSprintId === 'active'
+        ? activeSprint
+          ? activeSprint.name
+          : 'Active Sprint'
+        : selectedConsolidateSprintId === 'all'
+        ? 'All Sprints & Backlog'
+        : sprints.find((s) => s.id === selectedConsolidateSprintId)?.name || 'Selected Sprint';
+
+    const totalStories = consolidatedStories.length;
+    const totalTasks = consolidatedTasks.length;
+    const completedTasks = consolidatedTasks.filter((t) => t.state === 'Closed' || t.state === 'Resolved').length;
+    const activeTasks = consolidatedTasks.filter((t) => t.state === 'Active' || t.state === 'In Review').length;
+    const newTasks = consolidatedTasks.filter((t) => t.state === 'New' || !t.state).length;
+
+    const reportDate = new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    const storiesHtml = consolidatedStories
+      .map((story, sIdx) => {
+        const childTasks = consolidatedTasks.filter((t) => t.parentId === story.id);
+        const isDone = story.state === 'Closed' || story.state === 'Resolved';
+        const isActive = story.state === 'Active' || story.state === 'In Review';
+        const statusLabel = isDone ? 'FULFILLED' : isActive ? 'IN PROGRESS' : 'NOT STARTED';
+        const statusClass = isDone ? 'tag-fulfilled' : isActive ? 'tag-inprogress' : 'tag-notstarted';
+
+        const tasksRows = childTasks
+          .map((t, tIdx) => {
+            const isTaskDone = t.state === 'Closed' || t.state === 'Resolved';
+            const isTaskActive = t.state === 'Active' || t.state === 'In Review';
+            const taskTag = isTaskDone ? 'tag-fulfilled' : isTaskActive ? 'tag-inprogress' : 'tag-notstarted';
+            const criteriaStatus = isTaskDone
+              ? '[Fulfilled & Verified]'
+              : isTaskActive
+              ? '[Incomplete / In-Progress]'
+              : '[Requirements - Not Started]';
+
+            return `
+              <tr>
+                <td style="font-weight:600; font-family:monospace; color:#555;">Task ${sIdx + 1}.${tIdx + 1}</td>
+                <td>
+                  <strong>${t.title}</strong>
+                  ${t.description ? `<div style="font-size:11px; color:#555; margin-top:2px;">${t.description}</div>` : ''}
+                  ${
+                    t.acceptanceCriteria
+                      ? `<div style="font-size:10px; margin-top:4px; padding:4px 8px; background:#f9fafb; border-left:3px solid #b78938; border-radius:2px;"><strong>Acceptance Criteria ${criteriaStatus}:</strong> ${t.acceptanceCriteria}</div>`
+                      : ''
+                  }
+                </td>
+                <td style="white-space:nowrap;"><span class="badge ${taskTag}">${t.state}</span></td>
+                <td style="font-size:11px; color:#555;">${t.assignee || 'Unassigned'}</td>
+              </tr>
+            `;
+          })
+          .join('');
+
+        return `
+          <div class="story-card">
+            <div class="story-header">
+              <div class="story-title">
+                <span class="story-num">Story ${sIdx + 1}</span>
+                <h3>${story.title}</h3>
+              </div>
+              <div style="display:flex; gap:6px; align-items:center;">
+                <span class="badge ${statusClass}">${statusLabel}</span>
+                <span class="badge badge-outline">${story.type || 'User Story'}</span>
+                <span class="badge badge-outline">${story.storyPoints || 3} Pts</span>
+              </div>
+            </div>
+
+            ${story.description ? `<div class="story-desc"><strong>Description:</strong> ${story.description}</div>` : ''}
+
+            ${
+              story.acceptanceCriteria
+                ? `<div class="story-ac">
+                    <strong>Acceptance Criteria:</strong>
+                    <div style="margin-top:3px; white-space:pre-wrap;">${story.acceptanceCriteria}</div>
+                   </div>`
+                : ''
+            }
+
+            ${
+              childTasks.length > 0
+                ? `
+                <div class="tasks-section">
+                  <h4 style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:#777; margin:10px 0 6px 0;">Child Engineering & Sourcing Tasks (${childTasks.length}):</h4>
+                  <table class="tasks-table">
+                    <thead>
+                      <tr>
+                        <th style="width:70px;">Task #</th>
+                        <th>Task Deliverable & Criteria Status</th>
+                        <th style="width:110px;">Status</th>
+                        <th style="width:100px;">Assignee</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${tasksRows}
+                    </tbody>
+                  </table>
+                </div>
+              `
+                : ''
+            }
+          </div>
+        `;
+      })
+      .join('');
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>Rivlet - Sprint Workload Report (${targetSprintName})</title>
+        <style>
+          * { box-sizing: border-box; }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 35px;
+            color: #1a1a1a;
+            background: #fff;
+            line-height: 1.5;
+            font-size: 13px;
+          }
+          .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #b78938;
+            padding-bottom: 16px;
+            margin-bottom: 20px;
+          }
+          .brand-title {
+            font-family: Georgia, serif;
+            font-size: 24px;
+            letter-spacing: 0.15em;
+            color: #111;
+            font-weight: 700;
+            margin: 0;
+          }
+          .brand-sub {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #b78938;
+            font-weight: 600;
+          }
+          .report-meta {
+            text-align: right;
+            font-size: 11px;
+            color: #666;
+          }
+          .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+          }
+          .kpi-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px 14px;
+          }
+          .kpi-val {
+            font-size: 20px;
+            font-weight: 700;
+            color: #111;
+            font-family: monospace;
+          }
+          .kpi-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #6b7280;
+            letter-spacing: 0.05em;
+            margin-top: 2px;
+          }
+          .story-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            page-break-inside: avoid;
+            background: #ffffff;
+          }
+          .story-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 8px;
+          }
+          .story-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+          .story-num {
+            font-family: monospace;
+            font-size: 10px;
+            background: #111;
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+          }
+          .story-header h3 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 700;
+            color: #111;
+          }
+          .story-desc {
+            font-size: 12px;
+            color: #4b5563;
+            margin-bottom: 8px;
+            padding-left: 2px;
+          }
+          .story-ac {
+            font-size: 11px;
+            background: #fdf8ed;
+            border: 1px solid #fae8c8;
+            border-radius: 6px;
+            padding: 8px 10px;
+            color: #8c672b;
+            margin-bottom: 10px;
+          }
+          .tasks-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-top: 6px;
+          }
+          .tasks-table th, .tasks-table td {
+            border: 1px solid #e5e7eb;
+            padding: 6px 10px;
+            text-align: left;
+            vertical-align: top;
+          }
+          .tasks-table th {
+            background: #f9fafb;
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #6b7280;
+          }
+          .badge {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 2px 7px;
+            border-radius: 4px;
+            display: inline-block;
+          }
+          .tag-fulfilled { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+          .tag-inprogress { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+          .tag-notstarted { background: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb; }
+          .badge-outline { background: #ffffff; color: #4b5563; border: 1px solid #d1d5db; font-family: monospace; }
+          .action-bar {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+          }
+          .btn-print {
+            background: #b78938;
+            color: #000;
+            border: none;
+            padding: 10px 18px;
+            font-weight: 700;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+          }
+          .btn-close {
+            background: #111;
+            color: #fff;
+            border: none;
+            padding: 10px 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+          }
+          @media print {
+            body { padding: 15px; }
+            .action-bar { display: none !important; }
+            @page { margin: 15mm; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="action-bar">
+          <button class="btn-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
+          <button class="btn-close" onclick="window.close()">Close Window</button>
+        </div>
+
+        <div class="header">
+          <div>
+            <h1 class="brand-title">RIVLET</h1>
+            <div class="brand-sub">Executive Sprint Workload & Delivery Audit Report</div>
+          </div>
+          <div class="report-meta">
+            <div><strong>Target Scope:</strong> ${targetSprintName}</div>
+            <div><strong>Production Partner:</strong> Layo Group</div>
+            <div><strong>Generated:</strong> ${reportDate}</div>
+          </div>
+        </div>
+
+        <div class="kpi-row">
+          <div class="kpi-card">
+            <div class="kpi-val">${totalStories}</div>
+            <div class="kpi-label">User Stories</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-val">${totalTasks}</div>
+            <div class="kpi-label">Child Tasks</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-val" style="color:#15803d;">${completedTasks}</div>
+            <div class="kpi-label">Criteria Fulfilled</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-val" style="color:#b45309;">${activeTasks + newTasks}</div>
+            <div class="kpi-label">Incomplete / Backlog</div>
+          </div>
+        </div>
+
+        <h2 style="font-size:14px; text-transform:uppercase; letter-spacing:0.08em; color:#111; border-bottom:1px solid #e5e7eb; padding-bottom:6px; margin-bottom:14px;">
+          Workload Breakdown & Acceptance Criteria Audit
+        </h2>
+
+        ${storiesHtml}
+
+        <script>
+          window.addEventListener('load', function() {
+            setTimeout(function() {
+              window.print();
+            }, 600);
+          });
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    notify.success('Workload Report Ready', 'Executive report opened in new window. Print or save as PDF.');
   };
 
   const unifiedButtonLabel = useMemo(() => {
@@ -1684,16 +2054,26 @@ JSON Schema:
             </div>
 
             {/* Modal Footer */}
-            <div className="px-5 py-3 border-t border-[#171d2b] bg-[#0c1018] flex items-center justify-between">
+            <div className="px-5 py-3 border-t border-[#171d2b] bg-[#0c1018] flex flex-col sm:flex-row items-center justify-between gap-3">
               <span className="text-xs text-[#7c869d]">
                 Manufacturer set to Layo Group. Toggle existing workload context above to customize the exported AI prompt.
               </span>
-              <button
-                onClick={() => setShowConsolidateModal(false)}
-                className="px-4 py-2 rounded-xl bg-[#141926] border border-[#222c42] text-xs font-semibold text-[#cbd5e1] hover:text-white cursor-pointer"
-              >
-                Close
-              </button>
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <button
+                  onClick={handleGenerateReport}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-xs font-bold hover:shadow-glow transition-all cursor-pointer whitespace-nowrap"
+                  title="Generate printable executive workload report or save as PDF"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Generate Report (Print / PDF)</span>
+                </button>
+                <button
+                  onClick={() => setShowConsolidateModal(false)}
+                  className="px-4 py-2 rounded-xl bg-[#141926] border border-[#222c42] text-xs font-semibold text-[#cbd5e1] hover:text-white cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>

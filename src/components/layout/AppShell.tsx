@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from '@/lib/authContext';
 import { AdminStoreProvider } from '@/lib/store';
 import { ConfirmProvider } from '@/lib/confirmContext';
 import { ThemeProvider, useTheme } from '@/lib/themeContext';
+import { NotificationProvider } from '@/lib/notificationContext';
 import { RivletWatermark } from '@/components/brand/RivletLogo';
 import RivletLoader from '@/components/brand/RivletLoader';
 import WriteErrorToast from '@/components/ui/WriteErrorToast';
@@ -153,9 +154,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <AuthProvider>
         <AdminStoreProvider>
           <ConfirmProvider>
-            <AuthGuard>
-              {children}
-            </AuthGuard>
+            <NotificationProvider>
+              <AuthGuard>
+                {children}
+              </AuthGuard>
+            </NotificationProvider>
           </ConfirmProvider>
         </AdminStoreProvider>
       </AuthProvider>

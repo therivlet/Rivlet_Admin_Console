@@ -90,3 +90,38 @@ export function RivletWatermark({ className = '' }: { className?: string }) {
     </div>
   );
 }
+
+export function RivletWaveIcon({
+  variant = 'gold',
+  size = 24,
+  className = '',
+}: {
+  variant?: 'gold' | 'white' | 'dark' | 'adaptive';
+  size?: number;
+  className?: string;
+}) {
+  const getFilterStyle = (): React.CSSProperties => {
+    switch (variant) {
+      case 'white':
+        return { filter: 'brightness(0) invert(1)' };
+      case 'dark':
+        return { filter: 'brightness(0)' };
+      case 'gold':
+      default:
+        return {
+          filter: 'brightness(0) saturate(100%) invert(73%) sepia(28%) saturate(980%) hue-rotate(5deg) brightness(98%) contrast(92%)',
+        };
+    }
+  };
+
+  return (
+    <img
+      src="/brand/rivlet-wave.png"
+      alt="Rivlet Wave Mark"
+      style={getFilterStyle()}
+      width={size}
+      height={size}
+      className={`object-contain select-none transition-transform duration-200 ${className}`}
+    />
+  );
+}

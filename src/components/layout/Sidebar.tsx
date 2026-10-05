@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { useAuth } from '@/lib/authContext';
-import RivletLogo from '@/components/brand/RivletLogo';
+import RivletLogo, { RivletWaveIcon } from '@/components/brand/RivletLogo';
 
 interface SidebarProps {
   mobileOpen?: boolean;
@@ -115,19 +115,29 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
             href="/"
             onClick={handleLinkClick}
             title="Rivlet Executive Command Center"
-            className="flex items-center gap-3 group"
+            className="flex items-center gap-2.5 group"
           >
-            <RivletLogo variant="gold" size="sm" />
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#1b2234] to-[#0e121b] border border-[#2b3852] flex items-center justify-center shadow-glow flex-shrink-0 group-hover:border-[#cda052]/60 transition-colors">
+              <RivletWaveIcon variant="gold" size={20} />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-serif tracking-[0.22em] text-sm font-bold text-white group-hover:text-[#cda052] transition-colors leading-none">
+                RIVLET
+              </span>
+              <span className="text-[9px] uppercase tracking-[0.16em] text-[#94a3b8] font-mono mt-0.5">
+                Admin Console
+              </span>
+            </div>
           </Link>
         ) : (
           <Link
             href="/"
             onClick={handleLinkClick}
             title="Rivlet Executive Command Center"
-            className="mx-auto flex items-center justify-center p-1 rounded-lg hover:bg-white/[0.04] transition-colors"
+            className="mx-auto flex items-center justify-center p-1 rounded-xl hover:bg-white/[0.04] transition-all group"
           >
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#cda052] to-[#8c672b] flex items-center justify-center text-black font-extrabold font-serif text-sm shadow-glow">
-              R
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#1b2234] to-[#0e121b] border border-[#2b3852] flex items-center justify-center shadow-glow group-hover:border-[#cda052]/60 transition-colors">
+              <RivletWaveIcon variant="gold" size={22} className="group-hover:scale-110" />
             </div>
           </Link>
         )}
@@ -137,7 +147,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
           onClick={toggleCollapsed}
           title={collapsed ? 'Expand sidebar (show navigation names)' : 'Collapse sidebar (icons only)'}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className={`hidden lg:flex p-1.5 rounded-lg text-[#7c869d] hover:text-[#cda052] hover:bg-[#161a26] transition-colors ${
+          className={`hidden lg:flex p-1.5 rounded-lg text-[#7c869d] hover:text-[#cda052] hover:bg-[#161a26] transition-colors cursor-pointer ${
             collapsed ? 'mx-auto mt-2' : ''
           }`}
         >
@@ -185,16 +195,13 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
           )}
         </div>
 
-        {/* 2. WORK TRACKING (Submenu visible outside) */}
+        {/* 2. WORK TRACKING (Always expanded, clean header without submenu text) */}
         <div>
           {!collapsed ? (
             <div className="px-2 mb-1.5 flex items-center justify-between text-[11px] font-semibold tracking-wider text-[#94a3b8] uppercase">
               <span className="flex items-center gap-1.5">
                 <ListTree className="w-3.5 h-3.5 text-[#cda052]" />
                 Work Tracking
-              </span>
-              <span className="text-[9px] px-1.5 py-0.2 rounded bg-white/[0.04] text-[#8895ad] font-mono">
-                Submenu
               </span>
             </div>
           ) : (
@@ -245,7 +252,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
             </div>
           )}
 
-          {/* Business Calculations (with expandable tabs) */}
+          {/* Business Calculations (with expandable tabs and hover flyout when collapsed) */}
           <div className="relative group">
             <div
               className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all ${
@@ -260,7 +267,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                 href="/calculator"
                 onClick={handleLinkClick}
                 className={`flex items-center gap-3 flex-1 truncate ${collapsed ? 'justify-center' : ''}`}
-                title="Business Calculations (Garment Costing & Unit Economics)"
+                title="Business Calculations"
               >
                 <Calculator className={`w-4 h-4 flex-shrink-0 ${isCalcPath ? 'text-[#cda052]' : 'text-[#8895ad] group-hover:text-white'}`} />
                 {!collapsed && <span className="truncate">Business Calculations</span>}
@@ -273,7 +280,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                     e.stopPropagation();
                     setCalculatorExpanded((v) => !v);
                   }}
-                  className="p-1 rounded hover:bg-[#1a2233] text-[#7c869d] hover:text-[#cda052] transition-colors flex-shrink-0"
+                  className="p-1 rounded hover:bg-[#1a2233] text-[#7c869d] hover:text-[#cda052] transition-colors flex-shrink-0 cursor-pointer"
                   title="Toggle calculation sub-modules"
                   aria-label="Toggle calculation sub-modules"
                 >
@@ -332,14 +339,58 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
               </div>
             )}
 
-            {/* Hover Tooltip when collapsed */}
+            {/* Hover Floating Dropdown Flyout when collapsed */}
             {collapsed && (
-              <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 p-2 bg-[#0d101a] border border-[#22293e] rounded-xl shadow-2xl text-xs whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-50 min-w-[170px]">
-                <div className="font-semibold text-[#e6c875] mb-1.5">Business Calculations</div>
-                <div className="space-y-1 text-[11px] text-[#cbd5e1]">
-                  <Link href="/calculator?tab=overview" className="block px-1.5 py-0.5 rounded hover:bg-white/[0.06] hover:text-white">Overview</Link>
-                  <Link href="/calculator?tab=studio" className="block px-1.5 py-0.5 rounded hover:bg-white/[0.06] hover:text-white">Pricing & Unit Economy</Link>
-                  <Link href="/calculator?tab=styles" className="block px-1.5 py-0.5 rounded hover:bg-white/[0.06] hover:text-white">Active Styles</Link>
+              <div className="absolute left-full ml-2 top-0 p-3 bg-[#0d101a] border border-[#22293e] rounded-2xl shadow-2xl text-xs whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-50 min-w-[210px]">
+                <div className="flex items-center gap-2 font-bold text-[#e6c875] pb-2 mb-2 border-b border-white/[0.08]">
+                  <Calculator className="w-3.5 h-3.5 text-[#cda052]" />
+                  <span>Business Calculations</span>
+                </div>
+                <div className="space-y-1 text-[11px]">
+                  <Link
+                    href="/calculator?tab=overview"
+                    onClick={handleLinkClick}
+                    className={`block px-2.5 py-1.5 rounded-lg transition-colors ${
+                      isOverviewActive
+                        ? 'bg-[rgba(205,160,82,0.18)] text-[#e6c875] font-semibold'
+                        : 'text-[#cbd5e1] hover:text-white hover:bg-white/[0.06]'
+                    }`}
+                  >
+                    • Overview Dashboard
+                  </Link>
+                  <Link
+                    href="/calculator?tab=studio"
+                    onClick={handleLinkClick}
+                    className={`block px-2.5 py-1.5 rounded-lg transition-colors ${
+                      isStudioActive
+                        ? 'bg-[rgba(205,160,82,0.18)] text-[#e6c875] font-semibold'
+                        : 'text-[#cbd5e1] hover:text-white hover:bg-white/[0.06]'
+                    }`}
+                  >
+                    • Pricing & Unit Economy
+                  </Link>
+                  <Link
+                    href="/calculator?tab=styles"
+                    onClick={handleLinkClick}
+                    className={`block px-2.5 py-1.5 rounded-lg transition-colors ${
+                      isStylesActive
+                        ? 'bg-[rgba(205,160,82,0.18)] text-[#e6c875] font-semibold'
+                        : 'text-[#cbd5e1] hover:text-white hover:bg-white/[0.06]'
+                    }`}
+                  >
+                    • Active Styles
+                  </Link>
+                  <Link
+                    href="/calculator?tab=guide"
+                    onClick={handleLinkClick}
+                    className={`block px-2.5 py-1.5 rounded-lg transition-colors ${
+                      isGuideActive
+                        ? 'bg-[rgba(205,160,82,0.18)] text-[#e6c875] font-semibold'
+                        : 'text-[#cbd5e1] hover:text-white hover:bg-white/[0.06]'
+                    }`}
+                  >
+                    • Calculation Guide
+                  </Link>
                 </div>
               </div>
             )}
@@ -423,32 +474,32 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
 
         {/* 4. CONSOLIDATED DOCUMENTATION & VAULT MENU */}
         <div className="space-y-1">
-          {!collapsed && (
+          {!collapsed ? (
             <div className="px-2 pt-2 mb-1.5 text-[11px] font-semibold tracking-wider text-[#94a3b8] uppercase">
               Knowledge & Assets
             </div>
+          ) : (
+            <div className="my-2 border-t border-white/[0.06]" />
           )}
 
-          <div className="relative group">
-            <div
-              className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all ${
-                collapsed ? 'justify-center' : ''
-              } ${
-                isDocsActive
-                  ? 'bg-gradient-to-r from-[rgba(205,160,82,0.22)] via-[rgba(205,160,82,0.08)] to-transparent text-[#e6c875] font-semibold'
-                  : 'text-[#cbd5e1] hover:text-white hover:bg-[#131622]'
-              }`}
-            >
-              <Link
-                href="/documents"
-                onClick={handleLinkClick}
-                className={`flex items-center gap-3 flex-1 truncate ${collapsed ? 'justify-center' : ''}`}
-                title="Documentation & Vault"
+          {!collapsed ? (
+            <div className="relative group">
+              <div
+                className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all ${
+                  isDocsActive
+                    ? 'bg-gradient-to-r from-[rgba(205,160,82,0.22)] via-[rgba(205,160,82,0.08)] to-transparent text-[#e6c875] font-semibold'
+                    : 'text-[#cbd5e1] hover:text-white hover:bg-[#131622]'
+                }`}
               >
-                <FolderOpen className={`w-4 h-4 flex-shrink-0 ${isDocsActive ? 'text-[#cda052]' : 'text-[#8895ad] group-hover:text-white'}`} />
-                {!collapsed && <span className="truncate">Documentation & Vault</span>}
-              </Link>
-              {!collapsed && (
+                <Link
+                  href="/documents"
+                  onClick={handleLinkClick}
+                  className="flex items-center gap-3 flex-1 truncate"
+                  title="Documentation & Vault"
+                >
+                  <FolderOpen className={`w-4 h-4 flex-shrink-0 ${isDocsActive ? 'text-[#cda052]' : 'text-[#8895ad] group-hover:text-white'}`} />
+                  <span className="truncate">Documentation & Vault</span>
+                </Link>
                 <button
                   type="button"
                   onClick={(e) => {
@@ -456,70 +507,108 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                     e.stopPropagation();
                     setDocsExpanded((v) => !v);
                   }}
-                  className="p-1 rounded hover:bg-[#1a2233] text-[#7c869d] hover:text-[#cda052] transition-colors flex-shrink-0"
+                  className="p-1 rounded hover:bg-[#1a2233] text-[#7c869d] hover:text-[#cda052] transition-colors flex-shrink-0 cursor-pointer"
                   title="Toggle documentation sub-items"
                   aria-label="Toggle documentation sub-items"
                 >
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${docsExpanded ? '' : '-rotate-90'}`} />
                 </button>
+              </div>
+
+              {/* Subnavigations when expanded */}
+              {docsExpanded && (
+                <div className="ml-5 pl-3 py-1 space-y-0.5 border-l border-[#1f2638] text-[11px] animate-fade-in">
+                  {docsSubmenuItems.map((sub) => {
+                    const SubIcon = sub.icon;
+                    const isSubActive = pathname === sub.href;
+                    return (
+                      <Link
+                        key={sub.href}
+                        href={sub.href}
+                        onClick={handleLinkClick}
+                        className={`flex items-center justify-between px-2.5 py-1.5 rounded-md transition-colors ${
+                          isSubActive
+                            ? 'text-[#cda052] font-semibold bg-[rgba(205,160,82,0.12)]'
+                            : 'text-[#94a3b8] hover:text-white hover:bg-[#141724]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <SubIcon className={`w-3.5 h-3.5 ${isSubActive ? 'text-[#cda052]' : 'text-[#7c869d]'}`} />
+                          <span className="truncate">{sub.label}</span>
+                        </div>
+                        {sub.badge !== undefined && (
+                          <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-[#182030] text-[#94a3b8] border border-[#263148] font-mono">
+                            {sub.badge}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
               )}
             </div>
+          ) : (
+            /* COLLAPSED MODE: Show all 3 icons (FileText, BookOpen, Layers) in navigation rail + hover flyout */
+            <div className="space-y-1">
+              {docsSubmenuItems.map((sub) => {
+                const SubIcon = sub.icon;
+                const isSubActive = pathname === sub.href;
 
-            {/* Subnavigations when expanded */}
-            {!collapsed && docsExpanded && (
-              <div className="ml-5 pl-3 py-1 space-y-0.5 border-l border-[#1f2638] text-[11px] animate-fade-in">
-                {docsSubmenuItems.map((sub) => {
-                  const SubIcon = sub.icon;
-                  const isSubActive = pathname === sub.href;
-                  return (
+                return (
+                  <div key={sub.href} className="relative group">
                     <Link
-                      key={sub.href}
                       href={sub.href}
                       onClick={handleLinkClick}
-                      className={`flex items-center justify-between px-2.5 py-1.5 rounded-md transition-colors ${
+                      title={sub.label}
+                      className={`flex items-center justify-center px-3 py-2 rounded-xl text-xs transition-all ${
                         isSubActive
-                          ? 'text-[#cda052] font-semibold bg-[rgba(205,160,82,0.12)]'
-                          : 'text-[#94a3b8] hover:text-white hover:bg-[#141724]'
+                          ? 'bg-[rgba(205,160,82,0.22)] text-[#e6c875] font-semibold ring-1 ring-[#cda052]/50'
+                          : 'text-[#cbd5e1] hover:text-white hover:bg-[#131622]'
                       }`}
                     >
-                      <div className="flex items-center gap-2 truncate">
-                        <SubIcon className={`w-3.5 h-3.5 ${isSubActive ? 'text-[#cda052]' : 'text-[#7c869d]'}`} />
-                        <span className="truncate">{sub.label}</span>
-                      </div>
-                      {sub.badge !== undefined && (
-                        <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-[#182030] text-[#94a3b8] border border-[#263148] font-mono">
-                          {sub.badge}
-                        </span>
-                      )}
+                      <SubIcon className={`w-4 h-4 flex-shrink-0 ${isSubActive ? 'text-[#cda052]' : 'text-[#8895ad] group-hover:text-white'}`} />
                     </Link>
-                  );
-                })}
-              </div>
-            )}
 
-            {/* Hover Tooltip when collapsed */}
-            {collapsed && (
-              <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 p-2.5 bg-[#0d101a] border border-[#22293e] rounded-xl shadow-2xl text-xs whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-50 min-w-[180px]">
-                <div className="font-semibold text-[#e6c875] mb-2">Documentation & Vault</div>
-                <div className="space-y-1.5 text-[11px]">
-                  {docsSubmenuItems.map((sub) => (
-                    <Link
-                      key={sub.href}
-                      href={sub.href}
-                      className="flex items-center justify-between px-2 py-1 rounded hover:bg-white/[0.06] text-[#cbd5e1] hover:text-white"
-                    >
-                      <span>{sub.label}</span>
-                      {sub.badge !== undefined && (
-                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-black text-[#94a3b8] font-mono">
-                          {sub.badge}
-                        </span>
-                      )}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+                    {/* Floating Dropdown / Tooltip when hovering any of the 3 docs icons */}
+                    <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 p-3 bg-[#0d101a] border border-[#22293e] rounded-2xl shadow-2xl text-xs whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-50 min-w-[210px]">
+                      <div className="flex items-center gap-2 font-bold text-[#e6c875] pb-2 mb-2 border-b border-white/[0.08]">
+                        <FolderOpen className="w-3.5 h-3.5 text-[#cda052]" />
+                        <span>Documentation & Vault</span>
+                      </div>
+                      <div className="space-y-1 text-[11px]">
+                        {docsSubmenuItems.map((item) => {
+                          const ItemIcon = item.icon;
+                          const isItemActive = pathname === item.href;
+                          return (
+                            <Link
+                              key={item.href}
+                              href={item.href}
+                              onClick={handleLinkClick}
+                              className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-colors ${
+                                isItemActive
+                                  ? 'bg-[rgba(205,160,82,0.18)] text-[#e6c875] font-semibold'
+                                  : 'text-[#cbd5e1] hover:text-white hover:bg-white/[0.06]'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <ItemIcon className={`w-3.5 h-3.5 ${isItemActive ? 'text-[#cda052]' : 'text-[#7c869d]'}`} />
+                                <span>{item.label}</span>
+                              </div>
+                              {item.badge !== undefined && (
+                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-black text-[#94a3b8] font-mono">
+                                  {item.badge}
+                                </span>
+                              )}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
@@ -565,7 +654,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                 </div>
                 <button
                   onClick={() => signOut()}
-                  className="text-[#94a3b8] hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-950/30 transition-colors flex-shrink-0"
+                  className="text-[#94a3b8] hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-950/30 transition-colors flex-shrink-0 cursor-pointer"
                   title="Sign Out of Rivlet console"
                   aria-label="Sign Out"
                 >
@@ -587,7 +676,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
 
             <button
               onClick={() => signOut()}
-              className="p-2 rounded-xl text-[#94a3b8] hover:text-rose-400 hover:bg-rose-950/30 transition-colors"
+              className="p-2 rounded-xl text-[#94a3b8] hover:text-rose-400 hover:bg-rose-950/30 transition-colors cursor-pointer"
               title="Sign Out"
               aria-label="Sign Out"
             >
