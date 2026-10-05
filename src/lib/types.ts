@@ -306,7 +306,7 @@ export type VendorOutreachStage =
 
 export interface VendorItem {
   id: string;
-  name: string; // e.g. "Techno Sportswear"
+  name: string; // e.g. "Layo Group"
   location: string; // e.g. "Primary Facility"
   contactName?: string;
   contactEmail?: string;

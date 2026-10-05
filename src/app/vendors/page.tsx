@@ -294,7 +294,7 @@ export default function VendorsPage() {
               <div className="space-y-3">
                 <div>
                   <label className="text-[11px] text-[#94a3b8] block mb-1">Manufacturer / Vendor Name *</label>
-                  <input value={modalVendor.name} onChange={(e) => setModalVendor({ ...modalVendor, name: e.target.value })} placeholder="e.g. Techno Sportswear"
+                  <input value={modalVendor.name} onChange={(e) => setModalVendor({ ...modalVendor, name: e.target.value })} placeholder="e.g. Layo Group"
                     className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">

@@ -1144,7 +1144,7 @@ export default function BudgetPage() {
                   <input
                     value={spendNote}
                     onChange={(e) => setSpendNote(e.target.value)}
-                    placeholder="e.g. Advance payment to Techno Sportswear"
+                    placeholder="e.g. Advance payment to Layo Group"
                     className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50"
                   />
                 </div>

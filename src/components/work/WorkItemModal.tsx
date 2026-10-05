@@ -426,7 +426,7 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                 <input
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  placeholder="e.g. Confirm lab-dip approvals with Techno Sportswear"
+                  placeholder="e.g. Confirm lab-dip approvals with Layo Group"
                   className="w-full px-4 py-2.5 rounded-xl bg-[#0d121c] border border-[#222c42] text-base font-semibold text-white focus:outline-none focus:border-[#cda052]/60"
                 />
               </div>

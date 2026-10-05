@@ -17,15 +17,12 @@ import {
   ArrowRight,
   ListPlus,
   X,
-  Clock,
-  TrendingUp,
-  ListChecks,
-  CheckSquare,
   FileText,
-  ChevronRight,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
-import { WorkItem, WorkItemPriority, WorkItemType, Sprint } from '@/lib/types';
+import { WorkItem, WorkItemPriority, WorkItemType } from '@/lib/types';
 import { TYPE_COLOR, STATE_COLOR, PRIORITY_BADGE_COLOR, PRIORITY_LABEL } from '@/components/work/WorkItemModal';
 import ModalPortal from '@/components/ui/ModalPortal';
 
@@ -36,7 +33,7 @@ const SAMPLE_YAML = `
   points: 5
   assignee: "Unassigned"
   sprint: "Sprint 1"
-  manufacture: "Techno Sportswear"
+  manufacture: "Layo Group"
   styles: "Leggings, Sports Bra"
   description: "Lead fit sessions with sample master. Verify waistband elasticity, high-rise seam placement, and 4-way squat-proof density under 240 GSM."
   acceptance_criteria: "Fit trial approved across XS, S, and M. Zero roll-down on waistband during movement testing."
@@ -57,7 +54,7 @@ const SAMPLE_YAML = `
       priority: "P2"
       points: 1
       assignee: "Unassigned"
-      description: "Issue revision note to Techno Sportswear for flatlock seam stitch tension."
+      description: "Issue revision note to Layo Group for flatlock seam stitch tension."
       acceptance_criteria: "Revised proto sample ticket acknowledged by factory QA."
 
 - user_story: "Lab Dip Colorfastness & D65 Lighting Booth Verification"
@@ -66,7 +63,7 @@ const SAMPLE_YAML = `
   points: 3
   assignee: "Unassigned"
   sprint: "Sprint 1"
-  manufacture: "Techno Sportswear"
+  manufacture: "Layo Group"
   styles: "All Styles"
   description: "Inspect and sign off on fabric lab dips in Midnight and Cardamom colorways for all 6 launch styles."
   acceptance_criteria: "Delta-E color difference is under 0.8 compared to Pantone TCX standard swatch. Washing colorfastness grade 4.5+."
@@ -94,7 +91,7 @@ const SAMPLE_JSON = JSON.stringify(
       points: 5,
       assignee: 'Unassigned',
       sprint: 'Sprint 1',
-      manufacture: 'Techno Sportswear',
+      manufacture: 'Layo Group',
       styles: 'Leggings, Sports Bra',
       description: 'Lead fit sessions with sample master. Verify waistband elasticity, high-rise seam placement, and 4-way squat-proof density under 240 GSM.',
       acceptance_criteria: 'Fit trial approved across XS, S, and M. Zero roll-down on waistband during movement testing.',
@@ -120,7 +117,7 @@ const SAMPLE_JSON = JSON.stringify(
           priority: 'P2',
           points: 1,
           assignee: 'Unassigned',
-          description: 'Issue revision note to Techno Sportswear for flatlock seam stitch tension.',
+          description: 'Issue revision note to Layo Group for flatlock seam stitch tension.',
           acceptance_criteria: 'Revised proto sample ticket acknowledged by factory QA.',
         },
       ],
@@ -177,8 +174,10 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
 
   // Consolidation Modal States
   const [showConsolidateModal, setShowConsolidateModal] = useState(false);
-  const [copiedContextPrompt, setCopiedContextPrompt] = useState(false);
-  const [copiedContextJson, setCopiedContextJson] = useState(false);
+  const [includeExistingWorkload, setIncludeExistingWorkload] = useState(true);
+  const [outputFormat, setOutputFormat] = useState<'prompt' | 'json'>('prompt');
+  const [copiedUnified, setCopiedUnified] = useState(false);
+  const [showPreviewText, setShowPreviewText] = useState(false);
 
   // Determine current active sprint
   const activeSprint = useMemo(() => {
@@ -251,7 +250,7 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
     return found ? found.id : sprints[0]?.id;
   };
 
-  // Helper to match vendor
+  // Helper to match vendor (defaults Layo Group if not found)
   const resolveVendorId = (vendorStr?: string): string | undefined => {
     if (!vendorStr) return undefined;
     const clean = vendorStr.trim().toLowerCase();
@@ -329,7 +328,6 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
 
     if (isJson) {
       try {
-        // Strip trailing commas & line comments before parsing
         const sanitizedJson = jsonTarget
           .replace(/\/\/.*$/gm, '')
           .replace(/\/\*[\s\S]*?\*\//g, '')
@@ -382,8 +380,8 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
             assignee: item.assignee || 'Unassigned',
             sprintName: item.sprint || item.sprints,
             sprintId: resolveSprintId(item.sprint || item.sprints),
-            vendorName: item.manufacture || item.manufacturer || item.vendor,
-            vendorId: resolveVendorId(item.manufacture || item.manufacturer || item.vendor),
+            vendorName: item.manufacture || item.manufacturer || item.vendor || 'Layo Group',
+            vendorId: resolveVendorId(item.manufacture || item.manufacturer || item.vendor || 'Layo Group'),
             stylesText: item.styles || item.style || (Array.isArray(item.styles) ? item.styles.join(', ') : undefined),
             styleIds: resolveStyleIds(Array.isArray(item.styles) ? item.styles.join(', ') : item.styles),
             operationCategory: item.operation || item.operation_category || 'Operations & Sourcing',
@@ -725,7 +723,7 @@ JSON Schema:
     "points": 5, // 1, 2, 3, 5, 8
     "assignee": "Unassigned",
     "sprint": "Sprint 1",
-    "manufacture": "Techno Sportswear", // Or vendor partner name
+    "manufacture": "Layo Group", // Default partner: Layo Group (or Unassigned)
     "styles": "All Styles", // Or specific styles: e.g. "Leggings, Sports Bra"
     "operation": "Operations & Sourcing",
     "description": "[Detailed operational description of user story requirements without length limits]",
@@ -737,7 +735,7 @@ JSON Schema:
         "points": 2,
         "assignee": "Unassigned",
         "description": "[Detailed technical or operational instructions for this specific subtask]",
-        "acceptance_criteria": "[Verifiable criteria for task completion and QA sign-off]"
+        "acceptance_criteria": "[Verifiable criteria for task completion and sign-off]"
       },
       {
         "title": "[Subtask 2 action title]",
@@ -763,71 +761,230 @@ JSON Schema:
     setTimeout(() => setCopiedTemplate(false), 2000);
   };
 
-  // Generate Consolidated Workload Prompt for external AI planning
-  const generateWorkloadContextPrompt = () => {
+  // Generate Consolidated Content based on Selection Window (Include Workload + Output Format)
+  const generateConsolidatedContent = () => {
     const sprintName = resolvedConsolidateSprint ? resolvedConsolidateSprint.name : 'All Active Work Tracking';
     const sprintGoal = resolvedConsolidateSprint?.goal || 'Drive drop execution, vendor alignment, and production milestones.';
     const sprintDates = resolvedConsolidateSprint ? `${resolvedConsolidateSprint.startDate} to ${resolvedConsolidateSprint.endDate}` : 'Ongoing';
 
-    let prompt = `# RIVLET SPRINT WORKLOAD CONTEXT & PROGRESS SUMMARY FOR AI PLANNING\n\n`;
-    prompt += `**Sprint**: ${sprintName} (${sprintDates})\n`;
-    prompt += `**Sprint Goal**: ${sprintGoal}\n`;
-    prompt += `**Sprint Progress**: ${sprintStats.progressPercent}% completed (${sprintStats.donePoints} of ${sprintStats.totalPoints} story points resolved/closed)\n`;
-    prompt += `**Workload Count**: ${consolidatedStories.length} User Stories, ${consolidatedTasks.length} Child Tasks\n\n`;
-    prompt += `================================================================================\n`;
-    prompt += `## CURRENT SPRINT WORKLOAD BREAKDOWN\n`;
-    prompt += `================================================================================\n\n`;
-
-    if (consolidatedStories.length === 0) {
-      prompt += `No stories currently scheduled in this sprint.\n\n`;
-    } else {
-      consolidatedStories.forEach((story, idx) => {
-        const childTasks = consolidatedTasks.filter((t) => t.parentId === story.id);
-        prompt += `### STORY ${idx + 1}: ${story.title}\n`;
-        prompt += `- **Type**: ${story.type} | **State**: ${story.state} | **Priority**: P${story.priority} | **Points**: ${story.storyPoints || 0} pts | **Assignee**: ${story.assignee || 'Unassigned'}\n`;
-        if (story.operationCategory) prompt += `- **Operation**: ${story.operationCategory}\n`;
-        prompt += `- **Description**:\n  ${story.description || 'No description provided.'}\n`;
-        prompt += `- **Acceptance Criteria**:\n  ${story.acceptanceCriteria || 'No acceptance criteria defined.'}\n`;
-
-        if (childTasks.length > 0) {
-          prompt += `- **Child Tasks (${childTasks.length})**:\n`;
-          childTasks.forEach((task, tIdx) => {
-            prompt += `  * Task ${idx + 1}.${tIdx + 1}: ${task.title}\n`;
-            prompt += `    - Status: ${task.state} | Priority: P${task.priority} | Points: ${task.storyPoints || 1} pt | Assignee: ${task.assignee || 'Unassigned'}\n`;
-            if (task.description) {
-              prompt += `    - Task Description: ${task.description}\n`;
+    if (outputFormat === 'json') {
+      if (includeExistingWorkload) {
+        const payload = {
+          sprint_context: {
+            sprint: sprintName,
+            dates: sprintDates,
+            goal: sprintGoal,
+            progress_percent: sprintStats.progressPercent,
+            points_completed: sprintStats.donePoints,
+            total_points: sprintStats.totalPoints,
+            status_guide: {
+              completed: "Tasks with state 'Closed' or 'Resolved' have fulfilled acceptance criteria.",
+              in_progress: "Tasks with state 'Active' or 'In Review' are NOT completed. Their acceptance criteria are pending fulfillment.",
+              new_pending: "Tasks with state 'New' are unstarted. Their acceptance criteria have not started."
             }
-            if (task.acceptanceCriteria) {
-              prompt += `    - Task Acceptance Criteria: ${task.acceptanceCriteria}\n`;
+          },
+          existing_sprint_workload: consolidatedStories.map((story) => {
+            const childTasks = consolidatedTasks.filter((t) => t.parentId === story.id);
+            return {
+              user_story: story.title,
+              story_type: story.type,
+              execution_state: story.state,
+              is_completed: story.state === 'Closed' || story.state === 'Resolved',
+              priority: `P${story.priority}`,
+              story_points: story.storyPoints || 0,
+              assignee: story.assignee || 'Unassigned',
+              sprint: resolvedConsolidateSprint?.name || sprintName,
+              manufacture: 'Layo Group',
+              operation: story.operationCategory,
+              description: story.description || '',
+              acceptance_criteria: story.acceptanceCriteria || '',
+              acceptance_criteria_fulfilled: story.state === 'Closed' || story.state === 'Resolved',
+              tasks: childTasks.map((t) => {
+                const isTaskDone = t.state === 'Closed' || t.state === 'Resolved';
+                const isTaskActive = t.state === 'Active' || t.state === 'In Review';
+                return {
+                  title: t.title,
+                  execution_state: t.state,
+                  is_completed: isTaskDone,
+                  status_note: isTaskDone ? 'COMPLETED (Requirements verified)' : (isTaskActive ? 'IN PROGRESS (Pending fulfillment - NOT done)' : 'NEW (Not started yet)'),
+                  priority: `P${t.priority}`,
+                  points: t.storyPoints || 1,
+                  assignee: t.assignee || 'Unassigned',
+                  description: t.description || '',
+                  acceptance_criteria: t.acceptanceCriteria || '',
+                  acceptance_criteria_fulfilled: isTaskDone,
+                };
+              }),
+            };
+          }),
+          target_delivery_format: [
+            {
+              user_story: "New User Story Title",
+              story_type: "User Story",
+              priority: "P1",
+              points: 3,
+              assignee: "Unassigned",
+              sprint: sprintName,
+              manufacture: "Layo Group",
+              styles: "All Styles",
+              operation: "Operations & Sourcing",
+              description: "Detailed operational requirements...",
+              acceptance_criteria: "Verifiable checklist of criteria for story sign-off...",
+              tasks: [
+                {
+                  title: "Specific child task action",
+                  priority: "P1",
+                  points: 1,
+                  assignee: "Unassigned",
+                  description: "Detailed technical instructions for executing this task...",
+                  acceptance_criteria: "Conditions required for task sign-off..."
+                }
+              ]
             }
-          });
-        }
-        prompt += `\n`;
-      });
+          ]
+        };
+        return JSON.stringify(payload, null, 2);
+      } else {
+        // Pure target JSON schema template alone
+        const template = [
+          {
+            user_story: "Finalize proto sample fit & sizing specs for Drop 1 Leggings",
+            story_type: "User Story",
+            priority: "P1",
+            points: 5,
+            assignee: "Unassigned",
+            sprint: sprintName,
+            manufacture: "Layo Group",
+            styles: "Leggings, Sports Bra",
+            operation: "Operations & Sourcing",
+            description: "Lead fit sessions with sample master. Verify waistband elasticity and high-rise seam placement.",
+            acceptance_criteria: "Fit trial approved across XS, S, and M. Zero roll-down on waistband during movement testing.",
+            tasks: [
+              {
+                title: "Audit proto sample waist tension & stretch recovery",
+                priority: "P1",
+                points: 2,
+                assignee: "Unassigned",
+                description: "Perform tensile testing across 25 cycles on Drop 1 waistbands to evaluate elastic retention.",
+                acceptance_criteria: "Elastic recovery >= 95% with zero elastane breakdown or sagging."
+              },
+              {
+                title: "Log POM measurement delta between tech-pack spec and physical sample",
+                priority: "P2",
+                points: 1,
+                assignee: "Unassigned",
+                description: "Audit physical garment points of measure against tech-pack graded spec sheets.",
+                acceptance_criteria: "All 18 points of measure within +/- 0.5 cm tolerance margin."
+              }
+            ]
+          }
+        ];
+        return JSON.stringify(template, null, 2);
+      }
     }
 
-    // Unparented tasks
-    const unparentedTasks = consolidatedTasks.filter(
-      (t) => !t.parentId || !consolidatedStories.some((s) => s.id === t.parentId)
-    );
-    if (unparentedTasks.length > 0) {
-      prompt += `### STANDALONE / UNPARENTED TASKS:\n`;
-      unparentedTasks.forEach((task, idx) => {
-        prompt += `* Task ${idx + 1}: ${task.title} (State: ${task.state} | Priority: P${task.priority} | Points: ${task.storyPoints || 1})\n`;
-        if (task.description) prompt += `  - Description: ${task.description}\n`;
-        if (task.acceptanceCriteria) prompt += `  - Acceptance Criteria: ${task.acceptanceCriteria}\n`;
-      });
-      prompt += `\n`;
+    // Markdown AI Planning Prompt Format
+    let prompt = `# RIVLET SPRINT PLANNING & WORKLOAD PROMPT FOR AI\n\n`;
+    prompt += `**Target Sprint**: ${sprintName} (${sprintDates})\n`;
+    prompt += `**Sprint Goal**: ${sprintGoal}\n`;
+    prompt += `**Default Manufacturer**: Layo Group\n\n`;
+
+    if (includeExistingWorkload) {
+      prompt += `**Sprint Progress**: ${sprintStats.progressPercent}% completed (${sprintStats.donePoints} of ${sprintStats.totalPoints} points closed/resolved)\n`;
+      prompt += `**Existing Workload**: ${consolidatedStories.length} User Stories, ${consolidatedTasks.length} Child Tasks\n\n`;
+      prompt += `================================================================================\n`;
+      prompt += `CRITICAL INSTRUCTION ON STATUSES & ACCEPTANCE CRITERIA:\n`;
+      prompt += `1. Only tasks marked as [COMPLETED (Resolved/Closed)] have their acceptance criteria met.\n`;
+      prompt += `2. Tasks marked as [IN PROGRESS (Active/In Review)] or [NEW (Pending/Not Started)] are NOT DONE. Their acceptance criteria are pending fulfillment and STILL NEED TO BE DELIVERED.\n`;
+      prompt += `3. When generating new stories or tasks, take into account what is already finished vs what is still active or pending, and avoid duplicating in-flight tasks.\n`;
+      prompt += `================================================================================\n\n`;
+      prompt += `## CURRENT SPRINT WORKLOAD BREAKDOWN\n\n`;
+
+      if (consolidatedStories.length === 0) {
+        prompt += `No stories currently scheduled in this sprint.\n\n`;
+      } else {
+        consolidatedStories.forEach((story, idx) => {
+          const childTasks = consolidatedTasks.filter((t) => t.parentId === story.id);
+          const isStoryClosed = story.state === 'Closed' || story.state === 'Resolved';
+          const isStoryActive = story.state === 'Active' || story.state === 'In Review';
+          const storyStatusLabel = isStoryClosed
+            ? 'COMPLETED (Resolved/Closed)'
+            : isStoryActive
+            ? 'IN PROGRESS (Active - Under execution)'
+            : 'NEW (Pending - Not started)';
+
+          prompt += `### STORY ${idx + 1}: ${story.title}\n`;
+          prompt += `- **Execution Status**: ${storyStatusLabel}\n`;
+          prompt += `- **Type**: ${story.type} | **Priority**: P${story.priority} | **Points**: ${story.storyPoints || 0} pts | **Assignee**: ${story.assignee || 'Unassigned'}\n`;
+          prompt += `- **Manufacturer**: Layo Group\n`;
+          if (story.operationCategory) prompt += `- **Operation**: ${story.operationCategory}\n`;
+          prompt += `- **Description**:\n  ${story.description || 'No description provided.'}\n`;
+          prompt += `- **Acceptance Criteria**:\n  ${story.acceptanceCriteria || 'No acceptance criteria defined.'}\n`;
+
+          if (childTasks.length > 0) {
+            prompt += `- **Child Tasks (${childTasks.length})**:\n`;
+            childTasks.forEach((task, tIdx) => {
+              const isTaskDone = task.state === 'Closed' || task.state === 'Resolved';
+              const isTaskActive = task.state === 'Active' || task.state === 'In Review';
+              const taskStatusText = isTaskDone
+                ? 'COMPLETED (Resolved/Closed)'
+                : isTaskActive
+                ? 'IN PROGRESS (Active - NOT COMPLETED)'
+                : 'NEW (Pending / Not Started)';
+
+              const criteriaStatusText = isTaskDone
+                ? `[CRITERIA MET & VERIFIED]: ${task.acceptanceCriteria}`
+                : isTaskActive
+                ? `[PENDING FULFILLMENT - NOT DONE]: ${task.acceptanceCriteria}`
+                : `[REQUIRED FOR FUTURE SIGN-OFF - NOT STARTED]: ${task.acceptanceCriteria}`;
+
+              prompt += `  * Task ${idx + 1}.${tIdx + 1}: ${task.title}\n`;
+              prompt += `    - Status: ${taskStatusText} | Priority: P${task.priority} | Points: ${task.storyPoints || 1} pt | Assignee: ${task.assignee || 'Unassigned'}\n`;
+              if (task.description) {
+                prompt += `    - Description: ${task.description}\n`;
+              }
+              if (task.acceptanceCriteria) {
+                prompt += `    - Acceptance Criteria: ${criteriaStatusText}\n`;
+              }
+            });
+          }
+          prompt += `\n`;
+        });
+      }
+
+      // Unparented tasks
+      const unparentedTasks = consolidatedTasks.filter(
+        (t) => !t.parentId || !consolidatedStories.some((s) => s.id === t.parentId)
+      );
+      if (unparentedTasks.length > 0) {
+        prompt += `### STANDALONE / UNPARENTED TASKS:\n`;
+        unparentedTasks.forEach((task, idx) => {
+          const isTaskDone = task.state === 'Closed' || task.state === 'Resolved';
+          const taskStatusText = isTaskDone ? 'COMPLETED' : 'IN PROGRESS / PENDING';
+          prompt += `* Task ${idx + 1}: ${task.title} (Status: ${taskStatusText} | State: ${task.state} | Priority: P${task.priority} | Points: ${task.storyPoints || 1})\n`;
+          if (task.description) prompt += `  - Description: ${task.description}\n`;
+          if (task.acceptanceCriteria) {
+            prompt += `  - Acceptance Criteria: ${isTaskDone ? '[VERIFIED]:' : '[PENDING]:'} ${task.acceptanceCriteria}\n`;
+          }
+        });
+        prompt += `\n`;
+      }
     }
 
     prompt += `================================================================================\n`;
     prompt += `## AI INSTRUCTION FOR PLANNING THE NEXT STORIES & TASKS\n`;
     prompt += `================================================================================\n`;
-    prompt += `You are the Lead Technical Production Manager & Agile Delivery Lead for Rivlet.\n`;
-    prompt += `Carefully review the existing stories, completed progress, in-flight work, and remaining scope above.\n`;
-    prompt += `1. Identify remaining deliverables, missing verification steps, and next sequential milestones.\n`;
-    prompt += `2. Suggest and generate the next wave of User Stories and child Tasks needed to advance the brand.\n`;
-    prompt += `3. Output strictly in the Rivlet Bulk Creation JSON format shown below, ensuring EVERY User Story and child Task includes both a detailed description and verifiable acceptance_criteria:\n\n`;
+    prompt += `You are the Lead Technical Production Manager & Agile Delivery Lead for Rivlet, an athletic apparel brand.\n`;
+    if (includeExistingWorkload) {
+      prompt += `Carefully review the existing stories, completed progress, in-flight work, and remaining scope above.\n`;
+      prompt += `1. Identify remaining deliverables, missing verification steps, and next sequential milestones.\n`;
+      prompt += `2. Suggest and generate the next wave of User Stories and child Tasks needed to advance the brand.\n`;
+    } else {
+      prompt += `Plan and generate the necessary User Stories and child Tasks for this sprint cadence.\n`;
+    }
+    prompt += `3. Every User Story AND every child Task MUST include both a detailed "description" and verifiable "acceptance_criteria".\n`;
+    prompt += `4. Manufacturer must be set to "Layo Group" (or "Unassigned").\n`;
+    prompt += `5. Output strictly in the Rivlet Bulk Creation JSON format shown below:\n\n`;
     prompt += `[\n`;
     prompt += `  {\n`;
     prompt += `    "user_story": "[New Story Title]",\n`;
@@ -836,8 +993,9 @@ JSON Schema:
     prompt += `    "points": 3,\n`;
     prompt += `    "assignee": "Unassigned",\n`;
     prompt += `    "sprint": "${sprintName}",\n`;
-    prompt += `    "manufacture": "Techno Sportswear",\n`;
+    prompt += `    "manufacture": "Layo Group",\n`;
     prompt += `    "styles": "All Styles",\n`;
+    prompt += `    "operation": "Operations & Sourcing",\n`;
     prompt += `    "description": "Comprehensive explanation of what must be built or executed...",\n`;
     prompt += `    "acceptance_criteria": "Verifiable checklist of conditions for sign-off...",\n`;
     prompt += `    "tasks": [\n`;
@@ -847,7 +1005,7 @@ JSON Schema:
     prompt += `        "points": 1,\n`;
     prompt += `        "assignee": "Unassigned",\n`;
     prompt += `        "description": "Step-by-step instructions for completing this task...",\n`;
-    prompt += `        "acceptance_criteria": "Done criteria for task sign-off..."\n`;
+    prompt += `        "acceptance_criteria": "Verifiable criteria for task sign-off..."\n`;
     prompt += `      }\n`;
     prompt += `    ]\n`;
     prompt += `  }\n`;
@@ -856,43 +1014,24 @@ JSON Schema:
     return prompt;
   };
 
-  const handleCopyWorkloadPrompt = () => {
-    const text = generateWorkloadContextPrompt();
+  const handleUnifiedCopy = () => {
+    const text = generateConsolidatedContent();
     navigator.clipboard.writeText(text);
-    setCopiedContextPrompt(true);
-    setTimeout(() => setCopiedContextPrompt(false), 2000);
+    setCopiedUnified(true);
+    setTimeout(() => setCopiedUnified(false), 2500);
   };
 
-  const handleCopyWorkloadJson = () => {
-    const data = consolidatedStories.map((story) => {
-      const childTasks = consolidatedTasks.filter((t) => t.parentId === story.id);
-      return {
-        user_story: story.title,
-        story_type: story.type,
-        state: story.state,
-        priority: `P${story.priority}`,
-        points: story.storyPoints,
-        assignee: story.assignee || 'Unassigned',
-        sprint: resolvedConsolidateSprint?.name,
-        operation: story.operationCategory,
-        description: story.description || '',
-        acceptance_criteria: story.acceptanceCriteria || '',
-        tasks: childTasks.map((t) => ({
-          title: t.title,
-          state: t.state,
-          priority: `P${t.priority}`,
-          points: t.storyPoints,
-          assignee: t.assignee || 'Unassigned',
-          description: t.description || '',
-          acceptance_criteria: t.acceptanceCriteria || '',
-        })),
-      };
-    });
-
-    navigator.clipboard.writeText(JSON.stringify(data, null, 2));
-    setCopiedContextJson(true);
-    setTimeout(() => setCopiedContextJson(false), 2000);
-  };
+  const unifiedButtonLabel = useMemo(() => {
+    if (includeExistingWorkload) {
+      return outputFormat === 'prompt'
+        ? 'Copy Complete AI Prompt (With Existing Workload & JSON Schema)'
+        : 'Copy Current Workload (JSON Format)';
+    } else {
+      return outputFormat === 'prompt'
+        ? 'Copy AI Planning Prompt (Clean JSON Template Only)'
+        : 'Copy Clean Target JSON Schema';
+    }
+  }, [includeExistingWorkload, outputFormat]);
 
   return (
     <div className="space-y-6">
@@ -921,11 +1060,11 @@ JSON Schema:
               {copiedPrompt ? 'Prompt Copied!' : 'Copy AI Prompt'}
             </button>
 
-            {/* Consolidate & Review Workload Button (replaces Load Sample) */}
+            {/* Consolidate & Review Workload Button */}
             <button
               onClick={() => setShowConsolidateModal(true)}
               title="Consolidate and review current sprint workload to prompt AI for next stories"
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#172033] to-[#121827] border border-[#cda052]/40 text-xs font-semibold text-[#e6c875] hover:text-white hover:border-[#cda052] hover:shadow-[0_0_12px_rgba(205,160,82,0.2)] transition-all"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#172033] to-[#121827] border border-[#cda052]/40 text-xs font-semibold text-[#e6c875] hover:text-white hover:border-[#cda052] hover:shadow-[0_0_12px_rgba(205,160,82,0.2)] transition-all cursor-pointer"
             >
               <Layers className="w-3.5 h-3.5 text-[#cda052]" />
               <span>Consolidate & Review Workload</span>
@@ -1021,11 +1160,11 @@ JSON Schema:
                 <div className="text-[#cbd5e1]"><span className="text-[#cda052] font-semibold">points:</span> 1 to 8 pts</div>
                 <div className="text-[#cbd5e1]"><span className="text-[#cda052] font-semibold">assignee:</span> Unassigned / Name</div>
                 <div className="text-[#cbd5e1]"><span className="text-[#cda052] font-semibold">sprint:</span> Sprint 1, Sprint 2</div>
-                <div className="text-[#cbd5e1]"><span className="text-[#cda052] font-semibold">manufacture:</span> Vendor partner</div>
+                <div className="text-[#cbd5e1]"><span className="text-[#cda052] font-semibold">manufacture:</span> Layo Group</div>
                 <div className="text-[#cbd5e1]"><span className="text-[#cda052] font-semibold">styles:</span> All Styles / single</div>
                 <div className="text-[#cbd5e1]"><span className="text-[#cda052] font-semibold">tasks:</span> List of subtasks</div>
                 <div className="text-[#cbd5e1] col-span-2"><span className="text-[#cda052] font-semibold">task.description:</span> Detailed task instructions</div>
-                <div className="text-[#cbd5e1] col-span-2"><span className="text-emerald-400 font-semibold">task.acceptance_criteria:</span> Done checks for task</div>
+                <div className="text-[#cbd5e1] col-span-2"><span className="text-emerald-400 font-semibold">task.acceptance_criteria:</span> Criteria to sign-off task</div>
               </div>
             </div>
           </div>
@@ -1052,7 +1191,7 @@ JSON Schema:
               value={rawInput}
               onChange={(e) => setRawInput(e.target.value)}
               rows={14}
-              placeholder={`Paste your AI-generated JSON or YAML here...\n\nExample JSON:\n[\n  {\n    "user_story": "Finalize proto sample fit & sizing specs",\n    "priority": "P1",\n    "points": 5,\n    "assignee": "Unassigned",\n    "sprint": "Sprint 1",\n    "manufacture": "Techno Sportswear",\n    "styles": "All Styles",\n    "description": "Lead fit sessions with sample master...",\n    "acceptance_criteria": "Fit trial approved across XS, S, M...",\n    "tasks": [\n      {\n        "title": "Audit proto sample waist tension & stretch recovery",\n        "priority": "P1",\n        "points": 2,\n        "assignee": "Unassigned",\n        "description": "Perform tensile testing across 25 cycles...",\n        "acceptance_criteria": "Elastic recovery >= 95%..."\n      }\n    ]\n  }\n]`}
+              placeholder={`Paste your AI-generated JSON or YAML here...\n\nExample JSON:\n[\n  {\n    "user_story": "Finalize proto sample fit & sizing specs",\n    "priority": "P1",\n    "points": 5,\n    "assignee": "Unassigned",\n    "sprint": "Sprint 1",\n    "manufacture": "Layo Group",\n    "styles": "All Styles",\n    "description": "Lead fit sessions with sample master...",\n    "acceptance_criteria": "Fit trial approved across XS, S, M...",\n    "tasks": [\n      {\n        "title": "Audit proto sample waist tension & stretch recovery",\n        "priority": "P1",\n        "points": 2,\n        "assignee": "Unassigned",\n        "description": "Perform tensile testing across 25 cycles...",\n        "acceptance_criteria": "Elastic recovery >= 95%..."\n      }\n    ]\n  }\n]`}
               className="w-full p-4 rounded-xl bg-[#07090e] border border-[#20293d] text-xs font-mono text-white placeholder:text-[#424f67] focus:outline-none focus:border-[#cda052]/60 leading-relaxed resize-y"
             />
 
@@ -1189,7 +1328,7 @@ JSON Schema:
 
                           {task.acceptanceCriteria && (
                             <p className="text-[11px] text-emerald-300/90 bg-emerald-950/30 border border-emerald-900/40 p-1.5 rounded">
-                              <span className="text-emerald-400 font-semibold">Done: </span>{task.acceptanceCriteria}
+                              <span className="text-emerald-400 font-semibold">Acceptance Criteria: </span>{task.acceptanceCriteria}
                             </p>
                           )}
                         </div>
@@ -1241,9 +1380,9 @@ JSON Schema:
               </button>
             </div>
 
-            {/* Sprint Selector & Action Buttons Bar */}
-            <div className="px-5 py-3.5 border-b border-[#171d2b] bg-[#0f1422] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
+            {/* Target Sprint Selector Bar */}
+            <div className="px-5 py-3 border-b border-[#171d2b] bg-[#0f1422] flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 flex-wrap">
                 <span className="text-xs text-[#94a3b8] font-medium whitespace-nowrap">Target Sprint:</span>
                 <select
                   value={selectedConsolidateSprintId}
@@ -1260,24 +1399,117 @@ JSON Schema:
                 </select>
               </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleCopyWorkloadPrompt}
-                  title="Copy comprehensive AI prompt with full sprint context, descriptions & acceptance criteria"
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-xs font-bold hover:shadow-glow transition-all cursor-pointer"
+              <span className="text-[11px] text-[#7c869d] hidden sm:inline">
+                Partner: <strong className="text-white">Layo Group</strong>
+              </span>
+            </div>
+
+            {/* OPTIMIZED SELECTION WINDOW & SINGLE COPY BUTTON */}
+            <div className="p-4 sm:p-5 border-b border-[#171d2b] bg-[#0b0f19] space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                {/* Selection Option 1: Include Existing Workload Checkbox (Tick Mark) */}
+                <div
+                  onClick={() => setIncludeExistingWorkload(!includeExistingWorkload)}
+                  className={`md:col-span-8 p-3.5 rounded-xl border transition-all cursor-pointer flex items-start gap-3 select-none ${
+                    includeExistingWorkload
+                      ? 'bg-[#121929] border-[#cda052]/70 shadow-[0_0_15px_rgba(205,160,82,0.12)]'
+                      : 'bg-[#080b12] border-[#1a2337] hover:border-[#2a3754]'
+                  }`}
                 >
-                  {copiedContextPrompt ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  {copiedContextPrompt ? 'Copied Prompt for AI!' : 'Copy AI Planning Prompt'}
+                  <div
+                    className={`w-5 h-5 rounded-md flex items-center justify-center mt-0.5 transition-colors flex-shrink-0 ${
+                      includeExistingWorkload
+                        ? 'bg-[#cda052] text-black shadow-sm font-bold'
+                        : 'border border-[#323d57] bg-[#0c101a]'
+                    }`}
+                  >
+                    {includeExistingWorkload && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold text-white">Include Current Sprint Workload Context</span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#1a243a] text-[#cda052] font-semibold border border-[#2b3a5c]">
+                        {consolidatedStories.length} Stories · {consolidatedTasks.length} Tasks
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#94a3b8] leading-relaxed">
+                      Embeds all currently listed stories & tasks categorized by status (Completed, In-Progress, New/Pending) with full descriptions and criteria, so external AI knows what is already finished vs what is left to plan.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Selection Option 2: Output Format Mode (Prompt vs JSON) */}
+                <div className="md:col-span-4 p-3.5 rounded-xl bg-[#080b12] border border-[#1a2337] flex flex-col justify-between gap-2">
+                  <div>
+                    <span className="text-xs font-bold text-white block mb-0.5">Prompt Output Format</span>
+                    <p className="text-[10px] text-[#7c869d]">Choose Markdown prompt or pure JSON format.</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5 bg-[#05070c] p-1 rounded-xl border border-[#172033]">
+                    <button
+                      onClick={() => setOutputFormat('prompt')}
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                        outputFormat === 'prompt'
+                          ? 'bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black shadow-sm'
+                          : 'text-[#8290ab] hover:text-white'
+                      }`}
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>AI Prompt</span>
+                    </button>
+                    <button
+                      onClick={() => setOutputFormat('json')}
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                        outputFormat === 'json'
+                          ? 'bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black shadow-sm'
+                          : 'text-[#8290ab] hover:text-white'
+                      }`}
+                    >
+                      <FileText className="w-3 h-3" />
+                      <span>JSON Only</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* SINGLE UNIFIED COPY BUTTON BELOW SELECTION WINDOW */}
+              <div className="space-y-2">
+                <button
+                  onClick={handleUnifiedCopy}
+                  className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-gradient-to-r from-[#cda052] via-[#dfb66a] to-[#a97f38] text-black text-xs sm:text-sm font-bold hover:shadow-[0_0_20px_rgba(205,160,82,0.35)] transition-all cursor-pointer active:scale-[0.99]"
+                >
+                  {copiedUnified ? (
+                    <>
+                      <Check className="w-4 h-4 stroke-[3] text-black" />
+                      <span>Copied to Clipboard! Ready to paste into ChatGPT / Claude / Gemini</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4 text-black" />
+                      <span>{unifiedButtonLabel}</span>
+                    </>
+                  )}
                 </button>
 
-                <button
-                  onClick={handleCopyWorkloadJson}
-                  title="Copy raw structured JSON of current workload"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#141926] border border-[#222c42] text-xs font-medium text-[#cbd5e1] hover:text-white transition-all cursor-pointer"
-                >
-                  {copiedContextJson ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <FileText className="w-3.5 h-3.5 text-[#cda052]" />}
-                  {copiedContextJson ? 'JSON Copied!' : 'Copy JSON'}
-                </button>
+                <div className="flex items-center justify-between text-[11px] text-[#7c869d] px-1">
+                  <span>
+                    {includeExistingWorkload
+                      ? `Context includes: ${consolidatedStories.length} stories, ${consolidatedTasks.length} tasks, status breakdown & target JSON schema`
+                      : 'Context includes: Clean AI instructions & target delivery JSON schema template only'}
+                  </span>
+                  <button
+                    onClick={() => setShowPreviewText(!showPreviewText)}
+                    className="text-[#cda052] hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    {showPreviewText ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    <span>{showPreviewText ? 'Hide Prompt Preview' : 'Preview Generated Prompt'}</span>
+                  </button>
+                </div>
+
+                {showPreviewText && (
+                  <pre className="p-3.5 rounded-xl bg-[#06080e] border border-[#1b253b] text-[11px] font-mono text-[#a5b4fc] overflow-x-auto max-h-48 leading-relaxed whitespace-pre-wrap">
+                    {generateConsolidatedContent()}
+                  </pre>
+                )}
               </div>
             </div>
 
@@ -1312,7 +1544,7 @@ JSON Schema:
             </div>
 
             {/* Scrollable Workload List */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-4 max-h-[58vh]">
+            <div className="flex-1 overflow-y-auto p-5 space-y-4 max-h-[50vh]">
               {consolidatedStories.length === 0 ? (
                 <div className="p-12 text-center text-[#74829c] space-y-2">
                   <Layers className="w-8 h-8 text-[#414d64] mx-auto mb-2" />
@@ -1343,6 +1575,9 @@ JSON Schema:
                           </span>
                           <span className={`text-[9px] px-2 py-0.5 rounded border font-medium ${PRIORITY_BADGE_COLOR[story.priority]}`}>
                             {PRIORITY_LABEL[story.priority]}
+                          </span>
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-[#101824] border border-[#1e2e48] text-amber-300 font-medium flex items-center gap-1">
+                            <Factory className="w-2.5 h-2.5 text-amber-400" /> Layo Group
                           </span>
                           {story.assignee && (
                             <span className="text-[10px] text-[#cbd5e1] flex items-center gap-1 bg-[#131b2c] px-2 py-0.5 rounded border border-[#202d48]">
@@ -1388,29 +1623,57 @@ JSON Schema:
                             Child Tasks ({tasks.length}):
                           </span>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {tasks.map((t, tIdx) => (
-                              <div
-                                key={t.id}
-                                className="p-2.5 rounded-lg bg-[#080b12] border border-[#182133] text-xs space-y-1"
-                              >
-                                <div className="flex items-center justify-between gap-1.5">
-                                  <span className="text-white font-medium truncate flex-1">
-                                    ↳ Task {idx + 1}.{tIdx + 1}: {t.title}
-                                  </span>
-                                  <span className={`text-[8px] px-1.5 py-0.2 rounded border font-medium ${STATE_COLOR[t.state]}`}>
-                                    {t.state}
-                                  </span>
+                            {tasks.map((t, tIdx) => {
+                              const isTaskDone = t.state === 'Closed' || t.state === 'Resolved';
+                              const isTaskActive = t.state === 'Active' || t.state === 'In Review';
+
+                              return (
+                                <div
+                                  key={t.id}
+                                  className="p-2.5 rounded-lg bg-[#080b12] border border-[#182133] text-xs space-y-1.5"
+                                >
+                                  <div className="flex items-center justify-between gap-1.5">
+                                    <span className="text-white font-medium truncate flex-1">
+                                      ↳ Task {idx + 1}.{tIdx + 1}: {t.title}
+                                    </span>
+                                    <span className={`text-[8px] px-1.5 py-0.2 rounded border font-medium ${STATE_COLOR[t.state]}`}>
+                                      {t.state}
+                                    </span>
+                                  </div>
+                                  {t.description && (
+                                    <p className="text-[11px] text-[#94a3b8] line-clamp-2">{t.description}</p>
+                                  )}
+                                  {t.acceptanceCriteria && (
+                                    <p
+                                      className={`text-[10px] p-1.5 rounded border ${
+                                        isTaskDone
+                                          ? 'text-emerald-300/90 bg-emerald-950/30 border-emerald-900/40'
+                                          : isTaskActive
+                                          ? 'text-amber-300/90 bg-amber-950/20 border-amber-900/40'
+                                          : 'text-sky-300/90 bg-sky-950/20 border-sky-900/40'
+                                      }`}
+                                    >
+                                      <strong
+                                        className={
+                                          isTaskDone
+                                            ? 'text-emerald-400'
+                                            : isTaskActive
+                                            ? 'text-amber-400'
+                                            : 'text-sky-400'
+                                        }
+                                      >
+                                        {isTaskDone
+                                          ? 'Acceptance Criteria (Fulfilled): '
+                                          : isTaskActive
+                                          ? 'Acceptance Criteria (Pending Fulfillment): '
+                                          : 'Acceptance Criteria (Requirements - Not Started): '}
+                                      </strong>
+                                      {t.acceptanceCriteria}
+                                    </p>
+                                  )}
                                 </div>
-                                {t.description && (
-                                  <p className="text-[11px] text-[#94a3b8] line-clamp-2">{t.description}</p>
-                                )}
-                                {t.acceptanceCriteria && (
-                                  <p className="text-[10px] text-emerald-300/80 bg-emerald-950/30 p-1 rounded border border-emerald-900/40">
-                                    <strong className="text-emerald-400">Done: </strong>{t.acceptanceCriteria}
-                                  </p>
-                                )}
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       )}
@@ -1423,11 +1686,11 @@ JSON Schema:
             {/* Modal Footer */}
             <div className="px-5 py-3 border-t border-[#171d2b] bg-[#0c1018] flex items-center justify-between">
               <span className="text-xs text-[#7c869d]">
-                Clicking "Copy AI Planning Prompt" copies full story and task context with instructions.
+                Manufacturer set to Layo Group. Toggle existing workload context above to customize the exported AI prompt.
               </span>
               <button
                 onClick={() => setShowConsolidateModal(false)}
-                className="px-4 py-2 rounded-xl bg-[#141926] border border-[#222c42] text-xs font-semibold text-[#cbd5e1] hover:text-white"
+                className="px-4 py-2 rounded-xl bg-[#141926] border border-[#222c42] text-xs font-semibold text-[#cbd5e1] hover:text-white cursor-pointer"
               >
                 Close
               </button>
