@@ -135,9 +135,17 @@ export default function VendorsPage() {
   // 1-Click Stage Update Handler
   const handleUpdateStage = async (vendor: VendorItem, newStage: string) => {
     const now = new Date().toISOString();
+    const category = getVendorCategory(vendor);
+    const config = getCategoryConfig(category);
+    const stageObj = config.stages.find(
+      (s) => s.name.toLowerCase() === newStage.toLowerCase() || s.id.toLowerCase() === newStage.toLowerCase()
+    );
+    const newProgress = stageObj ? stageObj.progressPercent : getStageProgress({ ...vendor, stage: newStage });
+
     const updated: VendorItem = {
       ...vendor,
-      stage: newStage,
+      stage: stageObj ? stageObj.name : newStage,
+      stageProgressPercent: newProgress,
       lastContactedAt: now.split('T')[0],
       updatedAt: now,
     };
@@ -497,56 +505,65 @@ export default function VendorsPage() {
                     </div>
                   </div>
 
-                  {/* Middle Column: Domain-Specific Workflow Stepper (Interactive) */}
-                  <div className="flex-1 min-w-0 bg-[#07090e]/75 p-3 rounded-xl border border-white/[0.04] space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#8a96ae]">
-                          {cfg.shortLabel} Stage:
+                  {/* Middle Column: Refined Workflow Stage Controls & Progress */}
+                  <div className="flex-1 min-w-0 bg-[#090d16]/90 p-3 sm:p-3.5 rounded-xl border border-white/[0.05] space-y-2.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#8a96ae] flex-shrink-0">
+                          {cfg.shortLabel} Lifecycle:
                         </span>
-                        <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-[#141b2c] border border-[#27344e] text-[#f5d58d]">
-                          {vendor.stage}
-                        </span>
-                        <span className="text-[10px] font-mono text-[#8a96ae]">({progress}%)</span>
+                        {/* Interactive Stage Dropdown */}
+                        <div className="relative inline-flex items-center">
+                          <select
+                            value={vendor.stage}
+                            onChange={(e) => handleUpdateStage(vendor, e.target.value)}
+                            aria-label={`Update stage for ${vendor.name}`}
+                            className="appearance-none pl-2.5 pr-7 py-1 rounded-lg bg-[#141b2c] hover:bg-[#1a2338] border border-[#27344e] hover:border-[#cda052]/60 text-xs font-semibold text-[#f5d58d] cursor-pointer outline-none transition-all shadow-sm focus:ring-1 focus:ring-[#cda052]"
+                          >
+                            {cfg.stages.map((stg) => (
+                              <option key={stg.id} value={stg.name} className="bg-[#0e121b] text-white py-1">
+                                {stg.shortLabel} — {stg.name} ({stg.progressPercent}%)
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown className="w-3.5 h-3.5 text-[#cda052] absolute right-2 pointer-events-none" />
+                        </div>
                       </div>
 
-                      {next && (
+                      {next ? (
                         <button
                           onClick={() => handleAdvanceStep(vendor)}
-                          className="flex items-center gap-1 text-[11px] text-[#cda052] hover:text-[#f7dda0] font-bold hover:underline cursor-pointer"
+                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[rgba(205,160,82,0.14)] hover:bg-[rgba(205,160,82,0.25)] text-[#f5d58d] hover:text-white border border-[#cda052]/40 text-xs font-semibold transition-all cursor-pointer shadow-sm group flex-shrink-0"
                           title={`Advance to ${next.name}`}
                         >
                           <span>Advance: {next.shortLabel}</span>
-                          <ArrowRight className="w-3 h-3" />
+                          <ArrowRight className="w-3 h-3 text-[#cda052] group-hover:translate-x-0.5 transition-transform" />
                         </button>
+                      ) : (
+                        <div className="flex items-center gap-1 text-[11px] text-emerald-400 font-semibold flex-shrink-0">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Workflow Complete</span>
+                        </div>
                       )}
                     </div>
 
-                    {/* Progress nodes */}
-                    <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-7 gap-1">
-                      {cfg.stages.filter((s) => !s.isTerminalFailure).map((stageItem) => {
-                        const isCurrent = vendor.stage.toLowerCase() === stageItem.name.toLowerCase() || vendor.stage.toLowerCase() === stageItem.id.toLowerCase();
-                        const isDone = progress > stageItem.progressPercent;
+                    {/* Progress Track & Milestones Indicator */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-[#8a96ae] truncate max-w-[280px]">
+                          {cfg.stages.find((s) => s.name.toLowerCase() === vendor.stage.toLowerCase() || s.id.toLowerCase() === vendor.stage.toLowerCase())?.description || vendor.stage}
+                        </span>
+                        <span className="font-mono font-semibold text-[#f5d58d] flex-shrink-0">
+                          {progress}%
+                        </span>
+                      </div>
 
-                        return (
-                          <button
-                            key={stageItem.id}
-                            onClick={() => handleUpdateStage(vendor, stageItem.name)}
-                            title={`Set stage to: ${stageItem.name} (${stageItem.description})`}
-                            className={`p-1.5 rounded-lg border text-center transition-all cursor-pointer truncate ${
-                              isCurrent
-                                ? 'bg-[rgba(205,160,82,0.18)] border-[#cda052] text-white shadow-sm ring-1 ring-[#cda052]/50'
-                                : isDone
-                                ? 'bg-emerald-950/30 border-emerald-800/40 text-emerald-300'
-                                : 'bg-[#0f1422] border-[#1d273a] text-[#717d96] hover:text-white'
-                            }`}
-                          >
-                            <span className="text-[9px] font-semibold block truncate">
-                              {stageItem.shortLabel}
-                            </span>
-                          </button>
-                        );
-                      })}
+                      <div className="h-1.5 w-full bg-[#141b2a] rounded-full overflow-hidden border border-white/[0.05]">
+                        <div
+                          className="h-full bg-gradient-to-r from-[#9d7328] via-[#cda052] to-[#f7dda0] rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(205,160,82,0.35)]"
+                          style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
 

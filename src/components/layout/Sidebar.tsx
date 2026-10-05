@@ -33,9 +33,16 @@ import { useTheme } from '@/lib/themeContext';
 interface SidebarProps {
   mobileOpen?: boolean;
   onCloseMobile?: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
-export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
+export default function Sidebar({ 
+  mobileOpen = false, 
+  onCloseMobile,
+  isCollapsed: externalCollapsed,
+  onToggleCollapse: externalToggleCollapse
+}: SidebarProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const activeWorkTab = pathname === '/work' ? (searchParams.get('tab') || 'backlog') : null;
@@ -45,35 +52,36 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
   const isLight = theme === 'light';
 
   // Collapsible sidebar state for desktop
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [internalCollapsed, setInternalCollapsed] = useState(false);
+  const isCollapsed = externalCollapsed !== undefined ? externalCollapsed : internalCollapsed;
+  const toggleCollapsed = externalToggleCollapse || (() => {
+    setInternalCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('rivlet_sidebar_collapsed', String(next));
+      } catch {}
+      return next;
+    });
+  });
+
   const [docsExpanded, setDocsExpanded] = useState(
     pathname === '/documents' || pathname === '/knowledge-base' || pathname === '/artifacts'
   );
   const [calculatorExpanded, setCalculatorExpanded] = useState(pathname.startsWith('/calculator'));
 
-  // Load collapsed preference from localStorage
+  // Load collapsed preference from localStorage if not controlled externally
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('rivlet_sidebar_collapsed');
-      if (saved !== null) {
-        setIsCollapsed(saved === 'true');
-      }
-    } catch {
-      // ignore SSR or storage exceptions
-    }
-  }, []);
-
-  const toggleCollapsed = () => {
-    setIsCollapsed((prev) => {
-      const next = !prev;
+    if (externalCollapsed === undefined) {
       try {
-        localStorage.setItem('rivlet_sidebar_collapsed', String(next));
+        const saved = localStorage.getItem('rivlet_sidebar_collapsed');
+        if (saved !== null) {
+          setInternalCollapsed(saved === 'true');
+        }
       } catch {
-        // ignore
+        // ignore SSR or storage exceptions
       }
-      return next;
-    });
-  };
+    }
+  }, [externalCollapsed]);
 
   const isCalcPath = pathname === '/calculator';
   const calcTab = searchParams.get('tab');
@@ -142,17 +150,17 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
           <Link
             href="/"
             onClick={handleLinkClick}
-            className={`group/link flex items-center h-9 w-full rounded-xl text-xs transition-colors duration-200 border ${
+            className={`group/link flex items-center rounded-xl text-xs transition-colors duration-200 border ${
               pathname === '/'
                 ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold shadow-sm border-[#cda052]/60'
                 : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
-            }`}
+            } ${collapsed ? 'w-10 h-10 mx-auto justify-center p-0' : 'w-full h-9 px-2.5 justify-start'}`}
           >
-            <div className="w-9 h-9 flex items-center justify-center flex-shrink-0">
+            <div className={`flex items-center justify-center flex-shrink-0 ${collapsed ? 'w-full h-full' : 'w-7 h-7'}`}>
               <Home className={`w-4 h-4 flex-shrink-0 transition-transform group-hover/link:scale-110 ${pathname === '/' ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/link:text-white'}`} />
             </div>
             <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-              collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[160px] opacity-100 translate-x-0 ml-1'
+              collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none hidden' : 'max-w-[160px] opacity-100 translate-x-0 ml-1.5'
             }`}>
               Home
             </span>
@@ -191,17 +199,17 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                   <Link
                     href={item.href}
                     onClick={handleLinkClick}
-                    className={`group/link flex items-center h-9 w-full rounded-xl text-xs transition-colors duration-200 border ${
+                    className={`group/link flex items-center rounded-xl text-xs transition-colors duration-200 border ${
                       isActive
                         ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
                         : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
-                    }`}
+                    } ${collapsed ? 'w-10 h-10 mx-auto justify-center p-0' : 'w-full h-9 px-2.5 justify-start'}`}
                   >
-                    <div className="w-9 h-9 flex items-center justify-center flex-shrink-0">
+                    <div className={`flex items-center justify-center flex-shrink-0 ${collapsed ? 'w-full h-full' : 'w-7 h-7'}`}>
                       <Icon className={`w-3.5 h-3.5 flex-shrink-0 transition-transform group-hover/link:scale-110 ${isActive ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/link:text-white'}`} />
                     </div>
                     <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-                      collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[160px] opacity-100 translate-x-0 ml-1'
+                      collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none hidden' : 'max-w-[160px] opacity-100 translate-x-0 ml-1.5'
                     }`}>
                       {item.label}
                     </span>
@@ -238,40 +246,40 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
           {/* Business Calculations */}
           <div className="relative group w-full">
             <div
-              className={`nav-expandable-row group/row flex items-center h-9 w-full rounded-xl text-xs transition-colors duration-200 border cursor-pointer ${
+              className={`nav-expandable-row group/row flex items-center rounded-xl text-xs transition-colors duration-200 border cursor-pointer ${
                 isCalcPath
                   ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
                   : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1]'
-              }`}
+              } ${collapsed ? 'w-10 h-10 mx-auto justify-center p-0' : 'w-full h-9 px-2.5 justify-between'}`}
             >
               <Link
                 href="/calculator"
                 onClick={handleLinkClick}
-                className="flex items-center flex-1 h-full min-w-0 outline-none"
+                className={`flex items-center h-full min-w-0 outline-none ${collapsed ? 'w-full justify-center' : 'flex-1'}`}
               >
-                <div className="w-9 h-9 flex items-center justify-center flex-shrink-0">
+                <div className={`flex items-center justify-center flex-shrink-0 ${collapsed ? 'w-full h-full' : 'w-7 h-7'}`}>
                   <Calculator className={`w-4 h-4 flex-shrink-0 transition-transform group-hover/row:scale-110 ${isCalcPath ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/row:text-[#f7d88c]'}`} />
                 </div>
                 <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-                  collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[140px] opacity-100 translate-x-0 ml-1 group-hover/row:text-white'
+                  collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none hidden' : 'max-w-[140px] opacity-100 translate-x-0 ml-1.5 group-hover/row:text-white'
                 }`}>
                   Business Calculations
                 </span>
               </Link>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setCalculatorExpanded((v) => !v);
-                }}
-                className={`p-1.5 rounded text-[#a99a8b] hover:text-[#cda052] transition-all duration-300 flex-shrink-0 cursor-pointer outline-none mr-1.5 ${
-                  collapsed ? 'max-w-0 opacity-0 pointer-events-none p-0 mr-0' : 'max-w-6 opacity-100'
-                }`}
-                aria-label="Toggle calculation sub-modules"
-              >
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${calculatorExpanded ? '' : '-rotate-90'}`} />
-              </button>
+              {!collapsed && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setCalculatorExpanded((v) => !v);
+                  }}
+                  className="p-1 rounded text-[#a99a8b] hover:text-[#cda052] transition-all flex-shrink-0 cursor-pointer outline-none mr-0.5"
+                  aria-label="Toggle calculation sub-modules"
+                >
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${calculatorExpanded ? '' : '-rotate-90'}`} />
+                </button>
+              )}
             </div>
 
             {/* Submodules in expanded view */}
@@ -386,17 +394,17 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
             <Link
               href="/vendors"
               onClick={handleLinkClick}
-              className={`group/link flex items-center h-9 w-full rounded-xl text-xs transition-colors duration-200 border ${
+              className={`group/link flex items-center rounded-xl text-xs transition-colors duration-200 border ${
                 pathname === '/vendors'
                   ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
                   : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
-              }`}
+              } ${collapsed ? 'w-10 h-10 mx-auto justify-center p-0' : 'w-full h-9 px-2.5 justify-start'}`}
             >
-              <div className="w-9 h-9 flex items-center justify-center flex-shrink-0">
+              <div className={`flex items-center justify-center flex-shrink-0 ${collapsed ? 'w-full h-full' : 'w-7 h-7'}`}>
                 <Factory className={`w-4 h-4 flex-shrink-0 transition-transform group-hover/link:scale-110 ${pathname === '/vendors' ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/link:text-white'}`} />
               </div>
               <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-                collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[160px] opacity-100 translate-x-0 ml-1'
+                collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none hidden' : 'max-w-[160px] opacity-100 translate-x-0 ml-1.5'
               }`}>
                 Vendors
               </span>
@@ -414,17 +422,17 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
             <Link
               href="/pipeline"
               onClick={handleLinkClick}
-              className={`group/link flex items-center h-9 w-full rounded-xl text-xs transition-colors duration-200 border ${
+              className={`group/link flex items-center rounded-xl text-xs transition-colors duration-200 border ${
                 pathname === '/pipeline'
                   ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
                   : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
-              }`}
+              } ${collapsed ? 'w-10 h-10 mx-auto justify-center p-0' : 'w-full h-9 px-2.5 justify-start'}`}
             >
-              <div className="w-9 h-9 flex items-center justify-center flex-shrink-0">
+              <div className={`flex items-center justify-center flex-shrink-0 ${collapsed ? 'w-full h-full' : 'w-7 h-7'}`}>
                 <GitBranch className={`w-4 h-4 flex-shrink-0 transition-transform group-hover/link:scale-110 ${pathname === '/pipeline' ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/link:text-white'}`} />
               </div>
               <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-                collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[160px] opacity-100 translate-x-0 ml-1'
+                collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none hidden' : 'max-w-[160px] opacity-100 translate-x-0 ml-1.5'
               }`}>
                 Pipeline
               </span>
@@ -442,17 +450,17 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
             <Link
               href="/budget"
               onClick={handleLinkClick}
-              className={`group/link flex items-center h-9 w-full rounded-xl text-xs transition-colors duration-200 border ${
+              className={`group/link flex items-center rounded-xl text-xs transition-colors duration-200 border ${
                 pathname === '/budget'
                   ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
                   : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
-              }`}
+              } ${collapsed ? 'w-10 h-10 mx-auto justify-center p-0' : 'w-full h-9 px-2.5 justify-start'}`}
             >
-              <div className="w-9 h-9 flex items-center justify-center flex-shrink-0">
+              <div className={`flex items-center justify-center flex-shrink-0 ${collapsed ? 'w-full h-full' : 'w-7 h-7'}`}>
                 <Wallet className={`w-4 h-4 flex-shrink-0 transition-transform group-hover/link:scale-110 ${pathname === '/budget' ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/link:text-white'}`} />
               </div>
               <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-                collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[160px] opacity-100 translate-x-0 ml-1'
+                collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none hidden' : 'max-w-[160px] opacity-100 translate-x-0 ml-1.5'
               }`}>
                 Budget Tracker
               </span>
@@ -483,40 +491,40 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
 
           <div className="relative group w-full">
             <div
-              className={`nav-expandable-row group/row flex items-center h-9 w-full rounded-xl text-xs transition-colors duration-200 border cursor-pointer ${
+              className={`nav-expandable-row group/row flex items-center rounded-xl text-xs transition-colors duration-200 border cursor-pointer ${
                 isDocsActive
                   ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
                   : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1]'
-              }`}
+              } ${collapsed ? 'w-10 h-10 mx-auto justify-center p-0' : 'w-full h-9 px-2.5 justify-between'}`}
             >
               <Link
                 href="/documents"
                 onClick={handleLinkClick}
-                className="flex items-center flex-1 h-full min-w-0 outline-none"
+                className={`flex items-center h-full min-w-0 outline-none ${collapsed ? 'w-full justify-center' : 'flex-1'}`}
               >
-                <div className="w-9 h-9 flex items-center justify-center flex-shrink-0">
+                <div className={`flex items-center justify-center flex-shrink-0 ${collapsed ? 'w-full h-full' : 'w-7 h-7'}`}>
                   <FolderOpen className={`w-4 h-4 flex-shrink-0 transition-transform group-hover/row:scale-110 ${isDocsActive ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/row:text-[#f7d88c]'}`} />
                 </div>
                 <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-                  collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[140px] opacity-100 translate-x-0 ml-1 group-hover/row:text-white'
+                  collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none hidden' : 'max-w-[140px] opacity-100 translate-x-0 ml-1.5 group-hover/row:text-white'
                 }`}>
                   Documentation & Vault
                 </span>
               </Link>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setDocsExpanded((v) => !v);
-                }}
-                className={`p-1.5 rounded text-[#a99a8b] hover:text-[#cda052] transition-all duration-300 flex-shrink-0 cursor-pointer outline-none mr-1.5 ${
-                  collapsed ? 'max-w-0 opacity-0 pointer-events-none p-0 mr-0' : 'max-w-6 opacity-100'
-                }`}
-                aria-label="Toggle documentation sub-items"
-              >
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${docsExpanded ? '' : '-rotate-90'}`} />
-              </button>
+              {!collapsed && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDocsExpanded((v) => !v);
+                  }}
+                  className="p-1 rounded text-[#a99a8b] hover:text-[#cda052] transition-all flex-shrink-0 cursor-pointer outline-none mr-0.5"
+                  aria-label="Toggle documentation sub-items"
+                >
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${docsExpanded ? '' : '-rotate-90'}`} />
+                </button>
+              )}
             </div>
 
             {/* Subnavigations when expanded */}
@@ -609,17 +617,17 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
             <Link
               href="/profile"
               onClick={handleLinkClick}
-              className={`group/link flex items-center h-9 w-full rounded-xl text-xs transition-colors duration-200 border ${
+              className={`group/link flex items-center rounded-xl text-xs transition-colors duration-200 border ${
                 pathname === '/profile'
                   ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
                   : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
-              }`}
+              } ${collapsed ? 'w-10 h-10 mx-auto justify-center p-0' : 'w-full h-9 px-2.5 justify-start'}`}
             >
-              <div className="w-9 h-9 flex items-center justify-center flex-shrink-0">
+              <div className={`flex items-center justify-center flex-shrink-0 ${collapsed ? 'w-full h-full' : 'w-7 h-7'}`}>
                 <Settings className="w-4 h-4 text-[#cda052] transition-transform group-hover/link:scale-110" />
               </div>
               <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-                collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[150px] opacity-100 translate-x-0 ml-1'
+                collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none hidden' : 'max-w-[150px] opacity-100 translate-x-0 ml-1.5'
               }`}>
                 Profile & Brand Settings
               </span>
@@ -634,14 +642,16 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
 
           {/* User Profile Card & Sign Out */}
           <div className="relative group w-full">
-            <div className="flex items-center h-9 w-full rounded-xl transition-colors duration-200">
-              <div className="w-9 h-9 flex items-center justify-center flex-shrink-0">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#cda052] to-[#8c672b] text-black flex items-center justify-center text-xs font-bold shadow-glow">
+            <div className={`flex items-center rounded-xl transition-colors duration-200 ${
+              collapsed ? 'w-10 h-10 mx-auto justify-center' : 'h-9 w-full px-1'
+            }`}>
+              <div className="flex items-center justify-center flex-shrink-0">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#cda052] to-[#8c672b] text-black flex items-center justify-center text-xs font-bold shadow-glow">
                   {user?.name?.[0]?.toUpperCase() || 'R'}
                 </div>
               </div>
               <div className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] flex-1 min-w-0 ${
-                collapsed ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[130px] opacity-100 ml-1'
+                collapsed ? 'max-w-0 opacity-0 pointer-events-none hidden' : 'max-w-[130px] opacity-100 ml-1.5'
               }`}>
                 <span className="text-xs text-[#f1f5f9] truncate font-semibold block leading-tight">
                   {user?.name || 'Rivlet Admin'}
@@ -650,15 +660,15 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                   {user?.email || 'admin@therivlet.com'}
                 </span>
               </div>
-              <button
-                onClick={() => signOut()}
-                className={`p-1.5 rounded-lg text-[#a89487] dark:text-[#94a3b8] hover:text-rose-400 hover:bg-rose-950/30 transition-all duration-300 flex-shrink-0 cursor-pointer ${
-                  collapsed ? 'max-w-0 opacity-0 pointer-events-none p-0 overflow-hidden' : 'max-w-8 opacity-100'
-                }`}
-                aria-label="Sign Out"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-              </button>
+              {!collapsed && (
+                <button
+                  onClick={() => signOut()}
+                  className="p-1.5 rounded-lg text-[#a89487] dark:text-[#94a3b8] hover:text-rose-400 hover:bg-rose-950/30 transition-all flex-shrink-0 cursor-pointer"
+                  aria-label="Sign Out"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
 
             {/* Account Tooltip when collapsed */}

@@ -89,6 +89,27 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [user, isLoading, isLoginPage, router]);
 
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('rivlet_sidebar_collapsed');
+      if (saved !== null) {
+        setSidebarCollapsed(saved === 'true');
+      }
+    } catch {}
+  }, []);
+
+  const toggleSidebarCollapsed = () => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('rivlet_sidebar_collapsed', String(next));
+      } catch {}
+      return next;
+    });
+  };
+
   // Loading Splash Screen (renders centered on refresh, initial load, and auth sync)
   if (isLoading) {
     return (
@@ -122,7 +143,8 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
       {/* 1. Global Persistent Full-Width Header with Brand Logo & Wordmark */}
       <Topbar 
         onOpenCommand={() => setCommandPaletteOpen(true)}
-        onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)} 
+        onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
+        onToggleSidebarCollapse={toggleSidebarCollapsed}
       />
 
       {/* 2. Lower Area: Collapsible Navigation (Home to bottom) + Main Content */}
@@ -130,7 +152,9 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
         <div className="relative z-40 flex-shrink-0 h-full">
           <Sidebar 
             mobileOpen={mobileMenuOpen} 
-            onCloseMobile={() => setMobileMenuOpen(false)} 
+            onCloseMobile={() => setMobileMenuOpen(false)}
+            isCollapsed={sidebarCollapsed}
+            onToggleCollapse={toggleSidebarCollapsed}
           />
         </div>
         <main className="flex-1 overflow-y-auto overflow-x-hidden relative z-10 scroll-smooth">

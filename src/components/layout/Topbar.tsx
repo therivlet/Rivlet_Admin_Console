@@ -20,12 +20,13 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/authContext';
 import { useTheme } from '@/lib/themeContext';
 import { useAdminStore } from '@/lib/store';
-import RivletLogo, { RivletWaveIcon } from '@/components/brand/RivletLogo';
+import RivletLogo from '@/components/brand/RivletLogo';
 
 interface TopbarProps {
   onOpenCommand?: () => void;
   onNewArtifact?: () => void;
   onToggleMobileMenu?: () => void;
+  onToggleSidebarCollapse?: () => void;
 }
 
 const SEASON_OPTIONS = [
@@ -53,7 +54,8 @@ const SEASON_OPTIONS = [
 
 export default function Topbar({ 
   onOpenCommand, 
-  onToggleMobileMenu 
+  onToggleMobileMenu,
+  onToggleSidebarCollapse
 }: TopbarProps) {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -87,32 +89,34 @@ export default function Topbar({
     }
   };
 
+  const handleMenuClick = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      onToggleMobileMenu?.();
+    } else {
+      onToggleSidebarCollapse?.();
+    }
+  };
+
   return (
     <>
       <header className="h-14 flex-shrink-0 bg-[#241812] dark:bg-[#0a0c12]/95 backdrop-blur-xl px-3 sm:px-6 flex items-center justify-between z-30 select-none gap-2 shadow-sm border-b border-[#3d2b20] dark:border-[#1a2233] transition-all">
-        {/* Left section: Mobile Hamburger + Brand Logo + Search */}
-        <div className="flex items-center gap-2 sm:gap-6 flex-1 min-w-0 max-w-2xl">
-          {/* Mobile Hamburger Menu Toggle */}
+        {/* Left section: 3-Lines YouTube-style Hamburger + Combined Brand Logo & Wordmark + Search */}
+        <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0 max-w-2xl">
+          {/* YouTube-Style 3-Lines Hamburger Menu Button */}
           <button
-            onClick={onToggleMobileMenu}
-            className="lg:hidden p-1.5 sm:p-2 rounded-lg text-[#828ca1] hover:text-white hover:bg-white/[0.08] transition-colors flex-shrink-0"
-            title="Open Navigation Menu"
-            aria-label="Open Navigation Menu"
+            onClick={handleMenuClick}
+            className="p-2 rounded-xl text-[#d7cbbe] dark:text-[#94a3b8] hover:text-[#cda052] dark:hover:text-[#f7dda0] hover:bg-white/[0.08] active:scale-95 transition-all flex-shrink-0 cursor-pointer"
+            title="Toggle Navigation Menu"
+            aria-label="Toggle Navigation Menu"
           >
             <Menu className="w-5 h-5" />
           </button>
 
-          {/* Persistent Brand Logo & Wordmark */}
+          {/* Combined Brand Logo & Wordmark (No separate standalone wave box) */}
           <Link
             href="/"
-            className="brand-logo-link flex items-center gap-2.5 outline-none hover:opacity-90 transition-opacity flex-shrink-0 group"
+            className="brand-logo-link flex items-center outline-none hover:opacity-90 transition-opacity flex-shrink-0 py-1"
           >
-            <div className="w-8 h-8 rounded-xl bg-[#34241b] dark:bg-gradient-to-br dark:from-[#1b2234] dark:to-[#0e121b] border border-[#543b2c] dark:border-[#2b3852] flex items-center justify-center shadow-md flex-shrink-0 group-hover:scale-105 group-hover:border-[#cda052]/60 transition-all">
-              <RivletWaveIcon
-                variant={theme === 'light' ? 'white-gold' : 'gold'}
-                size={18}
-              />
-            </div>
             <RivletLogo variant={theme === 'light' ? 'white-gold' : 'gold'} size="sm" className="h-6 w-auto" />
           </Link>
 

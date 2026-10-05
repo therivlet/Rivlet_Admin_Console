@@ -257,9 +257,6 @@ export function getVendorCategory(vendor: Partial<VendorItem>): VendorCategory {
  * Returns stage progress percent for any vendor based on their current stage.
  */
 export function getStageProgress(vendor: Partial<VendorItem>): number {
-  if (typeof vendor.stageProgressPercent === 'number' && vendor.stageProgressPercent >= 0) {
-    return vendor.stageProgressPercent;
-  }
   const category = getVendorCategory(vendor);
   const config = getCategoryConfig(category);
   const stage = vendor.stage || '';
@@ -271,6 +268,10 @@ export function getStageProgress(vendor: Partial<VendorItem>): number {
   // Fuzzy match on keyword
   const fuzzy = config.stages.find((s) => stage.toLowerCase().includes(s.shortLabel.toLowerCase()) || s.name.toLowerCase().includes(stage.toLowerCase()));
   if (fuzzy) return fuzzy.progressPercent;
+
+  if (typeof vendor.stageProgressPercent === 'number' && vendor.stageProgressPercent >= 0) {
+    return vendor.stageProgressPercent;
+  }
 
   // Fallback for legacy outreach stages
   if (stage === 'Approved Partner' || stage.includes('Approved') || stage.includes('Live')) return 95;
