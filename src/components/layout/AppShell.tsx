@@ -118,18 +118,21 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
   // Authenticated admin layout
   return (
-    <div className="flex w-full h-screen h-[100dvh] bg-[#07090e] text-[#f1f5f9] overflow-hidden relative">
-      <div className="relative z-40 flex-shrink-0 h-full">
-        <Sidebar 
-          mobileOpen={mobileMenuOpen} 
-          onCloseMobile={() => setMobileMenuOpen(false)} 
-        />
-      </div>
-      <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative z-0">
-        <Topbar 
-          onOpenCommand={() => setCommandPaletteOpen(true)}
-          onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)} 
-        />
+    <div className="flex flex-col w-full h-screen h-[100dvh] bg-[#07090e] text-[#f1f5f9] overflow-hidden relative">
+      {/* 1. Global Persistent Full-Width Header with Brand Logo & Wordmark */}
+      <Topbar 
+        onOpenCommand={() => setCommandPaletteOpen(true)}
+        onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)} 
+      />
+
+      {/* 2. Lower Area: Collapsible Navigation (Home to bottom) + Main Content */}
+      <div className="flex-1 flex min-h-0 w-full overflow-hidden relative z-0">
+        <div className="relative z-40 flex-shrink-0 h-full">
+          <Sidebar 
+            mobileOpen={mobileMenuOpen} 
+            onCloseMobile={() => setMobileMenuOpen(false)} 
+          />
+        </div>
         <main className="flex-1 overflow-y-auto overflow-x-hidden relative z-10 scroll-smooth">
           {children}
         </main>

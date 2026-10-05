@@ -20,7 +20,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/authContext';
 import { useTheme } from '@/lib/themeContext';
 import { useAdminStore } from '@/lib/store';
-import RivletLogo from '@/components/brand/RivletLogo';
+import RivletLogo, { RivletWaveIcon } from '@/components/brand/RivletLogo';
 
 interface TopbarProps {
   onOpenCommand?: () => void;
@@ -89,40 +89,47 @@ export default function Topbar({
 
   return (
     <>
-      <header className="h-16 flex-shrink-0 bg-[#0a0c12]/90 backdrop-blur-xl px-2.5 sm:px-6 flex items-center justify-between z-30 select-none gap-2 shadow-[0_4px_25px_rgba(0,0,0,0.3)] transition-all">
-        {/* Left section: Mobile Hamburger + Logo + Search */}
-        <div className="flex items-center gap-1.5 sm:gap-4 flex-1 min-w-0 max-w-xl">
+      <header className="h-14 flex-shrink-0 bg-[#241812] dark:bg-[#0a0c12]/95 backdrop-blur-xl px-3 sm:px-6 flex items-center justify-between z-30 select-none gap-2 shadow-sm border-b border-[#3d2b20] dark:border-[#1a2233] transition-all">
+        {/* Left section: Mobile Hamburger + Brand Logo + Search */}
+        <div className="flex items-center gap-2 sm:gap-6 flex-1 min-w-0 max-w-2xl">
           {/* Mobile Hamburger Menu Toggle */}
           <button
             onClick={onToggleMobileMenu}
-            className="lg:hidden p-1.5 sm:p-2 rounded-lg text-[#828ca1] hover:text-white hover:bg-[#141824] transition-colors flex-shrink-0"
+            className="lg:hidden p-1.5 sm:p-2 rounded-lg text-[#828ca1] hover:text-white hover:bg-white/[0.08] transition-colors flex-shrink-0"
             title="Open Navigation Menu"
             aria-label="Open Navigation Menu"
           >
             <Menu className="w-5 h-5" />
           </button>
 
-          {/* Mobile Brand Logo */}
-          <div className="lg:hidden flex items-center flex-shrink-0">
-            <Link href="/" className="brand-logo-link flex items-center outline-none">
-              <RivletLogo variant={theme === 'light' ? 'white-gold' : 'gold'} size="xs" />
-            </Link>
-          </div>
+          {/* Persistent Brand Logo & Wordmark */}
+          <Link
+            href="/"
+            className="brand-logo-link flex items-center gap-2.5 outline-none hover:opacity-90 transition-opacity flex-shrink-0 group"
+          >
+            <div className="w-8 h-8 rounded-xl bg-[#34241b] dark:bg-gradient-to-br dark:from-[#1b2234] dark:to-[#0e121b] border border-[#543b2c] dark:border-[#2b3852] flex items-center justify-center shadow-md flex-shrink-0 group-hover:scale-105 group-hover:border-[#cda052]/60 transition-all">
+              <RivletWaveIcon
+                variant={theme === 'light' ? 'white-gold' : 'gold'}
+                size={18}
+              />
+            </div>
+            <RivletLogo variant={theme === 'light' ? 'white-gold' : 'gold'} size="sm" className="h-6 w-auto" />
+          </Link>
 
           {/* Search trigger button (Responsive: compact on mobile, expansive on desktop) */}
           <button
             onClick={triggerCommand}
             title="Search platform (⌘K / Ctrl+K)"
             aria-label="Search platform"
-            className="flex items-center justify-between px-2 sm:px-3.5 py-1.5 sm:py-2 rounded-lg bg-[#0e121b] border border-[#242e44] text-xs text-[#cbd5e1] hover:border-[#cda052]/60 hover:text-white transition-all shadow-inner cursor-pointer flex-1 min-w-0"
+            className="flex items-center justify-between px-2 sm:px-3.5 py-1.5 rounded-lg bg-[#1a110d] dark:bg-[#0e121b] border border-[#3d2b20] dark:border-[#242e44] text-xs text-[#cbd5e1] hover:border-[#cda052]/60 hover:text-white transition-all shadow-inner cursor-pointer flex-1 min-w-0"
           >
             <div className="flex items-center gap-1.5 sm:gap-2 truncate">
               <Search className="w-3.5 h-3.5 text-[#cda052] flex-shrink-0" />
-              <span className="truncate hidden md:inline text-[#94a3b8]">Search artifacts, costing sheets, SOPs...</span>
-              <span className="truncate hidden xs:inline md:hidden text-[#94a3b8]">Search portal...</span>
-              <span className="truncate xs:hidden text-[#94a3b8] text-[11px]">Search...</span>
+              <span className="truncate hidden md:inline text-[#a89487] dark:text-[#94a3b8]">Search artifacts, costing sheets, SOPs...</span>
+              <span className="truncate hidden xs:inline md:hidden text-[#a89487] dark:text-[#94a3b8]">Search portal...</span>
+              <span className="truncate xs:hidden text-[#a89487] dark:text-[#94a3b8] text-[11px]">Search...</span>
             </div>
-            <kbd className="hidden lg:inline-block px-1.5 py-0.5 text-[10px] bg-[#1a2234] border border-[#2b3852] rounded text-[#cbd5e1] font-mono flex-shrink-0">
+            <kbd className="hidden lg:inline-block px-1.5 py-0.5 text-[10px] bg-[#241812] dark:bg-[#1a2234] border border-[#3d2b20] dark:border-[#2b3852] rounded text-[#cbd5e1] font-mono flex-shrink-0">
               ⌘K
             </kbd>
           </button>

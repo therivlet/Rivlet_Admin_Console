@@ -29,7 +29,6 @@ import {
 import { useAdminStore } from '@/lib/store';
 import { useAuth } from '@/lib/authContext';
 import { useTheme } from '@/lib/themeContext';
-import RivletLogo, { RivletWaveIcon, RivletBrandCombo } from '@/components/brand/RivletLogo';
 
 interface SidebarProps {
   mobileOpen?: boolean;
@@ -107,73 +106,37 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
 
   const renderNavContent = (collapsed: boolean) => (
     <aside
-      className={`relative flex flex-col h-full bg-[#241812] dark:bg-[#0a0c12]/95 backdrop-blur-xl select-none z-40 transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[6px_0_30px_rgba(0,0,0,0.45)] border-r border-[#3d2b20] dark:border-[#1a2233] overflow-x-hidden ${
+      className={`relative flex flex-col h-full bg-[#241812] dark:bg-[#0a0c12]/95 backdrop-blur-xl select-none z-30 transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[6px_0_30px_rgba(0,0,0,0.45)] border-r border-[#3d2b20] dark:border-[#1a2233] overflow-visible ${
         collapsed ? 'w-[68px]' : 'w-64'
       }`}
     >
-      {/* Modern Edge Seam Collapse / Expand Toggle Arrow - Smooth rotating chevron */}
+      {/* Modern Edge Seam Collapse / Expand Toggle Arrow - Fully visible on dividing line, never clipped */}
       <button
         type="button"
         onClick={toggleCollapsed}
         title={collapsed ? 'Expand sidebar navigation' : 'Collapse sidebar navigation'}
         aria-label={collapsed ? 'Expand sidebar navigation' : 'Collapse sidebar navigation'}
-        className="hidden lg:flex absolute -right-3 top-[290px] z-[80] w-6 h-6 rounded-full bg-[#ede7dd] dark:bg-[#182030] hover:bg-[#e4dcce] dark:hover:bg-[#222d42] border border-[#d2c7b5] dark:border-[#2e3b52] hover:border-[#cda052] text-[#8a7b6e] dark:text-[#94a3b8] hover:text-[#cda052] shadow-sm items-center justify-center transition-all duration-200 hover:scale-110 cursor-pointer group"
+        className="hidden lg:flex absolute -right-3 top-1/2 -translate-y-1/2 z-[80] w-6 h-6 rounded-full bg-white dark:bg-[#182030] hover:bg-[#faf7f2] dark:hover:bg-[#222d42] border border-[#d8c9b8] dark:border-[#313f57] hover:border-[#cda052] dark:hover:border-[#cda052] text-[#6b5847] dark:text-[#cbd5e1] hover:text-[#cda052] dark:hover:text-[#cda052] shadow-[0_2px_10px_rgba(0,0,0,0.25)] items-center justify-center transition-all duration-200 hover:scale-110 cursor-pointer"
       >
         <ChevronLeft className={`w-3.5 h-3.5 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${collapsed ? 'rotate-180' : 'rotate-0'}`} />
       </button>
 
-      {/* Brand Header: Expanded shows combined logo+wordmark; Collapsed shows wave logo centered without offset */}
-      <div className="h-14 flex items-center min-h-[56px] px-3.5 overflow-hidden relative justify-center">
-        {/* Expanded logo with wordmark */}
-        <div className={`transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] flex items-center ${
-          collapsed 
-            ? 'opacity-0 scale-95 pointer-events-none -translate-x-3 absolute' 
-            : 'opacity-100 scale-100 translate-x-0 relative w-full'
-        }`}>
-          <Link
-            href="/"
-            onClick={handleLinkClick}
-            className="brand-logo-link flex items-center group py-0.5 outline-none transition-opacity hover:opacity-90"
-          >
-            <RivletLogo variant={isLight ? 'white-gold' : 'gold'} size="md" className="h-7 w-auto" />
-          </Link>
-        </div>
-
-        {/* Collapsed wave icon */}
-        <div className={`transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] flex items-center justify-center ${
-          collapsed 
-            ? 'opacity-100 scale-100 translate-x-0 relative w-full' 
-            : 'opacity-0 scale-95 pointer-events-none translate-x-3 absolute'
-        }`}>
-          <Link
-            href="/"
-            onClick={handleLinkClick}
-            className="brand-logo-link flex items-center justify-center p-0.5 mx-auto group outline-none"
-          >
-            <div className="w-9 h-9 rounded-xl bg-[#34241b] dark:bg-gradient-to-br dark:from-[#1b2234] dark:to-[#0e121b] border border-[#543b2c] dark:border-[#2b3852] flex items-center justify-center shadow-md group-hover:border-[#cda052]/60 transition-colors">
-              <RivletWaveIcon
-                variant={isLight ? 'white-gold' : 'gold'}
-                size={20}
-                className="group-hover:scale-105 transition-transform"
-              />
-            </div>
-          </Link>
-        </div>
-
-        {/* Mobile close button */}
-        {onCloseMobile && (
+      {/* Mobile Drawer Header with Close Button */}
+      {onCloseMobile && (
+        <div className="lg:hidden h-12 flex items-center justify-between px-3.5 border-b border-[#3d2b20] dark:border-[#1a2233]">
+          <span className="text-xs font-semibold text-[#a89487] dark:text-[#94a3b8] uppercase tracking-wider">Navigation</span>
           <button
             onClick={onCloseMobile}
-            aria-label="Close navigation drawer"
-            className="lg:hidden p-1.5 rounded-lg text-[#b3a496] hover:text-white hover:bg-white/[0.08] transition-colors absolute right-2"
+            aria-label="Close navigation"
+            className="p-1 rounded text-[#b3a496] hover:text-white hover:bg-white/[0.08] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Main Navigation Scroll Area - Zero scroller, clean fixed icon set */}
-      <div className="flex-1 overflow-x-hidden overflow-y-auto scrollbar-thin px-2 py-1 flex flex-col justify-start space-y-1">
+      {/* Main Navigation Scroll Area - Zero scroller, clean fixed icon set starting from Home */}
+      <div className="flex-1 overflow-x-hidden overflow-y-auto scrollbar-none px-2 py-3 flex flex-col justify-start space-y-1">
         {/* 1. HOME BUTTON */}
         <div className="relative group w-full">
           <Link
