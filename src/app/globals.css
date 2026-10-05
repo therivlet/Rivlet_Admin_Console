@@ -311,29 +311,56 @@ html.light aside [class*="bg-[#07080d]"] {
   border-color: #382c23 !important;
 }
 
-/* Header & Aside Links, Labels, and Text */
-html.light aside a,
-html.light header a,
-html.light aside span:not(.text-black):not([class*="bg-[#cda052]"]),
-html.light header span:not(.text-black):not([class*="bg-[#cda052]"]) {
-  color: #e2d5c5;
+/* Inactive Nav Links & Buttons: Warm Linen Text, Transparent Background */
+html.light aside a:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]),
+html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]) {
+  background-color: transparent !important;
+  color: #dfd3c4 !important;
 }
 
+html.light aside a:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]) span,
+html.light aside a:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]) svg {
+  color: #dfd3c4 !important;
+}
+
+/* Hover on ANY Nav Link or Button: Smooth Warm Espresso Hover, Bright White Text, Gold Icon */
 html.light aside a:hover,
-html.light header a:hover {
+html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):hover {
+  background-color: #382a22 !important;
   color: #ffffff !important;
-  background-color: #352922 !important;
+}
+
+html.light aside a:hover span,
+html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):hover span {
+  color: #ffffff !important;
+}
+
+html.light aside a:hover svg,
+html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):hover svg {
+  color: #cda052 !important;
 }
 
 /* Active Navigation items in aside */
 html.light aside [class*="from-[rgba(205,160,82"],
-html.light aside [class*="bg-[rgba(205,160,82"] {
+html.light aside [class*="bg-[rgba(205,160,82"],
+html.light aside [class*="from-[rgba(205,160,82"]:hover,
+html.light aside [class*="bg-[rgba(205,160,82"]:hover {
   background-color: rgba(205, 160, 82, 0.22) !important;
   color: #fce8a6 !important;
 }
 html.light aside [class*="from-[rgba(205,160,82"] span,
 html.light aside [class*="bg-[rgba(205,160,82"] span {
   color: #fce8a6 !important;
+  font-weight: 700 !important;
+}
+html.light aside [class*="from-[rgba(205,160,82"] svg,
+html.light aside [class*="bg-[rgba(205,160,82"] svg {
+  color: #cda052 !important;
+}
+
+/* Navigation Section Headers in Light Mode (Work Tracking, Operations & Planning, etc.) */
+html.light aside .uppercase {
+  color: #a89487 !important;
 }
 
 /* Header input fields & search in light mode */
@@ -348,16 +375,19 @@ html.light header input::placeholder {
 
 /* Aside Flyouts & Popovers in Light Mode */
 html.light aside [class*="bg-[#0d101a]"] {
-  background-color: #251c16 !important;
-  border-color: #423226 !important;
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45) !important;
+  background-color: #201712 !important;
+  border-color: #3f2f25 !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55) !important;
   color: #f5ede4 !important;
 }
 html.light aside [class*="bg-[#0d101a]"] * {
-  color: #e2d5c5;
+  color: #dfd3c4 !important;
 }
 html.light aside [class*="bg-[#0d101a]"] a:hover {
-  background-color: #352922 !important;
+  background-color: #382a22 !important;
+  color: #ffffff !important;
+}
+html.light aside [class*="bg-[#0d101a]"] a:hover * {
   color: #ffffff !important;
 }
 
@@ -800,15 +830,16 @@ html.light .kb-markdown hr {
 html.light [title*="Assigned to"],
 html.light [title*="Assignee"],
 html.light .assignee-pill {
-  background: #fef3c7 !important;
-  border-color: #d97706 !important;
-  color: #451a03 !important;
+  background-color: rgba(205, 160, 82, 0.16) !important;
+  border-color: rgba(205, 160, 82, 0.6) !important;
 }
 
-html.light [title*="Assigned to"] span:not(.w-3):not(.w-3\.5),
-html.light [title*="Assignee"] span:not(.w-3):not(.w-3\.5),
-html.light .assignee-pill span:not(.w-3):not(.w-3\.5) {
-  color: #451a03 !important;
+html.light [title*="Assigned to"] > span:last-child,
+html.light [title*="Assignee"] > span:last-child,
+html.light .assignee-pill > span:last-child,
+html.light [title*="Assigned to"] .truncate,
+html.light [title*="Assignee"] .truncate {
+  color: #2b1803 !important;
   font-weight: 700 !important;
 }
 
@@ -828,4 +859,13 @@ html.light main svg:not([class*="text-emerald"]):not([class*="text-rose"]):not([
 html.light main button svg:not([class*="text-white"]):not([class*="text-emerald"]):not([class*="text-rose"]):not([class*="text-indigo"]):not([class*="text-[#cda052]"]) {
   color: #2d241e;
 }
+
+/* --------------------------------------------------------------------------
+   TOP NOTIFICATIONS: Guaranteed on Top of Everything
+   -------------------------------------------------------------------------- */
+[role="alert"],
+div[aria-live="polite"] {
+  z-index: 9999999 !important;
+}
+
 

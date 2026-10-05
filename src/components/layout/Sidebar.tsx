@@ -108,13 +108,13 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
         collapsed ? 'w-[68px]' : 'w-72 lg:w-64'
       }`}
     >
-      {/* Modern Edge Seam Collapse / Expand Toggle Arrow right on the dividing line */}
+      {/* Modern Edge Seam Collapse / Expand Toggle Arrow in middle of navigation (above Calculator, between Work Tracking and Operations & Planning) */}
       <button
         type="button"
         onClick={toggleCollapsed}
         title={collapsed ? 'Expand sidebar navigation' : 'Collapse sidebar navigation'}
         aria-label={collapsed ? 'Expand sidebar navigation' : 'Collapse sidebar navigation'}
-        className="hidden lg:flex absolute -right-3 top-7 z-[70] w-6 h-6 rounded-full bg-[#182030] hover:bg-[#222d42] border border-[#2e3b52] hover:border-[#cda052] text-[#94a3b8] hover:text-[#cda052] shadow-xl items-center justify-center transition-all duration-200 hover:scale-110 cursor-pointer group"
+        className="hidden lg:flex absolute -right-3 top-[320px] z-[80] w-6 h-6 rounded-full bg-[#182030] hover:bg-[#222d42] border border-[#2e3b52] hover:border-[#cda052] text-[#94a3b8] hover:text-[#cda052] shadow-2xl items-center justify-center transition-all duration-200 hover:scale-110 cursor-pointer group"
       >
         {collapsed ? (
           <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
@@ -123,24 +123,16 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
         )}
       </button>
 
-      {/* Brand Header: Expanded shows Wordmark + Logo together; Collapsed shows Logo alone */}
+      {/* Brand Header: Expanded shows combined logo+wordmark alone without separate icon or subtitle; Collapsed shows wave logo alone */}
       <div className="p-4 sm:p-5 flex items-center justify-between min-h-[64px]">
         {!collapsed ? (
           <Link
             href="/"
             onClick={handleLinkClick}
             title="Rivlet Executive Command Center"
-            className="flex items-center gap-2.5 group overflow-hidden"
+            className="flex items-center group py-0.5"
           >
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#1b2234] to-[#0e121b] border border-[#2b3852] flex items-center justify-center shadow-glow flex-shrink-0 group-hover:border-[#cda052]/60 transition-colors">
-              <RivletWaveIcon variant="gold" size={20} />
-            </div>
-            <div className="flex flex-col min-w-0">
-              <RivletLogo variant="gold" size="xs" />
-              <span className="text-[8px] uppercase tracking-[0.18em] text-[#94a3b8] font-mono mt-0.5 leading-none">
-                Admin Console
-              </span>
-            </div>
+            <RivletLogo variant="gold" size="md" className="h-7 w-auto" />
           </Link>
         ) : (
           <Link

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { CheckCircle2, Sparkles, AlertTriangle, AlertCircle, X } from 'lucide-react';
 
 export type NotificationType = 'success' | 'info' | 'warning' | 'error';
@@ -252,7 +253,7 @@ function NotificationCard({
   );
 }
 
-// Container View rendered at the top of the viewport
+// Container View rendered at the top of the viewport directly into document.body
 function NotificationContainer({
   notifications,
   onDismiss,
@@ -260,16 +261,24 @@ function NotificationContainer({
   notifications: NotificationItem[];
   onDismiss: (id: string) => void;
 }) {
-  if (notifications.length === 0) return null;
+  const [mounted, setMounted] = useState(false);
 
-  return (
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || notifications.length === 0 || typeof document === 'undefined') return null;
+
+  return createPortal(
     <div
       aria-live="polite"
-      className="fixed top-4 right-4 sm:top-5 sm:right-6 z-[99999] flex flex-col gap-2.5 pointer-events-none max-w-full px-2 sm:px-0"
+      className="fixed top-4 right-4 sm:top-5 sm:right-6 flex flex-col gap-2.5 pointer-events-none max-w-full px-2 sm:px-0"
+      style={{ zIndex: 9999999 }}
     >
       {notifications.map((n) => (
         <NotificationCard key={n.id} item={n} onDismiss={onDismiss} />
       ))}
-    </div>
+    </div>,
+    document.body
   );
 }

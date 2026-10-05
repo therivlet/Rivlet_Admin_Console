@@ -64,11 +64,11 @@ export default function BacklogView() {
           <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium flex-shrink-0 ${TYPE_COLOR[item.type]}`}>{item.type}</span>
           <span className="text-xs sm:text-sm text-white truncate flex-1 group-hover:text-[#cda052]">{item.title}</span>
           {item.assignee ? (
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#fef3c7] dark:bg-[rgba(205,160,82,0.18)] border border-[#d97706]/40 dark:border-[#cda052]/50 text-[#451a03] dark:text-[#f5dfa8] text-[10px] font-bold flex-shrink-0" title={`Assigned to ${item.assignee}`}>
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[rgba(205,160,82,0.14)] dark:bg-[rgba(205,160,82,0.18)] border border-[#cda052]/60 text-[#2b1803] dark:text-[#f5dfa8] text-[10px] font-bold flex-shrink-0" title={`Assigned to ${item.assignee}`}>
               <span className="w-3.5 h-3.5 rounded-full bg-[#cda052] text-black text-[9px] font-black flex items-center justify-center flex-shrink-0">
                 {item.assignee[0]?.toUpperCase()}
               </span>
-              <span className="font-semibold">{item.assignee}</span>
+              <span className="font-semibold text-[#2b1803] dark:text-[#f5dfa8]">{item.assignee}</span>
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#141824]/60 border border-dashed border-[#3d4b66] text-[#828ca1] text-[9px] font-medium flex-shrink-0" title="Unassigned item">
