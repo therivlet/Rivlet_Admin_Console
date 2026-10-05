@@ -195,7 +195,7 @@ export default function DocumentsPage() {
       else fileFormat = 'pdf';
 
       // 1. Upload to Supabase Storage if configured.
-      // A blob: URL only exists in this tab's memory for this session — it can
+      // A blob: URL only exists in this tab's memory for this session - it can
       // never be opened later, on another device, or after a reload. Previously
       // a failed cloud upload silently fell back to one anyway, so the document
       // record looked saved but its preview/download was permanently broken.
@@ -223,7 +223,7 @@ export default function DocumentsPage() {
           fileUrl = urlData.publicUrl;
         } catch (err: any) {
           console.error('Upload error:', err);
-          setUploadError(`Cloud upload failed: ${err?.message || 'unknown error'}. The document was not saved — please try again.`);
+          setUploadError(`Cloud upload failed: ${err?.message || 'unknown error'}. The document was not saved - please try again.`);
           setIsUploading(false);
           return;
         }

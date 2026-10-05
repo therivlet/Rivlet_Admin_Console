@@ -286,7 +286,7 @@ export default function BudgetPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6 animate-fade-in">
-      {/* Top Header — Clean & uncluttered without duplicate buttons */}
+      {/* Top Header - Clean & uncluttered without duplicate buttons */}
       <div>
         <div className="flex items-center gap-2 mb-1">
           <span className="text-xs font-semibold px-2.5 py-0.5 rounded bg-[rgba(205,160,82,0.15)] text-[#cda052] border border-[rgba(205,160,82,0.3)] uppercase tracking-wider font-mono">
@@ -310,7 +310,7 @@ export default function BudgetPage() {
         cashInflows={cashInflows}
       />
 
-      {/* Capital Inflows & Cashflow Staging Section — With Single Consolidated Action Button & Compact View Limit */}
+      {/* Capital Inflows & Cashflow Staging Section - With Single Consolidated Action Button & Compact View Limit */}
       <div className="bg-[#0e121b] border border-[#1e2638] rounded-2xl p-4 sm:p-5 shadow-lg">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#182032]">
           <div className="flex items-center gap-2.5">
@@ -839,7 +839,7 @@ export default function BudgetPage() {
                         )}
                       </td>
                       <td className="px-4 py-3 text-white font-medium">{b.category}</td>
-                      <td className="px-4 py-3 text-[#94a3b8] font-mono text-xs">{b.phase || '—'}</td>
+                      <td className="px-4 py-3 text-[#94a3b8] font-mono text-xs">{b.phase || '-'}</td>
                       <td className="px-4 py-3 text-right font-mono text-[#cbd5e1] whitespace-nowrap">{formatINR(b.plannedAmount)}</td>
                       <td className="px-4 py-3 text-right font-mono text-[#cbd5e1] whitespace-nowrap">{formatINR(b.actualAmount)}</td>
                       <td className="px-4 py-3 text-right font-mono whitespace-nowrap">
@@ -1034,7 +1034,7 @@ export default function BudgetPage() {
                   />
                 </div>
                 <div className="px-3 py-2 rounded-lg bg-[#07090e] border border-[#1c2438] text-xs text-[#7c869d]">
-                  Spent amount is tracked from logged entries — use the{' '}
+                  Spent amount is tracked from logged entries - use the{' '}
                   <strong className="text-[#e6c875]">Spent</strong> button on the category row to record spend.
                 </div>
                 <div>

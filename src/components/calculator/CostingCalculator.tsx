@@ -117,7 +117,7 @@ export default function CostingCalculator({
     }
   }, [user]);
 
-  // Read the latest activeDefaults without making it a dependency below —
+  // Read the latest activeDefaults without making it a dependency below  - 
   // applying newly-saved brand defaults to the CURRENT sheet is already
   // handled non-destructively by onApplyDefaultsToCurrent (Settings modal).
   // This effect must only reset the form on a genuine initialSheet change,
@@ -210,7 +210,7 @@ export default function CostingCalculator({
   // Live Validation
   const validation = useMemo(() => validatePricingInputs(inputs), [inputs]);
 
-  // Calculations for all three scenarios — memoized so a keystroke in one field
+  // Calculations for all three scenarios - memoized so a keystroke in one field
   // doesn't re-run the full BOM/GST/forecast pipeline three extra times per render.
   const allResults = useMemo(() => ({
     low: calculateScenario(inputs, 'low'),
@@ -450,7 +450,7 @@ export default function CostingCalculator({
                 <option value="">{currentSheetId ? 'Switch Style...' : 'Load Active Style...'}</option>
                 {costingSheets.map(s => (
                   <option key={s.id} value={s.id}>
-                    {s.sku} — {s.styleName}
+                    {s.sku} - {s.styleName}
                   </option>
                 ))}
               </select>
@@ -931,7 +931,7 @@ export default function CostingCalculator({
               <span className="text-[#8e97ae] font-semibold">Output GST Rule:</span>
               {curr === '$' ? (
                 <span className="text-[10px] px-2 py-0.5 rounded bg-amber-950/50 text-amber-300 border border-amber-800/50 font-semibold">
-                  Manual only — USD pricing
+                  Manual only - USD pricing
                 </span>
               ) : (
                 <div className="flex items-center bg-[#171b28] p-0.5 rounded border border-[#252c40]" role="tablist" aria-label="Output GST rule mode">
@@ -979,7 +979,7 @@ export default function CostingCalculator({
             <div className="text-[11px] text-[#636c82] leading-relaxed">
               {curr === '$' ? (
                 <span>
-                  Export invoices in USD are typically <strong>zero-rated under GST</strong> — the ₹2,500 Indian retail
+                  Export invoices in USD are typically <strong>zero-rated under GST</strong> - the ₹2,500 Indian retail
                   threshold doesn't apply here. Set a manual rate only if a specific duty/tax applies to this shipment.
                 </span>
               ) : inputs.autoOutputTax ? (

@@ -18,7 +18,7 @@ const VAULT_BUCKET = 'vault-files';
 
 /**
  * Storage RLS is locked to authenticated sessions only (see supabase_migration_v2/v3),
- * so the plain public URL returned by getPublicUrl() at upload time no longer resolves —
+ * so the plain public URL returned by getPublicUrl() at upload time no longer resolves  - 
  * <img>/<object>/fetch() requests to it carry no auth token and get rejected. Resolve a
  * short-lived signed URL instead whenever a stored file actually needs to be displayed.
  * Non-Supabase URLs (local blob: fallback, external links) are returned unchanged.

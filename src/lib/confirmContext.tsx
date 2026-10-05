@@ -10,7 +10,7 @@ const ConfirmContext = createContext<ConfirmFn | null>(null);
 /**
  * App-wide two-step confirmation: any component calls `await confirmAction({...})`
  * and gets `true`/`false` back once the user picks Cancel or Confirm in a real
- * modal — replacing scattered native `window.confirm()` popups (easy to
+ * modal - replacing scattered native `window.confirm()` popups (easy to
  * reflexively click through) with one consistent, styled, keyboard-focusable
  * dialog for every destructive/high-impact action in the app.
  */

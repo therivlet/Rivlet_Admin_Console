@@ -431,7 +431,7 @@ export default function BudgetAnalyticsGraph({
             </div>
           </div>
 
-          {/* SVG Viewport — Crisp 1.8px Lines & Distinct Hues */}
+          {/* SVG Viewport - Crisp 1.8px Lines & Distinct Hues */}
           <div className="relative w-full overflow-x-auto">
             <svg
               viewBox={`0 0 ${svgWidth} ${svgHeight}`}

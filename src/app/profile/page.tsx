@@ -38,7 +38,7 @@ export default function ProfilePage() {
 
   const [activeTab, setActiveTab] = useState<'profile' | 'brand' | 'security' | 'preferences'>('profile');
 
-  // Personal Profile State — real values or empty, never a fabricated
+  // Personal Profile State - real values or empty, never a fabricated
   // placeholder that could get silently saved to Supabase as if the user
   // had entered it. Empty fields show hint text via the input's placeholder.
   const [fullName, setFullName] = useState(user?.metadata?.full_name || user?.name || '');
@@ -82,7 +82,7 @@ export default function ProfilePage() {
   const [savedAlert, setSavedAlert] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  // Field validation, scoped per tab — each tab has its own Save button, and
+  // Field validation, scoped per tab - each tab has its own Save button, and
   // validating every field across every tab on any single Save previously
   // meant a user editing Profile could be blocked by an error on a Brand
   // field they hadn't even looked at yet.
@@ -122,7 +122,7 @@ export default function ProfilePage() {
       }
     }
 
-    // Production hub / warehouse are informational, not required — a
+    // Production hub / warehouse are informational, not required - a
     // pre-revenue or home-based operation may not have either yet.
     if (primaryHub.trim() && primaryHub.trim().length < 2) {
       errors.primaryHub = 'Production hub must be at least 2 characters.';
@@ -553,7 +553,7 @@ export default function ProfilePage() {
               <input
                 type="text"
                 value={warehouseLocation}
-                placeholder="Not yet active — leave blank until fulfillment starts"
+                placeholder="Not yet active - leave blank until fulfillment starts"
                 onChange={(e) => {
                   setWarehouseLocation(e.target.value);
                   if (formErrors.warehouseLocation) setFormErrors(prev => { const n = {...prev}; delete n.warehouseLocation; return n; });

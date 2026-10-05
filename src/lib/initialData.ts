@@ -99,7 +99,7 @@ export const initialKBArticles: KBArticle[] = [
   - Custom Lab Dip Color: 300 kg / color
   - Running Greige stock: 150 kg
 - **Payment Terms**: 30% Advance at PO, 70% against Bill of Lading (BL) copy.
-- **Key Contact**: Rajesh Kumar (Head of Exports) — \`rajesh@southerneco.in\` / +91 98420 XXXXX
+- **Key Contact**: Rajesh Kumar (Head of Exports) - \`rajesh@southerneco.in\` / +91 98420 XXXXX
 
 ---
 
@@ -107,7 +107,7 @@ export const initialKBArticles: KBArticle[] = [
 - **Specialty**: Pigment dyeing, Mineral vintage acid wash, Enzyme bio-polishing.
 - **Capacity**: 15,000 pcs / month.
 - **Lead Time**: 12 days from greige fabric receipt.
-- **Key Contact**: Meera Nair — \`meera.nair@apexdyeing.com\`
+- **Key Contact**: Meera Nair - \`meera.nair@apexdyeing.com\`
 `
   },
   {
@@ -193,7 +193,7 @@ Rivlet is built on understated luxury, structural silhouettes, and uncompromisin
     updatedAt: '2026-10-04T10:00:00Z',
     content: `# Master Financial Blueprint: Garment Costing, Indian GST Step Taxation & Unit Economics
 
-> **CONFIDENTIAL — RIVLET INTERNAL OPERATIONS & MERCHANDISING ONLY**  
+> **CONFIDENTIAL: RIVLET INTERNAL OPERATIONS & MERCHANDISING ONLY**  
 > *Author: Rivlet Financial Engineering & Merchandising Team*  
 > *Effective Season: FW26 / SS27 & Beyond*
 
@@ -299,7 +299,7 @@ $\\text{Net Sales} = \\frac{4999}{1.18} = ₹4,236.44$
 $\\text{Output GST} = ₹762.56$
 
 ### Factory Input Tax Credit (ITC) Mechanism:
-When our garment factory bills us for fabrication (CMT + fabric), they levy GST (typically 5% on textile job work or 12%/18% on finished garments). Under the Indian GST regime, **this input GST is not an expense**—it is a tax credit asset that offsets the Output GST owed to the government.
+When our garment factory bills us for fabrication (CMT + fabric), they levy GST (typically 5% on textile job work or 12%/18% on finished garments). Under the Indian GST regime, **this input GST is not an expense** - it is a tax credit asset that offsets the Output GST owed to the government.
 
 - **Net Tax Remitted to Govt**: $\\text{Output GST} - \\text{Eligible Factory ITC}$
 - In the Rivlet Calculator, if factory invoices include claimable ITC, it reduces the net effective tax cash drain.
@@ -553,7 +553,7 @@ export const initialBudgetSettings: BudgetSettings = {
 export const initialSprints: Sprint[] = [
   {
     id: 'spr-001',
-    name: 'Sprint 1 — Manufacturer Outreach',
+    name: 'Sprint 1: Manufacturer Outreach',
     goal: 'Days 1–21: contact and qualify candidate manufacturers via the 5-touch sequence.',
     startDate: '2026-09-29',
     endDate: '2026-10-12',
@@ -562,7 +562,7 @@ export const initialSprints: Sprint[] = [
   },
   {
     id: 'spr-002',
-    name: 'Sprint 2 — Factory Visits & Sampling Kickoff',
+    name: 'Sprint 2: Factory Visits & Sampling Kickoff',
     goal: 'Days 22–35: shortlist visits, confirm vertical integration, start proto sampling.',
     startDate: '2026-10-13',
     endDate: '2026-10-26',
@@ -575,7 +575,7 @@ export const initialWorkItems: WorkItem[] = [
   {
     id: 'wi-epic-001',
     type: 'Epic',
-    title: 'Drop 1 Launch — 6 Styles',
+    title: 'Drop 1 Launch: 6 Styles',
     description: 'End-to-end launch of the first 1,580-piece production run across Leggings, Sports Bra, Training Tee, Co-ord Set, Joggers, and Slip Dress.',
     acceptanceCriteria: 'All 6 styles are in-stock and live on the D2C store; production QC passed AQL 2.5 standard.',
     state: 'Active',

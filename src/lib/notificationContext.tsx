@@ -157,50 +157,50 @@ function NotificationCard({
     const intervalTime = 50;
     const decrement = (intervalTime / duration) * 100;
 
+    const dismissTimer = setTimeout(() => {
+      onDismiss(item.id);
+    }, duration);
+
     const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev <= 0) {
-          clearInterval(interval);
-          onDismiss(item.id);
-          return 0;
-        }
-        return prev - decrement;
-      });
+      setProgress((prev) => Math.max(0, prev - decrement));
     }, intervalTime);
 
-    return () => clearInterval(interval);
-  }, [item, onDismiss]);
+    return () => {
+      clearTimeout(dismissTimer);
+      clearInterval(interval);
+    };
+  }, [item.id, item.duration, onDismiss]);
 
   const styleConfig = {
     success: {
-      border: 'border-[#cda052]/50 hover:border-[#cda052]',
-      bg: 'bg-[#0d121c]/95',
-      glow: 'shadow-[0_8px_30px_rgba(205,160,82,0.18)]',
-      iconBg: 'bg-gradient-to-br from-[#cda052]/20 to-[#8c672b]/10 text-[#e6c875] border border-[#cda052]/40',
+      border: 'border-[#cda052]/60 hover:border-[#cda052]',
+      bg: 'bg-[#0f1422] dark:bg-[#0f1422]',
+      glow: 'shadow-[0_24px_60px_-10px_rgba(0,0,0,0.95),0_0_25px_rgba(205,160,82,0.22)]',
+      iconBg: 'bg-gradient-to-br from-[#cda052]/25 to-[#8c672b]/20 text-[#f5dfa8] border border-[#cda052]/50',
       progressBar: 'bg-gradient-to-r from-[#cda052] to-[#f0d48f]',
       icon: CheckCircle2,
     },
     info: {
-      border: 'border-sky-500/40 hover:border-sky-400',
-      bg: 'bg-[#0b1220]/95',
-      glow: 'shadow-[0_8px_30px_rgba(56,189,248,0.18)]',
-      iconBg: 'bg-sky-500/15 text-sky-300 border border-sky-500/30',
+      border: 'border-sky-500/50 hover:border-sky-400',
+      bg: 'bg-[#0b1426] dark:bg-[#0b1426]',
+      glow: 'shadow-[0_24px_60px_-10px_rgba(0,0,0,0.95),0_0_25px_rgba(56,189,248,0.2)]',
+      iconBg: 'bg-sky-500/20 text-sky-200 border border-sky-500/40',
       progressBar: 'bg-gradient-to-r from-sky-400 to-cyan-300',
       icon: Sparkles,
     },
     warning: {
-      border: 'border-amber-500/40 hover:border-amber-400',
-      bg: 'bg-[#18120a]/95',
-      glow: 'shadow-[0_8px_30px_rgba(245,158,11,0.18)]',
-      iconBg: 'bg-amber-500/15 text-amber-300 border border-amber-500/30',
+      border: 'border-amber-500/50 hover:border-amber-400',
+      bg: 'bg-[#1c1308] dark:bg-[#1c1308]',
+      glow: 'shadow-[0_24px_60px_-10px_rgba(0,0,0,0.95),0_0_25px_rgba(245,158,11,0.2)]',
+      iconBg: 'bg-amber-500/20 text-amber-200 border border-amber-500/40',
       progressBar: 'bg-gradient-to-r from-amber-400 to-yellow-300',
       icon: AlertTriangle,
     },
     error: {
-      border: 'border-rose-500/40 hover:border-rose-400',
-      bg: 'bg-[#190c10]/95',
-      glow: 'shadow-[0_8px_30px_rgba(244,63,94,0.2)]',
-      iconBg: 'bg-rose-500/15 text-rose-300 border border-rose-500/30',
+      border: 'border-rose-500/50 hover:border-rose-400',
+      bg: 'bg-[#1e0c12] dark:bg-[#1e0c12]',
+      glow: 'shadow-[0_24px_60px_-10px_rgba(0,0,0,0.95),0_0_25px_rgba(244,63,94,0.22)]',
+      iconBg: 'bg-rose-500/20 text-rose-200 border border-rose-500/40',
       progressBar: 'bg-gradient-to-r from-rose-500 to-red-400',
       icon: AlertCircle,
     },
@@ -211,7 +211,7 @@ function NotificationCard({
   return (
     <div
       role="alert"
-      className={`pointer-events-auto relative overflow-hidden w-full max-w-sm sm:max-w-md rounded-2xl border ${styleConfig.border} ${styleConfig.bg} ${styleConfig.glow} backdrop-blur-2xl p-4 transition-all duration-300 transform translate-y-0 opacity-100 animate-in slide-in-from-top-4`}
+      className={`pointer-events-auto relative overflow-hidden w-full max-w-sm sm:max-w-md rounded-2xl border ${styleConfig.border} ${styleConfig.bg} ${styleConfig.glow} p-4 transition-all duration-300 transform translate-y-0 opacity-100 animate-in slide-in-from-top-4 notification-card`}
     >
       <div className="flex items-start gap-3">
         {/* Type Icon */}

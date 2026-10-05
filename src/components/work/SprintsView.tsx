@@ -155,7 +155,7 @@ export default function SprintsView({ onOpenBoard }: SprintsViewProps) {
               <div className="space-y-3">
                 <div>
                   <label className="text-[11px] text-[#94a3b8] block mb-1">Sprint Name *</label>
-                  <input value={modalItem.name} onChange={(e) => setModalItem({ ...modalItem, name: e.target.value })} placeholder="e.g. Sprint 3 — Pre-Production Samples"
+                  <input value={modalItem.name} onChange={(e) => setModalItem({ ...modalItem, name: e.target.value })} placeholder="e.g. Sprint 3: Pre-Production Samples"
                     className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50" />
                 </div>
                 <div>

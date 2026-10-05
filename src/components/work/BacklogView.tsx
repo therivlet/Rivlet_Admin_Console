@@ -88,7 +88,7 @@ export default function BacklogView() {
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4">
-        <p className="text-xs sm:text-sm text-[#94a3b8]">Epics, Features, User Stories, Tasks & Bugs — the full work hierarchy.</p>
+        <p className="text-xs sm:text-sm text-[#94a3b8]">Epics, Features, User Stories, Tasks & Bugs - the full work hierarchy.</p>
         <button
           onClick={() => setModalItem(emptyItem())}
           title="Create a new work item"

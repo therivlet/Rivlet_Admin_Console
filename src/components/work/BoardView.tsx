@@ -702,7 +702,7 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                               <span className="text-[8px] text-[#64748b]">expand story</span>
                             </div>
                           ) : (
-                            <span className="text-[#3b4760] text-sm font-mono select-none">—</span>
+                            <span className="text-[#3b4760] text-sm font-mono select-none"> - </span>
                           )}
                         </div>
                       );

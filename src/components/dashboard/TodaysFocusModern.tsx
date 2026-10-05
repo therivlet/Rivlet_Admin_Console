@@ -534,7 +534,7 @@ export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusMod
                   <div>
                     <div className="text-[9px] text-[#7c869d] uppercase">Actual Done</div>
                     <div className="text-xs text-emerald-400 font-bold">
-                      {activeDay.isPast ? `${activeDay.actualCompletedCount} tasks` : '—'}
+                      {activeDay.isPast ? `${activeDay.actualCompletedCount} tasks` : '-'}
                     </div>
                   </div>
                 </div>

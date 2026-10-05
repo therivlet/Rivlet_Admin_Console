@@ -187,7 +187,7 @@ export default function ArtifactSandbox({
       </div>
 
       {/* Frame Container */}
-      <div className="flex-1 bg-[#07080c] overflow-auto flex items-center justify-center p-2 relative">
+      <div className="flex-1 !bg-[#07080c] overflow-auto flex items-center justify-center p-2 relative">
         <div
           style={{ width: getViewportWidth(), height: '100%' }}
           className="transition-all duration-300 relative shadow-2xl bg-white rounded-md overflow-hidden border border-[#242b3d]"
@@ -197,7 +197,7 @@ export default function ArtifactSandbox({
             ref={iframeRef}
             srcDoc={artifact.htmlContent}
             title={artifact.title}
-            className="w-full h-full border-none block"
+            className="w-full h-full border-none block opacity-100"
             sandbox="allow-scripts allow-forms allow-modals allow-popups allow-downloads allow-same-origin"
           />
         </div>

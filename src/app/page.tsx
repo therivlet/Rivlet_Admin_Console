@@ -69,7 +69,7 @@ export default function DashboardOverviewPage() {
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-8 animate-fade-in">
-      {/* Proactive certificate expiry banner — surfaces what was previously only a passive badge */}
+      {/* Proactive certificate expiry banner - surfaces what was previously only a passive badge */}
       {expiringDocs.length > 0 && (
         <Link
           href="/documents"
@@ -77,7 +77,7 @@ export default function DashboardOverviewPage() {
         >
           <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
           <p className="text-xs text-amber-200">
-            <span className="font-semibold">{expiringDocs.length} document{expiringDocs.length > 1 ? 's' : ''}</span> expiring soon or already expired — review the vault.
+            <span className="font-semibold">{expiringDocs.length} document{expiringDocs.length > 1 ? 's' : ''}</span> expiring soon or already expired - review the vault.
           </p>
           <ChevronRight className="w-3.5 h-3.5 text-amber-400 ml-auto flex-shrink-0" />
         </Link>

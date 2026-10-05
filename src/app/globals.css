@@ -226,10 +226,10 @@ html.light ::-webkit-scrollbar-thumb:hover {
    1. UNIVERSAL SURFACES & CONTAINERS (Eliminates 100% of Pitch-Black Cards)
    -------------------------------------------------------------------------- */
 
-/* All dark hex cards become crisp elevated warm white surfaces */
-html.light [class*="bg-[#0"],
-html.light [class*="bg-[#1"],
-html.light [class*="bg-[#2"]:not([class*="bg-[#22c55e]"]) {
+/* All dark hex cards become crisp elevated warm white surfaces (excluding aside, header, and notification cards) */
+html.light [class*="bg-[#0"]:not(aside):not(aside *):not(header):not(header *):not(.notification-card):not(.notification-card *),
+html.light [class*="bg-[#1"]:not(aside):not(aside *):not(header):not(header *):not(.notification-card):not(.notification-card *),
+html.light [class*="bg-[#2"]:not([class*="bg-[#22c55e]"]):not(aside):not(aside *):not(header):not(header *):not(.notification-card):not(.notification-card *) {
   background-color: #ffffff !important;
 }
 
@@ -284,60 +284,106 @@ html.light [class*="bg-[#07090e]/60"] {
   background-color: #f0ebe1 !important;
 }
 
-/* Global App Shell Header & Navigation Aside in Light Mode: Warm Dark Espresso Brown */
+/* ==========================================================================
+   NAVIGATION ASIDE & HEADER: LUXURY WARM ESPRESSO BROWN THEME IN LIGHT MODE
+   Warm brown tones, gold accents, crisp hovers, zero blackness, zero glare
+   ========================================================================== */
+
 html.light aside,
+html.light aside[class*="bg-[#"] {
+  background-color: #241812 !important;
+  border-right-color: #3d2b20 !important;
+  color: #d7cbbe !important;
+  box-shadow: 4px 0 25px rgba(28, 17, 12, 0.3) !important;
+}
+
 html.light header,
-html.light aside[class*="bg-[#"],
 html.light header[class*="bg-[#"] {
-  background-color: #241c17 !important;
-  color: #f5ede4 !important;
-  border-color: #3d2f26 !important;
-  box-shadow: 0 4px 20px rgba(25, 18, 14, 0.25) !important;
+  background-color: #281c15 !important;
+  color: #f6ede4 !important;
+  border-bottom: 1px solid #3d2b20 !important;
+  box-shadow: 0 4px 20px rgba(28, 17, 12, 0.25) !important;
 }
 
-/* Inside aside and header in light mode: preserve warm dark espresso surfaces */
-html.light aside [class*="bg-[#0"],
-html.light aside [class*="bg-[#1"],
-html.light header [class*="bg-[#0"],
-html.light header [class*="bg-[#1"] {
-  background-color: #2a211b !important;
-  border-color: #42342b !important;
-  color: #f5ede4 !important;
+/* Header search button in light mode */
+html.light header button[title*="Search"],
+html.light header button[aria-label*="Search"] {
+  background-color: #1c130d !important;
+  border-color: #443023 !important;
+  color: #eeddd0 !important;
+}
+html.light header button[title*="Search"] span,
+html.light header button[aria-label*="Search"] span {
+  color: #b7a393 !important;
+}
+html.light header button[title*="Search"] kbd,
+html.light header button[aria-label*="Search"] kbd {
+  background-color: #342217 !important;
+  border-color: #553a29 !important;
+  color: #eeddd0 !important;
 }
 
-html.light aside .bg-\[\#07080d\]\/80,
-html.light aside [class*="bg-[#07080d]"] {
-  background-color: #1a1410 !important;
-  border-color: #382c23 !important;
+/* Header Season & Theme buttons */
+html.light header button[title*="merchandising"],
+html.light header button[aria-label*="merchandising"],
+html.light header button[title*="Theme"],
+html.light header button[aria-label*="Theme"] {
+  background-color: #342217 !important;
+  border-color: #553a29 !important;
+  color: #f7d88c !important;
 }
 
-/* Inactive Nav Links & Buttons: Warm Linen Text, Transparent Background */
+/* Header Dropdowns in Light Mode */
+html.light header div[class*="bg-[#0d101a]"] {
+  background-color: #241812 !important;
+  border-color: #443023 !important;
+  color: #eeddd0 !important;
+  box-shadow: 0 20px 45px -8px rgba(0, 0, 0, 0.7) !important;
+}
+html.light header div[class*="bg-[#0d101a]"] * {
+  color: #eeddd0 !important;
+}
+html.light header div[class*="bg-[#0d101a]"] .text-white,
+html.light header div[class*="bg-[#0d101a]"] span.font-bold {
+  color: #ffffff !important;
+}
+html.light header div[class*="bg-[#0d101a]"] [class*="bg-[#121623]"],
+html.light header div[class*="bg-[#0d101a]"] [class*="bg-[#07090e]"],
+html.light header div[class*="bg-[#0d101a]"] [class*="bg-[#07090f]"] {
+  background-color: #1a100b !important;
+  border-color: #3d2a1d !important;
+}
+
+/* Inactive links, buttons and labels inside aside */
 html.light aside a:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]),
 html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]) {
   background-color: transparent !important;
-  color: #dfd3c4 !important;
+  color: #d7cbbe !important;
 }
 
 html.light aside a:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]) span,
 html.light aside a:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]) svg {
-  color: #dfd3c4 !important;
+  color: #a99a8b !important;
 }
 
-/* Hover on ANY Nav Link or Button: Smooth Warm Espresso Hover, Bright White Text, Gold Icon */
+/* Hover on ANY Nav Link or Button inside aside */
 html.light aside a:hover,
-html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):hover {
-  background-color: #382a22 !important;
+html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):not([title*="Close"]):hover,
+html.light aside .group > div:hover:not([class*="from-[rgba"]):not([class*="bg-[rgba(205,160,82"]) {
+  background-color: #36251b !important;
   color: #ffffff !important;
 }
 
 html.light aside a:hover span,
-html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):hover span {
+html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):not([title*="Close"]):hover span,
+html.light aside .group > div:hover:not([class*="from-[rgba"]):not([class*="bg-[rgba(205,160,82"]) span {
   color: #ffffff !important;
 }
 
 html.light aside a:hover svg,
-html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):hover svg {
-  color: #cda052 !important;
+html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):not([title*="Close"]):hover svg,
+html.light aside .group > div:hover:not([class*="from-[rgba"]):not([class*="bg-[rgba(205,160,82"]) svg {
+  color: #f7d88c !important;
 }
 
 /* Active Navigation items in aside */
@@ -345,13 +391,14 @@ html.light aside [class*="from-[rgba(205,160,82"],
 html.light aside [class*="bg-[rgba(205,160,82"],
 html.light aside [class*="from-[rgba(205,160,82"]:hover,
 html.light aside [class*="bg-[rgba(205,160,82"]:hover {
-  background-color: rgba(205, 160, 82, 0.22) !important;
-  color: #fce8a6 !important;
+  background-color: rgba(205, 160, 82, 0.25) !important;
+  color: #f7d88c !important;
+  border-color: rgba(205, 160, 82, 0.6) !important;
 }
 html.light aside [class*="from-[rgba(205,160,82"] span,
 html.light aside [class*="bg-[rgba(205,160,82"] span {
-  color: #fce8a6 !important;
-  font-weight: 700 !important;
+  color: #f7d88c !important;
+  font-weight: 600 !important;
 }
 html.light aside [class*="from-[rgba(205,160,82"] svg,
 html.light aside [class*="bg-[rgba(205,160,82"] svg {
@@ -363,47 +410,65 @@ html.light aside .uppercase {
   color: #a89487 !important;
 }
 
-/* Header input fields & search in light mode */
-html.light header input {
-  background-color: #32251e !important;
-  border-color: #4c392e !important;
-  color: #f5ede4 !important;
-}
-html.light header input::placeholder {
-  color: #a89487 !important;
-}
-
 /* Aside Flyouts & Popovers in Light Mode */
-html.light aside [class*="bg-[#0d101a]"] {
-  background-color: #201712 !important;
-  border-color: #3f2f25 !important;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55) !important;
-  color: #f5ede4 !important;
+html.light aside [class*="bg-[#1e140e]"],
+html.light aside [class*="bg-[#0d101a]"],
+html.light aside div[class*="bg-[#0d101a]"] {
+  background-color: #241812 !important;
+  border-color: #443023 !important;
+  box-shadow: 0 20px 45px -8px rgba(0, 0, 0, 0.8) !important;
+  color: #eeddd0 !important;
 }
+html.light aside [class*="bg-[#1e140e]"] *,
 html.light aside [class*="bg-[#0d101a]"] * {
-  color: #dfd3c4 !important;
+  color: #d7cbbe !important;
 }
-html.light aside [class*="bg-[#0d101a]"] a:hover {
-  background-color: #382a22 !important;
+html.light aside [class*="bg-[#1e140e]"] .font-semibold,
+html.light aside [class*="bg-[#1e140e]"] .font-bold,
+html.light aside [class*="bg-[#0d101a]"] .font-semibold,
+html.light aside [class*="bg-[#0d101a]"] .font-bold {
   color: #ffffff !important;
 }
-html.light aside [class*="bg-[#0d101a]"] a:hover * {
+html.light aside [class*="bg-[#1e140e]"] .text-\[\#f7d88c\],
+html.light aside [class*="bg-[#0d101a]"] .text-\[\#e6c875\] {
+  color: #f7d88c !important;
+}
+html.light aside [class*="bg-[#1e140e]"] a:hover,
+html.light aside [class*="bg-[#0d101a]"] a:hover {
+  background-color: #36251b !important;
   color: #ffffff !important;
 }
 
-/* Modern Edge Seam Toggle Button in Light Mode */
+/* Aside Footer */
+html.light aside [class*="bg-black/25"],
+html.light aside [class*="bg-[#07080d]"] {
+  background-color: rgba(26, 17, 12, 0.85) !important;
+  border-top-color: #3d2b20 !important;
+}
+
+/* Modern Edge Seam Toggle Button in Light Mode: Soft, duller muted tone */
 html.light aside button[title*="sidebar"],
 html.light aside button[aria-label*="sidebar"] {
-  background-color: #2a201a !important;
-  border-color: #4a382c !important;
-  color: #e2d5c5 !important;
-  box-shadow: 0 4px 14px rgba(20, 14, 10, 0.35) !important;
+  background-color: #ede7dd !important;
+  border-color: #d2c7b5 !important;
+  color: #8a7b6e !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
 }
 html.light aside button[title*="sidebar"]:hover,
 html.light aside button[aria-label*="sidebar"]:hover {
-  background-color: #3a2c24 !important;
+  background-color: #e5ded3 !important;
   border-color: #cda052 !important;
   color: #cda052 !important;
+}
+
+/* Header search input */
+html.light header input {
+  background-color: #1f140e !important;
+  border-color: #443023 !important;
+  color: #f1f5f9 !important;
+}
+html.light header input::placeholder {
+  color: #a49182 !important;
 }
 
 /* Glassmorphism in Light Mode */
@@ -856,16 +921,74 @@ html.light main svg:not([class*="text-emerald"]):not([class*="text-rose"]):not([
   color: #2d241e !important;
 }
 
+/* --------------------------------------------------------------------------
+   CLAUDE HTML ARTIFACT VAULT: ZERO WHITE SMOKE / ZERO HAZE
+   Ensures 100% crisp HTML rendering without milky wash or opacity bleed
+   -------------------------------------------------------------------------- */
+.artifact-preview-frame,
+[class*="group/preview"],
+[class*="artifact-preview"] {
+  background-color: #090b10 !important;
+}
+
+.artifact-preview-frame iframe,
+[class*="group/preview"] iframe,
+[class*="artifact-preview"] iframe,
+iframe[sandbox] {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
 html.light main button svg:not([class*="text-white"]):not([class*="text-emerald"]):not([class*="text-rose"]):not([class*="text-indigo"]):not([class*="text-[#cda052]"]) {
   color: #2d241e;
 }
 
 /* --------------------------------------------------------------------------
-   TOP NOTIFICATIONS: Guaranteed on Top of Everything
+   TOP NOTIFICATIONS: Guaranteed on Top of Everything & 100% Opaque Glass
    -------------------------------------------------------------------------- */
 [role="alert"],
 div[aria-live="polite"] {
   z-index: 9999999 !important;
+}
+
+.notification-card {
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* DARK MODE: Solid high-contrast opaque panel so background items never bleed through */
+html:not(.light) .notification-card,
+html.dark .notification-card {
+  background-color: #0c101c !important;
+  border-width: 1.5px !important;
+  box-shadow: 0 24px 60px -8px rgba(0, 0, 0, 0.98), 0 0 30px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+}
+
+html:not(.light) .notification-card h4,
+html.dark .notification-card h4 {
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) !important;
+}
+
+html:not(.light) .notification-card p,
+html.dark .notification-card p {
+  color: #e2e8f0 !important;
+}
+
+/* LIGHT MODE: Crisp elevated card with warm brown/gold accent */
+html.light .notification-card {
+  background-color: #ffffff !important;
+  border: 1.5px solid #dcd3c4 !important;
+  box-shadow: 0 20px 45px -8px rgba(38, 25, 18, 0.22), 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+html.light .notification-card h4 {
+  color: #1c1917 !important;
+}
+
+html.light .notification-card p {
+  color: #475569 !important;
 }
 
 

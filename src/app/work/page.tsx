@@ -58,7 +58,7 @@ function WorkPageInner() {
             </span>
           </h1>
         </div>
-        <p className="text-xs sm:text-sm text-[#94a3b8] mt-1">Plan, track, and ship — Epics down to Tasks, sprint by sprint.</p>
+        <p className="text-xs sm:text-sm text-[#94a3b8] mt-1">Plan, track, and ship - Epics down to Tasks, sprint by sprint.</p>
       </div>
 
       {/* Module Navigation Tabs (Responsive & Mobile-Adaptive) */}
@@ -112,7 +112,7 @@ function WorkPageInner() {
               <button
                 key={key}
                 onClick={() => setTab(key)}
-                title={`${label} — ${description}`}
+                title={`${label} - ${description}`}
                 aria-selected={isActive}
                 role="tab"
                 className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${

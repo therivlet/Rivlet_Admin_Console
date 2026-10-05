@@ -57,10 +57,10 @@ export const STATE_COLOR: Record<WorkItemState, string> = {
 };
 
 export const PRIORITY_LABEL: Record<WorkItemPriority, string> = {
-  1: 'P1 — Critical',
-  2: 'P2 — High',
-  3: 'P3 — Medium',
-  4: 'P4 — Low',
+  1: 'P1: Critical',
+  2: 'P2: High',
+  3: 'P3: Medium',
+  4: 'P4: Low',
 };
 
 export const PRIORITY_BADGE_COLOR: Record<WorkItemPriority, string> = {
@@ -323,7 +323,7 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
     if (ids.includes('all')) {
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-950/70 border border-emerald-700/60 text-emerald-300">
-          <Shirt className="w-3.5 h-3.5 text-emerald-400" /> All Styles (Drop 1 — 6 Styles)
+          <Shirt className="w-3.5 h-3.5 text-emerald-400" /> All Styles (Drop 1: 6 Styles)
         </span>
       );
     }
@@ -545,7 +545,7 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                     </div>
                   )}
 
-                  {/* Discussion / Comment Box — input box at top, comments listed at bottom of text box */}
+                  {/* Discussion / Comment Box - input box at top, comments listed at bottom of text box */}
                   <div className="rounded-xl border border-[#1b2233] bg-[#0c1018] p-5 shadow-sm space-y-4">
                     <div className="flex items-center justify-between border-b border-[#171d2b] pb-2.5">
                       <h3 className="text-xs font-semibold uppercase tracking-wider text-[#7c869d] flex items-center gap-1.5">
@@ -553,7 +553,7 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                       </h3>
                     </div>
 
-                    {/* Add Comment Input — Placed at the top */}
+                    {/* Add Comment Input - Placed at the top */}
                     <div>
                       <label className="text-[11px] font-medium text-[#94a3b8] block mb-1.5">Add a Comment / Note</label>
                       <div className="flex items-center gap-2">
@@ -581,7 +581,7 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                       </div>
                     </div>
 
-                    {/* Comment list — Appears at the bottom of the text box, stacked newest first */}
+                    {/* Comment list - Appears at the bottom of the text box, stacked newest first */}
                     <div className="space-y-2 pt-1 border-t border-[#171d2b]">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-[11px] font-medium text-[#64748b]">Comment History</span>

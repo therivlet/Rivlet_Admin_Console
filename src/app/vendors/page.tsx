@@ -738,8 +738,8 @@ export default function VendorsPage() {
                     className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50"
                   >
                     <option value="unknown">Not yet confirmed</option>
-                    <option value="true">Yes — fully vertical</option>
-                    <option value="false">No — partial / outsourced steps</option>
+                    <option value="true">Yes - fully vertical</option>
+                    <option value="false">No - partial / outsourced steps</option>
                   </select>
                 </div>
                 <div className="grid grid-cols-2 gap-3">

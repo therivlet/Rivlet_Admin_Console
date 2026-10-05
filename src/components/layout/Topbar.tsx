@@ -105,7 +105,7 @@ export default function Topbar({
           {/* Mobile Brand Logo */}
           <div className="lg:hidden flex items-center flex-shrink-0">
             <Link href="/" title="Rivlet Admin Console Home" className="flex items-center">
-              <RivletLogo variant="gold" size="xs" />
+              <RivletLogo variant={theme === 'light' ? 'white-gold' : 'gold'} size="xs" />
             </Link>
           </div>
 

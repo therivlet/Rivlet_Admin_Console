@@ -33,21 +33,21 @@ export default function ArtifactCard({
       {/* Top Banner / Preview Snapshot */}
       <div 
         onClick={onOpen}
-        className="h-36 bg-[#090b10] border-b border-[#1b2132] relative overflow-hidden cursor-pointer group/preview"
+        className="h-40 !bg-[#090b10] border-b border-[#1b2132] relative overflow-hidden cursor-pointer group/preview artifact-preview-frame"
       >
-        {/* Scaled thumbnail preview */}
-        <div className="absolute inset-0 pointer-events-none opacity-80 group-hover/preview:opacity-100 transition-opacity">
+        {/* Scaled thumbnail preview - 100% crisp without white smoke or milky haze */}
+        <div className="absolute inset-0 pointer-events-none opacity-100">
           <iframe
             srcDoc={artifact.htmlContent}
             title={artifact.title}
-            className="w-[200%] h-[200%] transform scale-50 origin-top-left pointer-events-none border-none"
+            className="w-[200%] h-[200%] transform scale-50 origin-top-left pointer-events-none border-none opacity-100 block"
             tabIndex={-1}
           />
         </div>
 
-        {/* Hover overlay */}
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover/preview:opacity-100 transition-opacity flex items-center justify-center gap-2">
-          <span className="px-3 py-1.5 rounded-lg bg-[#cda052] text-black text-xs font-semibold flex items-center gap-1.5 shadow-lg">
+        {/* Hover overlay - crisp dark tint with zero smoke or backdrop-filter blur */}
+        <div className="absolute inset-0 bg-black/55 opacity-0 group-hover/preview:opacity-100 transition-opacity flex items-center justify-center gap-2">
+          <span className="px-3.5 py-1.5 rounded-lg bg-[#cda052] text-black text-xs font-bold flex items-center gap-1.5 shadow-xl hover:bg-[#dfb162]">
             <ExternalLink className="w-3.5 h-3.5" />
             Launch Interactive View
           </span>
@@ -55,7 +55,7 @@ export default function ArtifactCard({
 
         {/* Category Badge */}
         <div className="absolute top-2.5 left-2.5 z-10">
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-[#0d1017]/90 text-[#cda052] border border-[#2b3348] backdrop-blur-sm">
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-[#0d1017] text-[#cda052] border border-[#2b3348] shadow-sm">
             {artifact.category}
           </span>
         </div>

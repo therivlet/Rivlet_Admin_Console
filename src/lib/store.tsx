@@ -189,12 +189,12 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
   const reportWriteFailure = useCallback((action: string, err: unknown) => {
     console.error(`[Rivlet Store] ${action} failed:`, err);
     const message = err instanceof Error ? err.message : 'Unknown error';
-    setLastWriteError(`${action} failed to save to the cloud: ${message}. It's kept locally — try again once you're back online.`);
+    setLastWriteError(`${action} failed to save to the cloud: ${message}. It's kept locally - try again once you're back online.`);
   }, []);
 
   // Synchronize state with Supabase Cloud
   // `tables`, when passed, restricts this sync to only those tables instead of
-  // all 13 — a realtime event on e.g. `budget_items` should never also drag
+  // all 13 - a realtime event on e.g. `budget_items` should never also drag
   // along a full re-fetch of `artifacts.html_content` and `kb_articles.content`
   // (large text blobs), which is what was driving egress far higher than this
   // app's actual 27MB of data should ever cost. Omitting `tables` (initial
@@ -211,7 +211,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       const shouldSync = (table: string) => !tables || tables.includes(table);
 
       // New-module tables (vendors/pipeline/budget) may not exist yet if
-      // supabase_migration_v2.sql hasn't been run — fail soft per-table so
+      // supabase_migration_v2.sql hasn't been run - fail soft per-table so
       // a missing table there never breaks sync for the original modules.
       // Singleton settings tables (work_settings/budget_settings) have no
       // created_at column, so ordering by it must be skipped for those.
@@ -779,7 +779,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
   // Window Focus & Visibility Listener: catches changes made on another
   // device/tab while this one was inactive. A single tab-switch typically
   // fires BOTH visibilitychange and focus within milliseconds of each other,
-  // which was triggering two full 12-table re-fetches back to back — debounce
+  // which was triggering two full 12-table re-fetches back to back - debounce
   // them into one. Realtime handles the common case of "this tab is open and
   // something changed," so these full syncs should be the rare exception,
   // not routine traffic.
@@ -800,7 +800,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     window.addEventListener('focus', handleFocus);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // Slow fallback poll in case a realtime connection silently drops —
+    // Slow fallback poll in case a realtime connection silently drops  - 
     // scoped syncs from realtime + the focus/visibility triggers above
     // handle the normal case, so this only needs to be a safety net.
     const interval = setInterval(() => {

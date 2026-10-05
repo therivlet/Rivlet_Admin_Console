@@ -1030,7 +1030,7 @@ export default function CalculatorSettingsModal({
                         onChange={(e) => updateField('importIgstRecoverable', e.target.checked)}
                         className="rounded accent-[#cda052] w-4 h-4 cursor-pointer"
                       />
-                      <span className="text-white text-xs">Claim Import IGST as Input Tax Credit (ITC) — excluded from landed P&L cost</span>
+                      <span className="text-white text-xs">Claim Import IGST as Input Tax Credit (ITC) - excluded from landed P&L cost</span>
                     </label>
                   </div>
 

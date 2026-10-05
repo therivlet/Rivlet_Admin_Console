@@ -4,7 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 
 interface RivletLogoProps {
-  variant?: 'gold' | 'white' | 'dark' | 'adaptive';
+  variant?: 'gold' | 'white' | 'dark' | 'adaptive' | 'white-gold';
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'custom';
   className?: string;
   isWatermark?: boolean;
@@ -48,6 +48,10 @@ export default function RivletLogo({
     switch (variant) {
       case 'white':
         return { filter: 'brightness(0) invert(1)' };
+      case 'white-gold':
+        return {
+          filter: 'brightness(0) invert(1) drop-shadow(0 0 5px rgba(205, 160, 82, 0.85)) drop-shadow(0 0 1px #cda052)',
+        };
       case 'dark':
         return { filter: 'brightness(0)' };
       case 'gold':
@@ -96,7 +100,7 @@ export function RivletWaveIcon({
   size = 24,
   className = '',
 }: {
-  variant?: 'gold' | 'white' | 'dark' | 'adaptive';
+  variant?: 'gold' | 'white' | 'dark' | 'adaptive' | 'white-gold';
   size?: number;
   className?: string;
 }) {
@@ -104,6 +108,10 @@ export function RivletWaveIcon({
     switch (variant) {
       case 'white':
         return { filter: 'brightness(0) invert(1)' };
+      case 'white-gold':
+        return {
+          filter: 'brightness(0) invert(1) drop-shadow(0 0 5px rgba(205, 160, 82, 0.85)) drop-shadow(0 0 1px #cda052)',
+        };
       case 'dark':
         return { filter: 'brightness(0)' };
       case 'gold':

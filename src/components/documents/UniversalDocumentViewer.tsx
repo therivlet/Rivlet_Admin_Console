@@ -52,7 +52,7 @@ export default function UniversalDocumentViewer({
   const effectiveDoc: DocumentItem = override ? { ...doc, ...override } : doc;
 
   // The stored fileUrl is a Supabase public URL, but storage reads now require
-  // authentication — resolve a short-lived signed URL before fetching/displaying.
+  // authentication - resolve a short-lived signed URL before fetching/displaying.
   const [resolvedUrl, setResolvedUrl] = useState<string>(effectiveDoc.fileUrl || '#');
   const [urlResolving, setUrlResolving] = useState(true);
 
@@ -69,7 +69,7 @@ export default function UniversalDocumentViewer({
   }, [effectiveDoc.fileUrl]);
 
   // A blob: URL only ever resolves inside the browser tab/session that created
-  // it — if this record was saved with one (e.g. from a past failed cloud
+  // it - if this record was saved with one (e.g. from a past failed cloud
   // upload) it can never load again, on any device or after any reload.
   // Detect it up front instead of showing an unexplained blank preview.
   const isDeadBlobUrl = typeof window !== 'undefined' && !!effectiveDoc.fileUrl?.startsWith('blob:') && !effectiveDoc.fileUrl.startsWith(`blob:${window.location.origin}`);
@@ -225,7 +225,7 @@ export default function UniversalDocumentViewer({
         console.error('Document parser error:', err);
         if (!isCancelled) {
           // A bare "Failed to fetch" is a network-level failure (the request
-          // never got an HTTP response at all) — almost always because the
+          // never got an HTTP response at all) - almost always because the
           // file no longer exists at that path in the vault-files bucket,
           // not because the document record itself is missing.
           const message = err?.message === 'Failed to fetch'
@@ -390,7 +390,7 @@ export default function UniversalDocumentViewer({
               <div>
                 <h4 className="text-base font-bold text-white">This file was never saved to cloud storage</h4>
                 <p className="text-xs text-[#94a3b8] mt-1 max-w-md">
-                  Its upload failed at the time and the record was saved with a temporary local link instead — this has
+                  Its upload failed at the time and the record was saved with a temporary local link instead - this has
                   since been fixed for new uploads, but this file's original bytes can't be recovered.
                   Re-upload the original file below to fix this record in place.
                 </p>

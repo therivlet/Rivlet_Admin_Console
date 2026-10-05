@@ -285,7 +285,7 @@ export default function ArtifactsPage() {
                 rendered width lay out the same way here as they do on the standalone
                 /tools/[slug] page, which renders at true viewport width. */}
             <div
-              className="w-full max-w-[98vw] h-[97vh] bg-[#0c0f17] border border-[#22283a] rounded-xl flex flex-col shadow-2xl overflow-hidden relative"
+              className="w-full max-w-[98vw] h-[97vh] !bg-[#0c0f17] border border-[#22283a] rounded-xl flex flex-col shadow-2xl overflow-hidden relative"
               onClick={(e) => e.stopPropagation()}
             >
               <ArtifactSandbox

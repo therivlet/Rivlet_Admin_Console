@@ -1,6 +1,6 @@
 // Minimal, dependency-free Markdown -> HTML renderer for the Knowledge Base.
 // Covers headers, bold/italic, inline code, fenced code blocks, links,
-// unordered/ordered lists, blockquotes, horizontal rules, and paragraphs —
+// unordered/ordered lists, blockquotes, horizontal rules, and paragraphs  - 
 // the subset that actually shows up in SOP / vendor-directory style content.
 // Not a full CommonMark implementation by design: no external dependency,
 // small attack surface, good enough for admin-authored notes.
