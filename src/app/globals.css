@@ -284,12 +284,96 @@ html.light [class*="bg-[#07090e]/60"] {
   background-color: #f0ebe1 !important;
 }
 
-/* Global App Shell Header & Navigation Aside */
+/* Global App Shell Header & Navigation Aside in Light Mode: Warm Dark Espresso Brown */
 html.light aside,
-html.light header {
-  background-color: #ffffff !important;
-  border-color: #dfd9cd !important;
-  box-shadow: 0 1px 3px rgba(35, 25, 15, 0.05) !important;
+html.light header,
+html.light aside[class*="bg-[#"],
+html.light header[class*="bg-[#"] {
+  background-color: #241c17 !important;
+  color: #f5ede4 !important;
+  border-color: #3d2f26 !important;
+  box-shadow: 0 4px 20px rgba(25, 18, 14, 0.25) !important;
+}
+
+/* Inside aside and header in light mode: preserve warm dark espresso surfaces */
+html.light aside [class*="bg-[#0"],
+html.light aside [class*="bg-[#1"],
+html.light header [class*="bg-[#0"],
+html.light header [class*="bg-[#1"] {
+  background-color: #2a211b !important;
+  border-color: #42342b !important;
+  color: #f5ede4 !important;
+}
+
+html.light aside .bg-\[\#07080d\]\/80,
+html.light aside [class*="bg-[#07080d]"] {
+  background-color: #1a1410 !important;
+  border-color: #382c23 !important;
+}
+
+/* Header & Aside Links, Labels, and Text */
+html.light aside a,
+html.light header a,
+html.light aside span:not(.text-black):not([class*="bg-[#cda052]"]),
+html.light header span:not(.text-black):not([class*="bg-[#cda052]"]) {
+  color: #e2d5c5;
+}
+
+html.light aside a:hover,
+html.light header a:hover {
+  color: #ffffff !important;
+  background-color: #352922 !important;
+}
+
+/* Active Navigation items in aside */
+html.light aside [class*="from-[rgba(205,160,82"],
+html.light aside [class*="bg-[rgba(205,160,82"] {
+  background-color: rgba(205, 160, 82, 0.22) !important;
+  color: #fce8a6 !important;
+}
+html.light aside [class*="from-[rgba(205,160,82"] span,
+html.light aside [class*="bg-[rgba(205,160,82"] span {
+  color: #fce8a6 !important;
+}
+
+/* Header input fields & search in light mode */
+html.light header input {
+  background-color: #32251e !important;
+  border-color: #4c392e !important;
+  color: #f5ede4 !important;
+}
+html.light header input::placeholder {
+  color: #a89487 !important;
+}
+
+/* Aside Flyouts & Popovers in Light Mode */
+html.light aside [class*="bg-[#0d101a]"] {
+  background-color: #251c16 !important;
+  border-color: #423226 !important;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45) !important;
+  color: #f5ede4 !important;
+}
+html.light aside [class*="bg-[#0d101a]"] * {
+  color: #e2d5c5;
+}
+html.light aside [class*="bg-[#0d101a]"] a:hover {
+  background-color: #352922 !important;
+  color: #ffffff !important;
+}
+
+/* Modern Edge Seam Toggle Button in Light Mode */
+html.light aside button[title*="sidebar"],
+html.light aside button[aria-label*="sidebar"] {
+  background-color: #2a201a !important;
+  border-color: #4a382c !important;
+  color: #e2d5c5 !important;
+  box-shadow: 0 4px 14px rgba(20, 14, 10, 0.35) !important;
+}
+html.light aside button[title*="sidebar"]:hover,
+html.light aside button[aria-label*="sidebar"]:hover {
+  background-color: #3a2c24 !important;
+  border-color: #cda052 !important;
+  color: #cda052 !important;
 }
 
 /* Glassmorphism in Light Mode */
@@ -709,3 +793,39 @@ html.light .kb-markdown blockquote {
 html.light .kb-markdown hr {
   border-top: 1px solid #dfd9cd !important;
 }
+
+/* --------------------------------------------------------------------------
+   WORK TRACKING ASSIGNEE NAMES IN LIGHT MODE (Hari Chandru, Sandana Brinda, etc.)
+   -------------------------------------------------------------------------- */
+html.light [title*="Assigned to"],
+html.light [title*="Assignee"],
+html.light .assignee-pill {
+  background: #fef3c7 !important;
+  border-color: #d97706 !important;
+  color: #451a03 !important;
+}
+
+html.light [title*="Assigned to"] span:not(.w-3):not(.w-3\.5),
+html.light [title*="Assignee"] span:not(.w-3):not(.w-3\.5),
+html.light .assignee-pill span:not(.w-3):not(.w-3\.5) {
+  color: #451a03 !important;
+  font-weight: 700 !important;
+}
+
+html.light [title*="Assigned to"] .bg-\[\#cda052\],
+html.light [title*="Assignee"] .bg-\[\#cda052\] {
+  background-color: #cda052 !important;
+  color: #000000 !important;
+}
+
+/* --------------------------------------------------------------------------
+   CRISP DARK ICONS IN LIGHT MODE (Main Content & Action Buttons)
+   -------------------------------------------------------------------------- */
+html.light main svg:not([class*="text-emerald"]):not([class*="text-rose"]):not([class*="text-green"]):not([class*="text-amber"]):not([class*="text-indigo"]):not([class*="text-sky"]):not([class*="text-blue"]):not([class*="text-purple"]):not([class*="text-yellow"]):not([class*="text-[#cda052]"]):not([class*="text-white"]):not([class*="fill-white"]):not(.animate-spin) {
+  color: #2d241e !important;
+}
+
+html.light main button svg:not([class*="text-white"]):not([class*="text-emerald"]):not([class*="text-rose"]):not([class*="text-indigo"]):not([class*="text-[#cda052]"]) {
+  color: #2d241e;
+}
+

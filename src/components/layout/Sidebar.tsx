@@ -20,15 +20,15 @@ import {
   CalendarRange,
   Sparkles,
   Users,
-  PanelLeftClose,
-  PanelLeftOpen,
+  ChevronLeft,
+  ChevronRight,
   FolderOpen,
   UserCheck,
   X
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { useAuth } from '@/lib/authContext';
-import RivletLogo, { RivletWaveIcon } from '@/components/brand/RivletLogo';
+import RivletLogo, { RivletWaveIcon, RivletBrandCombo } from '@/components/brand/RivletLogo';
 
 interface SidebarProps {
   mobileOpen?: boolean;
@@ -104,27 +104,40 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
 
   const renderNavContent = (collapsed: boolean) => (
     <aside
-      className={`relative flex flex-col h-full bg-[#0a0c12]/95 backdrop-blur-xl select-none z-40 transition-all duration-300 ease-in-out shadow-[6px_0_30px_rgba(0,0,0,0.45)] ${
+      className={`relative flex flex-col h-full bg-[#0a0c12]/95 backdrop-blur-xl select-none z-40 transition-all duration-300 ease-in-out shadow-[6px_0_30px_rgba(0,0,0,0.45)] border-r border-[#1a2233] ${
         collapsed ? 'w-[68px]' : 'w-72 lg:w-64'
       }`}
     >
-      {/* Brand Header */}
+      {/* Modern Edge Seam Collapse / Expand Toggle Arrow right on the dividing line */}
+      <button
+        type="button"
+        onClick={toggleCollapsed}
+        title={collapsed ? 'Expand sidebar navigation' : 'Collapse sidebar navigation'}
+        aria-label={collapsed ? 'Expand sidebar navigation' : 'Collapse sidebar navigation'}
+        className="hidden lg:flex absolute -right-3 top-7 z-[70] w-6 h-6 rounded-full bg-[#182030] hover:bg-[#222d42] border border-[#2e3b52] hover:border-[#cda052] text-[#94a3b8] hover:text-[#cda052] shadow-xl items-center justify-center transition-all duration-200 hover:scale-110 cursor-pointer group"
+      >
+        {collapsed ? (
+          <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+        ) : (
+          <ChevronLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
+        )}
+      </button>
+
+      {/* Brand Header: Expanded shows Wordmark + Logo together; Collapsed shows Logo alone */}
       <div className="p-4 sm:p-5 flex items-center justify-between min-h-[64px]">
         {!collapsed ? (
           <Link
             href="/"
             onClick={handleLinkClick}
             title="Rivlet Executive Command Center"
-            className="flex items-center gap-2.5 group"
+            className="flex items-center gap-2.5 group overflow-hidden"
           >
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#1b2234] to-[#0e121b] border border-[#2b3852] flex items-center justify-center shadow-glow flex-shrink-0 group-hover:border-[#cda052]/60 transition-colors">
               <RivletWaveIcon variant="gold" size={20} />
             </div>
-            <div className="flex flex-col">
-              <span className="font-serif tracking-[0.22em] text-sm font-bold text-white group-hover:text-[#cda052] transition-colors leading-none">
-                RIVLET
-              </span>
-              <span className="text-[9px] uppercase tracking-[0.16em] text-[#94a3b8] font-mono mt-0.5">
+            <div className="flex flex-col min-w-0">
+              <RivletLogo variant="gold" size="xs" />
+              <span className="text-[8px] uppercase tracking-[0.18em] text-[#94a3b8] font-mono mt-0.5 leading-none">
                 Admin Console
               </span>
             </div>
@@ -141,18 +154,6 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
             </div>
           </Link>
         )}
-
-        {/* Desktop Collapse / Expand Toggle Button */}
-        <button
-          onClick={toggleCollapsed}
-          title={collapsed ? 'Expand sidebar (show navigation names)' : 'Collapse sidebar (icons only)'}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className={`hidden lg:flex p-1.5 rounded-lg text-[#7c869d] hover:text-[#cda052] hover:bg-[#161a26] transition-colors cursor-pointer ${
-            collapsed ? 'mx-auto mt-2' : ''
-          }`}
-        >
-          {collapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
-        </button>
 
         {/* Mobile close button */}
         {onCloseMobile && (
@@ -189,7 +190,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
 
           {/* Hover Tooltip when collapsed */}
           {collapsed && (
-            <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#0d101a] border border-[#22293e] rounded-lg shadow-2xl text-xs text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-50">
+            <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#0d101a] border border-[#22293e] rounded-lg shadow-2xl text-xs text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-[70]">
               Home
             </div>
           )}
@@ -233,7 +234,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
 
                   {/* Tooltip when collapsed */}
                   {collapsed && (
-                    <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#0d101a] border border-[#22293e] rounded-lg shadow-2xl text-xs text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-50">
+                    <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#0d101a] border border-[#22293e] rounded-lg shadow-2xl text-xs text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-[70]">
                       <span className="text-[#8895ad] text-[10px] block">Work Tracking</span>
                       <span className="font-semibold text-[#e6c875]">{item.label}</span>
                     </div>
@@ -341,7 +342,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
 
             {/* Hover Floating Dropdown Flyout when collapsed */}
             {collapsed && (
-              <div className="absolute left-full ml-2 top-0 p-3 bg-[#0d101a] border border-[#22293e] rounded-2xl shadow-2xl text-xs whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-50 min-w-[210px]">
+              <div className="absolute left-full ml-2 top-0 p-3 bg-[#0d101a] border border-[#22293e] rounded-2xl shadow-2xl text-xs whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-[70] min-w-[210px]">
                 <div className="flex items-center gap-2 font-bold text-[#e6c875] pb-2 mb-2 border-b border-white/[0.08]">
                   <Calculator className="w-3.5 h-3.5 text-[#cda052]" />
                   <span>Business Calculations</span>
@@ -415,7 +416,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
             </Link>
 
             {collapsed && (
-              <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#0d101a] border border-[#22293e] rounded-lg shadow-2xl text-xs text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-50">
+              <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#0d101a] border border-[#22293e] rounded-lg shadow-2xl text-xs text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-[70]">
                 Vendors
               </div>
             )}
@@ -440,7 +441,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
             </Link>
 
             {collapsed && (
-              <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#0d101a] border border-[#22293e] rounded-lg shadow-2xl text-xs text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-50">
+              <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#0d101a] border border-[#22293e] rounded-lg shadow-2xl text-xs text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-[70]">
                 Pipeline
               </div>
             )}
@@ -465,7 +466,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
             </Link>
 
             {collapsed && (
-              <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#0d101a] border border-[#22293e] rounded-lg shadow-2xl text-xs text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-50">
+              <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#0d101a] border border-[#22293e] rounded-lg shadow-2xl text-xs text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-[70]">
                 Budget Tracker
               </div>
             )}
@@ -570,7 +571,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                     </Link>
 
                     {/* Floating Dropdown / Tooltip when hovering any of the 3 docs icons */}
-                    <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 p-3 bg-[#0d101a] border border-[#22293e] rounded-2xl shadow-2xl text-xs whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-50 min-w-[210px]">
+                    <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 p-3 bg-[#0d101a] border border-[#22293e] rounded-2xl shadow-2xl text-xs whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-[70] min-w-[210px]">
                       <div className="flex items-center gap-2 font-bold text-[#e6c875] pb-2 mb-2 border-b border-white/[0.08]">
                         <FolderOpen className="w-3.5 h-3.5 text-[#cda052]" />
                         <span>Documentation & Vault</span>
@@ -684,7 +685,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
             </button>
 
             {/* Account Tooltip when collapsed */}
-            <div className="absolute left-full ml-3 bottom-0 p-2.5 bg-[#0d101a] border border-[#22293e] rounded-xl shadow-2xl text-xs whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-50">
+            <div className="absolute left-full ml-3 bottom-0 p-2.5 bg-[#0d101a] border border-[#22293e] rounded-xl shadow-2xl text-xs whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-[70]">
               <div className="font-semibold text-white">{user?.name || 'Rivlet Admin'}</div>
               <div className="text-[10px] text-[#94a3b8]">{user?.email || 'admin@therivlet.com'}</div>
               <div className="mt-2 pt-2 border-t border-white/[0.08] flex items-center justify-between gap-4">
@@ -700,14 +701,14 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
 
   return (
     <>
-      {/* Desktop Persistent Sidebar (Respects isCollapsed state) */}
-      <div className="hidden lg:flex flex-shrink-0 h-full">
+      {/* Desktop Persistent Sidebar (Respects isCollapsed state, elevated z-index) */}
+      <div className="hidden lg:flex flex-shrink-0 h-full relative z-40">
         {renderNavContent(isCollapsed)}
       </div>
 
-      {/* Mobile Backdrop & Drawer (Always expanded for usability) */}
+      {/* Mobile Backdrop & Drawer (Always expanded for usability, z-[100]) */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden animate-fade-in flex">
+        <div className="fixed inset-0 z-[100] lg:hidden animate-fade-in flex">
           {/* Backdrop */}
           <div 
             className="fixed inset-0 bg-black/80 backdrop-blur-sm"

@@ -496,11 +496,11 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                                 </span>
                               )}
                               {row.assignee ? (
-                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[rgba(205,160,82,0.18)] border border-[#cda052]/50 text-[#f5dfa8] text-[9px] font-bold">
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#fef3c7] dark:bg-[rgba(205,160,82,0.18)] border border-[#d97706]/40 dark:border-[#cda052]/50 text-[#451a03] dark:text-[#f5dfa8] text-[9px] font-bold" title={`Assigned to ${row.assignee}`}>
                                   <span className="w-3 h-3 rounded-full bg-[#cda052] text-black text-[8px] font-black flex items-center justify-center">
                                     {row.assignee[0]?.toUpperCase()}
                                   </span>
-                                  <span>{row.assignee}</span>
+                                  <span className="font-semibold">{row.assignee}</span>
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#141824]/60 border border-dashed border-[#3d4b66] text-[#828ca1] text-[9px] font-medium">
@@ -637,11 +637,11 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                             <div className="flex items-center gap-2">
                               {/* Assignee pill - Highlighted & Readable */}
                               {row.assignee ? (
-                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[rgba(205,160,82,0.18)] border border-[#cda052]/50 text-[#f5dfa8] text-[10px] font-bold shadow-sm" title={`Assigned to ${row.assignee}`}>
+                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#fef3c7] dark:bg-[rgba(205,160,82,0.18)] border border-[#d97706]/40 dark:border-[#cda052]/50 text-[#451a03] dark:text-[#f5dfa8] text-[10px] font-bold shadow-sm" title={`Assigned to ${row.assignee}`}>
                                   <span className="w-3.5 h-3.5 rounded-full bg-[#cda052] text-black text-[9px] font-black flex items-center justify-center flex-shrink-0">
                                     {row.assignee[0]?.toUpperCase()}
                                   </span>
-                                  <span>{row.assignee}</span>
+                                  <span className="font-semibold">{row.assignee}</span>
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#141824]/80 border border-dashed border-[#3d4b66] text-[#828ca1] text-[9px] font-medium" title="Unassigned story">
@@ -793,11 +793,11 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                               {/* Task Footer: Assignee - Highlighted and readable */}
                               <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-[#1a2336] text-[10px]">
                                 {task.assignee ? (
-                                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-gradient-to-r from-[rgba(205,160,82,0.22)] to-[rgba(205,160,82,0.1)] border border-[#cda052]/60 text-[#f5dfa8] font-bold text-[10px] shadow-sm max-w-[130px] truncate" title={`Assigned to ${task.assignee}`}>
+                                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#fef3c7] dark:bg-gradient-to-r dark:from-[rgba(205,160,82,0.22)] dark:to-[rgba(205,160,82,0.1)] border border-[#d97706]/40 dark:border-[#cda052]/60 text-[#451a03] dark:text-[#f5dfa8] font-bold text-[10px] shadow-sm max-w-[130px] truncate" title={`Assigned to ${task.assignee}`}>
                                     <span className="w-3.5 h-3.5 rounded-full bg-[#cda052] text-black text-[9px] font-black flex items-center justify-center flex-shrink-0">
                                       {task.assignee[0]?.toUpperCase()}
                                     </span>
-                                    <span className="truncate">{task.assignee}</span>
+                                    <span className="truncate font-semibold">{task.assignee}</span>
                                   </span>
                                 ) : (
                                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#121622]/80 border border-dashed border-[#3d4b66] text-[#828ca1] text-[9px] font-medium" title="Unassigned task">

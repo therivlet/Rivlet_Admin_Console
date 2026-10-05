@@ -125,3 +125,34 @@ export function RivletWaveIcon({
     />
   );
 }
+
+export function RivletBrandCombo({
+  variant = 'gold',
+  iconSize = 22,
+  wordmarkSize = 'sm',
+  className = '',
+  subtitle = 'Admin Console',
+}: {
+  variant?: 'gold' | 'white' | 'dark' | 'adaptive';
+  iconSize?: number;
+  wordmarkSize?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'custom';
+  className?: string;
+  subtitle?: string;
+}) {
+  return (
+    <div className={`flex items-center gap-2.5 select-none ${className}`}>
+      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#1b2234] to-[#0e121b] border border-[#2b3852] flex items-center justify-center shadow-glow flex-shrink-0">
+        <RivletWaveIcon variant={variant} size={iconSize} />
+      </div>
+      <div className="flex flex-col justify-center">
+        <RivletLogo variant={variant} size={wordmarkSize} />
+        {subtitle && (
+          <span className="text-[9px] uppercase tracking-[0.18em] text-[#94a3b8] font-mono mt-0.5 leading-none">
+            {subtitle}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+

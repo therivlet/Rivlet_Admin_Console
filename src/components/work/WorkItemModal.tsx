@@ -666,7 +666,7 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                           {currentItem.assignee ? currentItem.assignee[0]?.toUpperCase() : <User className="w-3.5 h-3.5" />}
                         </div>
                         <div className="min-w-0">
-                          <p className={`text-xs font-bold truncate ${currentItem.assignee ? 'text-[#f5dfa8]' : 'text-[#8594ab] italic'}`}>
+                          <p className={`text-xs font-bold truncate ${currentItem.assignee ? 'text-[#451a03] dark:text-[#f5dfa8]' : 'text-[#8594ab] italic'}`}>
                             {currentItem.assignee || 'Unassigned'}
                           </p>
                           {currentItem.assignee ? (
