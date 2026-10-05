@@ -272,7 +272,7 @@ export default function Topbar({
               onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
               title="Account settings & profile options"
               aria-label="Open User Menu"
-              className="flex items-center gap-1 p-1 rounded-lg hover:bg-[#161a26] transition-colors"
+              className="flex items-center gap-1 p-1 rounded-xl hover:bg-white/[0.08] border border-transparent hover:border-[#523b2c] dark:hover:border-[#2b3852] focus:outline-none transition-all cursor-pointer"
             >
               <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-[#cda052] to-[#8c672b] flex items-center justify-center text-xs font-bold text-black shadow-glow">
                 {user?.name?.[0]?.toUpperCase() || 'R'}
@@ -303,7 +303,7 @@ export default function Topbar({
                     href="/profile"
                     onClick={() => setProfileDropdownOpen(false)}
                     title="View and update personal profile and brand settings"
-                    className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[#cbd5e1] hover:text-white hover:bg-[#151a28] transition-colors"
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[#cbd5e1] hover:text-white hover:bg-white/[0.08] transition-colors"
                   >
                     <User className="w-3.5 h-3.5 text-[#cda052]" />
                     <span>My Profile & Brand Info</span>
@@ -313,7 +313,7 @@ export default function Topbar({
                     href="/calculator"
                     onClick={() => setProfileDropdownOpen(false)}
                     title="Open Garment Pricing Engine & Technical BOM"
-                    className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[#cbd5e1] hover:text-white hover:bg-[#151a28] transition-colors"
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[#cbd5e1] hover:text-white hover:bg-white/[0.08] transition-colors"
                   >
                     <Settings className="w-3.5 h-3.5 text-[#cda052]" />
                     <span>Pricing Engine & BOM</span>
@@ -325,7 +325,7 @@ export default function Topbar({
                       setProfileDropdownOpen(false);
                     }}
                     title="Toggle light or dark interface theme"
-                    className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[#cbd5e1] hover:text-white hover:bg-[#151a28] transition-colors text-left"
+                    className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[#cbd5e1] hover:text-white hover:bg-white/[0.08] transition-colors text-left"
                   >
                     <span className="flex items-center gap-2">
                       {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-[#cda052]" /> : <Moon className="w-3.5 h-3.5 text-[#cda052]" />}
@@ -338,14 +338,14 @@ export default function Topbar({
                 </div>
 
                 {/* Sign Out */}
-                <div className="pt-1 border-t border-[#1a2133]">
+                <div className="pt-1 border-t border-white/[0.08]">
                   <button
                     onClick={() => {
                       setProfileDropdownOpen(false);
                       signOut();
                     }}
                     title="Sign out of Rivlet Executive Console"
-                    className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-rose-400 hover:bg-rose-950/40 transition-colors text-left font-medium"
+                    className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/15 border border-transparent hover:border-rose-500/30 transition-all text-left font-medium cursor-pointer"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     <span>Sign Out</span>

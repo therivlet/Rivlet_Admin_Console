@@ -333,6 +333,22 @@ html.light header button[aria-label*="Theme"] {
   color: #f7d88c !important;
 }
 
+/* Header User Menu Avatar Button */
+html.light header button[title*="Account"],
+html.light header button[aria-label*="User"] {
+  background-color: transparent !important;
+  border: 1px solid transparent !important;
+  outline: none !important;
+}
+html.light header button[title*="Account"]:hover,
+html.light header button[aria-label*="User"]:hover,
+html.light header button[title*="Account"]:focus,
+html.light header button[aria-label*="User"]:focus {
+  background-color: #3d2a1f !important;
+  border-color: rgba(205, 160, 82, 0.4) !important;
+  outline: none !important;
+}
+
 /* Header Dropdowns in Light Mode */
 html.light header div[class*="bg-[#0d101a]"] {
   background-color: #241812 !important;
@@ -354,6 +370,30 @@ html.light header div[class*="bg-[#0d101a]"] [class*="bg-[#07090f]"] {
   border-color: #3d2a1d !important;
 }
 
+/* Sign Out in Header Profile Dropdown in Light Mode - Crisp, readable coral-rose */
+html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"],
+html.light header div[class*="bg-[#0d101a]"] button[aria-label*="Sign out"] {
+  background-color: transparent !important;
+  color: #fb7185 !important;
+  border: 1px solid transparent !important;
+}
+html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"]:hover,
+html.light header div[class*="bg-[#0d101a]"] button[aria-label*="Sign out"]:hover {
+  background-color: rgba(244, 63, 94, 0.16) !important;
+  border-color: rgba(244, 63, 94, 0.35) !important;
+  color: #fda4af !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+  transform: none !important;
+}
+html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"] svg,
+html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"] span {
+  color: #fb7185 !important;
+}
+html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"]:hover svg,
+html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"]:hover span {
+  color: #fda4af !important;
+}
+
 /* Inactive links, buttons and labels inside aside */
 html.light aside a:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]),
 html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]) {
@@ -366,24 +406,47 @@ html.light aside a:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(2
   color: #a99a8b !important;
 }
 
-/* Hover on ANY Nav Link or Button inside aside */
-html.light aside a:hover,
-html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):not([title*="Close"]):hover,
+/* Hover on ANY Nav Link or Button inside aside in Light Mode - Prominent warm cognac highlight tile */
+html.light aside a:hover:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]),
+html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):not([title*="Close"]):not([title*="Sign Out"]):not([title*="Sign out"]):not([aria-label*="Sign Out"]):hover,
 html.light aside .group > div:hover:not([class*="from-[rgba"]):not([class*="bg-[rgba(205,160,82"]) {
-  background-color: #36251b !important;
+  background-color: #3e2b20 !important;
+  border: 1px solid rgba(205, 160, 82, 0.45) !important;
   color: #ffffff !important;
-}
-
-html.light aside a:hover span,
-html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):not([title*="Close"]):hover span,
-html.light aside .group > div:hover:not([class*="from-[rgba"]):not([class*="bg-[rgba(205,160,82"]) span {
-  color: #ffffff !important;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.35), 0 0 10px rgba(205, 160, 82, 0.15) !important;
+  transform: scale(1.04);
 }
 
 html.light aside a:hover svg,
 html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):not([title*="Close"]):hover svg,
-html.light aside .group > div:hover:not([class*="from-[rgba"]):not([class*="bg-[rgba(205,160,82"]) svg {
+html.light aside .group > div:hover svg {
   color: #f7d88c !important;
+  filter: drop-shadow(0 0 5px rgba(205, 160, 82, 0.6)) !important;
+}
+
+html.light aside a:hover span,
+html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):not([title*="Close"]):hover span,
+html.light aside .group > div:hover span {
+  color: #ffffff !important;
+}
+
+/* Hover on ANY Nav Link or Button inside aside in Dark Mode */
+html:not(.light) aside a:hover:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]),
+html.dark aside a:hover:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]),
+html:not(.light) aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):not([title*="Close"]):not([title*="Sign Out"]):not([title*="Sign out"]):hover,
+html.dark aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):not([title*="Close"]):not([title*="Sign Out"]):not([title*="Sign out"]):hover {
+  background-color: #151b2a !important;
+  border: 1px solid rgba(205, 160, 82, 0.4) !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.45), 0 0 10px rgba(205, 160, 82, 0.15) !important;
+  transform: scale(1.04);
+}
+html:not(.light) aside a:hover svg,
+html.dark aside a:hover svg,
+html:not(.light) aside button:not([title*="sidebar"]):hover svg,
+html.dark aside button:not([title*="sidebar"]):hover svg {
+  color: #f7d88c !important;
+  filter: drop-shadow(0 0 5px rgba(205, 160, 82, 0.6)) !important;
 }
 
 /* Active Navigation items in aside */
@@ -549,18 +612,18 @@ html.light [class*="bg-yellow-900"] > * {
 }
 
 /* Rose / Red Badges (Overdue, Critical, Bug, Below Break-Even, Error) */
-html.light [class*="bg-rose-950"],
-html.light [class*="bg-rose-900"],
-html.light [class*="bg-red-950"],
-html.light [class*="bg-red-900"] {
+html.light [class*="bg-rose-950"]:not(header *):not(aside *):not([class*="hover:"]),
+html.light [class*="bg-rose-900"]:not(header *):not(aside *):not([class*="hover:"]),
+html.light [class*="bg-red-950"]:not(header *):not(aside *):not([class*="hover:"]),
+html.light [class*="bg-red-900"]:not(header *):not(aside *):not([class*="hover:"]) {
   background-color: #fff1f2 !important;
   border-color: #fecdd3 !important;
   color: #9f1239 !important;
 }
-html.light [class*="bg-rose-950"] > *,
-html.light [class*="bg-rose-900"] > *,
-html.light [class*="bg-red-950"] > *,
-html.light [class*="bg-red-900"] > * {
+html.light [class*="bg-rose-950"]:not(header *):not(aside *):not([class*="hover:"]) > *,
+html.light [class*="bg-rose-900"]:not(header *):not(aside *):not([class*="hover:"]) > *,
+html.light [class*="bg-red-950"]:not(header *):not(aside *):not([class*="hover:"]) > *,
+html.light [class*="bg-red-900"]:not(header *):not(aside *):not([class*="hover:"]) > * {
   color: #9f1239 !important;
 }
 

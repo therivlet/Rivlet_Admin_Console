@@ -107,7 +107,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
 
   const renderNavContent = (collapsed: boolean) => (
     <aside
-      className={`relative flex flex-col h-full bg-[#241812] dark:bg-[#0a0c12]/95 backdrop-blur-xl select-none z-40 transition-all duration-300 ease-in-out shadow-[6px_0_30px_rgba(0,0,0,0.45)] border-r border-[#3d2b20] dark:border-[#1a2233] ${
+      className={`relative flex flex-col h-full bg-[#241812] dark:bg-[#0a0c12]/95 backdrop-blur-xl select-none z-40 transition-[width] duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] shadow-[6px_0_30px_rgba(0,0,0,0.45)] border-r border-[#3d2b20] dark:border-[#1a2233] ${
         collapsed ? 'w-[68px]' : 'w-72 lg:w-64'
       }`}
     >
@@ -175,18 +175,18 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
             href="/"
             onClick={handleLinkClick}
             title="Home"
-            className={`flex items-center text-xs transition-all ${
+            className={`flex items-center text-xs transition-all duration-200 border ${
               collapsed 
                 ? 'w-9 h-9 rounded-xl justify-center mx-auto' 
                 : 'gap-3 px-3 py-2 rounded-xl'
             } ${
               pathname === '/'
-                ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold shadow-sm border border-[#cda052]/60'
-                : 'text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
+                ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold shadow-sm border-[#cda052]/60'
+                : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
             }`}
           >
             <Home className={`${collapsed ? 'w-[18px] h-[18px]' : 'w-4 h-4'} flex-shrink-0 ${pathname === '/' ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover:text-white'}`} />
-            {!collapsed && <span>Home</span>}
+            {!collapsed && <span className="animate-fade-in">Home</span>}
           </Link>
 
           {/* Hover Tooltip when collapsed */}
@@ -221,18 +221,18 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                     href={item.href}
                     onClick={handleLinkClick}
                     title={`Work Tracking: ${item.label}`}
-                    className={`flex items-center text-xs transition-all ${
+                    className={`flex items-center text-xs transition-all duration-200 border ${
                       collapsed 
                         ? 'w-9 h-9 rounded-xl justify-center mx-auto' 
                         : 'gap-2 px-2.5 py-1.5 rounded-lg'
                     } ${
                       isActive
-                        ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border border-[#cda052]/60 shadow-sm'
-                        : 'text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
+                        ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
+                        : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
                     }`}
                   >
                     <Icon className={`${collapsed ? 'w-[18px] h-[18px]' : 'w-3.5 h-3.5'} flex-shrink-0 ${isActive ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover:text-white'}`} />
-                    {!collapsed && <span className="truncate">{item.label}</span>}
+                    {!collapsed && <span className="truncate animate-fade-in">{item.label}</span>}
                   </Link>
 
                   {/* Tooltip when collapsed */}
@@ -265,10 +265,10 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                 href="/calculator"
                 onClick={handleLinkClick}
                 title="Business Calculations"
-                className={`w-9 h-9 rounded-xl flex items-center justify-center mx-auto transition-all ${
+                className={`w-9 h-9 rounded-xl flex items-center justify-center mx-auto transition-all duration-200 border ${
                   isCalcPath
-                    ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border border-[#cda052]/60 shadow-sm'
-                    : 'text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
+                    ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
+                    : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
                 }`}
               >
                 <Calculator className={`w-[18px] h-[18px] flex-shrink-0 ${isCalcPath ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover:text-white'}`} />
@@ -419,18 +419,18 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
               href="/vendors"
               onClick={handleLinkClick}
               title="Vendors"
-              className={`flex items-center text-xs transition-all ${
+              className={`flex items-center text-xs transition-all duration-200 border ${
                 collapsed 
                   ? 'w-9 h-9 rounded-xl justify-center mx-auto' 
                   : 'gap-3 px-3 py-2 rounded-xl'
               } ${
                 pathname === '/vendors'
-                  ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border border-[#cda052]/60 shadow-sm'
-                  : 'text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
+                  ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
+                  : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
               }`}
             >
               <Factory className={`${collapsed ? 'w-[18px] h-[18px]' : 'w-4 h-4'} flex-shrink-0 ${pathname === '/vendors' ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover:text-white'}`} />
-              {!collapsed && <span>Vendors</span>}
+              {!collapsed && <span className="animate-fade-in">Vendors</span>}
             </Link>
 
             {collapsed && (
@@ -446,18 +446,18 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
               href="/pipeline"
               onClick={handleLinkClick}
               title="Pipeline"
-              className={`flex items-center text-xs transition-all ${
+              className={`flex items-center text-xs transition-all duration-200 border ${
                 collapsed 
                   ? 'w-9 h-9 rounded-xl justify-center mx-auto' 
                   : 'gap-3 px-3 py-2 rounded-xl'
               } ${
                 pathname === '/pipeline'
-                  ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border border-[#cda052]/60 shadow-sm'
-                  : 'text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
+                  ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
+                  : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
               }`}
             >
               <GitBranch className={`${collapsed ? 'w-[18px] h-[18px]' : 'w-4 h-4'} flex-shrink-0 ${pathname === '/pipeline' ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover:text-white'}`} />
-              {!collapsed && <span>Pipeline</span>}
+              {!collapsed && <span className="animate-fade-in">Pipeline</span>}
             </Link>
 
             {collapsed && (
@@ -473,18 +473,18 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
               href="/budget"
               onClick={handleLinkClick}
               title="Budget Tracker"
-              className={`flex items-center text-xs transition-all ${
+              className={`flex items-center text-xs transition-all duration-200 border ${
                 collapsed 
                   ? 'w-9 h-9 rounded-xl justify-center mx-auto' 
                   : 'gap-3 px-3 py-2 rounded-xl'
               } ${
                 pathname === '/budget'
-                  ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border border-[#cda052]/60 shadow-sm'
-                  : 'text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
+                  ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
+                  : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
               }`}
             >
               <Wallet className={`${collapsed ? 'w-[18px] h-[18px]' : 'w-4 h-4'} flex-shrink-0 ${pathname === '/budget' ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover:text-white'}`} />
-              {!collapsed && <span>Budget Tracker</span>}
+              {!collapsed && <span className="animate-fade-in">Budget Tracker</span>}
             </Link>
 
             {collapsed && (
@@ -583,14 +583,14 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
                       href={sub.href}
                       onClick={handleLinkClick}
                       title={sub.label}
-                      className={`flex items-center justify-center transition-all ${
+                      className={`flex items-center justify-center transition-all duration-200 border ${
                         collapsed 
                           ? 'w-9 h-9 rounded-xl mx-auto' 
                           : 'px-3 py-2 rounded-xl text-xs'
                       } ${
                         isSubActive
-                          ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border border-[#cda052]/60 shadow-sm'
-                          : 'text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
+                          ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
+                          : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
                       }`}
                     >
                       <SubIcon className={`${collapsed ? 'w-[18px] h-[18px]' : 'w-4 h-4'} flex-shrink-0 ${isSubActive ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover:text-white'}`} />
@@ -696,10 +696,10 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
               href="/profile"
               onClick={handleLinkClick}
               title="Profile & Brand Settings"
-              className={`w-9 h-9 rounded-xl flex items-center justify-center mx-auto transition-colors ${
+              className={`w-9 h-9 rounded-xl flex items-center justify-center mx-auto transition-all duration-200 border ${
                 pathname === '/profile'
-                  ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] border border-[#cda052]/60'
-                  : 'text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-[#cda052] hover:bg-white/[0.08]'
+                  ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] border-[#cda052]/60'
+                  : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-[#cda052] hover:bg-white/[0.08]'
               }`}
             >
               <Settings className="w-[18px] h-[18px]" />
@@ -707,7 +707,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarPr
 
             <button
               onClick={() => signOut()}
-              className="w-9 h-9 rounded-xl flex items-center justify-center mx-auto text-[#a89487] dark:text-[#94a3b8] hover:text-rose-400 hover:bg-rose-950/30 transition-colors cursor-pointer"
+              className="w-9 h-9 rounded-xl flex items-center justify-center mx-auto text-[#a89487] dark:text-[#94a3b8] hover:text-rose-400 hover:bg-rose-950/30 border border-transparent transition-all duration-200 cursor-pointer"
               title="Sign Out"
               aria-label="Sign Out"
             >
