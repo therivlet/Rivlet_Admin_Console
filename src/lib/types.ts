@@ -293,10 +293,12 @@ export interface KBArticle {
 
 export type VendorOutreachStage =
   | 'Prospect'
+  | 'Proposed'
   | 'Email Sent'
   | 'WhatsApp Follow-up'
   | 'Second Email'
   | 'Call Attempted'
+  | 'Call Attended'
   | 'LinkedIn Referral'
   | 'Factory Visit Scheduled'
   | 'Sampling'

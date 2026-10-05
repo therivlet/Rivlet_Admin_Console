@@ -89,7 +89,7 @@ export default function Topbar({
 
   return (
     <>
-      <header className="h-16 flex-shrink-0 border-b border-[#1a1f2c] bg-[#0a0c12]/95 backdrop-blur-md px-2.5 sm:px-6 flex items-center justify-between z-30 select-none gap-2">
+      <header className="h-16 flex-shrink-0 bg-[#0a0c12]/90 backdrop-blur-xl px-2.5 sm:px-6 flex items-center justify-between z-30 select-none gap-2 shadow-[0_4px_25px_rgba(0,0,0,0.3)] transition-all">
         {/* Left section: Mobile Hamburger + Logo + Search */}
         <div className="flex items-center gap-1.5 sm:gap-4 flex-1 min-w-0 max-w-xl">
           {/* Mobile Hamburger Menu Toggle */}
@@ -252,23 +252,17 @@ export default function Topbar({
             )}
           </div>
 
-          {/* Theme Toggle Button (Light / Dark) */}
+          {/* Theme Toggle Button (Icon only) */}
           <button
             onClick={toggleTheme}
             title={theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
             aria-label="Toggle interface theme"
-            className="flex items-center gap-1.5 p-2 sm:px-3 sm:py-1.5 rounded-lg border border-[#242e44] bg-[#0e121b] hover:border-[#cda052]/60 text-xs font-semibold text-[#cbd5e1] hover:text-white transition-all shadow-sm"
+            className="flex items-center justify-center p-2 rounded-lg border border-[#242e44] bg-[#0e121b] hover:border-[#cda052]/60 hover:bg-[#151a26] text-[#cda052] transition-all shadow-sm"
           >
             {theme === 'dark' ? (
-              <>
-                <Sun className="w-3.5 h-3.5 text-[#cda052]" />
-                <span className="hidden md:inline text-[11px]">Light Mode</span>
-              </>
+              <Sun className="w-3.5 h-3.5 text-[#cda052]" />
             ) : (
-              <>
-                <Moon className="w-3.5 h-3.5 text-[#cda052]" />
-                <span className="hidden md:inline text-[11px]">Dark Mode</span>
-              </>
+              <Moon className="w-3.5 h-3.5 text-[#cda052]" />
             )}
           </button>
 

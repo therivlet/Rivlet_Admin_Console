@@ -343,9 +343,9 @@ export default function DocumentsPage() {
         </div>
       </div>
 
-      {/* Documents Grid */}
+      {/* Documents Rows View */}
       {filtered.length === 0 ? (
-        <div className="py-16 text-center border border-dashed border-[#1f2638] rounded-xl bg-[#080b12]">
+        <div className="py-16 text-center border border-dashed border-[#1f2638] rounded-2xl bg-[#080b12]">
           <FileText className="w-8 h-8 text-[#4a5266] mx-auto mb-2" />
           <h3 className="text-sm font-semibold text-white mb-1">No documents found</h3>
           <p className="text-xs text-[#94a3b8] max-w-sm mx-auto mb-4">
@@ -354,118 +354,158 @@ export default function DocumentsPage() {
           <button
             onClick={() => setIsUploadModalOpen(true)}
             title="Upload GOTS, OEKO-TEX, or contract to vault"
-            className="px-4 py-2 rounded-lg bg-[#151a28] border border-[#263148] text-xs font-semibold text-[#cda052] hover:bg-[#1a2236] transition-colors"
+            className="px-4 py-2 rounded-xl bg-[#151a28] border border-[#263148] text-xs font-semibold text-[#cda052] hover:bg-[#1a2236] transition-colors cursor-pointer"
           >
             Upload First Document
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((doc) => (
-            <div
-              key={doc.id}
-              className="bg-[#0e121b] border border-[#1e2638] rounded-xl p-4 sm:p-5 hover:border-[#cda052]/50 transition-all flex flex-col justify-between shadow-md"
-            >
-              <div>
-                {/* Header tags */}
-                <div className="flex items-center justify-between mb-2.5">
-                  <span className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded border font-semibold ${getFormatBadge(doc.fileFormat)}`}>
-                    {doc.fileFormat.toUpperCase()}
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-950/70 text-emerald-300 border border-emerald-800/40 font-mono font-medium">
-                    {doc.status}
-                  </span>
-                </div>
+        <div className="bg-[#0e121b] border border-[#1b2234] rounded-2xl shadow-md overflow-hidden">
+          {/* Table Header */}
+          <div className="hidden lg:grid grid-cols-12 gap-3 px-5 py-3 bg-[#080a10] border-b border-[#1b2234] text-[11px] font-semibold text-[#828ea6] uppercase tracking-wider">
+            <div className="col-span-4">Document Title & File</div>
+            <div className="col-span-2">Category</div>
+            <div className="col-span-2">Linked Partner / Style</div>
+            <div className="col-span-2">Validity & Expiry</div>
+            <div className="col-span-2 text-right">Actions</div>
+          </div>
 
-                {/* Title & Vendor */}
-                <h3 
-                  onClick={() => setPreviewDoc(doc)}
-                  className="text-sm font-semibold text-white hover:text-[#cda052] cursor-pointer mb-1.5 line-clamp-2 transition-colors"
+          {/* Table Rows */}
+          <div className="divide-y divide-[#161c2a]">
+            {filtered.map((doc) => {
+              const linkedVendor = doc.vendorId ? vendors.find((v) => v.id === doc.vendorId) : null;
+              const linkedStyle = doc.pipelineItemId ? pipelineItems.find((p) => p.id === doc.pipelineItemId) : null;
+              const isExpired = doc.expiryDate && new Date(doc.expiryDate) < new Date();
+
+              return (
+                <div
+                  key={doc.id}
+                  className="p-4 sm:px-5 sm:py-3.5 flex flex-col lg:grid lg:grid-cols-12 gap-3 items-start lg:items-center hover:bg-[#121624] transition-colors"
                 >
-                  {doc.title}
-                </h3>
+                  {/* Col 1: Document Title, Format & Filename (col-span-4) */}
+                  <div className="lg:col-span-4 min-w-0 flex items-start sm:items-center gap-3 w-full">
+                    <span className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded border font-semibold flex-shrink-0 ${getFormatBadge(doc.fileFormat)}`}>
+                      {doc.fileFormat.toUpperCase()}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div
+                        onClick={() => {
+                          setPreviewDoc(doc);
+                          setPreviewMode('preview');
+                        }}
+                        className="text-xs font-semibold text-white hover:text-[#cda052] cursor-pointer truncate transition-colors"
+                        title={doc.title}
+                      >
+                        {doc.title}
+                      </div>
+                      <div className="text-[11px] text-[#7c869d] truncate flex items-center gap-1.5 mt-0.5">
+                        <span className="truncate">{doc.fileName}</span>
+                        {doc.fileSizeBytes ? (
+                          <>
+                            <span>•</span>
+                            <span className="font-mono flex-shrink-0">{(doc.fileSizeBytes / 1024 / 1024).toFixed(2)} MB</span>
+                          </>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
 
-                {(doc.vendorId || doc.pipelineItemId || doc.associatedVendor) && (
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2.5">
-                    {doc.vendorId ? (
-                      <Link
-                        href="/vendors"
-                        onClick={(e) => e.stopPropagation()}
-                        title="Open this manufacturer"
-                        className="flex items-center gap-1.5 text-xs text-amber-300 hover:underline"
-                      >
-                        <Factory className="w-3.5 h-3.5" />
-                        <span>{vendors.find((v) => v.id === doc.vendorId)?.name || doc.associatedVendor}</span>
-                      </Link>
-                    ) : doc.associatedVendor ? (
-                      <span className="flex items-center gap-1.5 text-xs text-[#94a3b8]">
-                        <Building className="w-3.5 h-3.5 text-[#64748b]" />
-                        {doc.associatedVendor}
-                      </span>
-                    ) : null}
-                    {doc.pipelineItemId && (
-                      <Link
-                        href="/pipeline"
-                        onClick={(e) => e.stopPropagation()}
-                        title="Open this style in the production pipeline"
-                        className="flex items-center gap-1.5 text-xs text-sky-300 hover:underline"
-                      >
-                        <Shirt className="w-3.5 h-3.5" />
-                        <span>{pipelineItems.find((p) => p.id === doc.pipelineItemId)?.styleName}</span>
-                      </Link>
+                  {/* Col 2: Category & Tags (col-span-2) */}
+                  <div className="lg:col-span-2 min-w-0 w-full">
+                    <span className="text-[11px] px-2 py-0.5 rounded bg-white/[0.04] text-[#cbd5e1] border border-white/[0.08] font-medium">
+                      {doc.documentType}
+                    </span>
+                    {doc.tags && doc.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {doc.tags.slice(0, 2).map((t, idx) => (
+                          <span key={idx} className="text-[10px] text-[#7c869d] font-mono">
+                            #{t}
+                          </span>
+                        ))}
+                        {doc.tags.length > 2 && (
+                          <span className="text-[10px] text-[#556075]">+{doc.tags.length - 2}</span>
+                        )}
+                      </div>
                     )}
                   </div>
-                )}
 
-                {/* Tags */}
-                <div className="flex flex-wrap gap-1.5 my-3">
-                  {doc.tags.map((tag, idx) => (
-                    <span key={idx} className="text-[10px] px-2 py-0.5 rounded-md bg-[#131722] text-[#cbd5e1] font-medium border border-[#222b3e]">
-                      #{tag}
+                  {/* Col 3: Linked Partner / Style (col-span-2) */}
+                  <div className="lg:col-span-2 min-w-0 w-full text-xs">
+                    {linkedVendor || doc.associatedVendor ? (
+                      <Link
+                        href="/vendors"
+                        title="Open manufacturer details"
+                        className="flex items-center gap-1.5 text-amber-300 hover:underline truncate"
+                      >
+                        <Factory className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span className="truncate">{linkedVendor?.name || doc.associatedVendor}</span>
+                      </Link>
+                    ) : linkedStyle ? (
+                      <Link
+                        href="/pipeline"
+                        title="Open style pipeline"
+                        className="flex items-center gap-1.5 text-sky-300 hover:underline truncate"
+                      >
+                        <Shirt className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span className="truncate">{linkedStyle.styleName}</span>
+                      </Link>
+                    ) : (
+                      <span className="text-[11px] text-[#64748b]">Global Brand Asset</span>
+                    )}
+                  </div>
+
+                  {/* Col 4: Validity & Expiry (col-span-2) */}
+                  <div className="lg:col-span-2 min-w-0 w-full flex items-center gap-2 text-xs">
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded font-mono font-medium ${
+                        isExpired
+                          ? 'bg-rose-950/60 text-rose-300 border border-rose-800/40'
+                          : doc.status === 'Active'
+                          ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-800/40'
+                          : 'bg-[#182030] text-[#94a3b8] border border-[#263148]'
+                      }`}
+                    >
+                      {doc.status}
                     </span>
-                  ))}
-                </div>
-              </div>
+                    <span className="text-[11px] text-[#8895ad] font-mono truncate">
+                      {doc.expiryDate ? doc.expiryDate : 'Permanent'}
+                    </span>
+                  </div>
 
-              {/* Footer */}
-              <div className="pt-3.5 border-t border-[#1a2133] flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5 text-xs text-[#94a3b8] font-mono">
-                  <Calendar className="w-3.5 h-3.5 text-[#cda052]" />
-                  <span>Expires: {doc.expiryDate || 'Permanent'}</span>
+                  {/* Col 5: Actions (col-span-2) */}
+                  <div className="lg:col-span-2 w-full flex items-center justify-end gap-1.5 pt-2 lg:pt-0 border-t lg:border-t-0 border-white/[0.04]">
+                    <button
+                      onClick={() => {
+                        setPreviewDoc(doc);
+                        setPreviewMode('preview');
+                      }}
+                      className="p-1.5 rounded-lg bg-[#141824] hover:bg-[#1a2133] border border-[#242e44] text-[#cbd5e1] hover:text-[#cda052] transition-colors cursor-pointer"
+                      title="Preview Document in Universal Viewer"
+                      aria-label="Preview document"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleOpenEdit(doc)}
+                      className="p-1.5 rounded-lg bg-[#141824] hover:bg-[#1a2133] border border-[#242e44] text-[#cbd5e1] hover:text-[#cda052] transition-colors cursor-pointer"
+                      title="Edit metadata & expiry date"
+                      aria-label="Edit document metadata"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(doc)}
+                      className="p-1.5 rounded-lg bg-[#141824] hover:bg-rose-950/30 border border-[#242e44] text-[#cbd5e1] hover:text-rose-400 hover:border-rose-900/50 transition-colors cursor-pointer"
+                      title="Delete document"
+                      aria-label="Delete document"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
-
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => handleOpenEdit(doc)}
-                    className="p-1.5 rounded-lg bg-[#151a28] border border-[#263148] text-[#cbd5e1] hover:text-[#cda052] hover:border-[#cda052]/60 hover:bg-[#1a2236] transition-colors"
-                    title="Edit expiry date, title & metadata"
-                    aria-label="Edit document metadata"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setPreviewDoc(doc);
-                      setPreviewMode('preview');
-                    }}
-                    className="p-1.5 rounded-lg bg-[#151a28] border border-[#263148] text-[#cbd5e1] hover:text-[#cda052] hover:border-[#cda052]/60 hover:bg-[#1a2236] transition-colors"
-                    title="Preview / Read document"
-                    aria-label="Preview document in browser"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(doc)}
-                    className="p-1.5 rounded-lg bg-[#151a28] border border-[#263148] text-[#cbd5e1] hover:text-rose-400 hover:border-rose-900/60 hover:bg-rose-950/30 transition-colors"
-                    title="Delete document from vault"
-                    aria-label="Delete document from vault"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+              );
+            })}
+          </div>
         </div>
       )}
 
