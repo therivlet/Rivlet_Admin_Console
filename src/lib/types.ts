@@ -540,3 +540,122 @@ export interface WorkSettings {
   defaultSprintLengthDays: number; // e.g. 7, 14, 21, 28
   updatedAt: string;
 }
+
+// --- Security, Roles & Access Control ---
+
+export type AppRole = 'owner' | 'admin' | 'manager' | 'member';
+export type UserStatus = 'active' | 'invited' | 'deactivated';
+
+export type AppModule =
+  | 'dashboard'
+  | 'work'
+  | 'vendors'
+  | 'pipeline'
+  | 'documents'
+  | 'calculator'
+  | 'budget'
+  | 'knowledge'
+  | 'artifacts'
+  | 'profile'
+  | 'access'
+  | 'audit'
+  | 'notifications';
+
+export type PermissionAction =
+  | 'view'
+  | 'create'
+  | 'edit'
+  | 'delete'
+  | 'export'
+  | 'approve'
+  | 'manage_access';
+
+export interface ModulePermissionSet {
+  view: boolean;
+  create: boolean;
+  edit: boolean;
+  delete: boolean;
+  export: boolean;
+  approve: boolean;
+  manage_access: boolean;
+}
+
+export type UserPermissionMap = Record<AppModule, ModulePermissionSet>;
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  fullName: string;
+  role: AppRole;
+  status: UserStatus;
+  invitedBy?: string;
+  invitedAt?: string;
+  lastSignInAt?: string;
+  permissionOverrides?: Partial<Record<AppModule, Partial<ModulePermissionSet>>>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// --- Audit Trail & Activity Logging ---
+
+export interface AuditLogEntry {
+  id: string;
+  actorId?: string;
+  actorName: string;
+  actorEmail?: string;
+  action: string;
+  module: AppModule;
+  recordId?: string;
+  recordTitle?: string;
+  changes?: Record<string, any>;
+  details?: Record<string, any>;
+  ipAddress?: string;
+  createdAt: string;
+}
+
+// --- Durable Notifications & Reminders ---
+
+export interface NotificationRecord {
+  id: string;
+  userId?: string;
+  module?: AppModule;
+  type: 'info' | 'success' | 'warning' | 'error' | 'milestone' | 'followup' | 'reminder';
+  title: string;
+  message?: string;
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  link?: string;
+  isRead: boolean;
+  createdAt: string;
+  readAt?: string;
+}
+
+export interface ReminderRecord {
+  id: string;
+  ownerId?: string;
+  ownerName?: string;
+  sourceModule: AppModule;
+  sourceRecordId: string;
+  title: string;
+  dueDate: string; // YYYY-MM-DD
+  status: 'pending' | 'completed' | 'snoozed';
+  snoozedUntil?: string;
+  completedAt?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// --- Vendor Contact Touchpoint & Follow-up History ---
+
+export interface VendorActivity {
+  id: string;
+  vendorId: string;
+  actorId?: string;
+  actorName: string;
+  channel: 'WhatsApp' | 'Email' | 'Phone' | 'Factory Visit' | 'Video Call' | 'Portal';
+  summary: string;
+  outcome?: string;
+  touchDate: string; // YYYY-MM-DD
+  nextFollowUpDate?: string; // YYYY-MM-DD
+  createdAt: string;
+}

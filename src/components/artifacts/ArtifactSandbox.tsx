@@ -195,10 +195,17 @@ export default function ArtifactSandbox({
           <iframe
             key={key}
             ref={iframeRef}
-            srcDoc={artifact.htmlContent}
+            srcDoc={
+              (artifact.htmlContent || '').includes('<head>')
+                ? artifact.htmlContent.replace(
+                    '<head>',
+                    `<head><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' data: blob:; script-src 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'none';">`
+                  )
+                : `<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' data: blob:; script-src 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'none';">${artifact.htmlContent || ''}`
+            }
             title={artifact.title}
             className="w-full h-full border-none block opacity-100"
-            sandbox="allow-scripts allow-forms allow-modals allow-popups allow-downloads allow-same-origin"
+            sandbox="allow-scripts allow-forms allow-modals allow-popups allow-downloads"
           />
         </div>
       </div>

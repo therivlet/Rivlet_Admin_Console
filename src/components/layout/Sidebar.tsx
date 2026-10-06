@@ -24,11 +24,14 @@ import {
   ChevronRight,
   FolderOpen,
   UserCheck,
-  X
+  X,
+  Lock,
+  FileSearch
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { useAuth } from '@/lib/authContext';
 import { useTheme } from '@/lib/themeContext';
+import { ROLE_LABELS } from '@/lib/permissions';
 
 interface SidebarProps {
   mobileOpen?: boolean;
@@ -47,7 +50,7 @@ export default function Sidebar({
   const searchParams = useSearchParams();
   const activeWorkTab = pathname === '/work' ? (searchParams.get('tab') || 'backlog') : null;
   const { artifacts } = useAdminStore();
-  const { user, signOut } = useAuth();
+  const { user, signOut, canView } = useAuth();
   const { theme } = useTheme();
   const isLight = theme === 'light';
 
@@ -104,10 +107,10 @@ export default function Sidebar({
   ];
 
   const docsSubmenuItems = [
-    { label: 'Document Vault', href: '/documents', icon: FileText },
-    { label: 'Confidential Brand KB', href: '/knowledge-base', icon: BookOpen },
-    { label: 'Artifact Hub Review', href: '/artifacts', icon: Layers, badge: artifacts.length },
-  ];
+    canView('documents') ? { label: 'Document Vault', href: '/documents', icon: FileText } : null,
+    canView('knowledge') ? { label: 'Confidential Brand KB', href: '/knowledge-base', icon: BookOpen } : null,
+    canView('artifacts') ? { label: 'Artifact Hub Review', href: '/artifacts', icon: Layers, badge: artifacts.length } : null,
+  ].filter(Boolean) as { label: string; href: string; icon: any; badge?: number }[];
 
   const renderNavContent = (collapsed: boolean) => (
     <aside
@@ -535,6 +538,80 @@ export default function Sidebar({
         </div>
       </div>
 
+      {/* GOVERNANCE & SECURITY MODULES */}
+      {(canView('access') || canView('audit')) && (
+        <div className="w-full space-y-1">
+          <div className="h-6 flex items-center px-1 my-0.5 overflow-hidden relative">
+            <span className={`text-[10px] font-semibold tracking-wider uppercase whitespace-nowrap transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+              collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[180px] opacity-100 translate-x-0 text-[#a89487] dark:text-[#94a3b8]'
+            }`}>
+              Governance & Security
+            </span>
+            <div className={`transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] w-full ${
+              collapsed ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}>
+              <div className="w-7 border-t border-[#3d2b20] dark:border-white/[0.08] mx-auto" />
+            </div>
+          </div>
+
+          {canView('access') && (
+            <div className="relative group w-full">
+              <Link
+                href="/access"
+                onClick={handleLinkClick}
+                className={`group/link flex items-center rounded-xl text-xs transition-colors duration-200 border ${
+                  pathname === '/access'
+                    ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
+                    : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
+                } ${collapsed ? 'w-10 h-10 mx-auto justify-center p-0' : 'w-full h-9 px-2.5 justify-start'}`}
+              >
+                <div className={`flex items-center justify-center flex-shrink-0 ${collapsed ? 'w-full h-full' : 'w-7 h-7'}`}>
+                  <Lock className={`w-4 h-4 flex-shrink-0 transition-transform group-hover/link:scale-110 ${pathname === '/access' ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/link:text-white'}`} />
+                </div>
+                <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                  collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none hidden' : 'max-w-[160px] opacity-100 translate-x-0 ml-1.5'
+                }`}>
+                  Access Management
+                </span>
+              </Link>
+              {collapsed && (
+                <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#1e140e] dark:bg-[#0d101a] border border-[#443023] dark:border-[#22293e] rounded-lg shadow-2xl text-xs text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-[90]">
+                  Access Management
+                </div>
+              )}
+            </div>
+          )}
+
+          {canView('audit') && (
+            <div className="relative group w-full">
+              <Link
+                href="/audit"
+                onClick={handleLinkClick}
+                className={`group/link flex items-center rounded-xl text-xs transition-colors duration-200 border ${
+                  pathname === '/audit'
+                    ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
+                    : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
+                } ${collapsed ? 'w-10 h-10 mx-auto justify-center p-0' : 'w-full h-9 px-2.5 justify-start'}`}
+              >
+                <div className={`flex items-center justify-center flex-shrink-0 ${collapsed ? 'w-full h-full' : 'w-7 h-7'}`}>
+                  <FileSearch className={`w-4 h-4 flex-shrink-0 transition-transform group-hover/link:scale-110 ${pathname === '/audit' ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/link:text-white'}`} />
+                </div>
+                <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                  collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none hidden' : 'max-w-[160px] opacity-100 translate-x-0 ml-1.5'
+                }`}>
+                  Audit Log
+                </span>
+              </Link>
+              {collapsed && (
+                <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#1e140e] dark:bg-[#0d101a] border border-[#443023] dark:border-[#22293e] rounded-lg shadow-2xl text-xs text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-[90]">
+                  Audit Log
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* 5. ACCOUNTS & USER FOOTER */}
       <div className="p-2 bg-black/25 dark:bg-[#07080d]/80 text-[11px] border-t border-[#3d2b20] dark:border-[#1a2233] transition-all duration-300 overflow-hidden flex-shrink-0">
         <div className="px-1 mb-1 flex items-center justify-between overflow-hidden h-4">
@@ -588,12 +665,19 @@ export default function Sidebar({
               <div className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] flex-1 min-w-0 ${
                 collapsed ? 'max-w-0 opacity-0 pointer-events-none hidden' : 'max-w-[130px] opacity-100 ml-1.5'
               }`}>
-                <span className="text-xs text-[#f1f5f9] truncate font-semibold block leading-tight">
-                  {user?.name || 'Rivlet Admin'}
-                </span>
-                <span className="text-[10px] text-[#a89487] dark:text-[#94a3b8] block truncate leading-tight">
-                  {user?.email || 'admin@therivlet.com'}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-[#f1f5f9] truncate font-semibold block leading-tight">
+                    {user?.name || 'Rivlet Admin'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-[9px] font-mono uppercase tracking-wider text-[#cda052] font-semibold leading-tight">
+                    {user?.role ? ROLE_LABELS[user.role] : 'Owner'}
+                  </span>
+                  <span className="text-[10px] text-[#a89487] dark:text-[#94a3b8] truncate leading-tight">
+                    • {user?.email || 'admin@therivlet.com'}
+                  </span>
+                </div>
               </div>
               {!collapsed && (
                 <button

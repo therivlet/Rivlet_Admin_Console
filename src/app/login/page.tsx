@@ -11,19 +11,18 @@ import {
   EyeOff, 
   AlertCircle,
   CheckCircle2,
-  User,
+  ArrowLeft,
   KeyRound,
-  ArrowLeft
+  ShieldAlert
 } from 'lucide-react';
 import { useAuth } from '@/lib/authContext';
 import RivletLogo, { RivletWatermark } from '@/components/brand/RivletLogo';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { signIn, signUp, resetPassword } = useAuth();
+  const { signIn, resetPassword } = useAuth();
 
-  const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
-  const [name, setName] = useState('');
+  const [mode, setMode] = useState<'signin' | 'forgot'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -74,35 +73,14 @@ export default function LoginPage() {
       return;
     }
 
-    if (mode === 'signup' && (!name.trim() || name.trim().length < 2)) {
-      setErrorMessage('Please enter your full name (at least 2 characters).');
-      return;
-    }
-
     setIsSubmitting(true);
+    const res = await signIn(emailTrimmed, password);
+    setIsSubmitting(false);
 
-    if (mode === 'signin') {
-      const res = await signIn(emailTrimmed, password);
-      setIsSubmitting(false);
-      if (res.error) {
-        setErrorMessage(res.error);
-      } else {
-        router.push('/');
-      }
+    if (res.error) {
+      setErrorMessage(res.error);
     } else {
-      // Sign Up
-      const res = await signUp(emailTrimmed, password, name.trim());
-      setIsSubmitting(false);
-      if (res.error) {
-        setErrorMessage(res.error);
-      } else if (res.confirmationRequired) {
-        setSuccessMessage(
-          'Admin account created in Supabase! If your Supabase project requires email confirmation, please check your inbox before signing in.'
-        );
-        setMode('signin');
-      } else {
-        router.push('/');
-      }
+      router.push('/');
     }
   };
 
@@ -113,7 +91,7 @@ export default function LoginPage() {
       <div className="absolute bottom-6 right-6 w-96 h-96 bg-[rgba(16,185,129,0.04)] rounded-full blur-[130px] pointer-events-none" />
       <RivletWatermark />
 
-      {/* Login Card (perfectly centered vertically & horizontally with my-auto) */}
+      {/* Login Card */}
       <div className="w-full max-w-md bg-[#0e121b] border border-[#1e2638] rounded-2xl p-6 sm:p-8 shadow-2xl relative z-10 space-y-6 my-auto">
         {/* Brand Header */}
         <div className="text-center space-y-2">
@@ -121,44 +99,22 @@ export default function LoginPage() {
             <RivletLogo variant="gold" size="lg" />
           </div>
           <h1 className="text-xl sm:text-2xl font-bold font-serif text-white tracking-wide">
-            {mode === 'signin' && 'Rivlet Executive Sign In'}
-            {mode === 'signup' && 'Create Admin Account'}
-            {mode === 'forgot' && 'Reset Console Password'}
+            {mode === 'signin' ? 'Rivlet Executive Sign In' : 'Reset Console Password'}
           </h1>
           <p className="text-xs text-[#94a3b8] max-w-xs mx-auto leading-relaxed">
-            {mode === 'signin' && 'Secure administrative access to costing sheets, SOPs & brand vault.'}
-            {mode === 'signup' && 'Register your administrative credentials protected by Supabase.'}
-            {mode === 'forgot' && 'Enter your registered email address to receive password recovery instructions.'}
+            {mode === 'signin'
+              ? 'Secure administrative access to costing sheets, SOPs & brand vault.'
+              : 'Enter your registered email address to receive password setup instructions.'}
           </p>
         </div>
 
-        {/* Mode Switcher */}
-        {mode !== 'forgot' && (
-          <div className="flex bg-[#07090e] p-1 rounded-xl border border-[#1e2638]">
-            <button
-              type="button"
-              onClick={() => { setMode('signin'); setErrorMessage(''); setSuccessMessage(''); }}
-              className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all text-center ${
-                mode === 'signin'
-                  ? 'bg-[#141824] text-[#e6c875] border border-[#cda052]/50 shadow-sm ring-1 ring-[#cda052]/20'
-                  : 'text-[#94a3b8] hover:text-white'
-              }`}
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
-              onClick={() => { setMode('signup'); setErrorMessage(''); setSuccessMessage(''); }}
-              className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all text-center ${
-                mode === 'signup'
-                  ? 'bg-[#141824] text-[#e6c875] border border-[#cda052]/50 shadow-sm ring-1 ring-[#cda052]/20'
-                  : 'text-[#94a3b8] hover:text-white'
-              }`}
-            >
-              Create Account
-            </button>
-          </div>
-        )}
+        {/* Security Access Notice (Zero Public Signup) */}
+        <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-[#121623] border border-[#1e2638] text-[11px] text-[#94a3b8]">
+          <ShieldAlert className="w-4 h-4 text-[#cda052] flex-shrink-0" />
+          <span>
+            Access is restricted to invited team members. Public registration is permanently disabled.
+          </span>
+        </div>
 
         {/* Feedback Messages */}
         {errorMessage && (
@@ -177,28 +133,9 @@ export default function LoginPage() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-          {mode === 'signup' && (
-            <div>
-              <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">
-                Full Name
-              </label>
-              <div className="relative flex items-center">
-                <User className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8] pointer-events-none" />
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Harichandru"
-                  className="w-full pl-10 pr-3.5 py-2.5 rounded-lg bg-[#07090e] border border-[#263147] text-white placeholder-[#64748b] text-xs outline-none focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40 transition-colors"
-                />
-              </div>
-            </div>
-          )}
-
           <div>
             <label className="block text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider mb-1.5">
-              Admin Email
+              Email Address
             </label>
             <div className="relative flex items-center">
               <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8] pointer-events-none" />
@@ -213,21 +150,19 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {mode !== 'forgot' && (
+          {mode === 'signin' && (
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-[11px] uppercase font-semibold text-[#94a3b8] tracking-wider">
                   Password
                 </label>
-                {mode === 'signin' && (
-                  <button
-                    type="button"
-                    onClick={() => { setMode('forgot'); setErrorMessage(''); setSuccessMessage(''); }}
-                    className="text-[11px] text-[#e6c875] hover:text-white hover:underline transition-colors font-medium"
-                  >
-                    Forgot Password?
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => { setMode('forgot'); setErrorMessage(''); setSuccessMessage(''); }}
+                  className="text-[11px] text-[#e6c875] hover:text-white hover:underline transition-colors font-medium"
+                >
+                  Forgot Password?
+                </button>
               </div>
               <div className="relative flex items-center">
                 <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8] pointer-events-none" />
@@ -254,15 +189,13 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-bold text-xs hover:brightness-110 shadow-glow transition-all active:scale-[0.98] flex items-center justify-center gap-2 mt-4 disabled:opacity-50"
+            className="w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-bold text-xs hover:brightness-110 shadow-glow transition-all active:scale-[0.98] flex items-center justify-center gap-2 mt-4 disabled:opacity-50 cursor-pointer"
           >
             <span>
               {isSubmitting
-                ? 'Processing with Supabase...'
+                ? 'Authenticating...'
                 : mode === 'signin'
                 ? 'Sign In to Rivlet Console'
-                : mode === 'signup'
-                ? 'Create Supabase Admin Account'
                 : 'Send Password Reset Email'}
             </span>
             <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -272,7 +205,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => { setMode('signin'); setErrorMessage(''); setSuccessMessage(''); }}
-              className="w-full py-2 text-xs text-[#94a3b8] hover:text-white flex items-center justify-center gap-1.5 transition-colors font-medium"
+              className="w-full py-2 text-xs text-[#94a3b8] hover:text-white flex items-center justify-center gap-1.5 transition-colors font-medium cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to Sign In</span>
@@ -283,7 +216,7 @@ export default function LoginPage() {
         {/* Footer Security Badge */}
         <div className="pt-3 text-center text-[11px] text-[#94a3b8] flex items-center justify-center gap-1.5 border-t border-[#1e2638]">
           <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-          <span>Real Supabase Cloud Authentication Active</span>
+          <span>Supabase RBAC & Session Security Active</span>
         </div>
       </div>
     </div>

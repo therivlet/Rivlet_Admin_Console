@@ -13,9 +13,27 @@ import { NotificationProvider } from '@/lib/notificationContext';
 import { RivletWatermark } from '@/components/brand/RivletLogo';
 import RivletLoader from '@/components/brand/RivletLoader';
 import WriteErrorToast from '@/components/ui/WriteErrorToast';
+import AccessDenied from '@/components/ui/AccessDenied';
+import { AppModule } from '@/lib/types';
+
+function getModuleFromPathname(pathname: string): AppModule | null {
+  if (pathname === '/') return 'dashboard';
+  if (pathname.startsWith('/work')) return 'work';
+  if (pathname.startsWith('/calculator')) return 'calculator';
+  if (pathname.startsWith('/vendors')) return 'vendors';
+  if (pathname.startsWith('/pipeline')) return 'pipeline';
+  if (pathname.startsWith('/budget')) return 'budget';
+  if (pathname.startsWith('/documents')) return 'documents';
+  if (pathname.startsWith('/knowledge-base')) return 'knowledge';
+  if (pathname.startsWith('/artifacts')) return 'artifacts';
+  if (pathname.startsWith('/profile')) return 'profile';
+  if (pathname.startsWith('/access')) return 'access';
+  if (pathname.startsWith('/audit')) return 'audit';
+  return null;
+}
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, canView } = useAuth();
   const { theme } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
@@ -158,7 +176,13 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
           />
         </div>
         <main className="flex-1 overflow-y-auto overflow-x-hidden relative z-10 scroll-smooth">
-          {children}
+          {(() => {
+            const currentModule = getModuleFromPathname(pathname);
+            if (currentModule && !canView(currentModule)) {
+              return <AccessDenied module={currentModule} />;
+            }
+            return children;
+          })()}
         </main>
       </div>
 

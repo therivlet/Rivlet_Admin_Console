@@ -6,22 +6,27 @@ import { initialArtifacts, initialCostingSheets, initialDocuments, initialKBArti
 import { supabase, isSupabaseConfigured } from './supabase';
 import { notify } from './notificationContext';
 import { getVendorCategory } from './vendorWorkflows';
+import { useAuth } from './authContext';
 
 const STORAGE_KEYS = {
-  ARTIFACTS: 'rivlet_admin_artifacts',
-  COSTING_SHEETS: 'rivlet_admin_costing_sheets',
-  DOCUMENTS: 'rivlet_admin_documents',
-  KB_ARTICLES: 'rivlet_admin_kb_articles',
-  VENDORS: 'rivlet_admin_vendors',
-  PIPELINE_ITEMS: 'rivlet_admin_pipeline_items',
-  BUDGET_ITEMS: 'rivlet_admin_budget_items',
-  SPRINTS: 'rivlet_admin_sprints',
-  WORK_ITEMS: 'rivlet_admin_work_items',
-  TEAM_MEMBERS: 'rivlet_admin_team_members',
-  WORK_SETTINGS: 'rivlet_admin_work_settings',
-  BUDGET_SETTINGS: 'rivlet_admin_budget_settings',
-  ACTIVE_SEASON: 'rivlet_admin_active_season',
+  ARTIFACTS: 'artifacts',
+  COSTING_SHEETS: 'costing_sheets',
+  DOCUMENTS: 'documents',
+  KB_ARTICLES: 'kb_articles',
+  VENDORS: 'vendors',
+  PIPELINE_ITEMS: 'pipeline_items',
+  BUDGET_ITEMS: 'budget_items',
+  SPRINTS: 'sprints',
+  WORK_ITEMS: 'work_items',
+  TEAM_MEMBERS: 'team_members',
+  WORK_SETTINGS: 'work_settings',
+  BUDGET_SETTINGS: 'budget_settings',
+  ACTIVE_SEASON: 'active_season',
 };
+
+function getScopedKey(key: string, uid?: string): string {
+  return uid ? `rivlet_cache_${uid}_${key}` : `rivlet_cache_anon_${key}`;
+}
 
 interface AdminStoreContextType {
   isLoaded: boolean;
@@ -157,6 +162,9 @@ async function upsertWorkItemsSafe(supabaseClient: any, items: WorkItem[]) {
 const AdminStoreContext = createContext<AdminStoreContextType | null>(null);
 
 export function AdminStoreProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  const userId = user?.id;
+
   const [artifacts, setArtifacts] = useState<ArtifactItem[]>([]);
   const [costingSheets, setCostingSheets] = useState<CostingSheet[]>([]);
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
@@ -174,12 +182,31 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastWriteError, setLastWriteError] = useState<string | null>(null);
 
+  // Purge user-scoped cache on sign out
+  useEffect(() => {
+    const handleSignout = (e: any) => {
+      const targetUid = e?.detail?.userId;
+      if (typeof window !== 'undefined' && targetUid) {
+        try {
+          const prefix = `rivlet_cache_${targetUid}_`;
+          Object.keys(localStorage).forEach((k) => {
+            if (k.startsWith(prefix)) {
+              localStorage.removeItem(k);
+            }
+          });
+        } catch {}
+      }
+    };
+    window.addEventListener('rivlet-auth-signout', handleSignout);
+    return () => window.removeEventListener('rivlet-auth-signout', handleSignout);
+  }, []);
+
   const setActiveSeason = useCallback((season: string) => {
     setActiveSeasonState(season);
     try {
-      localStorage.setItem(STORAGE_KEYS.ACTIVE_SEASON, season);
+      localStorage.setItem(getScopedKey(STORAGE_KEYS.ACTIVE_SEASON, userId), season);
     } catch (_) {}
-  }, []);
+  }, [userId]);
 
   const isSyncingRef = useRef(false);
   const clearWriteError = useCallback(() => setLastWriteError(null), []);
@@ -711,22 +738,22 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     }
   }, []);
 
-  // Initial load: fast local cache first, then immediately pull live Supabase data
+  // Initial load: fast user-scoped local cache first, then immediately pull live Supabase data
   useEffect(() => {
     try {
-      const storedArtifacts = localStorage.getItem(STORAGE_KEYS.ARTIFACTS);
-      const storedSheets = localStorage.getItem(STORAGE_KEYS.COSTING_SHEETS);
-      const storedDocs = localStorage.getItem(STORAGE_KEYS.DOCUMENTS);
-      const storedArticles = localStorage.getItem(STORAGE_KEYS.KB_ARTICLES);
-      const storedVendors = localStorage.getItem(STORAGE_KEYS.VENDORS);
-      const storedPipeline = localStorage.getItem(STORAGE_KEYS.PIPELINE_ITEMS);
-      const storedBudget = localStorage.getItem(STORAGE_KEYS.BUDGET_ITEMS);
-      const storedSprints = localStorage.getItem(STORAGE_KEYS.SPRINTS);
-      const storedWorkItems = localStorage.getItem(STORAGE_KEYS.WORK_ITEMS);
-      const storedTeamMembers = localStorage.getItem(STORAGE_KEYS.TEAM_MEMBERS);
-      const storedWorkSettings = localStorage.getItem(STORAGE_KEYS.WORK_SETTINGS);
-      const storedBudgetSettings = localStorage.getItem(STORAGE_KEYS.BUDGET_SETTINGS);
-      const storedSeason = localStorage.getItem(STORAGE_KEYS.ACTIVE_SEASON);
+      const storedArtifacts = localStorage.getItem(getScopedKey(STORAGE_KEYS.ARTIFACTS, userId));
+      const storedSheets = localStorage.getItem(getScopedKey(STORAGE_KEYS.COSTING_SHEETS, userId));
+      const storedDocs = localStorage.getItem(getScopedKey(STORAGE_KEYS.DOCUMENTS, userId));
+      const storedArticles = localStorage.getItem(getScopedKey(STORAGE_KEYS.KB_ARTICLES, userId));
+      const storedVendors = localStorage.getItem(getScopedKey(STORAGE_KEYS.VENDORS, userId));
+      const storedPipeline = localStorage.getItem(getScopedKey(STORAGE_KEYS.PIPELINE_ITEMS, userId));
+      const storedBudget = localStorage.getItem(getScopedKey(STORAGE_KEYS.BUDGET_ITEMS, userId));
+      const storedSprints = localStorage.getItem(getScopedKey(STORAGE_KEYS.SPRINTS, userId));
+      const storedWorkItems = localStorage.getItem(getScopedKey(STORAGE_KEYS.WORK_ITEMS, userId));
+      const storedTeamMembers = localStorage.getItem(getScopedKey(STORAGE_KEYS.TEAM_MEMBERS, userId));
+      const storedWorkSettings = localStorage.getItem(getScopedKey(STORAGE_KEYS.WORK_SETTINGS, userId));
+      const storedBudgetSettings = localStorage.getItem(getScopedKey(STORAGE_KEYS.BUDGET_SETTINGS, userId));
+      const storedSeason = localStorage.getItem(getScopedKey(STORAGE_KEYS.ACTIVE_SEASON, userId));
 
       if (storedSeason) {
         setActiveSeasonState(storedSeason);
@@ -827,26 +854,26 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     // Immediately trigger cloud sync from Supabase
     syncWithSupabase();
-  }, [syncWithSupabase]);
+  }, [userId, syncWithSupabase]);
 
   // Keep local cache synced for instant cold start and offline resiliency
   useEffect(() => {
     if (!isLoaded) return;
     try {
-      localStorage.setItem(STORAGE_KEYS.ARTIFACTS, JSON.stringify(artifacts));
-      localStorage.setItem(STORAGE_KEYS.COSTING_SHEETS, JSON.stringify(costingSheets));
-      localStorage.setItem(STORAGE_KEYS.DOCUMENTS, JSON.stringify(documents));
-      localStorage.setItem(STORAGE_KEYS.KB_ARTICLES, JSON.stringify(kbArticles));
-      localStorage.setItem(STORAGE_KEYS.VENDORS, JSON.stringify(vendors));
-      localStorage.setItem(STORAGE_KEYS.PIPELINE_ITEMS, JSON.stringify(pipelineItems));
-      localStorage.setItem(STORAGE_KEYS.BUDGET_ITEMS, JSON.stringify(budgetItems));
-      localStorage.setItem(STORAGE_KEYS.SPRINTS, JSON.stringify(sprints));
-      localStorage.setItem(STORAGE_KEYS.WORK_ITEMS, JSON.stringify(workItems));
-      localStorage.setItem(STORAGE_KEYS.TEAM_MEMBERS, JSON.stringify(teamMembers));
-      localStorage.setItem(STORAGE_KEYS.WORK_SETTINGS, JSON.stringify(workSettings));
-      localStorage.setItem(STORAGE_KEYS.BUDGET_SETTINGS, JSON.stringify(budgetSettings));
+      localStorage.setItem(getScopedKey(STORAGE_KEYS.ARTIFACTS, userId), JSON.stringify(artifacts));
+      localStorage.setItem(getScopedKey(STORAGE_KEYS.COSTING_SHEETS, userId), JSON.stringify(costingSheets));
+      localStorage.setItem(getScopedKey(STORAGE_KEYS.DOCUMENTS, userId), JSON.stringify(documents));
+      localStorage.setItem(getScopedKey(STORAGE_KEYS.KB_ARTICLES, userId), JSON.stringify(kbArticles));
+      localStorage.setItem(getScopedKey(STORAGE_KEYS.VENDORS, userId), JSON.stringify(vendors));
+      localStorage.setItem(getScopedKey(STORAGE_KEYS.PIPELINE_ITEMS, userId), JSON.stringify(pipelineItems));
+      localStorage.setItem(getScopedKey(STORAGE_KEYS.BUDGET_ITEMS, userId), JSON.stringify(budgetItems));
+      localStorage.setItem(getScopedKey(STORAGE_KEYS.SPRINTS, userId), JSON.stringify(sprints));
+      localStorage.setItem(getScopedKey(STORAGE_KEYS.WORK_ITEMS, userId), JSON.stringify(workItems));
+      localStorage.setItem(getScopedKey(STORAGE_KEYS.TEAM_MEMBERS, userId), JSON.stringify(teamMembers));
+      localStorage.setItem(getScopedKey(STORAGE_KEYS.WORK_SETTINGS, userId), JSON.stringify(workSettings));
+      localStorage.setItem(getScopedKey(STORAGE_KEYS.BUDGET_SETTINGS, userId), JSON.stringify(budgetSettings));
     } catch (_) {}
-  }, [artifacts, costingSheets, documents, kbArticles, vendors, pipelineItems, budgetItems, sprints, workItems, teamMembers, workSettings, budgetSettings, isLoaded]);
+  }, [artifacts, costingSheets, documents, kbArticles, vendors, pipelineItems, budgetItems, sprints, workItems, teamMembers, workSettings, budgetSettings, isLoaded, userId]);
 
   // Window Focus & Visibility Listener: catches changes made on another
   // device/tab while this one was inactive. A single tab-switch typically

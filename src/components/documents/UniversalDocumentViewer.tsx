@@ -547,7 +547,13 @@ export default function UniversalDocumentViewer({
                       <div className="max-w-3xl mx-auto bg-[#0d1018] border border-[#22293b] rounded-2xl p-6 sm:p-10 shadow-2xl space-y-4">
                         <div 
                           className="prose prose-invert max-w-none text-xs sm:text-sm text-[#cbd5e1] leading-relaxed [&_h1]:text-xl [&_h1]:font-bold [&_h1]:text-white [&_h1]:border-b [&_h1]:border-[#263147] [&_h1]:pb-2 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-[#e6c875] [&_h3]:text-base [&_h3]:font-semibold [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_table]:w-full [&_table]:border-collapse [&_th]:bg-[#182030] [&_th]:p-2 [&_th]:border [&_th]:border-[#263147] [&_td]:p-2 [&_td]:border [&_td]:border-[#263147]"
-                          dangerouslySetInnerHTML={{ __html: wordHtml }}
+                          dangerouslySetInnerHTML={{ 
+                            __html: (wordHtml || '')
+                              .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+                              .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+                              .replace(/\s*on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+                              .replace(/href\s*=\s*["']javascript:[^"']*["']/gi, 'href="#"')
+                          }}
                         />
                       </div>
                     )}

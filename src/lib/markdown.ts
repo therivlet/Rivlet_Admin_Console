@@ -13,6 +13,14 @@ function escapeHtml(text: string): string {
     .replace(/"/g, '&quot;');
 }
 
+function sanitizeUrl(url: string): string {
+  const trimmed = (url || '').trim();
+  if (/^(https?:\/\/|mailto:|\/|#)/i.test(trimmed)) {
+    return trimmed;
+  }
+  return '#';
+}
+
 function renderInline(text: string): string {
   let html = escapeHtml(text);
   // Inline code (before bold/italic so backticked content isn't touched)
@@ -21,8 +29,11 @@ function renderInline(text: string): string {
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   // Italic (single asterisk or underscore, not immediately adjacent to another *)
   html = html.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, '<em>$1</em>');
-  // Links [text](url)
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
+  // Safe Links [text](url)
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) => {
+    const safeHref = sanitizeUrl(url);
+    return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+  });
   return html;
 }
 

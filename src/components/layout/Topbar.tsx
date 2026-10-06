@@ -14,13 +14,18 @@ import {
   Check, 
   Calendar, 
   Sun, 
-  Moon 
+  Moon,
+  Lock,
+  FileSearch,
+  CloudUpload
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/authContext';
 import { useTheme } from '@/lib/themeContext';
 import { useAdminStore } from '@/lib/store';
+import { ROLE_LABELS } from '@/lib/permissions';
 import RivletLogo from '@/components/brand/RivletLogo';
+import NotificationCenterDropdown from './NotificationCenterDropdown';
 
 interface TopbarProps {
   onOpenCommand?: () => void;
@@ -57,9 +62,9 @@ export default function Topbar({
   onToggleMobileMenu,
   onToggleSidebarCollapse
 }: TopbarProps) {
-  const { user, signOut } = useAuth();
+  const { user, signOut, canView } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { activeSeason, setActiveSeason } = useAdminStore();
+  const { activeSeason, setActiveSeason, isSyncing } = useAdminStore();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
   const [customSeasonInput, setCustomSeasonInput] = useState('');
@@ -102,7 +107,6 @@ export default function Topbar({
       <header className="h-14 flex-shrink-0 bg-[#241812] dark:bg-[#0a0c12]/95 backdrop-blur-xl px-3 sm:px-6 flex items-center justify-between z-30 select-none gap-2 shadow-sm border-b border-[#3d2b20] dark:border-[#1a2233] transition-all relative">
         {/* Left section: 3-Lines YouTube-style Hamburger + Combined Brand Logo & Wordmark */}
         <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 z-10">
-          {/* YouTube-Style 3-Lines Hamburger Menu Button */}
           <button
             onClick={handleMenuClick}
             className="p-2 rounded-xl text-[#d7cbbe] dark:text-[#94a3b8] hover:text-[#cda052] dark:hover:text-[#f7dda0] hover:bg-white/[0.08] active:scale-95 transition-all flex-shrink-0 cursor-pointer"
@@ -112,7 +116,6 @@ export default function Topbar({
             <Menu className="w-5 h-5" />
           </button>
 
-          {/* Combined Brand Logo & Wordmark (No separate standalone wave box) */}
           <Link
             href="/"
             className="brand-logo-link flex items-center outline-none hover:opacity-90 transition-opacity flex-shrink-0 py-1"
@@ -143,7 +146,13 @@ export default function Topbar({
 
         {/* Right controls */}
         <div className="flex items-center gap-1 sm:gap-2.5 flex-shrink-0 z-10">
-          {/* Interactive Season & Financial Year Selector (Icon + compact code on mobile, full on desktop) */}
+          {/* Cloud Sync Status Indicator */}
+          <div className="hidden xl:flex items-center gap-1 px-2 py-1 rounded-lg bg-[#0e121b] border border-[#1e2638] text-[10px] font-mono">
+            <span className={`w-1.5 h-1.5 rounded-full ${isSyncing ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`} />
+            <span className="text-[#94a3b8]">{isSyncing ? 'Syncing...' : 'Cloud Synced'}</span>
+          </div>
+
+          {/* Season & Financial Year Selector */}
           <div className="relative" ref={seasonDropdownRef}>
             <button
               onClick={() => setSeasonDropdownOpen(!seasonDropdownOpen)}
@@ -157,37 +166,19 @@ export default function Topbar({
               <ChevronDown className={`w-3 h-3 text-[#94a3b8] hidden xs:inline transition-transform duration-200 ${seasonDropdownOpen ? 'rotate-180 text-[#cda052]' : ''}`} />
             </button>
 
-            {/* Season & Financial Year Dropdown Modal (Viewport-friendly width) */}
             {seasonDropdownOpen && (
               <div className="absolute right-0 sm:left-0 sm:right-auto mt-2 w-[calc(100vw-24px)] max-w-sm sm:w-96 bg-[#0d101a] border border-[#22293e] rounded-2xl shadow-2xl p-4 z-50 animate-fade-in text-xs space-y-3.5">
-                {/* Header with Apparel Cycle Explanation */}
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-white text-sm flex items-center gap-1.5">
-                      <Calendar className="w-4 h-4 text-[#cda052]" />
-                      Season & Financial Year
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-[rgba(205,160,82,0.12)] text-[#cda052] border border-[rgba(205,160,82,0.25)] font-mono font-semibold">
-                      Merchandising Cycle
-                    </span>
-                  </div>
-
-                  {/* Educational Note explaining FW and SS */}
-                  <div className="mt-2.5 p-2.5 rounded-xl bg-[#07090e] border border-[#1b2133] text-[11px] text-[#94a3b8] leading-relaxed">
-                    <p className="font-medium text-[#cbd5e1] mb-1">What do FW and SS mean?</p>
-                    <div className="grid grid-cols-2 gap-1.5 text-[10px] font-mono">
-                      <div><strong className="text-[#cda052]">FW:</strong> Fall / Winter (Autumn)</div>
-                      <div><strong className="text-[#cda052]">SS:</strong> Spring / Summer</div>
-                    </div>
-                    <p className="text-[10px] text-[#717a90] mt-1.5">
-                      In the apparel industry, each financial year consists of two primary collection drops (e.g. FW26 + SS27 = FY 2026–27).
-                    </p>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-white text-sm flex items-center gap-1.5">
+                    <Calendar className="w-4 h-4 text-[#cda052]" />
+                    Season & Financial Year
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-[rgba(205,160,82,0.12)] text-[#cda052] border border-[rgba(205,160,82,0.25)] font-mono font-semibold">
+                    Merchandising Cycle
+                  </span>
                 </div>
 
-                {/* Season Options */}
                 <div className="space-y-1.5">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-[#64748b]">Select Active Cycle:</p>
                   {SEASON_OPTIONS.map((opt) => {
                     const isSelected = activeSeason === opt.code;
                     return (
@@ -215,69 +206,32 @@ export default function Topbar({
                     );
                   })}
                 </div>
-
-                {/* Custom Season Input */}
-                <div className="pt-2 border-t border-[#1a2133]">
-                  {!showCustomInput ? (
-                    <button
-                      onClick={() => {
-                        setShowCustomInput(true);
-                        setCustomSeasonInput(activeSeason);
-                      }}
-                      className="text-[11px] text-[#cda052] hover:underline flex items-center gap-1 font-medium"
-                    >
-                      + Enter custom season or financial year
-                    </button>
-                  ) : (
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-semibold text-[#8e97af] uppercase">Custom Season / FY Name:</label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={customSeasonInput}
-                          onChange={(e) => setCustomSeasonInput(e.target.value)}
-                          placeholder="e.g. FY 2026-27 or Drop 1 / SS27"
-                          className="flex-1 px-2.5 py-1.5 rounded-lg bg-[#07090e] border border-[#232d42] text-xs text-white outline-none focus:border-[#cda052]"
-                        />
-                        <button
-                          onClick={() => {
-                            if (customSeasonInput.trim()) {
-                              setActiveSeason(customSeasonInput.trim());
-                              setShowCustomInput(false);
-                              setSeasonDropdownOpen(false);
-                            }
-                          }}
-                          className="px-3 py-1.5 rounded-lg bg-[#cda052] text-black font-semibold text-xs hover:brightness-110"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={() => setShowCustomInput(false)}
-                          className="px-2 py-1.5 text-xs text-[#8e97af] hover:text-white"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
               </div>
             )}
           </div>
 
-          {/* Theme Toggle Button (Icon only) */}
+          {/* Theme Toggle Button */}
           <button
             onClick={toggleTheme}
             title={theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
             aria-label="Toggle interface theme"
-            className="flex items-center justify-center p-2 rounded-lg border border-[#242e44] bg-[#0e121b] hover:border-[#cda052]/60 hover:bg-[#151a26] text-[#cda052] transition-all shadow-sm"
+            className="flex items-center justify-center p-2 rounded-lg border border-[#242e44] bg-[#0e121b] hover:border-[#cda052]/60 hover:bg-[#151a26] text-[#cda052] transition-all shadow-sm cursor-pointer"
           >
-            {theme === 'dark' ? (
-              <Sun className="w-3.5 h-3.5 text-[#cda052]" />
-            ) : (
-              <Moon className="w-3.5 h-3.5 text-[#cda052]" />
-            )}
+            {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-[#cda052]" /> : <Moon className="w-3.5 h-3.5 text-[#cda052]" />}
           </button>
+
+          {/* Durable Notification Center */}
+          <NotificationCenterDropdown />
+
+          {/* User Full Name & Role Badge (Visible on top header of every page) */}
+          <div className="hidden md:flex flex-col items-end pl-1 pr-1 text-right leading-tight">
+            <span className="text-xs font-semibold text-white tracking-wide truncate max-w-[130px]">
+              {user?.name || 'Rivlet Executive'}
+            </span>
+            <span className="text-[10px] font-mono uppercase tracking-wider text-[#cda052] font-semibold">
+              {user?.role ? ROLE_LABELS[user.role] : 'Owner'}
+            </span>
+          </div>
 
           {/* User Profile Avatar & Dropdown */}
           <div className="relative" ref={dropdownRef}>
@@ -293,19 +247,19 @@ export default function Topbar({
               <ChevronDown className="w-3 h-3 text-[#8c97ad] hidden sm:block" />
             </button>
 
-            {/* Profile Dropdown Menu (Viewport friendly on mobile) */}
+            {/* Profile Dropdown Menu */}
             {profileDropdownOpen && (
               <div className="absolute right-0 mt-2 w-[calc(100vw-24px)] max-w-xs sm:w-64 bg-[#0d101a] border border-[#22293e] rounded-xl shadow-2xl p-2 space-y-2 z-50 animate-fade-in text-xs">
                 {/* User Header */}
                 <div className="p-2.5 bg-[#07090f] border border-[#1b2133] rounded-lg">
                   <div className="font-bold text-white truncate">{user?.name || 'Rivlet Executive'}</div>
-                  <div className="text-xs text-[#94a3b8] truncate">{user?.email || 'admin@therivlet.com'}</div>
+                  <div className="text-xs text-[#94a3b8] truncate font-mono">{user?.email || 'admin@therivlet.com'}</div>
                   <div className="mt-1.5 flex items-center gap-1.5">
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-[rgba(205,160,82,0.15)] text-[#cda052] border border-[rgba(205,160,82,0.3)] font-semibold font-mono">
-                      Super Admin
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-[rgba(205,160,82,0.15)] text-[#cda052] border border-[rgba(205,160,82,0.3)] font-semibold font-mono uppercase">
+                      {user?.role ? ROLE_LABELS[user.role] : 'Owner'}
                     </span>
                     <span className="text-[10px] text-emerald-400 flex items-center gap-0.5 font-medium">
-                      <ShieldCheck className="w-3 h-3" /> Live
+                      <ShieldCheck className="w-3 h-3" /> Active
                     </span>
                   </div>
                 </div>
@@ -315,39 +269,42 @@ export default function Topbar({
                   <Link
                     href="/profile"
                     onClick={() => setProfileDropdownOpen(false)}
-                    title="View and update personal profile and brand settings"
                     className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[#cbd5e1] hover:text-white hover:bg-white/[0.08] transition-colors"
                   >
                     <User className="w-3.5 h-3.5 text-[#cda052]" />
                     <span>My Profile & Brand Info</span>
                   </Link>
 
+                  {canView('access') && (
+                    <Link
+                      href="/access"
+                      onClick={() => setProfileDropdownOpen(false)}
+                      className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[#cbd5e1] hover:text-white hover:bg-white/[0.08] transition-colors"
+                    >
+                      <Lock className="w-3.5 h-3.5 text-[#cda052]" />
+                      <span>Access & Governance</span>
+                    </Link>
+                  )}
+
+                  {canView('audit') && (
+                    <Link
+                      href="/audit"
+                      onClick={() => setProfileDropdownOpen(false)}
+                      className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[#cbd5e1] hover:text-white hover:bg-white/[0.08] transition-colors"
+                    >
+                      <FileSearch className="w-3.5 h-3.5 text-[#cda052]" />
+                      <span>Audit Trail History</span>
+                    </Link>
+                  )}
+
                   <Link
                     href="/calculator"
                     onClick={() => setProfileDropdownOpen(false)}
-                    title="Open Garment Pricing Engine & Technical BOM"
                     className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[#cbd5e1] hover:text-white hover:bg-white/[0.08] transition-colors"
                   >
                     <Settings className="w-3.5 h-3.5 text-[#cda052]" />
                     <span>Pricing Engine & BOM</span>
                   </Link>
-
-                  <button
-                    onClick={() => {
-                      toggleTheme();
-                      setProfileDropdownOpen(false);
-                    }}
-                    title="Toggle light or dark interface theme"
-                    className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[#cbd5e1] hover:text-white hover:bg-white/[0.08] transition-colors text-left"
-                  >
-                    <span className="flex items-center gap-2">
-                      {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-[#cda052]" /> : <Moon className="w-3.5 h-3.5 text-[#cda052]" />}
-                      <span>Theme: {theme === 'dark' ? 'Dark' : 'Light'}</span>
-                    </span>
-                    <span className="text-[10px] text-[#94a3b8] uppercase font-mono">
-                      {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-                    </span>
-                  </button>
                 </div>
 
                 {/* Sign Out */}
@@ -357,7 +314,6 @@ export default function Topbar({
                       setProfileDropdownOpen(false);
                       signOut();
                     }}
-                    title="Sign out of Rivlet Executive Console"
                     className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/15 border border-transparent hover:border-rose-500/30 transition-all text-left font-medium cursor-pointer"
                   >
                     <LogOut className="w-3.5 h-3.5" />
