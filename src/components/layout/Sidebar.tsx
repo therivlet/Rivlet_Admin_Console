@@ -143,14 +143,14 @@ export default function Sidebar({
         </div>
       )}
 
-      {/* Main Navigation Scroll Area - Zero scroller, clean fixed icon set starting from Home */}
-      <div className="flex-1 overflow-x-hidden overflow-y-auto scrollbar-none px-2 py-3 flex flex-col justify-start space-y-1">
+      {/* Main Navigation Scroll Area - Adaptive zero-scroller flex column */}
+      <div className="flex-1 min-h-0 sidebar-nav-container px-2 py-2 flex flex-col justify-start space-y-0.5 sm:space-y-1">
         {/* 1. HOME BUTTON */}
         <div className="relative group w-full">
           <Link
             href="/"
             onClick={handleLinkClick}
-            className={`group/link flex items-center rounded-xl text-xs transition-colors duration-200 border ${
+            className={`sidebar-nav-item group/link flex items-center rounded-xl text-xs transition-colors duration-200 border flex-shrink ${
               pathname === '/'
                 ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold shadow-sm border-[#cda052]/60'
                 : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
@@ -176,7 +176,7 @@ export default function Sidebar({
 
         {/* 2. WORK TRACKING */}
         <div className="w-full">
-          <div className="h-6 flex items-center px-1 my-0.5 overflow-hidden relative">
+          <div className="sidebar-nav-section h-6 flex items-center px-1 my-0.5 overflow-hidden relative flex-shrink-0">
             <div className={`flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase whitespace-nowrap transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
               collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[180px] opacity-100 translate-x-0 text-[#a89487] dark:text-[#94a3b8]'
             }`}>
@@ -190,7 +190,7 @@ export default function Sidebar({
             </div>
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-0.5 sm:space-y-1">
             {workSubmenuItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeWorkTab === item.tab;
@@ -199,7 +199,7 @@ export default function Sidebar({
                   <Link
                     href={item.href}
                     onClick={handleLinkClick}
-                    className={`group/link flex items-center rounded-xl text-xs transition-colors duration-200 border ${
+                    className={`sidebar-nav-item group/link flex items-center rounded-xl text-xs transition-colors duration-200 border flex-shrink ${
                       isActive
                         ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
                         : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
@@ -229,8 +229,8 @@ export default function Sidebar({
         </div>
 
         {/* 3. BUSINESS & OPERATIONS MODULES */}
-        <div className="w-full space-y-1">
-          <div className="h-6 flex items-center px-1 my-0.5 overflow-hidden relative">
+        <div className="w-full space-y-0.5 sm:space-y-1">
+          <div className="sidebar-nav-section h-6 flex items-center px-1 my-0.5 overflow-hidden relative flex-shrink-0">
             <span className={`text-[10px] font-semibold tracking-wider uppercase whitespace-nowrap transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
               collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[180px] opacity-100 translate-x-0 text-[#a89487] dark:text-[#94a3b8]'
             }`}>
@@ -246,7 +246,7 @@ export default function Sidebar({
           {/* Business Calculations */}
           <div className="relative group w-full">
             <div
-              className={`nav-expandable-row group/row flex items-center rounded-xl text-xs transition-colors duration-200 border cursor-pointer ${
+              className={`sidebar-nav-item nav-expandable-row group/row flex items-center rounded-xl text-xs transition-colors duration-200 border cursor-pointer flex-shrink ${
                 isCalcPath
                   ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
                   : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1]'
@@ -394,7 +394,7 @@ export default function Sidebar({
             <Link
               href="/vendors"
               onClick={handleLinkClick}
-              className={`group/link flex items-center rounded-xl text-xs transition-colors duration-200 border ${
+              className={`sidebar-nav-item group/link flex items-center rounded-xl text-xs transition-colors duration-200 border flex-shrink ${
                 pathname === '/vendors'
                   ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
                   : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
@@ -422,7 +422,7 @@ export default function Sidebar({
             <Link
               href="/pipeline"
               onClick={handleLinkClick}
-              className={`group/link flex items-center rounded-xl text-xs transition-colors duration-200 border ${
+              className={`sidebar-nav-item group/link flex items-center rounded-xl text-xs transition-colors duration-200 border flex-shrink ${
                 pathname === '/pipeline'
                   ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
                   : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
@@ -450,7 +450,7 @@ export default function Sidebar({
             <Link
               href="/budget"
               onClick={handleLinkClick}
-              className={`group/link flex items-center rounded-xl text-xs transition-colors duration-200 border ${
+              className={`sidebar-nav-item group/link flex items-center rounded-xl text-xs transition-colors duration-200 border flex-shrink ${
                 pathname === '/budget'
                   ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
                   : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
@@ -475,8 +475,8 @@ export default function Sidebar({
         </div>
 
         {/* 4. KNOWLEDGE & ASSETS DIRECT MODULES */}
-        <div className="w-full space-y-1">
-          <div className="h-6 flex items-center px-1 my-0.5 overflow-hidden relative">
+        <div className="w-full space-y-0.5 sm:space-y-1">
+          <div className="sidebar-nav-section h-6 flex items-center px-1 my-0.5 overflow-hidden relative flex-shrink-0">
             <span className={`text-[10px] font-semibold tracking-wider uppercase whitespace-nowrap transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
               collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[180px] opacity-100 translate-x-0 text-[#a89487] dark:text-[#94a3b8]'
             }`}>
@@ -497,7 +497,7 @@ export default function Sidebar({
                 <Link
                   href={item.href}
                   onClick={handleLinkClick}
-                  className={`group/link flex items-center rounded-xl text-xs transition-colors duration-200 border ${
+                  className={`sidebar-nav-item group/link flex items-center rounded-xl text-xs transition-colors duration-200 border flex-shrink ${
                     isItemActive
                       ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
                       : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
@@ -540,8 +540,8 @@ export default function Sidebar({
 
       {/* GOVERNANCE & SECURITY MODULES */}
       {(canView('access') || canView('audit')) && (
-        <div className="w-full space-y-1">
-          <div className="h-6 flex items-center px-1 my-0.5 overflow-hidden relative">
+        <div className="w-full space-y-0.5 sm:space-y-1">
+          <div className="sidebar-nav-section h-6 flex items-center px-1 my-0.5 overflow-hidden relative flex-shrink-0">
             <span className={`text-[10px] font-semibold tracking-wider uppercase whitespace-nowrap transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
               collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[180px] opacity-100 translate-x-0 text-[#a89487] dark:text-[#94a3b8]'
             }`}>
@@ -559,7 +559,7 @@ export default function Sidebar({
               <Link
                 href="/access"
                 onClick={handleLinkClick}
-                className={`group/link flex items-center rounded-xl text-xs transition-colors duration-200 border ${
+                className={`sidebar-nav-item group/link flex items-center rounded-xl text-xs transition-colors duration-200 border flex-shrink ${
                   pathname === '/access'
                     ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
                     : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
@@ -587,7 +587,7 @@ export default function Sidebar({
               <Link
                 href="/audit"
                 onClick={handleLinkClick}
-                className={`group/link flex items-center rounded-xl text-xs transition-colors duration-200 border ${
+                className={`sidebar-nav-item group/link flex items-center rounded-xl text-xs transition-colors duration-200 border flex-shrink ${
                   pathname === '/audit'
                     ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
                     : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
@@ -613,7 +613,7 @@ export default function Sidebar({
       )}
 
       {/* 5. ACCOUNTS & USER FOOTER */}
-      <div className="p-2 bg-black/25 dark:bg-[#07080d]/80 text-[11px] border-t border-[#3d2b20] dark:border-[#1a2233] transition-all duration-300 overflow-hidden flex-shrink-0">
+      <div className="sidebar-nav-item p-2 bg-black/25 dark:bg-[#07080d]/80 text-[11px] border-t border-[#3d2b20] dark:border-[#1a2233] transition-all duration-300 overflow-hidden flex-shrink-0">
         <div className="px-1 mb-1 flex items-center justify-between overflow-hidden h-4">
           <span className={`text-[10px] font-semibold tracking-wider text-[#a89487] dark:text-[#94a3b8] uppercase transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
             collapsed ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[100px] opacity-100'
@@ -629,7 +629,7 @@ export default function Sidebar({
             <Link
               href="/profile"
               onClick={handleLinkClick}
-              className={`group/link flex items-center rounded-xl text-xs transition-colors duration-200 border ${
+              className={`sidebar-nav-item group/link flex items-center rounded-xl text-xs transition-colors duration-200 border flex-shrink ${
                 pathname === '/profile'
                   ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
                   : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'

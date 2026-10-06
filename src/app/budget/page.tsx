@@ -141,13 +141,17 @@ export default function BudgetPage() {
   const [isEditingTotal, setIsEditingTotal] = useState(false);
   const [totalInput, setTotalInput] = useState('');
 
-  const sumPlanned = useMemo(() => budgetItems.reduce((sum, b) => sum + b.plannedAmount, 0), [budgetItems]);
+  const sumPlanned = useMemo(() => budgetItems.reduce((sum, b) => sum + (b.plannedAmount || 0), 0), [budgetItems]);
+  const sumActual = useMemo(() => budgetItems.reduce((sum, b) => sum + (b.actualAmount || 0), 0), [budgetItems]);
+  const sumRemaining = sumPlanned - sumActual;
+  const sumPercentage = sumPlanned > 0 ? Math.round((sumActual / sumPlanned) * 100) : 0;
+
   const totals = useMemo(() => {
     const planned = budgetSettings.totalPlannedOverride ?? sumPlanned;
-    const actual = budgetItems.reduce((sum, b) => sum + b.actualAmount, 0);
+    const actual = sumActual;
     const percentage = planned > 0 ? Math.round((actual / planned) * 100) : 0;
     return { planned, actual, spent: actual, remaining: planned - actual, percentage };
-  }, [budgetItems, budgetSettings, sumPlanned]);
+  }, [budgetSettings, sumPlanned, sumActual]);
 
   const toggleExpand = (id: string) => setExpandedRows((prev) => ({ ...prev, [id]: !prev[id] }));
 
@@ -805,7 +809,7 @@ export default function BudgetPage() {
       {/* DESKTOP TABLE VIEW (sm:block)                                   */}
       {/* ============================================================== */}
       <div className="hidden sm:block rounded-2xl border border-[#1a1f2c] bg-[#0e121b] overflow-hidden shadow-lg">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto custom-scrollbar">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#1a1f2c] text-[11px] text-[#94a3b8] uppercase tracking-wide bg-[#0a0d14]">
@@ -1032,29 +1036,73 @@ export default function BudgetPage() {
               )}
             </tbody>
             {budgetItems.length > 0 && (
-              <tfoot className="border-t-2 border-[#222d42] bg-[#07090f] font-semibold text-xs">
+              <tfoot className="border-t-2 border-[#222d42] bg-[#07090f] font-semibold text-xs divide-y divide-[#182030]">
+                {/* 1. Category Sum Row: Exact mathematical sum of all category rows above */}
                 <tr>
                   <td colSpan={4} className="px-4 py-3.5 text-white font-bold tracking-wide uppercase text-[11px]">
-                    Total Ledger Balance ({budgetItems.length} Categories)
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#cda052] inline-block" />
+                      <span>Total Categories Allocated ({budgetItems.length} Categories)</span>
+                    </div>
                   </td>
                   <td className="px-4 py-3.5 text-right font-mono text-[#e6c875] font-bold whitespace-nowrap">
-                    {formatINR(totals.planned)}
+                    {formatINR(sumPlanned)}
                   </td>
                   <td className="px-4 py-3.5 text-right font-mono text-white font-bold whitespace-nowrap">
-                    {formatINR(totals.spent)}
+                    {formatINR(sumActual)}
                   </td>
                   <td className="px-4 py-3.5 text-right font-mono font-bold whitespace-nowrap">
-                    <span className={totals.remaining >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
-                      {formatINR(Math.abs(totals.remaining))}
+                    <span className={sumRemaining >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                      {formatINR(Math.abs(sumRemaining))}
                     </span>
                   </td>
                   <td className="px-4 py-3.5 text-right font-mono font-bold whitespace-nowrap">
-                    <span className={totals.percentage > 100 ? 'text-rose-400' : totals.percentage > 80 ? 'text-amber-400' : 'text-emerald-400'}>
-                      {totals.percentage}%
+                    <span className={sumPercentage > 100 ? 'text-rose-400' : sumPercentage > 80 ? 'text-amber-400' : 'text-emerald-400'}>
+                      {sumPercentage}%
                     </span>
                   </td>
                   <td className="px-4 py-3.5"></td>
                 </tr>
+
+                {/* 2. Cap Comparison Row: If an approved overall budget ceiling is configured */}
+                {budgetSettings.totalPlannedOverride !== undefined && (
+                  <tr className="bg-[#05070d] text-[11px]">
+                    <td colSpan={4} className="px-4 py-2.5 text-[#94a3b8] font-medium tracking-wide">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="w-1.5 h-1.5 rounded-full bg-purple-400 inline-block" />
+                        <span className="uppercase text-[10px] font-mono font-semibold text-[#cbd5e1]">Approved Launch Cap:</span>
+                        <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
+                          sumPlanned === budgetSettings.totalPlannedOverride
+                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                            : sumPlanned < budgetSettings.totalPlannedOverride
+                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                            : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
+                        }`}>
+                          {sumPlanned === budgetSettings.totalPlannedOverride
+                            ? '✓ Exactly 100% Balanced with Cap'
+                            : sumPlanned < budgetSettings.totalPlannedOverride
+                            ? `₹${(budgetSettings.totalPlannedOverride - sumPlanned).toLocaleString('en-IN')} Buffer Available`
+                            : `₹${(sumPlanned - budgetSettings.totalPlannedOverride).toLocaleString('en-IN')} Over Allocated`}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-mono text-[#cbd5e1] font-semibold whitespace-nowrap">
+                      {formatINR(budgetSettings.totalPlannedOverride)}
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-mono text-[#94a3b8] whitespace-nowrap">
+                      {formatINR(sumActual)}
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-mono font-semibold whitespace-nowrap">
+                      <span className={budgetSettings.totalPlannedOverride - sumActual >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                        {formatINR(Math.abs(budgetSettings.totalPlannedOverride - sumActual))}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-mono text-[#94a3b8] whitespace-nowrap">
+                      {Math.round((sumActual / budgetSettings.totalPlannedOverride) * 100)}%
+                    </td>
+                    <td className="px-4 py-2.5"></td>
+                  </tr>
+                )}
               </tfoot>
             )}
           </table>

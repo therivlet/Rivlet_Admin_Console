@@ -37,6 +37,62 @@ body {
   background: #cda052;
 }
 
+/* Scrollbar None Utility */
+.scrollbar-none {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Sidebar Flex & Screen-Adaptive Navigation without Scrollbar */
+.sidebar-nav-container {
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.sidebar-nav-container::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+@media (max-height: 890px) {
+  .sidebar-nav-item {
+    height: 32px !important;
+    min-height: 30px !important;
+  }
+  .sidebar-nav-section {
+    height: 18px !important;
+    margin-top: 1px !important;
+    margin-bottom: 1px !important;
+  }
+}
+
+@media (max-height: 760px) {
+  .sidebar-nav-item {
+    height: 28px !important;
+    min-height: 26px !important;
+    font-size: 11px !important;
+  }
+  .sidebar-nav-section {
+    display: none !important;
+  }
+}
+
+@media (max-height: 650px) {
+  .sidebar-nav-item {
+    height: 25px !important;
+    min-height: 24px !important;
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
+  }
+}
+
 /* Glassmorphism Classes */
 .glass-panel {
   background: rgba(18, 21, 30, 0.75);

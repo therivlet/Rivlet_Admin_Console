@@ -232,8 +232,18 @@ export default function BudgetAnalyticsGraph({
     );
   }, [timelineData, maxVal]);
 
-  // Active hover point
-  const activePoint = hoveredPointIndex !== null ? timelineData[hoveredPointIndex] : null;
+  // Active hover point - defaults to current/today position so details card stays permanently fixed in place
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const defaultPointIndex = useMemo(() => {
+    if (!timelineData || timelineData.length === 0) return 0;
+    const todayIdx = timelineData.findIndex((pt) => pt.date === todayStr);
+    if (todayIdx >= 0) return todayIdx;
+    const pastIdxs = timelineData.map((pt, i) => ({ pt, i })).filter(({ pt }) => pt.date <= todayStr);
+    if (pastIdxs.length > 0) return pastIdxs[pastIdxs.length - 1].i;
+    return timelineData.length - 1;
+  }, [timelineData, todayStr]);
+
+  const activePoint = hoveredPointIndex !== null ? timelineData[hoveredPointIndex] : timelineData[defaultPointIndex] || timelineData[0] || null;
 
   return (
     <div className="bg-[#0e121b] border border-[#1e2638] rounded-2xl p-4 sm:p-6 shadow-xl mb-6 relative overflow-hidden transition-all">
@@ -632,11 +642,19 @@ export default function BudgetAnalyticsGraph({
             </svg>
           </div>
 
-          {/* Interactive Hover Details Card */}
+          {/* Fixed Interactive Milestone Details Card (Permanently visible, data dynamically moves with mouse) */}
           {activePoint && (
-            <div className="mt-3 p-3 rounded-xl bg-[#0a0e17] border border-[#232f48] shadow-glass flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs animate-fade-in">
+            <div className={`mt-3 p-3 rounded-xl bg-[#0a0e17] border transition-all duration-150 shadow-glass flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs ${
+              hoveredPointIndex !== null
+                ? 'border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.15)] bg-[#0d101a]'
+                : 'border-[#232f48]'
+            }`}>
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-[rgba(205,160,82,0.12)] text-[#cda052] font-mono font-bold flex-shrink-0">
+                <div className={`p-2 rounded-lg font-mono font-bold flex-shrink-0 transition-colors ${
+                  hoveredPointIndex !== null
+                    ? 'bg-purple-900/60 text-purple-300'
+                    : 'bg-[rgba(205,160,82,0.12)] text-[#cda052]'
+                }`}>
                   <Calendar className="w-4 h-4" />
                 </div>
                 <div>
@@ -649,13 +667,23 @@ export default function BudgetAnalyticsGraph({
                         year: 'numeric',
                       })}
                     </span>
+                    {activePoint.date === todayStr && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-950/80 text-sky-300 border border-sky-800 font-mono font-semibold">
+                        Today (Current Position)
+                      </span>
+                    )}
                     {activePoint.isFuture && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-800 font-mono font-semibold">
                         Scheduled Future Injection
                       </span>
                     )}
+                    {hoveredPointIndex !== null && activePoint.date !== todayStr && !activePoint.isFuture && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-800 font-mono font-semibold">
+                        Scrubbing Milestone
+                      </span>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2 mt-0.5 text-[11px] text-[#94a3b8]">
+                  <div className="flex items-center gap-2 mt-0.5 text-[11px] text-[#94a3b8] flex-wrap">
                     {activePoint.notes.map((note, nIdx) => (
                       <span key={nIdx} className="bg-[#141b2b] px-2 py-0.5 rounded text-[#cbd5e1]">
                         {note}
@@ -665,18 +693,18 @@ export default function BudgetAnalyticsGraph({
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 text-right flex-shrink-0">
+              <div className="flex items-center gap-4 text-right flex-shrink-0 font-mono">
                 <div>
                   <div className="text-[10px] text-emerald-400 uppercase font-semibold">Inflow to Date</div>
-                  <div className="font-bold text-emerald-400 font-mono">{formatFullINR(activePoint.cumInflow)}</div>
+                  <div className="font-bold text-emerald-400 text-sm">{formatFullINR(activePoint.cumInflow)}</div>
                 </div>
                 <div>
                   <div className="text-[10px] text-rose-400 uppercase font-semibold">Spent to Date</div>
-                  <div className="font-bold text-rose-400 font-mono">{formatFullINR(activePoint.cumSpend)}</div>
+                  <div className="font-bold text-rose-400 text-sm">{formatFullINR(activePoint.cumSpend)}</div>
                 </div>
                 <div>
                   <div className="text-[10px] text-purple-400 uppercase font-semibold">Liquid Cash</div>
-                  <div className="font-bold text-purple-300 font-mono">{formatFullINR(activePoint.balance)}</div>
+                  <div className="font-bold text-purple-300 text-sm">{formatFullINR(activePoint.balance)}</div>
                 </div>
               </div>
             </div>
