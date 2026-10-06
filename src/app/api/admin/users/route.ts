@@ -35,14 +35,35 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 2. Fetch all user profiles
-    const { data: profiles, error: listErr } = await supabaseAdmin
-      .from('user_profiles')
-      .select('*')
-      .order('created_at', { ascending: true });
+    // 2. Fetch all user profiles and active Supabase Auth accounts
+    const [{ data: profiles, error: listErr }, authUsersRes] = await Promise.all([
+      supabaseAdmin.from('user_profiles').select('*').order('created_at', { ascending: true }),
+      supabaseAdmin.auth.admin.listUsers(),
+    ]);
 
     if (listErr) {
       return NextResponse.json({ error: listErr.message }, { status: 500 });
+    }
+
+    // Build set of valid active Supabase Auth user IDs
+    const activeAuthUserIds = new Set((authUsersRes.data?.users || []).map(u => u.id));
+
+    // Exclude any profile that was deleted from Supabase Auth
+    const validProfiles = authUsersRes.data?.users && authUsersRes.data.users.length > 0
+      ? (profiles || []).filter((prof: any) => activeAuthUserIds.has(prof.id))
+      : (profiles || []);
+
+    // Opportunistically prune orphaned rows from user_profiles table in background
+    const orphanedIds = (profiles || [])
+      .filter((prof: any) => !activeAuthUserIds.has(prof.id))
+      .map((prof: any) => prof.id);
+
+    if (orphanedIds.length > 0) {
+      try {
+        await supabaseAdmin.from('user_profiles').delete().in('id', orphanedIds);
+      } catch {
+        // Silently ignore background cleanup errors
+      }
     }
 
     // 3. Fetch all custom permissions overrides
@@ -73,7 +94,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Merge into complete response
-    const usersWithPermissions = (profiles || []).map((prof: any) => ({
+    const usersWithPermissions = validProfiles.map((prof: any) => ({
       id: prof.id,
       email: prof.email,
       name: prof.name,
