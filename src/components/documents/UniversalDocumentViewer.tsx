@@ -283,100 +283,113 @@ export default function UniversalDocumentViewer({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Topbar Header */}
-        <div className="px-4 sm:px-6 py-3.5 bg-[#0e121b] border-b border-[#1e2638] flex items-center justify-between gap-3 flex-shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2 rounded-xl bg-[rgba(205,160,82,0.15)] text-[#e6c875] border border-[rgba(205,160,82,0.3)] flex-shrink-0">
-              {isImage ? <ImageIcon className="w-5 h-5" /> : isExcel ? <FileSpreadsheet className="w-5 h-5 text-emerald-400" /> : <FileText className="w-5 h-5 text-[#cda052]" />}
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm sm:text-base font-bold text-white truncate max-w-[200px] sm:max-w-md font-serif">
-                  {doc.title}
-                </h3>
-                <span className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded font-bold border ${
-                  isExcel ? 'bg-emerald-950/80 text-emerald-400 border-emerald-800/60' :
-                  isWord ? 'bg-blue-950/80 text-blue-400 border-blue-800/60' :
-                  isPdf ? 'bg-rose-950/80 text-rose-400 border-rose-800/60' :
-                  'bg-amber-950/80 text-[#e6c875] border-amber-800/60'
-                }`}>
-                  {effectiveDoc.fileFormat || ext}
-                </span>
+        <div className="p-3 sm:px-6 sm:py-3.5 bg-[#0e121b] border-b border-[#1e2638] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 flex-shrink-0">
+          <div className="flex items-center justify-between sm:justify-start gap-2.5 min-w-0">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="p-1.5 sm:p-2 rounded-xl bg-[rgba(205,160,82,0.15)] text-[#e6c875] border border-[rgba(205,160,82,0.3)] flex-shrink-0">
+                {isImage ? <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" /> : isExcel ? <FileSpreadsheet className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" /> : <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-[#cda052]" />}
               </div>
-              <div className="flex items-center gap-2 text-[11px] text-[#94a3b8] truncate">
-                <span className="truncate">{fileName}</span>
-                <span>•</span>
-                <span className="flex-shrink-0">{(effectiveDoc.fileSizeBytes / 1024 / 1024).toFixed(2)} MB</span>
-                {doc.associatedVendor && (
-                  <>
-                    <span>•</span>
-                    <span className="text-[#cbd5e1] truncate">{doc.associatedVendor}</span>
-                  </>
-                )}
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <h3 className="text-sm sm:text-base font-bold text-white truncate max-w-[170px] sm:max-w-md font-serif">
+                    {doc.title}
+                  </h3>
+                  <span className={`text-[9px] sm:text-[10px] uppercase font-mono px-1.5 sm:px-2 py-0.5 rounded font-bold border ${
+                    isExcel ? 'bg-emerald-950/80 text-emerald-400 border-emerald-800/60' :
+                    isWord ? 'bg-blue-950/80 text-blue-400 border-blue-800/60' :
+                    isPdf ? 'bg-rose-950/80 text-rose-400 border-rose-800/60' :
+                    'bg-amber-950/80 text-[#e6c875] border-amber-800/60'
+                  }`}>
+                    {effectiveDoc.fileFormat || ext}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] text-[#94a3b8] truncate">
+                  <span className="truncate">{fileName}</span>
+                  <span>•</span>
+                  <span className="flex-shrink-0">{(effectiveDoc.fileSizeBytes / 1024 / 1024).toFixed(2)} MB</span>
+                  {doc.associatedVendor && (
+                    <>
+                      <span>•</span>
+                      <span className="text-[#cbd5e1] truncate">{doc.associatedVendor}</span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
+
+            {/* Mobile close button on top row */}
+            <button
+              onClick={onClose}
+              title="Close Preview (Esc)"
+              className="sm:hidden p-1.5 text-[#94a3b8] hover:text-white rounded-lg hover:bg-[#1a2133] transition-colors flex-shrink-0"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
           {/* Action Bar */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2 flex-shrink-0">
             {/* View Mode Toggle */}
             <div className="flex items-center bg-[#07090e] p-0.5 rounded-lg border border-[#1e2638]">
               <button
                 onClick={() => setViewTab('viewer')}
-                className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all flex items-center gap-1.5 ${
+                className={`px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs rounded-md font-medium transition-all flex items-center gap-1.5 ${
                   viewTab === 'viewer'
                     ? 'bg-[#141824] text-[#e6c875] border border-[#cda052]/40 shadow-sm font-semibold'
                     : 'text-[#94a3b8] hover:text-white'
                 }`}
               >
                 <Eye className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">In-App Preview</span>
+                <span className="inline text-[11px] sm:text-xs">Preview</span>
               </button>
               <button
                 onClick={() => setViewTab('readview')}
-                className={`px-3 py-1.5 text-xs rounded-md font-medium transition-all flex items-center gap-1.5 ${
+                className={`px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs rounded-md font-medium transition-all flex items-center gap-1.5 ${
                   viewTab === 'readview'
                     ? 'bg-[#141824] text-[#e6c875] border border-[#cda052]/40 shadow-sm font-semibold'
                     : 'text-[#94a3b8] hover:text-white'
                 }`}
               >
                 <FileCheck className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Compliance & Data</span>
+                <span className="inline text-[11px] sm:text-xs">Data</span>
               </button>
             </div>
 
-            {/* Edit Expiry Date */}
-            <button
-              onClick={() => onEditExpiry(doc)}
-              className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#141824] border border-[#263147] text-[#e6c875] hover:text-white hover:border-[#cda052] text-xs font-semibold flex items-center gap-1.5 transition-colors"
-              title="Edit compliance expiry date"
-            >
-              <Pencil className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Edit Expiry</span>
-            </button>
-
-            {/* Download */}
-            {resolvedUrl && resolvedUrl !== '#' && (
-              <a
-                href={resolvedUrl}
-                target="_blank"
-                rel="noreferrer"
-                download={fileName}
-                className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-bold text-xs flex items-center gap-1.5 hover:brightness-110 shadow-glow"
-                title="Download original document file"
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {/* Edit Expiry Date */}
+              <button
+                onClick={() => onEditExpiry(doc)}
+                className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-[#141824] border border-[#263147] text-[#e6c875] hover:text-white hover:border-[#cda052] text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                title="Edit compliance expiry date"
               >
-                <Download className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span className="hidden sm:inline">Download</span>
-              </a>
-            )}
+                <Pencil className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">Edit Expiry</span>
+              </button>
 
-            {/* Close Button */}
-            <button
-              onClick={onClose}
-              title="Close Preview (Esc)"
-              className="p-1.5 text-[#94a3b8] hover:text-white rounded-lg hover:bg-[#1a2133] transition-colors ml-1"
-            >
-              <X className="w-5 h-5" />
-            </button>
+              {/* Download */}
+              {resolvedUrl && resolvedUrl !== '#' && (
+                <a
+                  href={resolvedUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  download={fileName}
+                  className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-bold text-xs flex items-center gap-1.5 hover:brightness-110 shadow-glow"
+                  title="Download original document file"
+                >
+                  <Download className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span className="hidden xs:inline sm:inline">Download</span>
+                </a>
+              )}
+
+              {/* Desktop Close Button */}
+              <button
+                onClick={onClose}
+                title="Close Preview (Esc)"
+                className="hidden sm:inline-flex p-1.5 text-[#94a3b8] hover:text-white rounded-lg hover:bg-[#1a2133] transition-colors ml-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </div>
 

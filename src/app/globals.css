@@ -299,38 +299,65 @@ html.light aside[class*="bg-[#"] {
 
 html.light header,
 html.light header[class*="bg-[#"] {
-  background-color: #281c15 !important;
-  color: #f6ede4 !important;
-  border-bottom: 1px solid #3d2b20 !important;
-  box-shadow: 0 4px 20px rgba(28, 17, 12, 0.25) !important;
+  background-color: #ffffff !important;
+  color: #1c1917 !important;
+  border-bottom: 1px solid #e7e0d6 !important;
+  box-shadow: 0 1px 12px rgba(0, 0, 0, 0.04) !important;
 }
 
 /* Header search button in light mode */
 html.light header button[title*="Search"],
 html.light header button[aria-label*="Search"] {
-  background-color: #1c130d !important;
-  border-color: #443023 !important;
-  color: #eeddd0 !important;
+  background-color: #f6f2ec !important;
+  border-color: #ded5c8 !important;
+  color: #1c1917 !important;
+}
+html.light header button[title*="Search"]:hover,
+html.light header button[aria-label*="Search"]:hover {
+  background-color: #f0e9df !important;
+  border-color: #cda052 !important;
 }
 html.light header button[title*="Search"] span,
 html.light header button[aria-label*="Search"] span {
-  color: #b7a393 !important;
+  color: #78716c !important;
 }
 html.light header button[title*="Search"] kbd,
 html.light header button[aria-label*="Search"] kbd {
-  background-color: #342217 !important;
-  border-color: #553a29 !important;
-  color: #eeddd0 !important;
+  background-color: #eae3d7 !important;
+  border-color: #d8cdbe !important;
+  color: #57534e !important;
 }
 
-/* Header Season & Theme buttons */
+/* Header Season, Theme & Notification buttons */
 html.light header button[title*="merchandising"],
 html.light header button[aria-label*="merchandising"],
 html.light header button[title*="Theme"],
-html.light header button[aria-label*="Theme"] {
-  background-color: #342217 !important;
-  border-color: #553a29 !important;
-  color: #f7d88c !important;
+html.light header button[aria-label*="Theme"],
+html.light header button[title*="Notification"],
+html.light header button[aria-label*="Notification"] {
+  background-color: #f6f2ec !important;
+  border-color: #ded5c8 !important;
+  color: #8c672b !important;
+}
+html.light header button[title*="merchandising"]:hover,
+html.light header button[aria-label*="merchandising"]:hover,
+html.light header button[title*="Theme"]:hover,
+html.light header button[aria-label*="Theme"]:hover,
+html.light header button[title*="Notification"]:hover,
+html.light header button[aria-label*="Notification"]:hover {
+  background-color: #efe7dc !important;
+  border-color: #cda052 !important;
+}
+
+/* Header Navigation Menu button in light mode */
+html.light header button[title*="Navigation"],
+html.light header button[aria-label*="Navigation"] {
+  color: #57534e !important;
+}
+html.light header button[title*="Navigation"]:hover,
+html.light header button[aria-label*="Navigation"]:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+  color: #8c672b !important;
 }
 
 /* Header User Menu Avatar Button */
@@ -344,54 +371,72 @@ html.light header button[title*="Account"]:hover,
 html.light header button[aria-label*="User"]:hover,
 html.light header button[title*="Account"]:focus,
 html.light header button[aria-label*="User"]:focus {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+  border-color: #ded5c8 !important;
+}
+html.light header button[aria-label*="User"]:focus {
   background-color: #3d2a1f !important;
   border-color: rgba(205, 160, 82, 0.4) !important;
   outline: none !important;
 }
 
-/* Header Dropdowns in Light Mode */
 html.light header div[class*="bg-[#0d101a]"] {
-  background-color: #241812 !important;
-  border-color: #443023 !important;
-  color: #eeddd0 !important;
-  box-shadow: 0 20px 45px -8px rgba(0, 0, 0, 0.7) !important;
+  background-color: #ffffff !important;
+  border-color: #e5ded6 !important;
+  color: #1c1917 !important;
+  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.1) !important;
 }
 html.light header div[class*="bg-[#0d101a]"] * {
-  color: #eeddd0 !important;
+  color: #44403c !important;
 }
 html.light header div[class*="bg-[#0d101a]"] .text-white,
-html.light header div[class*="bg-[#0d101a]"] span.font-bold {
-  color: #ffffff !important;
+html.light header div[class*="bg-[#0d101a]"] span.font-bold,
+html.light header div[class*="bg-[#0d101a]"] div.font-bold {
+  color: #1c1917 !important;
+}
+html.light header div[class*="bg-[#0d101a]"] .text-\[\#cda052\] {
+  color: #8c672b !important;
 }
 html.light header div[class*="bg-[#0d101a]"] [class*="bg-[#121623]"],
 html.light header div[class*="bg-[#0d101a]"] [class*="bg-[#07090e]"],
-html.light header div[class*="bg-[#0d101a]"] [class*="bg-[#07090f]"] {
-  background-color: #1a100b !important;
-  border-color: #3d2a1d !important;
+html.light header div[class*="bg-[#0d101a]"] [class*="bg-[#07090f]"],
+html.light header div[class*="bg-[#0d101a]"] [class*="bg-[#080a11]"] {
+  background-color: #faf7f2 !important;
+  border-color: #ede4d8 !important;
 }
 
-/* Sign Out in Header Profile Dropdown in Light Mode - Crisp, readable coral-rose */
+/* Header Dropdown Links Hover in Light Mode */
+html.light header div[class*="bg-[#0d101a]"] a:hover {
+  background-color: #f5f0ea !important;
+  color: #1c1917 !important;
+}
+
+/* Sign Out in Header Profile Dropdown in Light Mode */
 html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"],
-html.light header div[class*="bg-[#0d101a]"] button[aria-label*="Sign out"] {
+html.light header div[class*="bg-[#0d101a]"] button[aria-label*="Sign out"],
+html.light header div[class*="bg-[#0d101a]"] button.text-rose-400 {
   background-color: transparent !important;
-  color: #fb7185 !important;
+  color: #e11d48 !important;
   border: 1px solid transparent !important;
 }
 html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"]:hover,
-html.light header div[class*="bg-[#0d101a]"] button[aria-label*="Sign out"]:hover {
-  background-color: rgba(244, 63, 94, 0.16) !important;
-  border-color: rgba(244, 63, 94, 0.35) !important;
-  color: #fda4af !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-  transform: none !important;
+html.light header div[class*="bg-[#0d101a]"] button[aria-label*="Sign out"]:hover,
+html.light header div[class*="bg-[#0d101a]"] button.text-rose-400:hover {
+  background-color: #ffe4e6 !important;
+  border-color: #fecdd3 !important;
+  color: #be123c !important;
 }
 html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"] svg,
-html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"] span {
-  color: #fb7185 !important;
+html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"] span,
+html.light header div[class*="bg-[#0d101a]"] button.text-rose-400 svg,
+html.light header div[class*="bg-[#0d101a]"] button.text-rose-400 span {
+  color: #e11d48 !important;
 }
 html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"]:hover svg,
-html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"]:hover span {
-  color: #fda4af !important;
+html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"]:hover span,
+html.light header div[class*="bg-[#0d101a]"] button.text-rose-400:hover svg,
+html.light header div[class*="bg-[#0d101a]"] button.text-rose-400:hover span {
+  color: #be123c !important;
 }
 
 /* Inactive links, buttons and labels inside aside */

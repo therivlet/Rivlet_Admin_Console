@@ -277,24 +277,24 @@ export default function DocumentsPage() {
       case 'pdf': return 'bg-rose-950/70 text-rose-400 border-rose-800/40';
       case 'docx': return 'bg-blue-950/70 text-blue-400 border-blue-800/40';
       case 'xlsx': return 'bg-emerald-950/70 text-emerald-400 border-emerald-800/40';
-      default: return 'bg-[#1b202e] text-[#8e97ae] border-[#262c3e]';
+      default: return 'bg-black/[0.05] dark:bg-[#1b202e] text-[#57534e] dark:text-[#8e97ae] border-black/[0.08] dark:border-[#262c3e]';
     }
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 animate-fade-in text-white">
+    <div className="p-3 sm:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6 animate-fade-in text-[#1c1917] dark:text-white">
       {/* Top Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#1c2233] pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-[#e2d9ce] dark:border-[#1c2233] pb-4 sm:pb-5">
         <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight font-serif">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-[#1c1917] dark:text-white tracking-tight font-serif">
               Document & Certificate Vault
             </h1>
-            <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-[rgba(205,160,82,0.15)] text-[#cda052] border border-[rgba(205,160,82,0.3)] font-semibold font-mono">
+            <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-[rgba(205,160,82,0.15)] text-[#8c672b] dark:text-[#cda052] border border-[rgba(205,160,82,0.3)] font-semibold font-mono">
               Cloud Storage & Compliance Hub
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-[#cbd5e1] leading-relaxed max-w-2xl">
+          <p className="text-xs sm:text-sm text-[#57534e] dark:text-[#cbd5e1] leading-relaxed max-w-2xl">
             Secure cloud repository for GOTS/OEKO-TEX certificates, factory audit reports, vendor agreements, and apparel tech packs.
           </p>
         </div>
@@ -303,7 +303,7 @@ export default function DocumentsPage() {
         <button
           onClick={() => setIsUploadModalOpen(true)}
           title="Upload GOTS, OEKO-TEX, or contract to vault"
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow transition-all"
+          className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow transition-all flex-shrink-0 cursor-pointer"
         >
           <Upload className="w-3.5 h-3.5 stroke-[2.5]" />
           <span>Upload Document to Cloud</span>
@@ -311,18 +311,18 @@ export default function DocumentsPage() {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#0e121b] p-3 rounded-xl border border-[#1e2638] shadow-md">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 bg-white dark:bg-[#0e121b] p-2.5 sm:p-3 rounded-xl border border-[#e2d9ce] dark:border-[#1e2638] shadow-sm">
         {/* Type Filter */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
           {['All', 'Certificate', 'Tech Pack', 'Legal & Contract', 'Audit Report', 'Specification'].map((type) => (
             <button
               key={type}
               onClick={() => setSelectedType(type)}
               title={`Filter documents by ${type}`}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap cursor-pointer ${
                 selectedType === type
-                  ? 'bg-[#1b2234] text-[#cda052] font-semibold border border-[#2e3b56]'
-                  : 'text-[#94a3b8] hover:text-white'
+                  ? 'bg-[rgba(205,160,82,0.15)] text-[#8c672b] dark:text-[#cda052] font-semibold border border-[#cda052]/40'
+                  : 'text-[#78716c] dark:text-[#94a3b8] hover:text-[#1c1917] dark:hover:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.04]'
               }`}
             >
               {type}
@@ -331,173 +331,133 @@ export default function DocumentsPage() {
         </div>
 
         {/* Search */}
-        <div className="relative min-w-[260px]">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
+        <div className="relative w-full sm:w-72 flex-shrink-0">
+          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#78716c] dark:text-[#94a3b8]" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search certificates, mills, tech packs..."
-            className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#080b12] border border-[#222b3e] text-xs text-white placeholder-[#94a3b8] outline-none focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40 transition-colors"
+            className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#f5f0ea] dark:bg-[#080b12] border border-[#e2d9ce] dark:border-[#222b3e] text-xs text-[#1c1917] dark:text-white placeholder-[#78716c] dark:placeholder-[#94a3b8] outline-none focus:border-[#cda052] focus:ring-1 focus:ring-[#cda052]/40 transition-colors"
           />
         </div>
       </div>
 
-      {/* Documents Rows View */}
+      {/* Documents View */}
       {filtered.length === 0 ? (
-        <div className="py-16 text-center border border-dashed border-[#1f2638] rounded-2xl bg-[#080b12]">
-          <FileText className="w-8 h-8 text-[#4a5266] mx-auto mb-2" />
-          <h3 className="text-sm font-semibold text-white mb-1">No documents found</h3>
-          <p className="text-xs text-[#94a3b8] max-w-sm mx-auto mb-4">
+        <div className="py-14 sm:py-16 text-center border border-dashed border-[#e2d9ce] dark:border-[#1f2638] rounded-2xl bg-white dark:bg-[#080b12] p-4">
+          <FileText className="w-8 h-8 text-[#a8a29e] dark:text-[#4a5266] mx-auto mb-2" />
+          <h3 className="text-sm font-semibold text-[#1c1917] dark:text-white mb-1">No documents found</h3>
+          <p className="text-xs text-[#78716c] dark:text-[#94a3b8] max-w-sm mx-auto mb-4">
             Upload your GOTS organic certificates, OEKO-TEX compliance reports, or vendor contracts to store them in your Supabase vault.
           </p>
           <button
             onClick={() => setIsUploadModalOpen(true)}
             title="Upload GOTS, OEKO-TEX, or contract to vault"
-            className="px-4 py-2 rounded-xl bg-[#151a28] border border-[#263148] text-xs font-semibold text-[#cda052] hover:bg-[#1a2236] transition-colors cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-[#f5f0ea] dark:bg-[#151a28] border border-[#e2d9ce] dark:border-[#263148] text-xs font-semibold text-[#8c672b] dark:text-[#cda052] hover:bg-[#ede5da] dark:hover:bg-[#1a2236] transition-colors cursor-pointer"
           >
             Upload First Document
           </button>
         </div>
       ) : (
-        <div className="bg-[#0e121b] border border-[#1b2234] rounded-2xl shadow-md overflow-hidden">
-          {/* Table Header */}
-          <div className="hidden lg:grid grid-cols-12 gap-3 px-5 py-3 bg-[#080a10] border-b border-[#1b2234] text-[11px] font-semibold text-[#828ea6] uppercase tracking-wider">
-            <div className="col-span-4">Document Title & File</div>
-            <div className="col-span-2">Category</div>
-            <div className="col-span-2">Linked Partner / Style</div>
-            <div className="col-span-2">Validity & Expiry</div>
-            <div className="col-span-2 text-right">Actions</div>
-          </div>
-
-          {/* Table Rows */}
-          <div className="divide-y divide-[#161c2a]">
+        <div className="bg-white dark:bg-[#0e121b] border border-[#e2d9ce] dark:border-[#1b2234] rounded-2xl shadow-sm overflow-hidden">
+          {/* MOBILE CARDS VIEW (Phones & Small Tablets < 1024px) */}
+          <div className="lg:hidden divide-y divide-[#ede5da] dark:divide-[#1a2233]">
             {filtered.map((doc) => {
               const linkedVendor = doc.vendorId ? vendors.find((v) => v.id === doc.vendorId) : null;
               const linkedStyle = doc.pipelineItemId ? pipelineItems.find((p) => p.id === doc.pipelineItemId) : null;
               const isExpired = doc.expiryDate && new Date(doc.expiryDate) < new Date();
 
               return (
-                <div
-                  key={doc.id}
-                  className="p-4 sm:px-5 sm:py-3.5 flex flex-col lg:grid lg:grid-cols-12 gap-3 items-start lg:items-center hover:bg-[#121624] transition-colors"
-                >
-                  {/* Col 1: Document Title, Format & Filename (col-span-4) */}
-                  <div className="lg:col-span-4 min-w-0 flex items-start sm:items-center gap-3 w-full">
-                    <span className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded border font-semibold flex-shrink-0 ${getFormatBadge(doc.fileFormat)}`}>
-                      {doc.fileFormat.toUpperCase()}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div
-                        onClick={() => {
-                          setPreviewDoc(doc);
-                          setPreviewMode('preview');
-                        }}
-                        className="text-xs font-semibold text-white hover:text-[#cda052] cursor-pointer truncate transition-colors"
-                        title={doc.title}
-                      >
-                        {doc.title}
-                      </div>
-                      <div className="text-[11px] text-[#7c869d] truncate flex items-center gap-1.5 mt-0.5">
-                        <span className="truncate">{doc.fileName}</span>
-                        {doc.fileSizeBytes ? (
-                          <>
-                            <span>•</span>
-                            <span className="font-mono flex-shrink-0">{(doc.fileSizeBytes / 1024 / 1024).toFixed(2)} MB</span>
-                          </>
-                        ) : null}
+                <div key={doc.id} className="p-3.5 sm:p-4 space-y-3 hover:bg-[#faf7f2] dark:hover:bg-[#121624]/60 transition-colors">
+                  {/* Card Header: Format Badge + Title + Status Pill */}
+                  <div className="flex items-start justify-between gap-2.5">
+                    <div className="flex items-start gap-2.5 min-w-0">
+                      <span className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded border font-semibold flex-shrink-0 mt-0.5 ${getFormatBadge(doc.fileFormat)}`}>
+                        {doc.fileFormat.toUpperCase()}
+                      </span>
+                      <div className="min-w-0">
+                        <h3 
+                          onClick={() => { setPreviewDoc(doc); setPreviewMode('preview'); }}
+                          className="text-xs sm:text-sm font-bold text-[#1c1917] dark:text-white hover:text-[#8c672b] dark:hover:text-[#cda052] cursor-pointer line-clamp-1 transition-colors"
+                          title={doc.title}
+                        >
+                          {doc.title}
+                        </h3>
+                        <div className="text-[11px] text-[#78716c] dark:text-[#7c869d] truncate flex items-center gap-1.5 mt-0.5">
+                          <span className="truncate">{doc.fileName}</span>
+                          {doc.fileSizeBytes ? (
+                            <>
+                              <span>•</span>
+                              <span className="font-mono flex-shrink-0">{(doc.fileSizeBytes / 1024 / 1024).toFixed(2)} MB</span>
+                            </>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
+
+                    {/* Status Badge */}
+                    <span className={`text-[10px] px-2 py-0.5 rounded font-mono font-semibold flex-shrink-0 ${
+                      isExpired
+                        ? 'bg-rose-950/60 text-rose-300 border border-rose-800/40'
+                        : doc.status === 'Active'
+                        ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-800/40'
+                        : 'bg-[#faf7f2] dark:bg-[#182030] text-[#78716c] dark:text-[#94a3b8] border border-[#ede5da] dark:border-[#263148]'
+                    }`}>
+                      {doc.status}
+                    </span>
                   </div>
 
-                  {/* Col 2: Category & Tags (col-span-2) */}
-                  <div className="lg:col-span-2 min-w-0 w-full">
-                    <span className="text-[11px] px-2 py-0.5 rounded bg-white/[0.04] text-[#cbd5e1] border border-white/[0.08] font-medium">
+                  {/* Meta Pills: Category + Partner / Style + Expiry Date */}
+                  <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                    <span className="px-2 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.04] text-[#44403c] dark:text-[#cbd5e1] border border-black/[0.06] dark:border-white/[0.08] font-medium">
                       {doc.documentType}
                     </span>
-                    {doc.tags && doc.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {doc.tags.slice(0, 2).map((t, idx) => (
-                          <span key={idx} className="text-[10px] text-[#7c869d] font-mono">
-                            #{t}
-                          </span>
-                        ))}
-                        {doc.tags.length > 2 && (
-                          <span className="text-[10px] text-[#556075]">+{doc.tags.length - 2}</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
 
-                  {/* Col 3: Linked Partner / Style (col-span-2) */}
-                  <div className="lg:col-span-2 min-w-0 w-full text-xs">
                     {linkedVendor || doc.associatedVendor ? (
                       <Link
                         href="/vendors"
-                        title="Open manufacturer details"
-                        className="flex items-center gap-1.5 text-amber-300 hover:underline truncate"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 max-w-[180px] truncate"
                       >
-                        <Factory className="w-3.5 h-3.5 flex-shrink-0" />
+                        <Factory className="w-3 h-3 flex-shrink-0" />
                         <span className="truncate">{linkedVendor?.name || doc.associatedVendor}</span>
                       </Link>
                     ) : linkedStyle ? (
                       <Link
                         href="/pipeline"
-                        title="Open style pipeline"
-                        className="flex items-center gap-1.5 text-sky-300 hover:underline truncate"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20 max-w-[180px] truncate"
                       >
-                        <Shirt className="w-3.5 h-3.5 flex-shrink-0" />
+                        <Shirt className="w-3 h-3 flex-shrink-0" />
                         <span className="truncate">{linkedStyle.styleName}</span>
                       </Link>
-                    ) : (
-                      <span className="text-[11px] text-[#64748b]">Global Brand Asset</span>
-                    )}
-                  </div>
+                    ) : null}
 
-                  {/* Col 4: Validity & Expiry (col-span-2) */}
-                  <div className="lg:col-span-2 min-w-0 w-full flex items-center gap-2 text-xs">
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded font-mono font-medium ${
-                        isExpired
-                          ? 'bg-rose-950/60 text-rose-300 border border-rose-800/40'
-                          : doc.status === 'Active'
-                          ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-800/40'
-                          : 'bg-[#182030] text-[#94a3b8] border border-[#263148]'
-                      }`}
-                    >
-                      {doc.status}
-                    </span>
-                    <span className="text-[11px] text-[#8895ad] font-mono truncate">
-                      {doc.expiryDate ? doc.expiryDate : 'Permanent'}
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-black/[0.03] dark:bg-white/[0.03] text-[#78716c] dark:text-[#8895ad] font-mono border border-black/[0.05] dark:border-white/[0.06]">
+                      <Calendar className="w-3 h-3 flex-shrink-0" />
+                      <span>{doc.expiryDate ? doc.expiryDate : 'Permanent'}</span>
                     </span>
                   </div>
 
-                  {/* Col 5: Actions (col-span-2) */}
-                  <div className="lg:col-span-2 w-full flex items-center justify-end gap-1.5 pt-2 lg:pt-0 border-t lg:border-t-0 border-white/[0.04]">
+                  {/* Action Buttons Row */}
+                  <div className="flex items-center gap-2 pt-1 border-t border-black/[0.04] dark:border-white/[0.04]">
                     <button
-                      onClick={() => {
-                        setPreviewDoc(doc);
-                        setPreviewMode('preview');
-                      }}
-                      className="p-1.5 rounded-lg bg-[#141824] hover:bg-[#1a2133] border border-[#242e44] text-[#cbd5e1] hover:text-[#cda052] transition-colors cursor-pointer"
-                      title="Preview Document in Universal Viewer"
-                      aria-label="Preview document"
+                      onClick={() => { setPreviewDoc(doc); setPreviewMode('preview'); }}
+                      className="flex-1 py-1.5 px-3 rounded-lg bg-[rgba(205,160,82,0.12)] hover:bg-[rgba(205,160,82,0.2)] border border-[rgba(205,160,82,0.3)] text-[#8c672b] dark:text-[#cda052] font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <Eye className="w-3.5 h-3.5" />
+                      <span>Preview</span>
                     </button>
                     <button
                       onClick={() => handleOpenEdit(doc)}
-                      className="p-1.5 rounded-lg bg-[#141824] hover:bg-[#1a2133] border border-[#242e44] text-[#cbd5e1] hover:text-[#cda052] transition-colors cursor-pointer"
-                      title="Edit metadata & expiry date"
-                      aria-label="Edit document metadata"
+                      className="py-1.5 px-3 rounded-lg bg-black/[0.04] dark:bg-[#141824] hover:bg-black/[0.08] dark:hover:bg-[#1a2133] border border-black/[0.08] dark:border-[#242e44] text-[#44403c] dark:text-[#cbd5e1] hover:text-[#8c672b] dark:hover:text-[#cda052] text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer"
                     >
                       <Pencil className="w-3.5 h-3.5" />
+                      <span>Edit</span>
                     </button>
                     <button
                       onClick={() => handleDelete(doc)}
-                      className="p-1.5 rounded-lg bg-[#141824] hover:bg-rose-950/30 border border-[#242e44] text-[#cbd5e1] hover:text-rose-400 hover:border-rose-900/50 transition-colors cursor-pointer"
+                      className="py-1.5 px-2.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs flex items-center justify-center transition-colors cursor-pointer"
                       title="Delete document"
-                      aria-label="Delete document"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -505,6 +465,155 @@ export default function DocumentsPage() {
                 </div>
               );
             })}
+          </div>
+
+          {/* DESKTOP TABLE VIEW (Laptops & Desktops >= 1024px) */}
+          <div className="hidden lg:block">
+            {/* Table Header */}
+            <div className="grid grid-cols-12 gap-3 px-5 py-3 bg-[#faf7f2] dark:bg-[#080a10] border-b border-[#e2d9ce] dark:border-[#1b2234] text-[11px] font-semibold text-[#78716c] dark:text-[#828ea6] uppercase tracking-wider">
+              <div className="col-span-4">Document Title & File</div>
+              <div className="col-span-2">Category</div>
+              <div className="col-span-2">Linked Partner / Style</div>
+              <div className="col-span-2">Validity & Expiry</div>
+              <div className="col-span-2 text-right">Actions</div>
+            </div>
+
+            {/* Table Rows */}
+            <div className="divide-y divide-[#ede5da] dark:divide-[#161c2a]">
+              {filtered.map((doc) => {
+                const linkedVendor = doc.vendorId ? vendors.find((v) => v.id === doc.vendorId) : null;
+                const linkedStyle = doc.pipelineItemId ? pipelineItems.find((p) => p.id === doc.pipelineItemId) : null;
+                const isExpired = doc.expiryDate && new Date(doc.expiryDate) < new Date();
+
+                return (
+                  <div
+                    key={doc.id}
+                    className="px-5 py-3.5 grid grid-cols-12 gap-3 items-center hover:bg-[#faf7f2] dark:hover:bg-[#121624] transition-colors"
+                  >
+                    {/* Col 1: Document Title, Format & Filename (col-span-4) */}
+                    <div className="col-span-4 min-w-0 flex items-center gap-3 w-full">
+                      <span className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded border font-semibold flex-shrink-0 ${getFormatBadge(doc.fileFormat)}`}>
+                        {doc.fileFormat.toUpperCase()}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div
+                          onClick={() => {
+                            setPreviewDoc(doc);
+                            setPreviewMode('preview');
+                          }}
+                          className="text-xs font-semibold text-[#1c1917] dark:text-white hover:text-[#8c672b] dark:hover:text-[#cda052] cursor-pointer truncate transition-colors"
+                          title={doc.title}
+                        >
+                          {doc.title}
+                        </div>
+                        <div className="text-[11px] text-[#78716c] dark:text-[#7c869d] truncate flex items-center gap-1.5 mt-0.5">
+                          <span className="truncate">{doc.fileName}</span>
+                          {doc.fileSizeBytes ? (
+                            <>
+                              <span>•</span>
+                              <span className="font-mono flex-shrink-0">{(doc.fileSizeBytes / 1024 / 1024).toFixed(2)} MB</span>
+                            </>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Col 2: Category & Tags (col-span-2) */}
+                    <div className="col-span-2 min-w-0 w-full">
+                      <span className="text-[11px] px-2 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.04] text-[#44403c] dark:text-[#cbd5e1] border border-black/[0.06] dark:border-white/[0.08] font-medium">
+                        {doc.documentType}
+                      </span>
+                      {doc.tags && doc.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {doc.tags.slice(0, 2).map((t, idx) => (
+                            <span key={idx} className="text-[10px] text-[#78716c] dark:text-[#7c869d] font-mono">
+                              #{t}
+                            </span>
+                          ))}
+                          {doc.tags.length > 2 && (
+                            <span className="text-[10px] text-[#a8a29e] dark:text-[#556075]">+{doc.tags.length - 2}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Col 3: Linked Partner / Style (col-span-2) */}
+                    <div className="col-span-2 min-w-0 w-full text-xs">
+                      {linkedVendor || doc.associatedVendor ? (
+                        <Link
+                          href="/vendors"
+                          title="Open manufacturer details"
+                          className="flex items-center gap-1.5 text-amber-700 dark:text-amber-300 hover:underline truncate"
+                        >
+                          <Factory className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span className="truncate">{linkedVendor?.name || doc.associatedVendor}</span>
+                        </Link>
+                      ) : linkedStyle ? (
+                        <Link
+                          href="/pipeline"
+                          title="Open style pipeline"
+                          className="flex items-center gap-1.5 text-sky-700 dark:text-sky-300 hover:underline truncate"
+                        >
+                          <Shirt className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span className="truncate">{linkedStyle.styleName}</span>
+                        </Link>
+                      ) : (
+                        <span className="text-[11px] text-[#a8a29e] dark:text-[#64748b]">Global Brand Asset</span>
+                      )}
+                    </div>
+
+                    {/* Col 4: Validity & Expiry (col-span-2) */}
+                    <div className="col-span-2 min-w-0 w-full flex items-center gap-2 text-xs">
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded font-mono font-medium ${
+                          isExpired
+                            ? 'bg-rose-950/60 text-rose-300 border border-rose-800/40'
+                            : doc.status === 'Active'
+                            ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-800/40'
+                            : 'bg-[#faf7f2] dark:bg-[#182030] text-[#78716c] dark:text-[#94a3b8] border border-[#ede5da] dark:border-[#263148]'
+                        }`}
+                      >
+                        {doc.status}
+                      </span>
+                      <span className="text-[11px] text-[#78716c] dark:text-[#8895ad] font-mono truncate">
+                        {doc.expiryDate ? doc.expiryDate : 'Permanent'}
+                      </span>
+                    </div>
+
+                    {/* Col 5: Actions (col-span-2) */}
+                    <div className="col-span-2 w-full flex items-center justify-end gap-1.5">
+                      <button
+                        onClick={() => {
+                          setPreviewDoc(doc);
+                          setPreviewMode('preview');
+                        }}
+                        className="p-1.5 rounded-lg bg-black/[0.04] dark:bg-[#141824] hover:bg-black/[0.08] dark:hover:bg-[#1a2133] border border-black/[0.08] dark:border-[#242e44] text-[#44403c] dark:text-[#cbd5e1] hover:text-[#8c672b] dark:hover:text-[#cda052] transition-colors cursor-pointer"
+                        title="Preview Document in Universal Viewer"
+                        aria-label="Preview document"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleOpenEdit(doc)}
+                        className="p-1.5 rounded-lg bg-black/[0.04] dark:bg-[#141824] hover:bg-black/[0.08] dark:hover:bg-[#1a2133] border border-black/[0.08] dark:border-[#242e44] text-[#44403c] dark:text-[#cbd5e1] hover:text-[#8c672b] dark:hover:text-[#cda052] transition-colors cursor-pointer"
+                        title="Edit metadata & expiry date"
+                        aria-label="Edit document metadata"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(doc)}
+                        className="p-1.5 rounded-lg bg-black/[0.04] dark:bg-[#141824] hover:bg-rose-500/10 border border-black/[0.08] dark:border-[#242e44] text-[#44403c] dark:text-[#cbd5e1] hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-500/30 transition-colors cursor-pointer"
+                        title="Delete document"
+                        aria-label="Delete document"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
