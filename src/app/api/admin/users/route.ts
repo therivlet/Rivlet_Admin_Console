@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { email, name, role = 'member', permissions } = body;
+    const { email, name, role = 'member', permissions, origin: clientOrigin } = body;
 
     if (!email || !email.includes('@')) {
       return NextResponse.json({ error: 'Valid email address is required' }, { status: 400 });
@@ -144,6 +144,15 @@ export async function POST(request: NextRequest) {
       }, { status: 503 });
     }
 
+    // Calculate accurate redirect target to our app's set_password endpoint
+    const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
+    const proto = request.headers.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
+    const computedOrigin = host ? `${proto}://${host}` : request.nextUrl.origin;
+    const finalOrigin = (typeof clientOrigin === 'string' && clientOrigin.startsWith('http'))
+      ? clientOrigin
+      : computedOrigin;
+    const inviteRedirectTo = `${finalOrigin}/login?mode=set_password`;
+
     // 2. Send invitation email via Supabase Auth Admin
     const { data: inviteData, error: inviteErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       email.trim().toLowerCase(),
@@ -151,6 +160,7 @@ export async function POST(request: NextRequest) {
         data: {
           full_name: (name || '').trim(),
         },
+        redirectTo: inviteRedirectTo,
       }
     );
 

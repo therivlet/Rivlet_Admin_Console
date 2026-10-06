@@ -131,6 +131,7 @@ export default function AccessManagementPage() {
           email: inviteEmail.trim(),
           name: inviteName.trim(),
           role: inviteRole,
+          origin: typeof window !== 'undefined' ? window.location.origin : '',
         }),
       });
 

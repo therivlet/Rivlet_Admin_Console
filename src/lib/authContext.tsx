@@ -27,6 +27,7 @@ interface AuthContextType {
   signUp: (email: string, pass: string, name?: string) => Promise<{ error?: string; confirmationRequired?: boolean }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error?: string; message?: string }>;
+  updateUserPassword: (password: string) => Promise<{ error?: string }>;
   updateProfile: (metadata: Record<string, any>) => Promise<{ error?: string }>;
   refreshProfile: () => Promise<void>;
 }
@@ -41,6 +42,7 @@ const AuthContext = createContext<AuthContextType>({
   signUp: async () => ({}),
   signOut: async () => {},
   resetPassword: async () => ({}),
+  updateUserPassword: async () => ({}),
   updateProfile: async () => ({}),
   refreshProfile: async () => {},
 });
@@ -298,9 +300,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!isSupabaseConfigured || !supabase) {
       return { error: 'Supabase is not configured.' };
     }
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const redirectTo = origin ? `${origin}/login?mode=set_password` : undefined;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo,
+    });
     if (error) return { error: error.message };
     return { message: 'Password reset link sent to your email.' };
+  };
+
+  // Set / Update Password for Invited or Password Recovery users
+  const updateUserPassword = async (newPassword: string) => {
+    if (!isSupabaseConfigured || !supabase) {
+      return { error: 'Supabase backend is not configured in .env.local.' };
+    }
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      if (error) {
+        return { error: error.message };
+      }
+      if (data?.user) {
+        await refreshProfile();
+      }
+      return {};
+    } catch (err: any) {
+      return { error: err.message || 'Failed to update password.' };
+    }
   };
 
   return (
@@ -314,6 +341,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signUp,
       signOut,
       resetPassword,
+      updateUserPassword,
       updateProfile,
       refreshProfile
     }}>
