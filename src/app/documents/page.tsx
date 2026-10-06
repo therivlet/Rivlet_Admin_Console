@@ -274,10 +274,27 @@ export default function DocumentsPage() {
 
   const getFormatBadge = (fmt: string) => {
     switch (fmt) {
-      case 'pdf': return 'bg-rose-950/70 text-rose-400 border-rose-800/40';
-      case 'docx': return 'bg-blue-950/70 text-blue-400 border-blue-800/40';
-      case 'xlsx': return 'bg-emerald-950/70 text-emerald-400 border-emerald-800/40';
-      default: return 'bg-black/[0.05] dark:bg-[#1b202e] text-[#57534e] dark:text-[#8e97ae] border-black/[0.08] dark:border-[#262c3e]';
+      case 'pdf': return 'bg-rose-100/90 text-rose-800 border-rose-300 dark:bg-rose-950/70 dark:text-rose-400 dark:border-rose-800/40';
+      case 'docx': return 'bg-blue-100/90 text-blue-800 border-blue-300 dark:bg-blue-950/70 dark:text-blue-400 dark:border-blue-800/40';
+      case 'xlsx': return 'bg-emerald-100/90 text-emerald-800 border-emerald-300 dark:bg-emerald-950/70 dark:text-emerald-400 dark:border-emerald-800/40';
+      default: return 'bg-stone-100 text-stone-800 border-stone-300 dark:bg-[#1b202e] dark:text-[#8e97ae] dark:border-[#262c3e]';
+    }
+  };
+
+  const getCategoryBadge = (category: string) => {
+    switch (category) {
+      case 'Tech Pack':
+        return 'bg-blue-100/90 text-blue-950 border-blue-300 dark:bg-blue-950/70 dark:text-blue-300 dark:border-blue-800/50';
+      case 'Certificate':
+        return 'bg-emerald-100/90 text-emerald-950 border-emerald-300 dark:bg-emerald-950/70 dark:text-emerald-300 dark:border-emerald-800/50';
+      case 'Specification':
+        return 'bg-amber-100/90 text-amber-950 border-amber-300 dark:bg-amber-950/70 dark:text-amber-300 dark:border-amber-800/50';
+      case 'Legal & Contract':
+        return 'bg-purple-100/90 text-purple-950 border-purple-300 dark:bg-purple-950/70 dark:text-purple-300 dark:border-purple-800/50';
+      case 'Audit Report':
+        return 'bg-teal-100/90 text-teal-950 border-teal-300 dark:bg-teal-950/70 dark:text-teal-300 dark:border-teal-800/50';
+      default:
+        return 'bg-stone-100 text-stone-900 border-stone-300 dark:bg-slate-900/70 dark:text-slate-200 dark:border-slate-700/60';
     }
   };
 
@@ -319,10 +336,10 @@ export default function DocumentsPage() {
               key={type}
               onClick={() => setSelectedType(type)}
               title={`Filter documents by ${type}`}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer border ${
                 selectedType === type
-                  ? 'bg-[rgba(205,160,82,0.15)] text-[#8c672b] dark:text-[#cda052] font-semibold border border-[#cda052]/40'
-                  : 'text-[#78716c] dark:text-[#94a3b8] hover:text-[#1c1917] dark:hover:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.04]'
+                  ? 'bg-[rgba(205,160,82,0.2)] text-[#8c672b] dark:text-[#cda052] font-bold border-[#cda052] dark:border-[#cda052]/60 shadow-sm'
+                  : 'bg-[#f5efe6] dark:bg-[#121624] text-[#443831] dark:text-[#94a3b8] hover:text-[#1c1917] dark:hover:text-white hover:bg-[#ede3d4] dark:hover:bg-[#1a2236] border-[#e2d5c3] dark:border-[#222b3e]'
               }`}
             >
               {type}
@@ -410,7 +427,7 @@ export default function DocumentsPage() {
 
                   {/* Meta Pills: Category + Partner / Style + Expiry Date */}
                   <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                    <span className="px-2 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.04] text-[#44403c] dark:text-[#cbd5e1] border border-black/[0.06] dark:border-white/[0.08] font-medium">
+                    <span className={`px-2.5 py-0.5 rounded-md border font-semibold ${getCategoryBadge(doc.documentType)}`}>
                       {doc.documentType}
                     </span>
 
@@ -520,18 +537,18 @@ export default function DocumentsPage() {
 
                     {/* Col 2: Category & Tags (col-span-2) */}
                     <div className="col-span-2 min-w-0 w-full">
-                      <span className="text-[11px] px-2 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.04] text-[#44403c] dark:text-[#cbd5e1] border border-black/[0.06] dark:border-white/[0.08] font-medium">
+                      <span className={`text-[11px] px-2.5 py-0.5 rounded-md border font-semibold inline-block ${getCategoryBadge(doc.documentType)}`}>
                         {doc.documentType}
                       </span>
                       {doc.tags && doc.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1">
                           {doc.tags.slice(0, 2).map((t, idx) => (
-                            <span key={idx} className="text-[10px] text-[#78716c] dark:text-[#7c869d] font-mono">
+                            <span key={idx} className="text-[10px] text-stone-700 dark:text-[#7c869d] font-mono font-medium">
                               #{t}
                             </span>
                           ))}
                           {doc.tags.length > 2 && (
-                            <span className="text-[10px] text-[#a8a29e] dark:text-[#556075]">+{doc.tags.length - 2}</span>
+                            <span className="text-[10px] text-stone-500 dark:text-[#556075] font-mono">+{doc.tags.length - 2}</span>
                           )}
                         </div>
                       )}

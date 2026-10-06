@@ -220,6 +220,24 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     setLastWriteError(`${action} failed to save to the cloud: ${message}. It's kept locally - try again once you're back online.`);
   }, []);
 
+  const getCachedItem = useCallback((k: string) => {
+    if (typeof window === 'undefined') return null;
+    try {
+      return localStorage.getItem(getScopedKey(k, userId)) || localStorage.getItem(k);
+    } catch {
+      return null;
+    }
+  }, [userId]);
+
+  const persistLocal = useCallback((key: string, data: any) => {
+    if (typeof window === 'undefined') return;
+    try {
+      const json = JSON.stringify(data);
+      localStorage.setItem(getScopedKey(key, userId), json);
+      localStorage.setItem(key, json);
+    } catch (_) {}
+  }, [userId]);
+
   // Synchronize state with Supabase Cloud
   // `tables`, when passed, restricts this sync to only those tables instead of
   // all 13 - a realtime event on e.g. `budget_items` should never also drag
@@ -303,14 +321,6 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           console.warn('[Rivlet Store] /api/sync fallback notice:', e);
         }
       }
-
-      const persistLocal = (key: string, data: any) => {
-        try {
-          const json = JSON.stringify(data);
-          localStorage.setItem(getScopedKey(key, userId), json);
-          localStorage.setItem(key, json);
-        } catch (_) {}
-      };
 
       // 1. Artifacts sync
       if (artRes.data && artRes.data.length > 0) {
@@ -488,22 +498,44 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
       // 7. Budget items sync
       if (budRes.data && budRes.data.length > 0) {
-        const formatted: BudgetItem[] = budRes.data.map((r: any) => ({
-          id: r.id,
-          category: r.category,
-          plannedAmount: Number(r.planned_amount || 0),
-          actualAmount: Number(r.actual_amount || 0),
-          spendLog: Array.isArray(r.spend_log) ? r.spend_log : [],
-          currency: r.currency || '₹',
-          phase: r.phase || undefined,
-          notes: r.notes || undefined,
-          order: r.order !== undefined ? Number(r.order) : undefined,
-          createdAt: r.created_at || new Date().toISOString(),
-          updatedAt: r.updated_at || new Date().toISOString(),
-        }));
-        if (formatted.some((f) => f.order !== undefined)) {
-          formatted.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-        }
+        // Read cached order map from existing memory state, localStorage, and initial fallback
+        const currentOrderMap = new Map<string, number>();
+        budgetItems.forEach((b, idx) => {
+          currentOrderMap.set(b.id, b.order ?? (idx + 1));
+        });
+
+        const cachedBudget = getCachedItem(STORAGE_KEYS.BUDGET_ITEMS);
+        let cachedItems: BudgetItem[] = [];
+        try {
+          if (cachedBudget) cachedItems = JSON.parse(cachedBudget);
+        } catch (_) {}
+        cachedItems.forEach((ci, idx) => {
+          if (ci.id && !currentOrderMap.has(ci.id)) {
+            currentOrderMap.set(ci.id, ci.order ?? (idx + 1));
+          }
+        });
+
+        const initialOrderMap = new Map(initialBudgetItems.map((ib, idx) => [ib.id, idx + 1]));
+
+        const formatted: BudgetItem[] = budRes.data.map((r: any) => {
+          const dbOrder = r.order !== undefined && r.order !== null ? Number(r.order) : undefined;
+          const assignedOrder = dbOrder ?? currentOrderMap.get(r.id) ?? initialOrderMap.get(r.id) ?? 999;
+          return {
+            id: r.id,
+            category: r.category,
+            plannedAmount: Number(r.planned_amount || 0),
+            actualAmount: Number(r.actual_amount || 0),
+            spendLog: Array.isArray(r.spend_log) ? r.spend_log : [],
+            currency: r.currency || '₹',
+            phase: r.phase || undefined,
+            notes: r.notes || undefined,
+            order: assignedOrder,
+            createdAt: r.created_at || new Date().toISOString(),
+            updatedAt: r.updated_at || new Date().toISOString(),
+          };
+        });
+
+        formatted.sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
         setBudgetItems(formatted);
         persistLocal(STORAGE_KEYS.BUDGET_ITEMS, formatted);
       }
@@ -622,10 +654,6 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
   // Initial load: fast local cache first (scoped or unscoped), then immediately pull live Supabase data
   useEffect(() => {
     try {
-      const getCachedItem = (k: string) => {
-        if (typeof window === 'undefined') return null;
-        return localStorage.getItem(getScopedKey(k, userId)) || localStorage.getItem(k);
-      };
 
       const storedArtifacts = getCachedItem(STORAGE_KEYS.ARTIFACTS);
       const storedSheets = getCachedItem(STORAGE_KEYS.COSTING_SHEETS);
@@ -1291,7 +1319,10 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
   // 7. Launch Budget Tracker Actions
   const saveBudgetItem = async (item: BudgetItem) => {
     const now = new Date().toISOString();
-    const updated: BudgetItem = { ...item, updatedAt: now };
+    const existing = budgetItems.find((b) => b.id === item.id);
+    const existingIdx = budgetItems.findIndex((b) => b.id === item.id);
+    const assignedOrder = item.order ?? existing?.order ?? (existingIdx >= 0 ? existingIdx + 1 : budgetItems.length + 1);
+    const updated: BudgetItem = { ...item, order: assignedOrder, updatedAt: now };
 
     setBudgetItems((prev) => {
       const idx = prev.findIndex((b) => b.id === item.id);
@@ -1300,12 +1331,24 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         copy[idx] = updated;
         return copy;
       }
-      return [updated, ...prev];
+      return [...prev, updated];
     });
+
+    try {
+      const cachedBudget = getCachedItem(STORAGE_KEYS.BUDGET_ITEMS);
+      let localList: BudgetItem[] = cachedBudget ? JSON.parse(cachedBudget) : [];
+      const lIdx = localList.findIndex((b) => b.id === item.id);
+      if (lIdx >= 0) {
+        localList[lIdx] = updated;
+      } else {
+        localList.push(updated);
+      }
+      persistLocal(STORAGE_KEYS.BUDGET_ITEMS, localList);
+    } catch (_) {}
 
     if (isSupabaseConfigured && supabase) {
       try {
-        const { error: writeErr } = await supabase.from('budget_items').upsert({
+        const payloadWithOrder: any = {
           id: updated.id,
           category: updated.category,
           planned_amount: updated.plannedAmount,
@@ -1314,10 +1357,15 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           currency: updated.currency,
           phase: updated.phase || null,
           notes: updated.notes || null,
+          order: updated.order,
           created_at: updated.createdAt || now,
           updated_at: now,
-        });
-        if (writeErr) throw writeErr;
+        };
+        const { error: writeErr } = await supabase.from('budget_items').upsert(payloadWithOrder);
+        if (writeErr) {
+          delete payloadWithOrder.order;
+          await supabase.from('budget_items').upsert(payloadWithOrder);
+        }
       } catch (e) {
         reportWriteFailure('Saving budget item', e);
       }
@@ -1342,12 +1390,12 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     const withOrder = reordered.map((b, idx) => ({ ...b, order: idx + 1 }));
     setBudgetItems(withOrder);
     try {
-      localStorage.setItem(STORAGE_KEYS.BUDGET_ITEMS, JSON.stringify(withOrder));
+      persistLocal(STORAGE_KEYS.BUDGET_ITEMS, withOrder);
     } catch (_) {}
 
     if (isSupabaseConfigured && supabase) {
       try {
-        const rows = withOrder.map((b) => ({
+        const rowsWithOrder = withOrder.map((b) => ({
           id: b.id,
           category: b.category,
           planned_amount: b.plannedAmount,
@@ -1356,11 +1404,15 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           currency: b.currency,
           phase: b.phase || null,
           notes: b.notes || null,
+          order: b.order,
           created_at: b.createdAt,
           updated_at: new Date().toISOString(),
         }));
-        const { error: writeErr } = await supabase.from('budget_items').upsert(rows);
-        if (writeErr) throw writeErr;
+        const { error: writeErr } = await supabase.from('budget_items').upsert(rowsWithOrder);
+        if (writeErr) {
+          const rowsFallback = rowsWithOrder.map(({ order: _order, ...rest }) => rest);
+          await supabase.from('budget_items').upsert(rowsFallback);
+        }
       } catch (e) {
         reportWriteFailure('Reordering budget categories', e);
       }

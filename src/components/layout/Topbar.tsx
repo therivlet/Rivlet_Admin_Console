@@ -152,12 +152,12 @@ export default function Topbar({
               onClick={() => setSeasonDropdownOpen(!seasonDropdownOpen)}
               title="Change active merchandising season / financial year"
               aria-label="Change active merchandising season and financial year"
-              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-[#1b120d] dark:bg-[#121623] hover:bg-[#281c15] dark:hover:bg-[#182030] border border-[#3d2b20] dark:border-[#242e44] hover:border-[#cda052]/60 text-xs text-[#e6c875] dark:text-[#cda052] transition-all shadow-sm cursor-pointer group"
+              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-[#1b120d] dark:bg-[#121623] hover:bg-[#281c15] dark:hover:bg-[#182030] border border-[#3d2b20] dark:border-[#242e44] hover:border-[#cda052] text-xs text-[#f5d58d] hover:text-[#f7dda0] dark:text-[#cda052] dark:hover:text-[#f7dda0] transition-all shadow-sm cursor-pointer group"
             >
-              <Tag className="w-3.5 h-3.5 text-[#cda052] flex-shrink-0 group-hover:scale-110 transition-transform" />
-              <span className="font-semibold tracking-wider font-mono hidden sm:inline">{activeSeason}</span>
-              <span className="font-semibold tracking-wider font-mono text-[11px] sm:hidden">{activeSeason.split('/')[0].trim()}</span>
-              <ChevronDown className={`w-3 h-3 text-[#a99a8b] dark:text-[#94a3b8] hidden xs:inline transition-transform duration-200 ${seasonDropdownOpen ? 'rotate-180 text-[#cda052]' : ''}`} />
+              <Tag className="w-3.5 h-3.5 text-[#cda052] group-hover:text-[#f7dda0] flex-shrink-0 group-hover:scale-110 transition-transform" />
+              <span className="font-semibold tracking-wider font-mono hidden sm:inline text-[#f5d58d] group-hover:text-[#f7dda0]">{activeSeason}</span>
+              <span className="font-semibold tracking-wider font-mono text-[11px] sm:hidden text-[#f5d58d] group-hover:text-[#f7dda0]">{activeSeason.split('/')[0].trim()}</span>
+              <ChevronDown className={`w-3 h-3 text-[#cda052] group-hover:text-[#f7dda0] hidden xs:inline transition-transform duration-200 ${seasonDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {seasonDropdownOpen && (
@@ -209,9 +209,13 @@ export default function Topbar({
             onClick={toggleTheme}
             title={theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
             aria-label="Toggle interface theme"
-            className="flex items-center justify-center p-2 rounded-lg border border-[#3d2b20] dark:border-[#242e44] bg-[#1b120d] dark:bg-[#0e121b] hover:border-[#cda052]/60 hover:bg-[#281c15] dark:hover:bg-[#151a26] text-[#e6c875] dark:text-[#cda052] transition-all shadow-sm cursor-pointer"
+            className="flex items-center justify-center p-2 rounded-lg border border-[#3d2b20] dark:border-[#242e44] bg-[#1b120d] dark:bg-[#0e121b] hover:border-[#cda052] hover:bg-[#281c15] dark:hover:bg-[#151a26] text-[#f5d58d] hover:text-[#f7dda0] dark:text-[#cda052] transition-all shadow-sm cursor-pointer group"
           >
-            {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-[#cda052]" /> : <Moon className="w-3.5 h-3.5 text-[#e6c875]" />}
+            {theme === 'dark' ? (
+              <Sun className="w-4 h-4 text-[#cda052] stroke-[2.2] group-hover:scale-110 transition-transform" />
+            ) : (
+              <Moon className="w-4 h-4 text-[#f5d58d] stroke-[2.2] group-hover:scale-110 transition-transform filter drop-shadow-[0_0_6px_rgba(205,160,82,0.45)]" />
+            )}
           </button>
 
           {/* Durable Notification Center */}

@@ -642,14 +642,14 @@ export default function BudgetAnalyticsGraph({
             </svg>
           </div>
 
-          {/* Fixed Interactive Milestone Details Card (Permanently visible, data dynamically moves with mouse) */}
+          {/* Fixed Interactive Milestone Details Card (Permanently fixed box, data alone updates smoothly) */}
           {activePoint && (
-            <div className={`mt-3 p-3 rounded-xl bg-[#0a0e17] border transition-all duration-150 shadow-glass flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs ${
+            <div className={`mt-3 p-3 sm:px-4 sm:py-3 rounded-xl bg-[#0a0e17] border transition-all duration-150 shadow-glass flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs min-h-[74px] md:h-[74px] overflow-hidden ${
               hoveredPointIndex !== null
                 ? 'border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.15)] bg-[#0d101a]'
                 : 'border-[#232f48]'
             }`}>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
                 <div className={`p-2 rounded-lg font-mono font-bold flex-shrink-0 transition-colors ${
                   hoveredPointIndex !== null
                     ? 'bg-purple-900/60 text-purple-300'
@@ -657,54 +657,61 @@ export default function BudgetAnalyticsGraph({
                 }`}>
                   <Calendar className="w-4 h-4" />
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-white font-mono text-sm">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 truncate">
+                    <span className="font-bold text-white font-mono text-xs sm:text-sm flex-shrink-0">
                       {new Date(activePoint.date + 'T00:00:00').toLocaleDateString('en-US', {
                         weekday: 'short',
-                        month: 'long',
+                        month: 'short',
                         day: 'numeric',
                         year: 'numeric',
                       })}
                     </span>
-                    {activePoint.date === todayStr && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-950/80 text-sky-300 border border-sky-800 font-mono font-semibold">
+                    {activePoint.date === todayStr ? (
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-sky-950/80 text-sky-300 border border-sky-800 font-mono font-semibold flex-shrink-0">
                         Today (Current Position)
                       </span>
-                    )}
-                    {activePoint.isFuture && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-800 font-mono font-semibold">
+                    ) : activePoint.isFuture ? (
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-950/80 text-purple-300 border border-purple-800 font-mono font-semibold flex-shrink-0">
                         Scheduled Future Injection
                       </span>
-                    )}
-                    {hoveredPointIndex !== null && activePoint.date !== todayStr && !activePoint.isFuture && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-800 font-mono font-semibold">
+                    ) : hoveredPointIndex !== null ? (
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-950/80 text-purple-300 border border-purple-800 font-mono font-semibold flex-shrink-0">
                         Scrubbing Milestone
+                      </span>
+                    ) : (
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800/80 text-slate-300 border border-slate-700 font-mono font-semibold flex-shrink-0">
+                        Milestone Position
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 mt-0.5 text-[11px] text-[#94a3b8] flex-wrap">
-                    {activePoint.notes.map((note, nIdx) => (
-                      <span key={nIdx} className="bg-[#141b2b] px-2 py-0.5 rounded text-[#cbd5e1]">
-                        {note}
+                  <div className="mt-1 text-[11px] text-[#94a3b8] truncate h-5 flex items-center">
+                    {activePoint.notes && activePoint.notes.length > 0 ? (
+                      <span
+                        className="bg-[#141b2b] px-2 py-0.5 rounded text-[#cbd5e1] truncate max-w-full inline-block"
+                        title={activePoint.notes.join(' • ')}
+                      >
+                        {activePoint.notes.join(' • ')}
                       </span>
-                    ))}
+                    ) : (
+                      <span className="text-[#64748b] italic">Standard runway baseline</span>
+                    )}
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 text-right flex-shrink-0 font-mono">
-                <div>
+              <div className="flex items-center gap-4 text-right flex-shrink-0 font-mono border-t md:border-t-0 border-[#1a2336] pt-2 md:pt-0">
+                <div className="min-w-[90px] sm:min-w-[110px]">
                   <div className="text-[10px] text-emerald-400 uppercase font-semibold">Inflow to Date</div>
-                  <div className="font-bold text-emerald-400 text-sm">{formatFullINR(activePoint.cumInflow)}</div>
+                  <div className="font-bold text-emerald-400 text-xs sm:text-sm tabular-nums">{formatFullINR(activePoint.cumInflow)}</div>
                 </div>
-                <div>
+                <div className="min-w-[90px] sm:min-w-[110px]">
                   <div className="text-[10px] text-rose-400 uppercase font-semibold">Spent to Date</div>
-                  <div className="font-bold text-rose-400 text-sm">{formatFullINR(activePoint.cumSpend)}</div>
+                  <div className="font-bold text-rose-400 text-xs sm:text-sm tabular-nums">{formatFullINR(activePoint.cumSpend)}</div>
                 </div>
-                <div>
+                <div className="min-w-[90px] sm:min-w-[110px]">
                   <div className="text-[10px] text-purple-400 uppercase font-semibold">Liquid Cash</div>
-                  <div className="font-bold text-purple-300 text-sm">{formatFullINR(activePoint.balance)}</div>
+                  <div className="font-bold text-purple-300 text-xs sm:text-sm tabular-nums">{formatFullINR(activePoint.balance)}</div>
                 </div>
               </div>
             </div>

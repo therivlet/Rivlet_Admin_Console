@@ -813,7 +813,7 @@ export default function BudgetPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#1a1f2c] text-[11px] text-[#94a3b8] uppercase tracking-wide bg-[#0a0d14]">
-                <th className="text-center px-2 py-3 font-semibold w-12" title="Arrangement handle">Order</th>
+                <th className="text-center px-3 py-3 font-semibold w-16" title="Drag two-line handle to reorder categories">Order</th>
                 <th className="text-left px-3 py-3 font-semibold w-8"></th>
                 <th className="text-left px-4 py-3 font-semibold">Category</th>
                 <th className="text-left px-4 py-3 font-semibold">Phase</th>
@@ -847,8 +847,8 @@ export default function BudgetPage() {
                       }`}
                     >
                       {/* Order Column: Two-Line Drag Handle & Move Up/Down Buttons */}
-                      <td className="px-2 py-3">
-                        <div className="flex items-center justify-center gap-1">
+                      <td className="px-3 py-3 w-16 text-center select-none">
+                        <div className="flex items-center justify-center gap-1.5">
                           {/* Two-Line Drag Handle */}
                           <div
                             draggable
@@ -856,31 +856,31 @@ export default function BudgetPage() {
                             onDragEnd={() => { setDraggingBudgetId(null); setDragOverBudgetId(null); }}
                             title="Drag two-line handle to move up or down"
                             aria-label="Drag two-line handle to move category up or down"
-                            className="flex flex-col justify-center items-center gap-[3px] p-1.5 rounded hover:bg-[#1a2335] text-[#64748b] hover:text-[#cda052] cursor-grab active:cursor-grabbing transition-colors select-none group/handle"
+                            className="flex flex-col justify-center items-center gap-[4px] p-2 rounded-lg bg-[#141b29] hover:bg-[#1f293d] border border-[#232d42] hover:border-[#cda052]/60 text-[#8e9cb5] hover:text-[#f5d58d] cursor-grab active:cursor-grabbing transition-all select-none group/handle shadow-sm"
                           >
-                            <span className="w-3.5 h-[2px] rounded-full bg-current group-hover/handle:bg-[#cda052] transition-colors" />
-                            <span className="w-3.5 h-[2px] rounded-full bg-current group-hover/handle:bg-[#cda052] transition-colors" />
+                            <span className="w-4 h-[2px] rounded-full bg-current group-hover/handle:bg-[#cda052] transition-colors" />
+                            <span className="w-4 h-[2px] rounded-full bg-current group-hover/handle:bg-[#cda052] transition-colors" />
                           </div>
 
                           {/* Move Up / Down Buttons */}
-                          <div className="flex flex-col items-center">
+                          <div className="flex flex-col items-center gap-0.5">
                             <button
                               disabled={idx === 0}
                               onClick={() => handleMoveCategory(b.id, 'up')}
                               title="Move category up"
                               aria-label="Move category up"
-                              className="p-0.5 rounded text-[#64748b] hover:text-[#cda052] hover:bg-[#1a2335] disabled:opacity-20 transition-colors"
+                              className="p-1 rounded bg-[#101522] border border-[#1e273a] text-[#8e9cb5] hover:text-[#f5d58d] hover:bg-[#1b2336] disabled:opacity-20 transition-all cursor-pointer"
                             >
-                              <ChevronUp className="w-3 h-3" />
+                              <ChevronUp className="w-2.5 h-2.5" />
                             </button>
                             <button
                               disabled={idx === budgetItems.length - 1}
                               onClick={() => handleMoveCategory(b.id, 'down')}
                               title="Move category down"
                               aria-label="Move category down"
-                              className="p-0.5 rounded text-[#64748b] hover:text-[#cda052] hover:bg-[#1a2335] disabled:opacity-20 transition-colors"
+                              className="p-1 rounded bg-[#101522] border border-[#1e273a] text-[#8e9cb5] hover:text-[#f5d58d] hover:bg-[#1b2336] disabled:opacity-20 transition-all cursor-pointer"
                             >
-                              <ChevronDown className="w-3 h-3" />
+                              <ChevronDown className="w-2.5 h-2.5" />
                             </button>
                           </div>
                         </div>
@@ -1063,46 +1063,6 @@ export default function BudgetPage() {
                   </td>
                   <td className="px-4 py-3.5"></td>
                 </tr>
-
-                {/* 2. Cap Comparison Row: If an approved overall budget ceiling is configured */}
-                {budgetSettings.totalPlannedOverride !== undefined && (
-                  <tr className="bg-[#05070d] text-[11px]">
-                    <td colSpan={4} className="px-4 py-2.5 text-[#94a3b8] font-medium tracking-wide">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="w-1.5 h-1.5 rounded-full bg-purple-400 inline-block" />
-                        <span className="uppercase text-[10px] font-mono font-semibold text-[#cbd5e1]">Approved Launch Cap:</span>
-                        <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
-                          sumPlanned === budgetSettings.totalPlannedOverride
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                            : sumPlanned < budgetSettings.totalPlannedOverride
-                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                            : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
-                        }`}>
-                          {sumPlanned === budgetSettings.totalPlannedOverride
-                            ? '✓ Exactly 100% Balanced with Cap'
-                            : sumPlanned < budgetSettings.totalPlannedOverride
-                            ? `₹${(budgetSettings.totalPlannedOverride - sumPlanned).toLocaleString('en-IN')} Buffer Available`
-                            : `₹${(sumPlanned - budgetSettings.totalPlannedOverride).toLocaleString('en-IN')} Over Allocated`}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-mono text-[#cbd5e1] font-semibold whitespace-nowrap">
-                      {formatINR(budgetSettings.totalPlannedOverride)}
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-mono text-[#94a3b8] whitespace-nowrap">
-                      {formatINR(sumActual)}
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-mono font-semibold whitespace-nowrap">
-                      <span className={budgetSettings.totalPlannedOverride - sumActual >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
-                        {formatINR(Math.abs(budgetSettings.totalPlannedOverride - sumActual))}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-mono text-[#94a3b8] whitespace-nowrap">
-                      {Math.round((sumActual / budgetSettings.totalPlannedOverride) * 100)}%
-                    </td>
-                    <td className="px-4 py-2.5"></td>
-                  </tr>
-                )}
               </tfoot>
             )}
           </table>

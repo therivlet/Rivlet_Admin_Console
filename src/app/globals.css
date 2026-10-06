@@ -393,7 +393,14 @@ html.light header button[title*="Notification"],
 html.light header button[aria-label*="Notification"] {
   background-color: #1b120d !important;
   border-color: #3d2b20 !important;
-  color: #e6c875 !important;
+  color: #f5d58d !important;
+}
+html.light header button[title*="merchandising"] svg,
+html.light header button[aria-label*="merchandising"] svg,
+html.light header button[title*="Theme"] svg,
+html.light header button[aria-label*="Theme"] svg,
+html.light header button[title*="Notification"] svg {
+  color: #f5d58d !important;
 }
 html.light header button[title*="merchandising"]:hover,
 html.light header button[aria-label*="merchandising"]:hover,
@@ -403,6 +410,14 @@ html.light header button[title*="Notification"]:hover,
 html.light header button[aria-label*="Notification"]:hover {
   background-color: #281c15 !important;
   border-color: #cda052 !important;
+  color: #f7dda0 !important;
+}
+html.light header button[title*="merchandising"]:hover *,
+html.light header button[aria-label*="merchandising"]:hover *,
+html.light header button[title*="Theme"]:hover *,
+html.light header button[aria-label*="Theme"]:hover *,
+html.light header button[title*="Notification"]:hover * {
+  color: #f7dda0 !important;
 }
 
 /* Header Navigation Menu button in light mode */
@@ -1016,10 +1031,10 @@ html.light .bg-black\/60 {
    7. INTERACTIVE HOVER STATES (Zero Unreadable Black Boxes on Hover)
    -------------------------------------------------------------------------- */
 
-html.light [class*="hover:bg-[#0"]:hover,
-html.light [class*="hover:bg-[#1"]:hover,
-html.light [class*="hover:bg-[#2"]:hover,
-html.light [class*="hover:bg-[#3"]:hover {
+html.light [class*="hover:bg-[#0"]:not(aside):not(aside *):not(header):not(header *):hover,
+html.light [class*="hover:bg-[#1"]:not(aside):not(aside *):not(header):not(header *):hover,
+html.light [class*="hover:bg-[#2"]:not(aside):not(aside *):not(header):not(header *):hover,
+html.light [class*="hover:bg-[#3"]:not(aside):not(aside *):not(header):not(header *):hover {
   background-color: #ede5d7 !important;
   color: #1c1917 !important;
 }
