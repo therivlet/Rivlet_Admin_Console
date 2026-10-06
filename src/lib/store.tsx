@@ -265,7 +265,54 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         safeSelect('budget_settings', false),
       ]);
 
-      // 1. Artifacts sync & auto-seed
+      // If any table returned empty/null (e.g. browser RLS session blocked or hydrating),
+      // fall back to /api/sync which safely reads with the service role
+      const emptyTables: string[] = [];
+      if (shouldSync('vendors') && (!venRes.data || venRes.data.length === 0)) emptyTables.push('vendors');
+      if (shouldSync('pipeline_items') && (!pipeRes.data || pipeRes.data.length === 0)) emptyTables.push('pipeline_items');
+      if (shouldSync('budget_items') && (!budRes.data || budRes.data.length === 0)) emptyTables.push('budget_items');
+      if (shouldSync('sprints') && (!sprRes.data || sprRes.data.length === 0)) emptyTables.push('sprints');
+      if (shouldSync('work_items') && (!wiRes.data || wiRes.data.length === 0)) emptyTables.push('work_items');
+      if (shouldSync('team_members') && (!tmRes.data || tmRes.data.length === 0)) emptyTables.push('team_members');
+      if (shouldSync('artifacts') && (!artRes.data || artRes.data.length === 0)) emptyTables.push('artifacts');
+      if (shouldSync('costing_sheets') && (!costRes.data || costRes.data.length === 0)) emptyTables.push('costing_sheets');
+      if (shouldSync('documents') && (!docRes.data || docRes.data.length === 0)) emptyTables.push('documents');
+      if (shouldSync('kb_articles') && (!kbRes.data || kbRes.data.length === 0)) emptyTables.push('kb_articles');
+      if (shouldSync('budget_settings') && (!bsRes.data || bsRes.data.length === 0)) emptyTables.push('budget_settings');
+      if (shouldSync('work_settings') && (!wsRes.data || wsRes.data.length === 0)) emptyTables.push('work_settings');
+
+      if (emptyTables.length > 0 && typeof window !== 'undefined') {
+        try {
+          const apiRes = await fetch(`/api/sync?tables=${emptyTables.join(',')}`);
+          const apiJson = await apiRes.json();
+          if (apiJson.success && apiJson.data) {
+            if (apiJson.data.vendors?.length > 0) venRes.data = apiJson.data.vendors;
+            if (apiJson.data.pipeline_items?.length > 0) pipeRes.data = apiJson.data.pipeline_items;
+            if (apiJson.data.budget_items?.length > 0) budRes.data = apiJson.data.budget_items;
+            if (apiJson.data.sprints?.length > 0) sprRes.data = apiJson.data.sprints;
+            if (apiJson.data.work_items?.length > 0) wiRes.data = apiJson.data.work_items;
+            if (apiJson.data.team_members?.length > 0) tmRes.data = apiJson.data.team_members;
+            if (apiJson.data.artifacts?.length > 0) artRes.data = apiJson.data.artifacts;
+            if (apiJson.data.costing_sheets?.length > 0) costRes.data = apiJson.data.costing_sheets;
+            if (apiJson.data.documents?.length > 0) docRes.data = apiJson.data.documents;
+            if (apiJson.data.kb_articles?.length > 0) kbRes.data = apiJson.data.kb_articles;
+            if (apiJson.data.budget_settings?.length > 0) bsRes.data = apiJson.data.budget_settings;
+            if (apiJson.data.work_settings?.length > 0) wsRes.data = apiJson.data.work_settings;
+          }
+        } catch (e) {
+          console.warn('[Rivlet Store] /api/sync fallback notice:', e);
+        }
+      }
+
+      const persistLocal = (key: string, data: any) => {
+        try {
+          const json = JSON.stringify(data);
+          localStorage.setItem(getScopedKey(key, userId), json);
+          localStorage.setItem(key, json);
+        } catch (_) {}
+      };
+
+      // 1. Artifacts sync
       if (artRes.data && artRes.data.length > 0) {
         const formatted: ArtifactItem[] = artRes.data
           .filter((r: any) => r.id !== 'art-001' && r.id !== 'art-002')
@@ -287,32 +334,10 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
             updatedAt: r.updated_at || new Date().toISOString(),
           }));
         setArtifacts(formatted);
-        try { localStorage.setItem(STORAGE_KEYS.ARTIFACTS, JSON.stringify(formatted)); } catch (_) {}
-      } else if (artRes.data && artRes.data.length === 0) {
-        // Auto-seed initial real Claude pricing artifact to Supabase
-        for (const art of initialArtifacts) {
-          await supabase.from('artifacts').upsert({
-            id: art.id,
-            title: art.title,
-            description: art.description,
-            category: art.category,
-            tags: art.tags,
-            html_content: art.htmlContent,
-            source: art.source,
-            version: art.version,
-            is_promoted: art.isPromoted,
-            route_slug: art.routeSlug,
-            status: art.status,
-            is_favorite: art.isFavorite,
-            created_at: art.createdAt,
-            updated_at: art.updatedAt,
-          });
-        }
-        setArtifacts(initialArtifacts);
-        try { localStorage.setItem(STORAGE_KEYS.ARTIFACTS, JSON.stringify(initialArtifacts)); } catch (_) {}
+        persistLocal(STORAGE_KEYS.ARTIFACTS, formatted);
       }
 
-      // 2. Costing Sheets sync & auto-seed
+      // 2. Costing Sheets sync
       if (costRes.data && costRes.data.length > 0) {
         const formatted: CostingSheet[] = costRes.data.map((r: any) => ({
           id: r.id,
@@ -329,27 +354,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           updatedAt: r.updated_at || new Date().toISOString(),
         }));
         setCostingSheets(formatted);
-        try { localStorage.setItem(STORAGE_KEYS.COSTING_SHEETS, JSON.stringify(formatted)); } catch (_) {}
-      } else if (costRes.data && costRes.data.length === 0) {
-        // Auto-seed costing sheets to Supabase
-        for (const sheet of initialCostingSheets) {
-          await supabase.from('costing_sheets').upsert({
-            id: sheet.id,
-            sku: sheet.sku,
-            style_name: sheet.styleName,
-            season: sheet.season,
-            category: sheet.category,
-            currency: sheet.currency,
-            mrp: sheet.mrp,
-            expected_margin: sheet.expectedMargin,
-            inputs: sheet.inputs,
-            notes: sheet.notes,
-            created_at: sheet.createdAt,
-            updated_at: sheet.updatedAt,
-          });
-        }
-        setCostingSheets(initialCostingSheets);
-        try { localStorage.setItem(STORAGE_KEYS.COSTING_SHEETS, JSON.stringify(initialCostingSheets)); } catch (_) {}
+        persistLocal(STORAGE_KEYS.COSTING_SHEETS, formatted);
       }
 
       // 3. Documents sync (vault files)
@@ -374,10 +379,10 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
             updatedAt: r.updated_at || new Date().toISOString(),
           }));
         setDocuments(formatted);
-        try { localStorage.setItem(STORAGE_KEYS.DOCUMENTS, JSON.stringify(formatted)); } catch (_) {}
+        persistLocal(STORAGE_KEYS.DOCUMENTS, formatted);
       }
 
-      // 4. KB Articles sync & auto-seed
+      // 4. KB Articles sync
       if (kbRes.data && kbRes.data.length > 0) {
         const formatted: KBArticle[] = kbRes.data.map((r: any) => ({
           id: r.id,
@@ -392,49 +397,11 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           updatedAt: r.updated_at || new Date().toISOString(),
         }));
 
-        // Merge any new master articles added to code that don't exist yet in Supabase
-        const existingIds = new Set(formatted.map(k => k.id));
-        const missingInitials = initialKBArticles.filter(k => !existingIds.has(k.id));
-        if (missingInitials.length > 0) {
-          for (const kb of missingInitials) {
-            await supabase.from('kb_articles').upsert({
-              id: kb.id,
-              title: kb.title,
-              slug: kb.slug,
-              category: kb.category,
-              content: kb.content,
-              is_confidential: kb.isConfidential,
-              author: kb.author,
-              tags: kb.tags,
-              created_at: kb.createdAt,
-              updated_at: kb.updatedAt,
-            });
-            formatted.push(kb);
-          }
-        }
-
         setKbArticles(formatted);
-        try { localStorage.setItem(STORAGE_KEYS.KB_ARTICLES, JSON.stringify(formatted)); } catch (_) {}
-      } else if (kbRes.data && kbRes.data.length === 0) {
-        for (const kb of initialKBArticles) {
-          await supabase.from('kb_articles').upsert({
-            id: kb.id,
-            title: kb.title,
-            slug: kb.slug,
-            category: kb.category,
-            content: kb.content,
-            is_confidential: kb.isConfidential,
-            author: kb.author,
-            tags: kb.tags,
-            created_at: kb.createdAt,
-            updated_at: kb.updatedAt,
-          });
-        }
-        setKbArticles(initialKBArticles);
-        try { localStorage.setItem(STORAGE_KEYS.KB_ARTICLES, JSON.stringify(initialKBArticles)); } catch (_) {}
+        persistLocal(STORAGE_KEYS.KB_ARTICLES, formatted);
       }
 
-      // 5. Vendors sync & auto-seed
+      // 5. Vendors sync
       if (venRes.data && venRes.data.length > 0) {
         let cachedVendorsMap = new Map<string, Partial<VendorItem>>();
         try {
@@ -493,28 +460,10 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         }
 
         setVendors(formatted);
-        try { localStorage.setItem(STORAGE_KEYS.VENDORS, JSON.stringify(formatted)); } catch (_) {}
-      } else if (venRes.data && venRes.data.length === 0) {
-        for (const v of initialVendors) {
-          const primaryContact = v.contacts?.find((c) => c.isPrimary) || v.contacts?.[0];
-          await Promise.resolve(supabase.from('vendors').upsert({
-            id: v.id, name: v.name, location: v.location,
-            contact_name: v.contactName || primaryContact?.name || null,
-            contact_email: v.contactEmail || primaryContact?.email || null,
-            contact_phone: v.contactPhone || primaryContact?.phone || null,
-            is_vertically_integrated: v.isVerticallyIntegrated, specialty: v.specialty,
-            stage: v.stage, moq_offered: v.moqOffered, moq_target: v.moqTarget,
-            payment_terms_offered: v.paymentTermsOffered, payment_terms_target: v.paymentTermsTarget,
-            sampling_fee: v.samplingFee, certifications: v.certifications,
-            last_contacted_at: v.lastContactedAt, next_follow_up_at: v.nextFollowUpAt,
-            notes: v.notes, created_at: v.createdAt, updated_at: v.updatedAt,
-          })).catch(() => {});
-        }
-        setVendors(initialVendors);
-        try { localStorage.setItem(STORAGE_KEYS.VENDORS, JSON.stringify(initialVendors)); } catch (_) {}
+        persistLocal(STORAGE_KEYS.VENDORS, formatted);
       }
 
-      // 6. Pipeline items sync & auto-seed
+      // 6. Pipeline items sync
       if (pipeRes.data && pipeRes.data.length > 0) {
         const formatted: PipelineItem[] = pipeRes.data.map((r: any) => ({
           id: r.id,
@@ -534,21 +483,10 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           updatedAt: r.updated_at || new Date().toISOString(),
         }));
         setPipelineItems(formatted);
-        try { localStorage.setItem(STORAGE_KEYS.PIPELINE_ITEMS, JSON.stringify(formatted)); } catch (_) {}
-      } else if (pipeRes.data && pipeRes.data.length === 0) {
-        for (const p of initialPipelineItems) {
-          await Promise.resolve(supabase.from('pipeline_items').upsert({
-            id: p.id, style_name: p.styleName, hsn_code: p.hsnCode, sku: p.sku, category: p.category,
-            colorway: p.colorway, drop_name: p.drop, vendor_id: p.vendorId, stage: p.stage,
-            target_quantity: p.targetQuantity, target_date: p.targetDate, actual_date: p.actualDate,
-            notes: p.notes, created_at: p.createdAt, updated_at: p.updatedAt,
-          })).catch(() => {});
-        }
-        setPipelineItems(initialPipelineItems);
-        try { localStorage.setItem(STORAGE_KEYS.PIPELINE_ITEMS, JSON.stringify(initialPipelineItems)); } catch (_) {}
+        persistLocal(STORAGE_KEYS.PIPELINE_ITEMS, formatted);
       }
 
-      // 7. Budget items sync & auto-seed
+      // 7. Budget items sync
       if (budRes.data && budRes.data.length > 0) {
         const formatted: BudgetItem[] = budRes.data.map((r: any) => ({
           id: r.id,
@@ -567,20 +505,10 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           formatted.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
         }
         setBudgetItems(formatted);
-        try { localStorage.setItem(STORAGE_KEYS.BUDGET_ITEMS, JSON.stringify(formatted)); } catch (_) {}
-      } else if (budRes.data && budRes.data.length === 0) {
-        for (const b of initialBudgetItems) {
-          await Promise.resolve(supabase.from('budget_items').upsert({
-            id: b.id, category: b.category, planned_amount: b.plannedAmount,
-            actual_amount: b.actualAmount, spend_log: b.spendLog, currency: b.currency, phase: b.phase,
-            notes: b.notes, created_at: b.createdAt, updated_at: b.updatedAt,
-          })).catch(() => {});
-        }
-        setBudgetItems(initialBudgetItems);
-        try { localStorage.setItem(STORAGE_KEYS.BUDGET_ITEMS, JSON.stringify(initialBudgetItems)); } catch (_) {}
+        persistLocal(STORAGE_KEYS.BUDGET_ITEMS, formatted);
       }
 
-      // 7b. Budget settings sync & auto-seed (singleton row)
+      // 7b. Budget settings sync (singleton row)
       if (bsRes.data && bsRes.data.length > 0) {
         const r = bsRes.data[0];
         const formatted: BudgetSettings = {
@@ -590,18 +518,10 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           updatedAt: r.updated_at || new Date().toISOString(),
         };
         setBudgetSettings(formatted);
-        try { localStorage.setItem(STORAGE_KEYS.BUDGET_SETTINGS, JSON.stringify(formatted)); } catch (_) {}
-      } else if (bsRes.data && bsRes.data.length === 0) {
-        await Promise.resolve(supabase.from('budget_settings').upsert({
-          id: initialBudgetSettings.id,
-          total_planned_override: initialBudgetSettings.totalPlannedOverride,
-          updated_at: initialBudgetSettings.updatedAt,
-        })).catch(() => {});
-        setBudgetSettings(initialBudgetSettings);
-        try { localStorage.setItem(STORAGE_KEYS.BUDGET_SETTINGS, JSON.stringify(initialBudgetSettings)); } catch (_) {}
+        persistLocal(STORAGE_KEYS.BUDGET_SETTINGS, formatted);
       }
 
-      // 8. Sprints sync & auto-seed
+      // 8. Sprints sync
       if (sprRes.data && sprRes.data.length > 0) {
         const formatted: Sprint[] = sprRes.data.map((r: any) => ({
           id: r.id,
@@ -613,19 +533,10 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           updatedAt: r.updated_at || new Date().toISOString(),
         }));
         setSprints(formatted);
-        try { localStorage.setItem(STORAGE_KEYS.SPRINTS, JSON.stringify(formatted)); } catch (_) {}
-      } else if (sprRes.data && sprRes.data.length === 0) {
-        for (const s of initialSprints) {
-          await Promise.resolve(supabase.from('sprints').upsert({
-            id: s.id, name: s.name, goal: s.goal, start_date: s.startDate, end_date: s.endDate,
-            created_at: s.createdAt, updated_at: s.updatedAt,
-          })).catch(() => {});
-        }
-        setSprints(initialSprints);
-        try { localStorage.setItem(STORAGE_KEYS.SPRINTS, JSON.stringify(initialSprints)); } catch (_) {}
+        persistLocal(STORAGE_KEYS.SPRINTS, formatted);
       }
 
-      // 9. Work items sync & auto-seed
+      // 9. Work items sync
       if (wiRes.data && wiRes.data.length > 0) {
         const formatted: WorkItem[] = wiRes.data.map((r: any) => {
           const rawTags: string[] = Array.isArray(r.tags) ? r.tags : [];
@@ -671,23 +582,10 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           };
         });
         setWorkItems(formatted);
-        try { localStorage.setItem(STORAGE_KEYS.WORK_ITEMS, JSON.stringify(formatted)); } catch (_) {}
-      } else if (wiRes.data && wiRes.data.length === 0) {
-        for (const w of initialWorkItems) {
-          await Promise.resolve(supabase.from('work_items').upsert({
-            id: w.id, type: w.type, title: w.title, description: w.description,
-            acceptance_criteria: w.acceptanceCriteria, state: w.state, priority: w.priority,
-            story_points: w.storyPoints, assignee: w.assignee, tags: w.tags,
-            parent_id: w.parentId, sprint_id: w.sprintId, start_date: w.startDate,
-            target_date: w.targetDate, completed_date: w.completedDate, comments: w.comments,
-            created_at: w.createdAt, updated_at: w.updatedAt,
-          })).catch(() => {});
-        }
-        setWorkItems(initialWorkItems);
-        try { localStorage.setItem(STORAGE_KEYS.WORK_ITEMS, JSON.stringify(initialWorkItems)); } catch (_) {}
+        persistLocal(STORAGE_KEYS.WORK_ITEMS, formatted);
       }
 
-      // 10. Team members sync & auto-seed
+      // 10. Team members sync
       if (tmRes.data && tmRes.data.length > 0) {
         const formatted: TeamMember[] = tmRes.data.map((r: any) => ({
           id: r.id,
@@ -698,19 +596,10 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           updatedAt: r.updated_at || new Date().toISOString(),
         }));
         setTeamMembers(formatted);
-        try { localStorage.setItem(STORAGE_KEYS.TEAM_MEMBERS, JSON.stringify(formatted)); } catch (_) {}
-      } else if (tmRes.data && tmRes.data.length === 0) {
-        for (const m of initialTeamMembers) {
-          await Promise.resolve(supabase.from('team_members').upsert({
-            id: m.id, name: m.name, role: m.role, email: m.email,
-            created_at: m.createdAt, updated_at: m.updatedAt,
-          })).catch(() => {});
-        }
-        setTeamMembers(initialTeamMembers);
-        try { localStorage.setItem(STORAGE_KEYS.TEAM_MEMBERS, JSON.stringify(initialTeamMembers)); } catch (_) {}
+        persistLocal(STORAGE_KEYS.TEAM_MEMBERS, formatted);
       }
 
-      // 11. Work settings sync & auto-seed (singleton row)
+      // 11. Work settings sync (singleton row)
       if (wsRes.data && wsRes.data.length > 0) {
         const r = wsRes.data[0];
         const formatted: WorkSettings = {
@@ -719,15 +608,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
           updatedAt: r.updated_at || new Date().toISOString(),
         };
         setWorkSettings(formatted);
-        try { localStorage.setItem(STORAGE_KEYS.WORK_SETTINGS, JSON.stringify(formatted)); } catch (_) {}
-      } else if (wsRes.data && wsRes.data.length === 0) {
-        await Promise.resolve(supabase.from('work_settings').upsert({
-          id: initialWorkSettings.id,
-          default_sprint_length_days: initialWorkSettings.defaultSprintLengthDays,
-          updated_at: initialWorkSettings.updatedAt,
-        })).catch(() => {});
-        setWorkSettings(initialWorkSettings);
-        try { localStorage.setItem(STORAGE_KEYS.WORK_SETTINGS, JSON.stringify(initialWorkSettings)); } catch (_) {}
+        persistLocal(STORAGE_KEYS.WORK_SETTINGS, formatted);
       }
     } catch (err) {
       console.warn('[Rivlet Store] Supabase sync notice:', err);
@@ -736,24 +617,29 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       setIsSyncing(false);
       setIsLoaded(true);
     }
-  }, []);
+  }, [userId]);
 
-  // Initial load: fast user-scoped local cache first, then immediately pull live Supabase data
+  // Initial load: fast local cache first (scoped or unscoped), then immediately pull live Supabase data
   useEffect(() => {
     try {
-      const storedArtifacts = localStorage.getItem(getScopedKey(STORAGE_KEYS.ARTIFACTS, userId));
-      const storedSheets = localStorage.getItem(getScopedKey(STORAGE_KEYS.COSTING_SHEETS, userId));
-      const storedDocs = localStorage.getItem(getScopedKey(STORAGE_KEYS.DOCUMENTS, userId));
-      const storedArticles = localStorage.getItem(getScopedKey(STORAGE_KEYS.KB_ARTICLES, userId));
-      const storedVendors = localStorage.getItem(getScopedKey(STORAGE_KEYS.VENDORS, userId));
-      const storedPipeline = localStorage.getItem(getScopedKey(STORAGE_KEYS.PIPELINE_ITEMS, userId));
-      const storedBudget = localStorage.getItem(getScopedKey(STORAGE_KEYS.BUDGET_ITEMS, userId));
-      const storedSprints = localStorage.getItem(getScopedKey(STORAGE_KEYS.SPRINTS, userId));
-      const storedWorkItems = localStorage.getItem(getScopedKey(STORAGE_KEYS.WORK_ITEMS, userId));
-      const storedTeamMembers = localStorage.getItem(getScopedKey(STORAGE_KEYS.TEAM_MEMBERS, userId));
-      const storedWorkSettings = localStorage.getItem(getScopedKey(STORAGE_KEYS.WORK_SETTINGS, userId));
-      const storedBudgetSettings = localStorage.getItem(getScopedKey(STORAGE_KEYS.BUDGET_SETTINGS, userId));
-      const storedSeason = localStorage.getItem(getScopedKey(STORAGE_KEYS.ACTIVE_SEASON, userId));
+      const getCachedItem = (k: string) => {
+        if (typeof window === 'undefined') return null;
+        return localStorage.getItem(getScopedKey(k, userId)) || localStorage.getItem(k);
+      };
+
+      const storedArtifacts = getCachedItem(STORAGE_KEYS.ARTIFACTS);
+      const storedSheets = getCachedItem(STORAGE_KEYS.COSTING_SHEETS);
+      const storedDocs = getCachedItem(STORAGE_KEYS.DOCUMENTS);
+      const storedArticles = getCachedItem(STORAGE_KEYS.KB_ARTICLES);
+      const storedVendors = getCachedItem(STORAGE_KEYS.VENDORS);
+      const storedPipeline = getCachedItem(STORAGE_KEYS.PIPELINE_ITEMS);
+      const storedBudget = getCachedItem(STORAGE_KEYS.BUDGET_ITEMS);
+      const storedSprints = getCachedItem(STORAGE_KEYS.SPRINTS);
+      const storedWorkItems = getCachedItem(STORAGE_KEYS.WORK_ITEMS);
+      const storedTeamMembers = getCachedItem(STORAGE_KEYS.TEAM_MEMBERS);
+      const storedWorkSettings = getCachedItem(STORAGE_KEYS.WORK_SETTINGS);
+      const storedBudgetSettings = getCachedItem(STORAGE_KEYS.BUDGET_SETTINGS);
+      const storedSeason = getCachedItem(STORAGE_KEYS.ACTIVE_SEASON);
 
       if (storedSeason) {
         setActiveSeasonState(storedSeason);
