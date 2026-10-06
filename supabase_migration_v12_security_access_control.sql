@@ -323,7 +323,7 @@ declare
   target_tables text[] := array[
     'artifacts', 'costing_sheets', 'documents', 'kb_articles',
     'vendors', 'pipeline_items', 'budget_items', 'budget_settings',
-    'cash_inflows', 'sprints', 'work_items', 'team_members', 'work_settings'
+    'sprints', 'work_items', 'team_members', 'work_settings'
   ];
   t text;
 begin
@@ -384,11 +384,6 @@ create policy "budget_settings_select" on public.budget_settings for select usin
 create policy "budget_settings_insert" on public.budget_settings for insert with check (public.has_permission(auth.uid(), 'budget', 'edit'));
 create policy "budget_settings_update" on public.budget_settings for update using (public.has_permission(auth.uid(), 'budget', 'edit')) with check (public.has_permission(auth.uid(), 'budget', 'edit'));
 
-create policy "cash_inflows_select" on public.cash_inflows for select using (public.has_permission(auth.uid(), 'budget', 'view'));
-create policy "cash_inflows_insert" on public.cash_inflows for insert with check (public.has_permission(auth.uid(), 'budget', 'create'));
-create policy "cash_inflows_update" on public.cash_inflows for update using (public.has_permission(auth.uid(), 'budget', 'edit')) with check (public.has_permission(auth.uid(), 'budget', 'edit'));
-create policy "cash_inflows_delete" on public.cash_inflows for delete using (public.has_permission(auth.uid(), 'budget', 'delete'));
-
 -- WORK TRACKING (Module: work)
 create policy "sprints_select" on public.sprints for select using (public.has_permission(auth.uid(), 'work', 'view'));
 create policy "sprints_insert" on public.sprints for insert with check (public.has_permission(auth.uid(), 'work', 'create'));
@@ -414,11 +409,15 @@ do $$
 declare
   pol record;
 begin
-  for pol in
-    select policyname from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname ilike '%vault-files%'
-  loop
-    execute format('drop policy %I on storage.objects', pol.policyname);
-  end loop;
+  if to_regclass('storage.objects') is not null then
+    for pol in
+      select policyname from pg_policies
+      where schemaname = 'storage' and tablename = 'objects'
+        and (policyname ilike '%vault%files%' or policyname in ('vault_files_select', 'vault_files_insert', 'vault_files_delete'))
+    loop
+      execute format('drop policy %I on storage.objects', pol.policyname);
+    end loop;
+  end if;
 end $$;
 
 create policy "vault_files_select" on storage.objects
