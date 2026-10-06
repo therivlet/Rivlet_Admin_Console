@@ -43,10 +43,24 @@ export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusMod
   const [hoveredDayIndex, setHoveredDayIndex] = useState<number | null>(null);
 
   const todayStr = new Date().toISOString().slice(0, 10);
-  const currentSprint = useMemo(
-    () => sprints.find((s) => s.startDate <= todayStr && s.endDate >= todayStr),
-    [sprints, todayStr]
-  );
+  const currentSprint = useMemo(() => {
+    if (!sprints || sprints.length === 0) return undefined;
+    // Find active sprints covering today's date
+    const active = sprints.filter((s) => s.startDate <= todayStr && s.endDate >= todayStr);
+    if (active.length > 0) {
+      // Sort descending by startDate so that the newest active sprint (e.g. Sprint 2) is prioritized over an older overlapping sprint
+      active.sort((a, b) => b.startDate.localeCompare(a.startDate));
+      return active[0];
+    }
+    // If none active, find nearest upcoming sprint
+    const upcoming = sprints
+      .filter((s) => s.startDate > todayStr)
+      .sort((a, b) => a.startDate.localeCompare(b.startDate));
+    if (upcoming.length > 0) return upcoming[0];
+    // Otherwise pick the most recently ended sprint
+    const past = [...sprints].sort((a, b) => b.endDate.localeCompare(a.endDate));
+    return past[0];
+  }, [sprints, todayStr]);
 
   // Relevant items for current sprint or all items
   const sprintItems = useMemo(() => {
@@ -176,7 +190,31 @@ export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusMod
   }, [pastDays, maxTaskVal]);
 
   const todayIndex = sprintTimelineDays.findIndex((d) => d.isToday);
-  const activeDay = hoveredDayIndex !== null ? sprintTimelineDays[hoveredDayIndex] : null;
+  const defaultDay = (todayIndex >= 0 ? sprintTimelineDays[todayIndex] : sprintTimelineDays[sprintTimelineDays.length - 1]) || null;
+  const activeDay = hoveredDayIndex !== null ? sprintTimelineDays[hoveredDayIndex] : defaultDay;
+
+  // Filter X-axis labels to prevent text overlapping on longer sprints
+  const shouldShowXAxisLabel = (index: number) => {
+    const total = sprintTimelineDays.length;
+    if (total <= 1) return true;
+    if (hoveredDayIndex === index) return true;
+    if (index === 0 || index === total - 1) return true;
+    if (index === todayIndex) return true;
+
+    // Smart step spacing depending on duration
+    const step = total <= 14 ? 2 : total <= 28 ? 4 : total <= 45 ? 6 : 8;
+
+    // Avoid displaying label if too close to today
+    if (todayIndex >= 0 && Math.abs(index - todayIndex) < Math.floor(step / 2)) {
+      return false;
+    }
+    // Avoid displaying label if too close to boundaries
+    if (index < Math.floor(step / 2) || (total - 1 - index) < Math.floor(step / 2)) {
+      return false;
+    }
+
+    return index % step === 0;
+  };
 
   // Filtered displayed focus items
   const displayedItems = useMemo(() => {
@@ -309,7 +347,7 @@ export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusMod
                   </span>
                 </div>
                 <p className="text-[11px] text-[#94a3b8] mt-0.5">
-                  Actual completed tasks vs. Target pacing trajectory across the 14-day sprint cycle.
+                  Actual completed tasks vs. Target pacing trajectory across the {sprintPacing.daysTotal}-day sprint cycle.
                 </p>
               </div>
 
@@ -470,29 +508,37 @@ export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusMod
                         </g>
                       )}
 
-                      {/* X-axis date labels */}
-                      <text
-                        x={x}
-                        y={svgHeight - 8}
-                        textAnchor="middle"
-                        fontSize="8.5"
-                        fill={d.isToday ? '#38bdf8' : isHovered ? '#ffffff' : '#64748b'}
-                        fontWeight={d.isToday || isHovered ? 'bold' : 'normal'}
-                        fontFamily="monospace"
-                      >
-                        {d.displayDate}
-                      </text>
+                      {/* X-axis date labels (filtered by shouldShowXAxisLabel so they never overlap) */}
+                      {shouldShowXAxisLabel(i) && (
+                        <text
+                          x={x}
+                          y={svgHeight - 8}
+                          textAnchor="middle"
+                          fontSize="8.5"
+                          fill={d.isToday ? '#38bdf8' : isHovered ? '#ffffff' : '#94a3b8'}
+                          fontWeight={d.isToday || isHovered ? 'bold' : 'normal'}
+                          fontFamily="monospace"
+                        >
+                          {d.displayDate}
+                        </text>
+                      )}
                     </g>
                   );
                 })}
               </svg>
             </div>
 
-            {/* Interactive Day Details Card */}
+            {/* Interactive Day Details Card (Fixed and permanently visible, data dynamically tracks mouse position) */}
             {activeDay && (
-              <div className="mt-3 p-3 rounded-xl bg-[#0a0e17] border border-[#232f48] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs animate-fade-in">
+              <div className={`mt-3 p-3 rounded-xl bg-[#0a0e17] border transition-all duration-150 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
+                hoveredDayIndex !== null
+                  ? 'border-indigo-500/50 shadow-[0_0_15px_rgba(99,102,241,0.15)] bg-[#0d1322]'
+                  : 'border-[#232f48]'
+              }`}>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-indigo-950/60 text-indigo-400 font-bold font-mono">
+                  <div className={`p-2 rounded-lg font-bold font-mono transition-colors ${
+                    hoveredDayIndex !== null ? 'bg-indigo-900/60 text-indigo-300' : 'bg-indigo-950/60 text-indigo-400'
+                  }`}>
                     <Calendar className="w-4 h-4" />
                   </div>
                   <div>
@@ -510,6 +556,11 @@ export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusMod
                       {activeDay.isToday && (
                         <span className="text-[9px] px-1.5 py-0.2 rounded bg-sky-950/80 text-sky-300 font-mono">
                           Today
+                        </span>
+                      )}
+                      {hoveredDayIndex !== null && !activeDay.isToday && (
+                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-indigo-950/80 text-indigo-300 font-mono">
+                          Scrubbing Day {activeDay.dayNum}
                         </span>
                       )}
                     </div>

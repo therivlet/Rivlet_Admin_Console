@@ -28,12 +28,23 @@ const COLUMNS: WorkItemState[] = ['New', 'Active', 'In Review', 'Resolved', 'Clo
 const ROW_TYPES: WorkItem['type'][] = ['User Story', 'Bug'];
 const UNPARENTED = '__unparented__';
 
-function currentSprintId(sprints: Sprint[]): string | undefined {
+export function currentSprintId(sprints: Sprint[]): string | undefined {
+  if (!sprints || sprints.length === 0) return undefined;
   const today = new Date().toISOString().slice(0, 10);
-  const current = sprints.find((s) => s.startDate <= today && s.endDate >= today);
-  if (current) return current.id;
-  const upcoming = [...sprints].sort((a, b) => a.startDate.localeCompare(b.startDate)).find((s) => s.startDate > today);
-  if (upcoming) return upcoming.id;
+  // Find all active sprints covering today's date
+  const active = sprints.filter((s) => s.startDate <= today && s.endDate >= today);
+  if (active.length > 0) {
+    // Sort descending by startDate so the newest active sprint (e.g. Sprint 2) takes precedence over an older overlapping sprint
+    active.sort((a, b) => b.startDate.localeCompare(a.startDate));
+    return active[0].id;
+  }
+  // If none active right now, find the nearest upcoming sprint
+  const upcoming = [...sprints]
+    .filter((s) => s.startDate > today)
+    .sort((a, b) => a.startDate.localeCompare(b.startDate));
+  if (upcoming.length > 0) return upcoming[0].id;
+
+  // Otherwise pick the most recently ended sprint
   return [...sprints].sort((a, b) => b.endDate.localeCompare(a.endDate))[0]?.id;
 }
 
@@ -57,6 +68,16 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [assigneeFilter, setAssigneeFilter] = useState<string>('All');
   const [collapsedRowIds, setCollapsedRowIds] = useState<Set<string>>(new Set());
+
+  // Always keep selected sprint synced with the active sprint based on today's date if not explicitly set
+  React.useEffect(() => {
+    if (initialSprintId) {
+      setSelectedSprintId(initialSprintId);
+    } else if (!selectedSprintId || !sprints.some((s) => s.id === selectedSprintId)) {
+      const best = currentSprintId(sprints);
+      if (best) setSelectedSprintId(best);
+    }
+  }, [initialSprintId, sprints, selectedSprintId]);
 
   const toggleRowCollapse = (rowId: string) => {
     setCollapsedRowIds((prev) => {

@@ -159,6 +159,52 @@ export default function UniversalDocumentViewer({
   const [imageZoom, setImageZoom] = useState(1);
   const [imageRotation, setImageRotation] = useState(0);
 
+  // PDF Streaming State
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const [useGoogleViewer, setUseGoogleViewer] = useState(false);
+
+  // Fetch and stream PDF through same-origin proxy into in-memory blob to prevent Chrome/Safari cross-origin iframe blocking
+  useEffect(() => {
+    if (!isPdf || !resolvedUrl || resolvedUrl === '#') {
+      setPdfBlobUrl(null);
+      return;
+    }
+
+    let isMounted = true;
+    let createdUrl: string | null = null;
+    setPdfLoading(true);
+    setPdfError(null);
+
+    const proxyUrl = `/api/pdf-proxy?url=${encodeURIComponent(resolvedUrl)}`;
+
+    fetch(proxyUrl)
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to stream PDF bytes.`);
+        const blob = await res.blob();
+        if (!isMounted) return;
+        createdUrl = URL.createObjectURL(blob);
+        setPdfBlobUrl(createdUrl);
+      })
+      .catch((err) => {
+        console.warn('Direct blob load failed, will fallback to proxy URL or Google Viewer:', err);
+        if (isMounted) {
+          setPdfError(err?.message || 'Unable to stream PDF locally.');
+        }
+      })
+      .finally(() => {
+        if (isMounted) setPdfLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+      if (createdUrl) {
+        URL.revokeObjectURL(createdUrl);
+      }
+    };
+  }, [isPdf, resolvedUrl]);
+
   // Keyboard shortcut: ESC to close
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -578,46 +624,53 @@ export default function UniversalDocumentViewer({
               {isPdf && (
                 <div className="flex-1 flex flex-col h-full overflow-hidden">
                   <div className="px-4 py-2 bg-[#0e121b] border-b border-[#1e2638] flex items-center justify-between text-xs flex-shrink-0">
-                    <span className="text-rose-400 font-semibold flex items-center gap-1.5">
-                      <FileCheck className="w-3.5 h-3.5" /> High-Resolution PDF Engine
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-rose-400 font-semibold flex items-center gap-1.5">
+                        <FileCheck className="w-3.5 h-3.5" /> High-Resolution PDF Engine
+                      </span>
+                      {resolvedUrl && resolvedUrl !== '#' && (
+                        <button
+                          onClick={() => setUseGoogleViewer((prev) => !prev)}
+                          className="text-[10px] px-2 py-0.5 rounded bg-[#161c2b] text-[#94a3b8] hover:text-white border border-[#273248] transition-colors"
+                        >
+                          {useGoogleViewer ? 'Use Native PDF Engine' : 'Use Cloud Reader Fallback'}
+                        </button>
+                      )}
+                    </div>
                     {resolvedUrl && resolvedUrl !== '#' && (
-                      <a
-                        href={resolvedUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[11px] text-[#e6c875] hover:underline flex items-center gap-1"
-                      >
-                        <ExternalLink className="w-3 h-3" /> Open Fullscreen
-                      </a>
+                      <div className="flex items-center gap-3">
+                        <a
+                          href={resolvedUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[11px] text-[#e6c875] hover:underline flex items-center gap-1 font-medium"
+                        >
+                          <ExternalLink className="w-3 h-3" /> Open in New Tab
+                        </a>
+                      </div>
                     )}
                   </div>
 
-                  <div className="flex-1 p-2 sm:p-4 bg-[#05070a] overflow-hidden">
+                  <div className="flex-1 p-2 sm:p-4 bg-[#05070a] overflow-hidden relative">
                     {resolvedUrl && resolvedUrl !== '#' ? (
-                      <object
-                        data={resolvedUrl}
-                        type="application/pdf"
-                        className="w-full h-full rounded-xl border border-[#1e2638] bg-white shadow-2xl"
-                      >
+                      pdfLoading && !pdfBlobUrl ? (
+                        <div className="h-full flex flex-col items-center justify-center gap-3 text-sm text-[#94a3b8]">
+                          <Loader2 className="w-8 h-8 text-rose-400 animate-spin" />
+                          <span className="font-mono text-xs">Streaming secure PDF document...</span>
+                        </div>
+                      ) : useGoogleViewer ? (
                         <iframe
-                          src={`${resolvedUrl}#toolbar=1`}
+                          src={`https://docs.google.com/viewer?url=${encodeURIComponent(resolvedUrl)}&embedded=true`}
                           title={doc.title}
                           className="w-full h-full rounded-xl border border-[#1e2638] bg-white shadow-2xl"
-                        >
-                          <div className="p-8 text-center text-xs text-[#94a3b8] space-y-3">
-                            <p>Unable to display PDF preview directly inside your current browser.</p>
-                            <a
-                              href={resolvedUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="px-4 py-2 rounded-lg bg-[#cda052] text-black font-bold inline-block"
-                            >
-                              Download / Open PDF
-                            </a>
-                          </div>
-                        </iframe>
-                      </object>
+                        />
+                      ) : (
+                        <iframe
+                          src={pdfBlobUrl || `/api/pdf-proxy?url=${encodeURIComponent(resolvedUrl)}#toolbar=1`}
+                          title={doc.title}
+                          className="w-full h-full rounded-xl border border-[#1e2638] bg-white shadow-2xl"
+                        />
+                      )
                     ) : (
                       <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-3">
                         <AlertCircle className="w-8 h-8 text-amber-400" />
