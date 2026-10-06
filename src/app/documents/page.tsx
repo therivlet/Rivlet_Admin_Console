@@ -617,7 +617,7 @@ export default function DocumentsPage() {
                       className="w-full px-3 py-2 rounded bg-[#090b12] border border-[#22283a] text-white outline-none"
                     >
                       <option value="">None</option>
-                      {pipelineItems.map((p) => <option key={p.id} value={p.id}>{p.styleName}{p.accessionCode ? ` (${p.accessionCode})` : ''}</option>)}
+                      {pipelineItems.map((p) => <option key={p.id} value={p.id}>{p.styleName}{p.hsnCode ? ` (HSN: ${p.hsnCode})` : ''}</option>)}
                     </select>
                   </div>
 
@@ -807,7 +807,7 @@ export default function DocumentsPage() {
                       className="w-full px-3 py-2 rounded-lg bg-[#080b12] border border-[#242d40] text-white outline-none focus:border-[#cda052] transition-colors"
                     >
                       <option value="">None</option>
-                      {pipelineItems.map((p) => <option key={p.id} value={p.id}>{p.styleName}{p.accessionCode ? ` (${p.accessionCode})` : ''}</option>)}
+                      {pipelineItems.map((p) => <option key={p.id} value={p.id}>{p.styleName}{p.hsnCode ? ` (HSN: ${p.hsnCode})` : ''}</option>)}
                     </select>
                   </div>
                 </div>

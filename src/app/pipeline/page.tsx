@@ -40,7 +40,7 @@ function emptyItem(): Omit<PipelineItem, 'createdAt' | 'updatedAt'> {
   return {
     id: `pip-${Date.now()}`,
     styleName: '',
-    accessionCode: '',
+    hsnCode: '',
     category: "Women's Activewear",
     drop: 'Drop 1',
     stage: 'Design Finalized',
@@ -76,7 +76,7 @@ export default function PipelinePage() {
       if (
         !q ||
         item.styleName.toLowerCase().includes(q) ||
-        (item.accessionCode && item.accessionCode.toLowerCase().includes(q)) ||
+        (item.hsnCode && item.hsnCode.toLowerCase().includes(q)) ||
         (item.sku && item.sku.toLowerCase().includes(q)) ||
         item.category.toLowerCase().includes(q) ||
         (item.colorway && item.colorway.toLowerCase().includes(q))
@@ -102,7 +102,7 @@ export default function PipelinePage() {
     const full: PipelineItem = {
       ...(modalItem as PipelineItem),
       styleName: modalItem.styleName.trim(),
-      accessionCode: modalItem.accessionCode?.trim() || undefined,
+      hsnCode: modalItem.hsnCode?.trim() || undefined,
       createdAt: (modalItem as PipelineItem).createdAt || now,
       updatedAt: now,
     };
@@ -146,7 +146,7 @@ export default function PipelinePage() {
               type="text"
               value={pipelineSearch}
               onChange={(e) => setPipelineSearch(e.target.value)}
-              placeholder="Search styles, accession code..."
+              placeholder="Search styles, HSN code..."
               className="w-full pl-8 pr-3 py-2 rounded-xl bg-[#0e121b] border border-[#1f2638] text-xs text-white placeholder-[#64748b] focus:outline-none focus:border-[#cda052]/60"
             />
           </div>
@@ -187,9 +187,9 @@ export default function PipelinePage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <p className="text-xs font-semibold text-white">{item.styleName}</p>
-                        {item.accessionCode && (
+                        {item.hsnCode && (
                           <span className="font-mono text-[9px] font-semibold text-[#cda052] bg-[rgba(205,160,82,0.12)] border border-[rgba(205,160,82,0.28)] px-1.5 py-0.5 rounded tracking-wide">
-                            {item.accessionCode}
+                            HSN: {item.hsnCode}
                           </span>
                         )}
                       </div>
@@ -267,8 +267,8 @@ export default function PipelinePage() {
                       className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50" />
                   </div>
                   <div>
-                    <label className="text-[11px] text-[#94a3b8] block mb-1">Accession Code</label>
-                    <input value={modalItem.accessionCode || ''} onChange={(e) => setModalItem({ ...modalItem, accessionCode: e.target.value })} placeholder="e.g. ACC-FW26-001"
+                    <label className="text-[11px] text-[#94a3b8] block mb-1">HSN Code</label>
+                    <input value={modalItem.hsnCode || ''} onChange={(e) => setModalItem({ ...modalItem, hsnCode: e.target.value })} placeholder="e.g. 6104.62.00"
                       className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white font-mono focus:outline-none focus:border-[#cda052]/50" />
                   </div>
                 </div>

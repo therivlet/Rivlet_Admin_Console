@@ -492,7 +492,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         const formatted: PipelineItem[] = pipeRes.data.map((r: any) => ({
           id: r.id,
           styleName: r.style_name,
-          accessionCode: r.accession_code || undefined,
+          hsnCode: r.hsn_code || undefined,
           sku: r.sku || undefined,
           category: r.category || "Women's Activewear",
           colorway: r.colorway || undefined,
@@ -511,7 +511,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       } else if (pipeRes.data && pipeRes.data.length === 0) {
         for (const p of initialPipelineItems) {
           await Promise.resolve(supabase.from('pipeline_items').upsert({
-            id: p.id, style_name: p.styleName, accession_code: p.accessionCode, sku: p.sku, category: p.category,
+            id: p.id, style_name: p.styleName, hsn_code: p.hsnCode, sku: p.sku, category: p.category,
             colorway: p.colorway, drop_name: p.drop, vendor_id: p.vendorId, stage: p.stage,
             target_quantity: p.targetQuantity, target_date: p.targetDate, actual_date: p.actualDate,
             notes: p.notes, created_at: p.createdAt, updated_at: p.updatedAt,
@@ -781,10 +781,10 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         try {
           const parsed = JSON.parse(storedPipeline);
           const merged = parsed.map((p: any) => {
-            if (!p.accessionCode) {
+            if (!p.hsnCode) {
               const init = initialPipelineItems.find((ip) => ip.id === p.id);
-              if (init?.accessionCode) {
-                return { ...p, accessionCode: init.accessionCode };
+              if (init?.hsnCode) {
+                return { ...p, hsnCode: init.hsnCode };
               }
             }
             return p;
@@ -1330,7 +1330,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         const payload: any = {
           id: updated.id,
           style_name: updated.styleName,
-          accession_code: updated.accessionCode || null,
+          hsn_code: updated.hsnCode || null,
           sku: updated.sku || null,
           category: updated.category,
           colorway: updated.colorway || null,
@@ -1346,9 +1346,9 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         };
         const { error: writeErr } = await supabase.from('pipeline_items').upsert(payload);
         if (writeErr) {
-          // If remote table hasn't had accession_code added yet, fallback retry without accession_code
-          if (writeErr.message && writeErr.message.toLowerCase().includes('accession_code')) {
-            delete payload.accession_code;
+          // If remote table hasn't had hsn_code added yet, fallback retry without hsn_code
+          if (writeErr.message && writeErr.message.toLowerCase().includes('hsn_code')) {
+            delete payload.hsn_code;
             const retry = await supabase.from('pipeline_items').upsert(payload);
             if (retry.error) throw retry.error;
           } else {

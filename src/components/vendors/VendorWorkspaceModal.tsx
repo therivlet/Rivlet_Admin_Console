@@ -1290,9 +1290,9 @@ export default function VendorWorkspaceModal({
                           >
                             <div className="font-semibold text-white text-xs group-hover:text-sky-300 flex items-center justify-between gap-1">
                               <span>{style.styleName}</span>
-                              {style.accessionCode && (
+                              {style.hsnCode && (
                                 <span className="font-mono text-[9px] text-[#cda052] bg-[rgba(205,160,82,0.12)] border border-[rgba(205,160,82,0.25)] px-1 py-0.2 rounded font-normal">
-                                  {style.accessionCode}
+                                  HSN: {style.hsnCode}
                                 </span>
                               )}
                             </div>

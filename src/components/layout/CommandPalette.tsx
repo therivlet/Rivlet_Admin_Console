@@ -88,7 +88,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
       p.styleName.toLowerCase().includes(q) ||
       p.stage.toLowerCase().includes(q) ||
       (p.sku || '').toLowerCase().includes(q) ||
-      (p.accessionCode || '').toLowerCase().includes(q)
+      (p.hsnCode || '').toLowerCase().includes(q)
   );
 
   const filteredWorkItems = workItems.filter(
@@ -308,9 +308,9 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
                     <div>
                       <div className="text-white font-medium group-hover:text-sky-300 flex items-center gap-1.5">
                         <span>{p.styleName}</span>
-                        {p.accessionCode && (
+                        {p.hsnCode && (
                           <span className="font-mono text-[9px] text-[#cda052] bg-[#cda052]/10 border border-[#cda052]/25 px-1 py-0.2 rounded">
-                            {p.accessionCode}
+                            HSN: {p.hsnCode}
                           </span>
                         )}
                       </div>
