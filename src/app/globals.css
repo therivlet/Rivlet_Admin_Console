@@ -299,33 +299,33 @@ html.light aside[class*="bg-[#"] {
 
 html.light header,
 html.light header[class*="bg-[#"] {
-  background-color: #ffffff !important;
-  color: #1c1917 !important;
-  border-bottom: 1px solid #e7e0d6 !important;
-  box-shadow: 0 1px 12px rgba(0, 0, 0, 0.04) !important;
+  background-color: #241812 !important;
+  color: #f5ece3 !important;
+  border-bottom: 1px solid #3d2b20 !important;
+  box-shadow: 0 4px 20px rgba(28, 17, 12, 0.35) !important;
 }
 
 /* Header search button in light mode */
 html.light header button[title*="Search"],
 html.light header button[aria-label*="Search"] {
-  background-color: #f6f2ec !important;
-  border-color: #ded5c8 !important;
-  color: #1c1917 !important;
+  background-color: #1b120d !important;
+  border-color: #3d2b20 !important;
+  color: #f5ece3 !important;
 }
 html.light header button[title*="Search"]:hover,
 html.light header button[aria-label*="Search"]:hover {
-  background-color: #f0e9df !important;
+  background-color: #281c15 !important;
   border-color: #cda052 !important;
 }
 html.light header button[title*="Search"] span,
 html.light header button[aria-label*="Search"] span {
-  color: #78716c !important;
+  color: #a99a8b !important;
 }
 html.light header button[title*="Search"] kbd,
 html.light header button[aria-label*="Search"] kbd {
-  background-color: #eae3d7 !important;
-  border-color: #d8cdbe !important;
-  color: #57534e !important;
+  background-color: #2e2018 !important;
+  border-color: #4a3528 !important;
+  color: #d7cbbe !important;
 }
 
 /* Header Season, Theme & Notification buttons */
@@ -335,9 +335,9 @@ html.light header button[title*="Theme"],
 html.light header button[aria-label*="Theme"],
 html.light header button[title*="Notification"],
 html.light header button[aria-label*="Notification"] {
-  background-color: #f6f2ec !important;
-  border-color: #ded5c8 !important;
-  color: #8c672b !important;
+  background-color: #1b120d !important;
+  border-color: #3d2b20 !important;
+  color: #e6c875 !important;
 }
 html.light header button[title*="merchandising"]:hover,
 html.light header button[aria-label*="merchandising"]:hover,
@@ -345,19 +345,19 @@ html.light header button[title*="Theme"]:hover,
 html.light header button[aria-label*="Theme"]:hover,
 html.light header button[title*="Notification"]:hover,
 html.light header button[aria-label*="Notification"]:hover {
-  background-color: #efe7dc !important;
+  background-color: #281c15 !important;
   border-color: #cda052 !important;
 }
 
 /* Header Navigation Menu button in light mode */
 html.light header button[title*="Navigation"],
 html.light header button[aria-label*="Navigation"] {
-  color: #57534e !important;
+  color: #d7cbbe !important;
 }
 html.light header button[title*="Navigation"]:hover,
 html.light header button[aria-label*="Navigation"]:hover {
-  background-color: rgba(0, 0, 0, 0.05) !important;
-  color: #8c672b !important;
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #f7dda0 !important;
 }
 
 /* Header User Menu Avatar Button */
@@ -371,44 +371,48 @@ html.light header button[title*="Account"]:hover,
 html.light header button[aria-label*="User"]:hover,
 html.light header button[title*="Account"]:focus,
 html.light header button[aria-label*="User"]:focus {
-  background-color: rgba(0, 0, 0, 0.04) !important;
-  border-color: #ded5c8 !important;
-}
-html.light header button[aria-label*="User"]:focus {
-  background-color: #3d2a1f !important;
-  border-color: rgba(205, 160, 82, 0.4) !important;
-  outline: none !important;
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: #3d2b20 !important;
 }
 
-html.light header div[class*="bg-[#0d101a]"] {
-  background-color: #ffffff !important;
-  border-color: #e5ded6 !important;
-  color: #1c1917 !important;
-  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.1) !important;
+/* Header Dropdowns in Light Mode (Warm espresso styling matching navigation) */
+html.light header div[class*="bg-[#0d101a]"],
+html.light header div[class*="bg-[#1f140e]"] {
+  background-color: #1f140e !important;
+  border-color: #3d2b20 !important;
+  color: #f5ece3 !important;
+  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.5) !important;
 }
-html.light header div[class*="bg-[#0d101a]"] * {
-  color: #44403c !important;
+html.light header div[class*="bg-[#0d101a]"] *,
+html.light header div[class*="bg-[#1f140e]"] * {
+  color: #d7cbbe !important;
 }
 html.light header div[class*="bg-[#0d101a]"] .text-white,
 html.light header div[class*="bg-[#0d101a]"] span.font-bold,
-html.light header div[class*="bg-[#0d101a]"] div.font-bold {
-  color: #1c1917 !important;
+html.light header div[class*="bg-[#0d101a]"] div.font-bold,
+html.light header div[class*="bg-[#1f140e]"] .text-white,
+html.light header div[class*="bg-[#1f140e]"] span.font-bold,
+html.light header div[class*="bg-[#1f140e]"] div.font-bold {
+  color: #f5ece3 !important;
 }
-html.light header div[class*="bg-[#0d101a]"] .text-\[\#cda052\] {
-  color: #8c672b !important;
+html.light header div[class*="bg-[#0d101a]"] .text-\[\#cda052\],
+html.light header div[class*="bg-[#1f140e]"] .text-\[\#cda052\] {
+  color: #e6c875 !important;
 }
 html.light header div[class*="bg-[#0d101a]"] [class*="bg-[#121623]"],
 html.light header div[class*="bg-[#0d101a]"] [class*="bg-[#07090e]"],
 html.light header div[class*="bg-[#0d101a]"] [class*="bg-[#07090f]"],
-html.light header div[class*="bg-[#0d101a]"] [class*="bg-[#080a11]"] {
-  background-color: #faf7f2 !important;
-  border-color: #ede4d8 !important;
+html.light header div[class*="bg-[#0d101a]"] [class*="bg-[#080a11]"],
+html.light header div[class*="bg-[#1f140e]"] [class*="bg-[#180f0a]"] {
+  background-color: #180f0a !important;
+  border-color: #2e2018 !important;
 }
 
 /* Header Dropdown Links Hover in Light Mode */
-html.light header div[class*="bg-[#0d101a]"] a:hover {
-  background-color: #f5f0ea !important;
-  color: #1c1917 !important;
+html.light header div[class*="bg-[#0d101a]"] a:hover,
+html.light header div[class*="bg-[#1f140e]"] a:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
 }
 
 /* Sign Out in Header Profile Dropdown in Light Mode */
@@ -416,27 +420,27 @@ html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"],
 html.light header div[class*="bg-[#0d101a]"] button[aria-label*="Sign out"],
 html.light header div[class*="bg-[#0d101a]"] button.text-rose-400 {
   background-color: transparent !important;
-  color: #e11d48 !important;
+  color: #fb7185 !important;
   border: 1px solid transparent !important;
 }
 html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"]:hover,
 html.light header div[class*="bg-[#0d101a]"] button[aria-label*="Sign out"]:hover,
 html.light header div[class*="bg-[#0d101a]"] button.text-rose-400:hover {
-  background-color: #ffe4e6 !important;
-  border-color: #fecdd3 !important;
-  color: #be123c !important;
+  background-color: rgba(244, 63, 94, 0.15) !important;
+  border-color: rgba(244, 63, 94, 0.3) !important;
+  color: #fda4af !important;
 }
 html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"] svg,
 html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"] span,
 html.light header div[class*="bg-[#0d101a]"] button.text-rose-400 svg,
 html.light header div[class*="bg-[#0d101a]"] button.text-rose-400 span {
-  color: #e11d48 !important;
+  color: #fb7185 !important;
 }
 html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"]:hover svg,
 html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"]:hover span,
 html.light header div[class*="bg-[#0d101a]"] button.text-rose-400:hover svg,
 html.light header div[class*="bg-[#0d101a]"] button.text-rose-400:hover span {
-  color: #be123c !important;
+  color: #fda4af !important;
 }
 
 /* Inactive links, buttons and labels inside aside */

@@ -169,7 +169,7 @@ export default function NotificationCenterDropdown() {
         onClick={() => setIsOpen(!isOpen)}
         title="Durable Notification Center & Operational Reminders"
         aria-label="Notification Center"
-        className="relative p-2 rounded-lg border border-[#ded5c8] dark:border-[#242e44] bg-[#f6f2ec] dark:bg-[#0e121b] hover:border-[#cda052]/60 hover:bg-[#efe7dc] dark:hover:bg-[#151a26] text-[#57534e] dark:text-[#cbd5e1] hover:text-[#8c672b] dark:hover:text-[#cda052] transition-all shadow-sm cursor-pointer"
+        className="relative p-2 rounded-lg border border-[#3d2b20] dark:border-[#242e44] bg-[#1b120d] dark:bg-[#0e121b] hover:border-[#cda052]/60 hover:bg-[#281c15] dark:hover:bg-[#151a26] text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-[#e6c875] dark:hover:text-[#cda052] transition-all shadow-sm cursor-pointer"
       >
         <Bell className="w-3.5 h-3.5" />
         {unreadCount > 0 && (
@@ -181,14 +181,14 @@ export default function NotificationCenterDropdown() {
 
       {/* Dropdown Panel */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-[calc(100vw-24px)] max-w-sm sm:w-96 bg-white dark:bg-[#0d101a] border border-[#ded5c8] dark:border-[#22293e] rounded-2xl shadow-2xl z-50 animate-fade-in text-xs overflow-hidden flex flex-col max-h-[80vh]">
+        <div className="absolute right-0 mt-2 w-[calc(100vw-24px)] max-w-sm sm:w-96 bg-[#1f140e] dark:bg-[#0d101a] border border-[#3d2b20] dark:border-[#22293e] rounded-2xl shadow-2xl z-50 animate-fade-in text-xs overflow-hidden flex flex-col max-h-[80vh]">
           {/* Header */}
-          <div className="p-3.5 bg-[#faf8f5] dark:bg-[#080a11] border-b border-[#ede5da] dark:border-[#1b2236] flex items-center justify-between flex-shrink-0">
+          <div className="p-3.5 bg-[#180f0a] dark:bg-[#080a11] border-b border-[#2e2018] dark:border-[#1b2236] flex items-center justify-between flex-shrink-0 text-[#f5ece3]">
             <div className="flex items-center gap-2">
               <Bell className="w-4 h-4 text-[#cda052]" />
-              <span className="font-bold text-[#1c1917] dark:text-white text-sm">Notifications & Reminders</span>
+              <span className="font-bold text-[#f5ece3] dark:text-white text-sm">Notifications & Reminders</span>
               {unreadCount > 0 && (
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-[#8c672b] dark:text-[#cda052] font-mono font-semibold">
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-[#f7dda0] dark:text-[#cda052] font-mono font-semibold">
                   {unreadCount} new
                 </span>
               )}
@@ -198,7 +198,7 @@ export default function NotificationCenterDropdown() {
               <button
                 type="button"
                 onClick={markAllAsRead}
-                className="text-[11px] text-[#78716c] dark:text-[#8e9ab5] hover:text-[#8c672b] dark:hover:text-[#cda052] flex items-center gap-1 transition-colors cursor-pointer"
+                className="text-[11px] text-[#a99a8b] dark:text-[#8e9ab5] hover:text-[#f7dda0] dark:hover:text-[#cda052] flex items-center gap-1 transition-colors cursor-pointer"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
                 <span>Mark all read</span>
@@ -207,14 +207,14 @@ export default function NotificationCenterDropdown() {
           </div>
 
           {/* Filter Bar */}
-          <div className="px-3.5 py-2 bg-[#f5f0ea] dark:bg-[#0b0e17] border-b border-[#ede5da] dark:border-[#192133] flex items-center gap-2 flex-shrink-0">
+          <div className="px-3.5 py-2 bg-[#150d09] dark:bg-[#0b0e17] border-b border-[#2e2018] dark:border-[#192133] flex items-center gap-2 flex-shrink-0">
             <button
               type="button"
               onClick={() => setFilter('all')}
               className={`px-2 py-1 rounded-lg text-[11px] font-medium transition-all ${
                 filter === 'all'
-                  ? 'bg-[rgba(205,160,82,0.18)] text-[#8c672b] dark:text-[#f7dda0] font-semibold'
-                  : 'text-[#78716c] dark:text-[#8e9ab5] hover:text-[#1c1917] dark:hover:text-white'
+                  ? 'bg-[rgba(205,160,82,0.18)] text-[#f7dda0] font-semibold'
+                  : 'text-[#a99a8b] dark:text-[#8e9ab5] hover:text-white'
               }`}
             >
               All ({notifications.length})
@@ -225,7 +225,7 @@ export default function NotificationCenterDropdown() {
               className={`px-2 py-1 rounded-lg text-[11px] font-medium transition-all ${
                 filter === 'unread'
                   ? 'bg-[rgba(205,160,82,0.18)] text-[#f7dda0] font-semibold'
-                  : 'text-[#8e9ab5] hover:text-white'
+                  : 'text-[#a99a8b] dark:text-[#8e9ab5] hover:text-white'
               }`}
             >
               Unread ({unreadCount})
@@ -233,9 +233,9 @@ export default function NotificationCenterDropdown() {
           </div>
 
           {/* List Area */}
-          <div className="overflow-y-auto divide-y divide-[#ede5da] dark:divide-[#161d2e] flex-1">
+          <div className="overflow-y-auto divide-y divide-[#2e2018] dark:divide-[#161d2e] flex-1">
             {displayedNotifications.length === 0 ? (
-              <div className="p-8 text-center text-[#78716c] dark:text-[#64748b]">
+              <div className="p-8 text-center text-[#a99a8b] dark:text-[#64748b]">
                 <Clock className="w-6 h-6 mx-auto mb-2 opacity-50" />
                 <p className="text-xs">No {filter === 'unread' ? 'unread' : ''} notifications at this time.</p>
               </div>
@@ -243,8 +243,8 @@ export default function NotificationCenterDropdown() {
               displayedNotifications.map((n) => (
                 <div
                   key={n.id}
-                  className={`p-3.5 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.02] flex items-start gap-3 ${
-                    !n.isRead ? 'bg-[rgba(205,160,82,0.06)]' : ''
+                  className={`p-3.5 transition-colors hover:bg-white/[0.04] flex items-start gap-3 ${
+                    !n.isRead ? 'bg-[#241710] dark:bg-[rgba(205,160,82,0.06)]' : ''
                   }`}
                 >
                   <div className="mt-0.5">
@@ -253,7 +253,7 @@ export default function NotificationCenterDropdown() {
 
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span className={`font-semibold truncate text-xs ${!n.isRead ? 'text-[#1c1917] dark:text-white' : 'text-[#57534e] dark:text-[#cbd5e1]'}`}>
+                      <span className={`font-semibold truncate text-xs ${!n.isRead ? 'text-[#f5ece3] dark:text-white' : 'text-[#d7cbbe] dark:text-[#cbd5e1]'}`}>
                         {n.title}
                       </span>
                       {!n.isRead && (
@@ -261,11 +261,11 @@ export default function NotificationCenterDropdown() {
                       )}
                     </div>
 
-                    <p className="text-[11px] text-[#78716c] dark:text-[#94a3b8] leading-relaxed line-clamp-2">
+                    <p className="text-[11px] text-[#a99a8b] dark:text-[#94a3b8] leading-relaxed line-clamp-2">
                       {n.message}
                     </p>
 
-                    <div className="flex items-center justify-between pt-1 text-[10px] text-[#64748b] font-mono">
+                    <div className="flex items-center justify-between pt-1 text-[10px] text-[#8a786a] dark:text-[#64748b] font-mono">
                       <span>{new Date(n.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
 
                       <div className="flex items-center gap-2">

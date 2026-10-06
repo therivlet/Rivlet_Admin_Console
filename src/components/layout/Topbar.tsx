@@ -104,12 +104,12 @@ export default function Topbar({
 
   return (
     <>
-      <header className="h-14 flex-shrink-0 bg-white/95 dark:bg-[#0a0c12]/95 backdrop-blur-xl px-3 sm:px-6 flex items-center justify-between z-30 select-none gap-2 shadow-sm border-b border-[#e5ded6] dark:border-[#1a2233] transition-all relative">
+      <header className="h-14 flex-shrink-0 bg-[#241812] dark:bg-[#0a0c12]/95 backdrop-blur-xl px-3 sm:px-6 flex items-center justify-between z-30 select-none gap-2 shadow-[0_4px_20px_rgba(28,17,12,0.35)] border-b border-[#3d2b20] dark:border-[#1a2233] transition-all relative">
         {/* Left section: 3-Lines YouTube-style Hamburger + Combined Brand Logo & Wordmark */}
         <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 z-10">
           <button
             onClick={handleMenuClick}
-            className="p-2 rounded-xl text-[#57534e] dark:text-[#94a3b8] hover:text-[#8c672b] dark:hover:text-[#f7dda0] hover:bg-black/[0.04] dark:hover:bg-white/[0.08] active:scale-95 transition-all flex-shrink-0 cursor-pointer"
+            className="p-2 rounded-xl text-[#d7cbbe] dark:text-[#94a3b8] hover:text-[#f7dda0] dark:hover:text-[#f7dda0] hover:bg-white/[0.08] active:scale-95 transition-all flex-shrink-0 cursor-pointer"
             title="Toggle Navigation Menu"
             aria-label="Toggle Navigation Menu"
           >
@@ -130,15 +130,15 @@ export default function Topbar({
             onClick={triggerCommand}
             title="Search platform (⌘K / Ctrl+K)"
             aria-label="Search platform"
-            className="w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-xl flex items-center justify-between px-2.5 sm:px-3.5 py-1.5 rounded-lg bg-[#f6f2ec] dark:bg-[#0e121b] border border-[#ded5c8] dark:border-[#242e44] text-xs text-[#1c1917] dark:text-[#cbd5e1] hover:border-[#cda052]/60 hover:text-black dark:hover:text-white transition-all shadow-inner cursor-pointer pointer-events-auto"
+            className="w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-xl flex items-center justify-between px-2.5 sm:px-3.5 py-1.5 rounded-lg bg-[#1b120d] dark:bg-[#0e121b] border border-[#3d2b20] dark:border-[#242e44] text-xs text-[#f5ece3] dark:text-[#cbd5e1] hover:border-[#cda052]/60 hover:text-white transition-all shadow-inner cursor-pointer pointer-events-auto"
           >
             <div className="flex items-center gap-1.5 sm:gap-2 truncate">
               <Search className="w-3.5 h-3.5 text-[#cda052] flex-shrink-0" />
-              <span className="truncate hidden md:inline text-[#78716c] dark:text-[#94a3b8]">Search artifacts, costing sheets, SOPs...</span>
-              <span className="truncate hidden xs:inline md:hidden text-[#78716c] dark:text-[#94a3b8]">Search portal...</span>
-              <span className="truncate xs:hidden text-[#78716c] dark:text-[#94a3b8] text-[11px]">Search...</span>
+              <span className="truncate hidden md:inline text-[#a99a8b] dark:text-[#94a3b8]">Search artifacts, costing sheets, SOPs...</span>
+              <span className="truncate hidden xs:inline md:hidden text-[#a99a8b] dark:text-[#94a3b8]">Search portal...</span>
+              <span className="truncate xs:hidden text-[#a99a8b] dark:text-[#94a3b8] text-[11px]">Search...</span>
             </div>
-            <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] bg-[#eae3d7] dark:bg-[#1a2234] border border-[#d8cdbe] dark:border-[#2b3852] rounded text-[#57534e] dark:text-[#cbd5e1] font-mono flex-shrink-0">
+            <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] bg-[#2e2018] dark:bg-[#1a2234] border border-[#4a3528] dark:border-[#2b3852] rounded text-[#d7cbbe] dark:text-[#cbd5e1] font-mono flex-shrink-0">
               ⌘K
             </kbd>
           </button>
@@ -152,22 +152,22 @@ export default function Topbar({
               onClick={() => setSeasonDropdownOpen(!seasonDropdownOpen)}
               title="Change active merchandising season / financial year"
               aria-label="Change active merchandising season and financial year"
-              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-[#f6f2ec] dark:bg-[#121623] hover:bg-[#efe7dc] dark:hover:bg-[#182030] border border-[#ded5c8] dark:border-[#242e44] hover:border-[#cda052]/60 text-xs text-[#8c672b] dark:text-[#cda052] transition-all shadow-sm cursor-pointer group"
+              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-[#1b120d] dark:bg-[#121623] hover:bg-[#281c15] dark:hover:bg-[#182030] border border-[#3d2b20] dark:border-[#242e44] hover:border-[#cda052]/60 text-xs text-[#e6c875] dark:text-[#cda052] transition-all shadow-sm cursor-pointer group"
             >
               <Tag className="w-3.5 h-3.5 text-[#cda052] flex-shrink-0 group-hover:scale-110 transition-transform" />
               <span className="font-semibold tracking-wider font-mono hidden sm:inline">{activeSeason}</span>
               <span className="font-semibold tracking-wider font-mono text-[11px] sm:hidden">{activeSeason.split('/')[0].trim()}</span>
-              <ChevronDown className={`w-3 h-3 text-[#78716c] dark:text-[#94a3b8] hidden xs:inline transition-transform duration-200 ${seasonDropdownOpen ? 'rotate-180 text-[#cda052]' : ''}`} />
+              <ChevronDown className={`w-3 h-3 text-[#a99a8b] dark:text-[#94a3b8] hidden xs:inline transition-transform duration-200 ${seasonDropdownOpen ? 'rotate-180 text-[#cda052]' : ''}`} />
             </button>
 
             {seasonDropdownOpen && (
-              <div className="absolute right-0 sm:left-0 sm:right-auto mt-2 w-[calc(100vw-24px)] max-w-sm sm:w-96 bg-white dark:bg-[#0d101a] border border-[#ded5c8] dark:border-[#22293e] rounded-2xl shadow-2xl p-4 z-50 animate-fade-in text-xs space-y-3.5">
+              <div className="absolute right-0 sm:left-0 sm:right-auto mt-2 w-[calc(100vw-24px)] max-w-sm sm:w-96 bg-[#1f140e] dark:bg-[#0d101a] border border-[#3d2b20] dark:border-[#22293e] rounded-2xl shadow-2xl p-4 z-50 animate-fade-in text-xs space-y-3.5">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-[#1c1917] dark:text-white text-sm flex items-center gap-1.5">
+                  <span className="font-bold text-[#f5ece3] dark:text-white text-sm flex items-center gap-1.5">
                     <Calendar className="w-4 h-4 text-[#cda052]" />
                     Season & Financial Year
                   </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-[rgba(205,160,82,0.12)] text-[#8c672b] dark:text-[#cda052] border border-[rgba(205,160,82,0.25)] font-mono font-semibold">
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-[rgba(205,160,82,0.18)] text-[#f7dda0] dark:text-[#cda052] border border-[rgba(205,160,82,0.3)] font-mono font-semibold">
                     Merchandising Cycle
                   </span>
                 </div>
@@ -184,16 +184,16 @@ export default function Topbar({
                         }}
                         className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-left transition-all ${
                           isSelected
-                            ? 'bg-[rgba(205,160,82,0.12)] border-[#cda052] text-[#1c1917] dark:text-white shadow-sm'
-                            : 'bg-[#faf8f5] dark:bg-[#121623] border-[#ede5da] dark:border-[#1e2638] text-[#44403c] dark:text-[#cbd5e1] hover:bg-[#f5f0ea] dark:hover:bg-[#182030] hover:border-[#ded5c8] dark:hover:border-[#2b3854]'
+                            ? 'bg-[rgba(205,160,82,0.18)] border-[#cda052] text-[#f7dda0] dark:text-white shadow-sm'
+                            : 'bg-[#180f0a] dark:bg-[#121623] border-[#2e2018] dark:border-[#1e2638] text-[#d7cbbe] dark:text-[#cbd5e1] hover:bg-[#281c15] dark:hover:bg-[#182030] hover:border-[#3d2b20] dark:hover:border-[#2b3854]'
                         }`}
                       >
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-xs text-[#8c672b] dark:text-[#cda052]">{opt.code}</span>
-                            <span className="text-[10px] text-[#78716c] dark:text-[#94a3b8] font-mono font-semibold">({opt.fiscalYear})</span>
+                            <span className="font-mono font-bold text-xs text-[#e6c875] dark:text-[#cda052]">{opt.code}</span>
+                            <span className="text-[10px] text-[#a99a8b] dark:text-[#94a3b8] font-mono font-semibold">({opt.fiscalYear})</span>
                           </div>
-                          <div className="text-[11px] text-[#78716c] dark:text-[#8e97af] mt-0.5">{opt.description}</div>
+                          <div className="text-[11px] text-[#a99a8b] dark:text-[#8e97af] mt-0.5">{opt.description}</div>
                         </div>
                         {isSelected && <Check className="w-4 h-4 text-[#cda052] flex-shrink-0" />}
                       </button>
@@ -209,9 +209,9 @@ export default function Topbar({
             onClick={toggleTheme}
             title={theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
             aria-label="Toggle interface theme"
-            className="flex items-center justify-center p-2 rounded-lg border border-[#ded5c8] dark:border-[#242e44] bg-[#f6f2ec] dark:bg-[#0e121b] hover:border-[#cda052]/60 hover:bg-[#efe7dc] dark:hover:bg-[#151a26] text-[#8c672b] dark:text-[#cda052] transition-all shadow-sm cursor-pointer"
+            className="flex items-center justify-center p-2 rounded-lg border border-[#3d2b20] dark:border-[#242e44] bg-[#1b120d] dark:bg-[#0e121b] hover:border-[#cda052]/60 hover:bg-[#281c15] dark:hover:bg-[#151a26] text-[#e6c875] dark:text-[#cda052] transition-all shadow-sm cursor-pointer"
           >
-            {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-[#cda052]" /> : <Moon className="w-3.5 h-3.5 text-[#8c672b]" />}
+            {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-[#cda052]" /> : <Moon className="w-3.5 h-3.5 text-[#e6c875]" />}
           </button>
 
           {/* Durable Notification Center */}
@@ -223,23 +223,23 @@ export default function Topbar({
               onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
               title={`${user?.name || 'Rivlet Executive'} (${user?.role ? ROLE_LABELS[user.role] : 'Owner'})`}
               aria-label="Open User Menu"
-              className="flex items-center gap-1.5 p-1 rounded-xl hover:bg-black/[0.04] dark:hover:bg-white/[0.08] border border-transparent hover:border-[#ded5c8] dark:hover:border-[#2b3852] focus:outline-none transition-all cursor-pointer"
+              className="flex items-center gap-1.5 p-1 rounded-xl hover:bg-white/[0.08] border border-transparent hover:border-[#3d2b20] dark:hover:border-[#2b3852] focus:outline-none transition-all cursor-pointer"
             >
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#cda052] to-[#8c672b] flex items-center justify-center text-xs font-bold text-black shadow-glow ring-2 ring-[rgba(205,160,82,0.3)]">
                 {user?.name?.[0]?.toUpperCase() || 'R'}
               </div>
-              <ChevronDown className="w-3 h-3 text-[#78716c] dark:text-[#8c97ad] hidden sm:block" />
+              <ChevronDown className="w-3 h-3 text-[#a99a8b] dark:text-[#8c97ad] hidden sm:block" />
             </button>
 
             {/* Profile Dropdown Menu */}
             {profileDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-[calc(100vw-24px)] max-w-xs sm:w-64 bg-[#0d101a] border border-[#22293e] rounded-xl shadow-2xl p-2 space-y-2 z-50 animate-fade-in text-xs">
+              <div className="absolute right-0 mt-2 w-[calc(100vw-24px)] max-w-xs sm:w-64 bg-[#1f140e] dark:bg-[#0d101a] border border-[#3d2b20] dark:border-[#22293e] rounded-xl shadow-2xl p-2 space-y-2 z-50 animate-fade-in text-xs">
                 {/* User Header */}
-                <div className="p-2.5 bg-[#07090f] border border-[#1b2133] rounded-lg">
+                <div className="p-2.5 bg-[#180f0a] dark:bg-[#07090f] border border-[#2e2018] dark:border-[#1b2133] rounded-lg">
                   <div className="font-bold text-white truncate">{user?.name || 'Rivlet Executive'}</div>
-                  <div className="text-xs text-[#94a3b8] truncate font-mono">{user?.email || 'admin@therivlet.com'}</div>
+                  <div className="text-xs text-[#a99a8b] dark:text-[#94a3b8] truncate font-mono">{user?.email || 'admin@therivlet.com'}</div>
                   <div className="mt-1.5 flex items-center gap-1.5">
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-[rgba(205,160,82,0.15)] text-[#cda052] border border-[rgba(205,160,82,0.3)] font-semibold font-mono uppercase">
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-[rgba(205,160,82,0.18)] text-[#f7dda0] dark:text-[#cda052] border border-[rgba(205,160,82,0.3)] font-semibold font-mono uppercase">
                       {user?.role ? ROLE_LABELS[user.role] : 'Owner'}
                     </span>
                     <span className="text-[10px] text-emerald-400 flex items-center gap-0.5 font-medium">
@@ -253,7 +253,7 @@ export default function Topbar({
                   <Link
                     href="/profile"
                     onClick={() => setProfileDropdownOpen(false)}
-                    className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[#cbd5e1] hover:text-white hover:bg-white/[0.08] transition-colors"
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08] transition-colors"
                   >
                     <User className="w-3.5 h-3.5 text-[#cda052]" />
                     <span>My Profile & Brand Info</span>
