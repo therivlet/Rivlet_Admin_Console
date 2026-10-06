@@ -418,6 +418,7 @@ export type PipelineStage =
 export interface PipelineItem {
   id: string;
   styleName: string; // e.g. "Leggings"
+  accessionCode?: string; // unique style accession/archive code, e.g. "ACC-FW26-001"
   sku?: string; // links to a CostingSheet.sku if priced
   category: 'Women\'s Activewear' | 'Men\'s Activewear' | 'Athleisure' | 'Easy/Casual Wear';
   colorway?: string; // 'Midnight' | 'Cardamom' | etc.

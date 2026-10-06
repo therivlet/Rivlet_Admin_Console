@@ -87,7 +87,8 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
     (p) =>
       p.styleName.toLowerCase().includes(q) ||
       p.stage.toLowerCase().includes(q) ||
-      (p.sku || '').toLowerCase().includes(q)
+      (p.sku || '').toLowerCase().includes(q) ||
+      (p.accessionCode || '').toLowerCase().includes(q)
   );
 
   const filteredWorkItems = workItems.filter(
@@ -305,7 +306,14 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
                     className="flex items-center justify-between p-2.5 rounded-lg hover:bg-[#181d2a] cursor-pointer group text-xs"
                   >
                     <div>
-                      <div className="text-white font-medium group-hover:text-sky-300">{p.styleName}</div>
+                      <div className="text-white font-medium group-hover:text-sky-300 flex items-center gap-1.5">
+                        <span>{p.styleName}</span>
+                        {p.accessionCode && (
+                          <span className="font-mono text-[9px] text-[#cda052] bg-[#cda052]/10 border border-[#cda052]/25 px-1 py-0.2 rounded">
+                            {p.accessionCode}
+                          </span>
+                        )}
+                      </div>
                       <div className="text-[10px] text-[#747c91]">{p.category} • {p.stage}</div>
                     </div>
                     <ArrowRight className="w-3.5 h-3.5 text-[#555d71] group-hover:text-white" />

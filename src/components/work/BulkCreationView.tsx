@@ -269,7 +269,7 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
     }
     const matched: string[] = [];
     for (const p of pipelineItems) {
-      if (clean.includes(p.styleName.toLowerCase())) {
+      if (clean.includes(p.styleName.toLowerCase()) || (p.accessionCode && clean.includes(p.accessionCode.toLowerCase()))) {
         matched.push(p.id);
       }
     }

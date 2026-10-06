@@ -1288,8 +1288,13 @@ export default function VendorWorkspaceModal({
                             href="/pipeline"
                             className="p-2.5 rounded-lg bg-[#0e1320] border border-[#1b2336] hover:border-sky-500/40 block transition-colors group"
                           >
-                            <div className="font-semibold text-white text-xs group-hover:text-sky-300">
-                              {style.styleName}
+                            <div className="font-semibold text-white text-xs group-hover:text-sky-300 flex items-center justify-between gap-1">
+                              <span>{style.styleName}</span>
+                              {style.accessionCode && (
+                                <span className="font-mono text-[9px] text-[#cda052] bg-[rgba(205,160,82,0.12)] border border-[rgba(205,160,82,0.25)] px-1 py-0.2 rounded font-normal">
+                                  {style.accessionCode}
+                                </span>
+                              )}
                             </div>
                             <div className="flex items-center justify-between text-[10px] text-[#8a96ae] mt-1">
                               <span>{style.drop}</span>

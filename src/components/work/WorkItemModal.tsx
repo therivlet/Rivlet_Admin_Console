@@ -974,7 +974,10 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                           }`}
                         >
                           <Shirt className={`w-3 h-3 ${isSelected ? 'text-[#cda052]' : 'text-[#64748b]'}`} />
-                          {style.styleName}
+                          <span>{style.styleName}</span>
+                          {style.accessionCode && (
+                            <span className="font-mono text-[10px] text-[#cda052]/80">({style.accessionCode})</span>
+                          )}
                         </button>
                       );
                     })}

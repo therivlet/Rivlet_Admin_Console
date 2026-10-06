@@ -99,9 +99,9 @@ export default function Topbar({
 
   return (
     <>
-      <header className="h-14 flex-shrink-0 bg-[#241812] dark:bg-[#0a0c12]/95 backdrop-blur-xl px-3 sm:px-6 flex items-center justify-between z-30 select-none gap-2 shadow-sm border-b border-[#3d2b20] dark:border-[#1a2233] transition-all">
-        {/* Left section: 3-Lines YouTube-style Hamburger + Combined Brand Logo & Wordmark + Search */}
-        <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0 max-w-2xl">
+      <header className="h-14 flex-shrink-0 bg-[#241812] dark:bg-[#0a0c12]/95 backdrop-blur-xl px-3 sm:px-6 flex items-center justify-between z-30 select-none gap-2 shadow-sm border-b border-[#3d2b20] dark:border-[#1a2233] transition-all relative">
+        {/* Left section: 3-Lines YouTube-style Hamburger + Combined Brand Logo & Wordmark */}
+        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 z-10">
           {/* YouTube-Style 3-Lines Hamburger Menu Button */}
           <button
             onClick={handleMenuClick}
@@ -119,13 +119,15 @@ export default function Topbar({
           >
             <RivletLogo variant={theme === 'light' ? 'white-gold' : 'gold'} size="sm" className="h-6 w-auto" />
           </Link>
+        </div>
 
-          {/* Search trigger button (Responsive: compact on mobile, expansive on desktop) */}
+        {/* Center section: Search bar box positioned at the center of the screen/header */}
+        <div className="flex-1 flex justify-center items-center px-1 sm:px-2 md:px-0 md:absolute md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-md lg:max-w-xl z-20 pointer-events-none min-w-0">
           <button
             onClick={triggerCommand}
             title="Search platform (⌘K / Ctrl+K)"
             aria-label="Search platform"
-            className="flex items-center justify-between px-2 sm:px-3.5 py-1.5 rounded-lg bg-[#1a110d] dark:bg-[#0e121b] border border-[#3d2b20] dark:border-[#242e44] text-xs text-[#cbd5e1] hover:border-[#cda052]/60 hover:text-white transition-all shadow-inner cursor-pointer flex-1 min-w-0"
+            className="w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-xl flex items-center justify-between px-2.5 sm:px-3.5 py-1.5 rounded-lg bg-[#1a110d] dark:bg-[#0e121b] border border-[#3d2b20] dark:border-[#242e44] text-xs text-[#cbd5e1] hover:border-[#cda052]/60 hover:text-white transition-all shadow-inner cursor-pointer pointer-events-auto"
           >
             <div className="flex items-center gap-1.5 sm:gap-2 truncate">
               <Search className="w-3.5 h-3.5 text-[#cda052] flex-shrink-0" />
@@ -133,14 +135,14 @@ export default function Topbar({
               <span className="truncate hidden xs:inline md:hidden text-[#a89487] dark:text-[#94a3b8]">Search portal...</span>
               <span className="truncate xs:hidden text-[#a89487] dark:text-[#94a3b8] text-[11px]">Search...</span>
             </div>
-            <kbd className="hidden lg:inline-block px-1.5 py-0.5 text-[10px] bg-[#241812] dark:bg-[#1a2234] border border-[#3d2b20] dark:border-[#2b3852] rounded text-[#cbd5e1] font-mono flex-shrink-0">
+            <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] bg-[#241812] dark:bg-[#1a2234] border border-[#3d2b20] dark:border-[#2b3852] rounded text-[#cbd5e1] font-mono flex-shrink-0">
               ⌘K
             </kbd>
           </button>
         </div>
 
         {/* Right controls */}
-        <div className="flex items-center gap-1 sm:gap-2.5 flex-shrink-0">
+        <div className="flex items-center gap-1 sm:gap-2.5 flex-shrink-0 z-10">
           {/* Interactive Season & Financial Year Selector (Icon + compact code on mobile, full on desktop) */}
           <div className="relative" ref={seasonDropdownRef}>
             <button

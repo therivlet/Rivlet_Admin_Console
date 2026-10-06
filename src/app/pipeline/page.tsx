@@ -12,6 +12,7 @@ import {
   Package,
   FileText,
   KanbanSquare,
+  Search,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminStore } from '@/lib/store';
@@ -39,6 +40,7 @@ function emptyItem(): Omit<PipelineItem, 'createdAt' | 'updatedAt'> {
   return {
     id: `pip-${Date.now()}`,
     styleName: '',
+    accessionCode: '',
     category: "Women's Activewear",
     drop: 'Drop 1',
     stage: 'Design Finalized',
@@ -49,6 +51,7 @@ export default function PipelinePage() {
   const confirm = useConfirm();
   const { pipelineItems, savePipelineItem, deletePipelineItem, vendors, documents, workItems } = useAdminStore();
   const [modalItem, setModalItem] = useState<PipelineItem | Omit<PipelineItem, 'createdAt' | 'updatedAt'> | null>(null);
+  const [pipelineSearch, setPipelineSearch] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -66,14 +69,24 @@ export default function PipelinePage() {
   };
 
   const byStage = useMemo(() => {
+    const q = pipelineSearch.toLowerCase().trim();
     const map: Record<string, PipelineItem[]> = {};
     for (const s of STAGES) map[s] = [];
     for (const item of pipelineItems) {
-      if (!map[item.stage]) map[item.stage] = [];
-      map[item.stage].push(item);
+      if (
+        !q ||
+        item.styleName.toLowerCase().includes(q) ||
+        (item.accessionCode && item.accessionCode.toLowerCase().includes(q)) ||
+        (item.sku && item.sku.toLowerCase().includes(q)) ||
+        item.category.toLowerCase().includes(q) ||
+        (item.colorway && item.colorway.toLowerCase().includes(q))
+      ) {
+        if (!map[item.stage]) map[item.stage] = [];
+        map[item.stage].push(item);
+      }
     }
     return map;
-  }, [pipelineItems]);
+  }, [pipelineItems, pipelineSearch]);
 
   const vendorName = (id?: string) => vendors.find((v) => v.id === id)?.name;
 
@@ -89,6 +102,7 @@ export default function PipelinePage() {
     const full: PipelineItem = {
       ...(modalItem as PipelineItem),
       styleName: modalItem.styleName.trim(),
+      accessionCode: modalItem.accessionCode?.trim() || undefined,
       createdAt: (modalItem as PipelineItem).createdAt || now,
       updatedAt: now,
     };
@@ -125,14 +139,26 @@ export default function PipelinePage() {
             Drop 1 styles from proto sample through delivery, at a glance.
           </p>
         </div>
-        <button
-          onClick={() => { setModalItem(emptyItem()); setError(null); }}
-          title="Add a new style to the pipeline"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-sm font-semibold hover:shadow-glow transition-all"
-        >
-          <Plus className="w-4 h-4" />
-          Add Style
-        </button>
+        <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+          <div className="relative min-w-[200px] sm:min-w-[240px]">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#7c869d]" />
+            <input
+              type="text"
+              value={pipelineSearch}
+              onChange={(e) => setPipelineSearch(e.target.value)}
+              placeholder="Search styles, accession code..."
+              className="w-full pl-8 pr-3 py-2 rounded-xl bg-[#0e121b] border border-[#1f2638] text-xs text-white placeholder-[#64748b] focus:outline-none focus:border-[#cda052]/60"
+            />
+          </div>
+          <button
+            onClick={() => { setModalItem(emptyItem()); setError(null); }}
+            title="Add a new style to the pipeline"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-sm font-semibold hover:shadow-glow transition-all flex-shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            Add Style
+          </button>
+        </div>
       </div>
 
       {/* Kanban-style stage board */}
@@ -158,9 +184,16 @@ export default function PipelinePage() {
                   className={`rounded-xl border border-[#1f2638] bg-[#0e121b] p-3 group cursor-grab active:cursor-grabbing ${draggingId === item.id ? 'opacity-40' : ''}`}
                 >
                   <div className="flex items-start justify-between gap-1.5">
-                    <div>
-                      <p className="text-xs font-semibold text-white">{item.styleName}</p>
-                      <p className="text-[10px] text-[#94a3b8]">{item.category}{item.colorway ? ` · ${item.colorway}` : ''}</p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="text-xs font-semibold text-white">{item.styleName}</p>
+                        {item.accessionCode && (
+                          <span className="font-mono text-[9px] font-semibold text-[#cda052] bg-[rgba(205,160,82,0.12)] border border-[rgba(205,160,82,0.28)] px-1.5 py-0.5 rounded tracking-wide">
+                            {item.accessionCode}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-[#94a3b8] mt-0.5">{item.category}{item.colorway ? ` · ${item.colorway}` : ''}</p>
                     </div>
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5 flex-shrink-0">
                       <button onClick={() => { setModalItem(item); setError(null); }} title="Edit" aria-label={`Edit ${item.styleName}`} className="p-1 rounded text-[#94a3b8] hover:text-[#cda052]">
@@ -227,10 +260,17 @@ export default function PipelinePage() {
               {error && <div className="mb-3 text-xs text-rose-300 bg-rose-950/40 border border-rose-800/50 rounded-lg px-3 py-2">{error}</div>}
 
               <div className="space-y-3">
-                <div>
-                  <label className="text-[11px] text-[#94a3b8] block mb-1">Style Name *</label>
-                  <input value={modalItem.styleName} onChange={(e) => setModalItem({ ...modalItem, styleName: e.target.value })} placeholder="e.g. Leggings"
-                    className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] text-[#94a3b8] block mb-1">Style Name *</label>
+                    <input value={modalItem.styleName} onChange={(e) => setModalItem({ ...modalItem, styleName: e.target.value })} placeholder="e.g. Leggings"
+                      className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-[#94a3b8] block mb-1">Accession Code</label>
+                    <input value={modalItem.accessionCode || ''} onChange={(e) => setModalItem({ ...modalItem, accessionCode: e.target.value })} placeholder="e.g. ACC-FW26-001"
+                      className="w-full px-3 py-2 rounded-lg bg-[#0e121b] border border-[#1f2638] text-sm text-white font-mono focus:outline-none focus:border-[#cda052]/50" />
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>

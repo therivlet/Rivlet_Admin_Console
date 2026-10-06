@@ -764,12 +764,12 @@ export const initialVendors: VendorItem[] = [
 ];
 
 export const initialPipelineItems: PipelineItem[] = [
-  { id: 'pip-001', styleName: 'Leggings', category: "Women's Activewear", drop: 'Drop 1', stage: 'Design Finalized', targetQuantity: 400, createdAt: '2026-09-20T09:00:00Z', updatedAt: '2026-09-20T09:00:00Z' },
-  { id: 'pip-002', styleName: 'Sports Bra', category: "Women's Activewear", drop: 'Drop 1', stage: 'Design Finalized', targetQuantity: 280, createdAt: '2026-09-20T09:00:00Z', updatedAt: '2026-09-20T09:00:00Z' },
-  { id: 'pip-003', styleName: 'Training Tee', category: 'Athleisure', drop: 'Drop 1', stage: 'Design Finalized', targetQuantity: 300, createdAt: '2026-09-20T09:00:00Z', updatedAt: '2026-09-20T09:00:00Z' },
-  { id: 'pip-004', styleName: 'Co-ord Set', category: 'Athleisure', drop: 'Drop 1', stage: 'Design Finalized', targetQuantity: 250, createdAt: '2026-09-20T09:00:00Z', updatedAt: '2026-09-20T09:00:00Z' },
-  { id: 'pip-005', styleName: 'Joggers', category: "Men's Activewear", drop: 'Drop 1', stage: 'Design Finalized', targetQuantity: 220, createdAt: '2026-09-20T09:00:00Z', updatedAt: '2026-09-20T09:00:00Z' },
-  { id: 'pip-006', styleName: 'Slip Dress', category: 'Easy/Casual Wear', drop: 'Drop 1', stage: 'Design Finalized', targetQuantity: 130, createdAt: '2026-09-20T09:00:00Z', updatedAt: '2026-09-20T09:00:00Z' },
+  { id: 'pip-001', styleName: 'Leggings', accessionCode: 'ACC-FW26-001', category: "Women's Activewear", drop: 'Drop 1', stage: 'Design Finalized', targetQuantity: 400, createdAt: '2026-09-20T09:00:00Z', updatedAt: '2026-09-20T09:00:00Z' },
+  { id: 'pip-002', styleName: 'Sports Bra', accessionCode: 'ACC-FW26-002', category: "Women's Activewear", drop: 'Drop 1', stage: 'Design Finalized', targetQuantity: 280, createdAt: '2026-09-20T09:00:00Z', updatedAt: '2026-09-20T09:00:00Z' },
+  { id: 'pip-003', styleName: 'Training Tee', accessionCode: 'ACC-FW26-003', category: 'Athleisure', drop: 'Drop 1', stage: 'Design Finalized', targetQuantity: 300, createdAt: '2026-09-20T09:00:00Z', updatedAt: '2026-09-20T09:00:00Z' },
+  { id: 'pip-004', styleName: 'Co-ord Set', accessionCode: 'ACC-FW26-004', category: 'Athleisure', drop: 'Drop 1', stage: 'Design Finalized', targetQuantity: 250, createdAt: '2026-09-20T09:00:00Z', updatedAt: '2026-09-20T09:00:00Z' },
+  { id: 'pip-005', styleName: 'Joggers', accessionCode: 'ACC-FW26-005', category: "Men's Activewear", drop: 'Drop 1', stage: 'Design Finalized', targetQuantity: 220, createdAt: '2026-09-20T09:00:00Z', updatedAt: '2026-09-20T09:00:00Z' },
+  { id: 'pip-006', styleName: 'Slip Dress', accessionCode: 'ACC-FW26-006', category: 'Easy/Casual Wear', drop: 'Drop 1', stage: 'Design Finalized', targetQuantity: 130, createdAt: '2026-09-20T09:00:00Z', updatedAt: '2026-09-20T09:00:00Z' },
 ];
 
 export const initialBudgetItems: BudgetItem[] = [
