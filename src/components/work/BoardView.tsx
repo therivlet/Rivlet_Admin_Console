@@ -19,7 +19,6 @@ import {
   CheckCircle2,
   Tag,
   ArrowRight,
-  ArrowRightLeft,
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { WorkItem, WorkItemState, Sprint } from '@/lib/types';
@@ -63,7 +62,7 @@ interface BoardViewProps {
 }
 
 export default function BoardView({ initialSprintId }: BoardViewProps) {
-  const { workItems, sprints, vendors, teamMembers, pipelineItems, saveWorkItem, reorderWorkItems, moveWorkItemToSprint, moveTaskToStory } = useAdminStore();
+  const { workItems, sprints, vendors, teamMembers, pipelineItems, saveWorkItem, reorderWorkItems } = useAdminStore();
   const [selectedSprintId, setSelectedSprintId] = useState<string | undefined>(() => initialSprintId ?? currentSprintId(sprints));
   const [modalItem, setModalItem] = useState<WorkItem | Omit<WorkItem, 'createdAt' | 'updatedAt'> | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -555,30 +554,6 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                                 </span>
                               )}
                             </div>
-
-                            {/* Move Story & Tasks quick selector */}
-                            <div className="flex items-center justify-between gap-1 pt-1.5 mt-1 border-t border-[#171d2b]/60" onClick={(e) => e.stopPropagation()}>
-                              <span className="text-[8px] text-[#7c869d] flex items-center gap-0.5 font-medium">
-                                <Calendar className="w-2 h-2 text-[#cda052]" /> Move Story & Tasks:
-                              </span>
-                              <select
-                                value={row.sprintId || ''}
-                                onChange={async (e) => {
-                                  const targetSprint = e.target.value === 'backlog' ? undefined : (e.target.value || undefined);
-                                  await moveWorkItemToSprint(row.id, targetSprint);
-                                }}
-                                title="Move this user story and all its child tasks to another sprint"
-                                className="text-[8px] font-semibold bg-[#07090e] border border-[#232d44] hover:border-[#cda052]/60 rounded px-1.5 py-0.5 text-[#cbd5e1] focus:outline-none"
-                              >
-                                <option value="" disabled>Move to...</option>
-                                {sprints.map((s) => (
-                                  <option key={s.id} value={s.id} disabled={s.id === row.sprintId}>
-                                    {s.id === row.sprintId ? `• Current: ${s.name}` : `→ ${s.name}`}
-                                  </option>
-                                ))}
-                                <option value="backlog">→ Backlog</option>
-                              </select>
-                            </div>
                           </div>
                         </>
                       ) : (
@@ -711,7 +686,7 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                           </div>
 
                           {/* Bottom Row Attributes */}
-                          <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#171d2b]">
+                          <div className="flex items-center justify-between mt-auto pt-2 border-t border-[#171d2b]">
                             <span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${STATE_COLOR[row.state]}`}>
                               {row.state}
                             </span>
@@ -738,33 +713,6 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                                 </span>
                               )}
                             </div>
-                          </div>
-
-                          {/* Move Story & Tasks quick action */}
-                          <div
-                            className="flex items-center justify-between gap-1.5 mt-2 pt-2 border-t border-[#171d2b]"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <span className="text-[9px] text-[#7c869d] flex items-center gap-1 font-semibold" title="Move story and all its child tasks together">
-                              <Calendar className="w-2.5 h-2.5 text-[#cda052]" /> Move Story & Tasks:
-                            </span>
-                            <select
-                              value={row.sprintId || ''}
-                              onChange={async (e) => {
-                                const targetSprint = e.target.value === 'backlog' ? undefined : (e.target.value || undefined);
-                                await moveWorkItemToSprint(row.id, targetSprint);
-                              }}
-                              title={`Move "${row.title}" and its ${rowTasks.length} child task${rowTasks.length === 1 ? '' : 's'} to another sprint`}
-                              className="text-[9px] font-semibold bg-[#070a10] border border-[#232e44] hover:border-[#cda052]/60 rounded-md px-1.5 py-0.5 text-[#cbd5e1] focus:outline-none focus:border-[#cda052]"
-                            >
-                              <option value="" disabled>Select sprint...</option>
-                              {sprints.map((s) => (
-                                <option key={s.id} value={s.id} disabled={s.id === row.sprintId}>
-                                  {s.id === row.sprintId ? `• Current: ${s.name}` : `→ Move to: ${s.name}`}
-                                </option>
-                              ))}
-                              <option value="backlog">→ Move to Backlog</option>
-                            </select>
                           </div>
                         </>
                       ) : (
@@ -835,7 +783,7 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                               onDragStart={() => setDraggingId(task.id)}
                               onDragEnd={() => setDraggingId(null)}
                               onClick={() => setModalItem(task)}
-                              className={`rounded-lg border border-[#1f2638] bg-[#0e121b] p-2.5 cursor-grab active:cursor-grabbing hover:border-[#33425f] transition-all shadow-sm ${
+                              className={`rounded-lg border border-[#1f2638] bg-[#0e121b] p-2.5 cursor-grab active:cursor-grabbing hover:border-[#33425f] transition-all shadow-sm flex flex-col ${
                                 draggingId === task.id ? 'opacity-40' : ''
                               }`}
                             >
@@ -899,8 +847,8 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                                 </span>
                               )}
 
-                              {/* Task Footer: Assignee - Highlighted and readable */}
-                              <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-[#1a2336] text-[10px]">
+                              {/* Task Footer: Assignee & Story/Task code aligned cleanly at the bottom */}
+                              <div className="flex items-center justify-between mt-auto pt-2 border-t border-[#1a2336] text-[10px]">
                                 {task.assignee ? (
                                   <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[rgba(205,160,82,0.14)] dark:bg-gradient-to-r dark:from-[rgba(205,160,82,0.22)] dark:to-[rgba(205,160,82,0.1)] border border-[#cda052]/60 text-[#2b1803] dark:text-[#f5dfa8] font-bold text-[10px] shadow-sm max-w-[145px]" title={`Assigned to ${task.assignee}`}>
                                     <span className="w-3.5 h-3.5 rounded-full bg-[#cda052] text-black text-[9px] font-black flex items-center justify-center flex-shrink-0">
@@ -918,32 +866,6 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                                   {row && <span className="text-[#cda052]/80 font-bold">S{storyNumber}</span>}
                                   <span>{task.id.slice(-4)}</span>
                                 </div>
-                              </div>
-
-                              {/* Independent Move: Re-link Task to another Story */}
-                              <div
-                                className="mt-1.5 pt-1.5 border-t border-[#1a2336]/60 flex items-center justify-between gap-1 text-[9px]"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <span className="text-[#64748b] flex items-center gap-1 font-medium" title="Re-link task independently to another story">
-                                  <ArrowRightLeft className="w-2.5 h-2.5 text-[#cda052]" /> Story:
-                                </span>
-                                <select
-                                  value={task.parentId || ''}
-                                  onChange={async (e) => {
-                                    const nextStoryId = e.target.value || undefined;
-                                    await moveTaskToStory(task.id, nextStoryId);
-                                  }}
-                                  title="Move this task independently to another User Story or unparent"
-                                  className="text-[9px] max-w-[130px] truncate bg-[#080b11] border border-[#20293d] hover:border-[#cda052]/60 rounded px-1.5 py-0.5 text-[#cbd5e1] focus:outline-none"
-                                >
-                                  <option value="">(Unparented)</option>
-                                  {rows.map((r, i) => (
-                                    <option key={r.id} value={r.id}>
-                                      #{i + 1} {r.title.slice(0, 20)}{r.title.length > 20 ? '…' : ''}
-                                    </option>
-                                  ))}
-                                </select>
                               </div>
                             </div>
                           );

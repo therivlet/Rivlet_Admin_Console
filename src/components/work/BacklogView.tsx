@@ -14,7 +14,7 @@ function emptyItem(parentId?: string): Omit<WorkItem, 'createdAt' | 'updatedAt'>
 }
 
 export default function BacklogView() {
-  const { workItems, sprints, teamMembers, moveWorkItemToSprint } = useAdminStore();
+  const { workItems, sprints, teamMembers } = useAdminStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<'All' | WorkItemType>('All');
   const [stateFilter, setStateFilter] = useState<'All' | WorkItemState>('All');
@@ -77,28 +77,7 @@ export default function BacklogView() {
             </span>
           )}
           {item.storyPoints !== undefined && <span className="text-[10px] font-mono text-[#7c869d] flex-shrink-0">{item.storyPoints} pts</span>}
-          <div className="flex-shrink-0 hidden sm:block" onClick={(e) => e.stopPropagation()}>
-            <select
-              value={item.sprintId || ''}
-              onChange={async (e) => {
-                const targetSprint = e.target.value === 'backlog' ? undefined : (e.target.value || undefined);
-                await moveWorkItemToSprint(item.id, targetSprint);
-              }}
-              title={
-                item.type === 'User Story' || item.type === 'Feature'
-                  ? `Move this ${item.type} and all its child tasks to another sprint`
-                  : 'Move this item to sprint'
-              }
-              className="text-[10px] font-medium bg-[#10141e] border border-[#232c3f] hover:border-[#cda052]/50 rounded px-1.5 py-0.5 text-[#cbd5e1] focus:outline-none"
-            >
-              <option value="">Backlog</option>
-              {sprints.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <span className="text-[10px] text-[#7c869d] flex-shrink-0 hidden sm:inline">{sprintName(item.sprintId) || 'Backlog'}</span>
           <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium flex-shrink-0 ${STATE_COLOR[item.state]}`}>{item.state}</span>
         </div>
         {!isCollapsed && children.map((c) => renderRow(c, depth + 1))}
