@@ -73,6 +73,8 @@ interface AdminStoreContextType {
   reorderWorkItems: (reordered: WorkItem[]) => Promise<void>;
   deleteWorkItem: (id: string) => Promise<void>;
   addWorkItemComment: (id: string, text: string, author: string) => Promise<void>;
+  moveWorkItemToSprint: (itemId: string, newSprintId: string | undefined) => Promise<void>;
+  moveTaskToStory: (taskId: string, targetStoryId: string | undefined, alignSprint?: boolean) => Promise<void>;
   saveTeamMember: (member: TeamMember) => Promise<void>;
   deleteTeamMember: (id: string) => Promise<void>;
   saveWorkSettings: (settings: Partial<WorkSettings>) => Promise<void>;
@@ -1473,24 +1475,105 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     const now = new Date().toISOString();
     const updated: WorkItem = { ...item, updatedAt: now };
 
-    setWorkItems((prev) => {
-      const idx = prev.findIndex((w) => w.id === item.id);
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx] = updated;
-        return copy;
+    // Check if sprint changed for a container work item (User Story, Feature, or Epic)
+    const prev = workItems.find((w) => w.id === item.id);
+    const sprintChanged = prev !== undefined && prev.sprintId !== item.sprintId;
+
+    let cascadeItems: WorkItem[] = [];
+    if (sprintChanged) {
+      if (item.type === 'User Story') {
+        // Cascade to direct child tasks and bugs
+        cascadeItems = workItems
+          .filter((w) => w.parentId === item.id)
+          .map((w) => ({ ...w, sprintId: item.sprintId, updatedAt: now }));
+      } else if (item.type === 'Feature') {
+        // Cascade to child User Stories AND their respective child Tasks
+        const childStories = workItems.filter((w) => w.parentId === item.id);
+        const childStoryIds = new Set(childStories.map((s) => s.id));
+        const childTasks = workItems.filter((w) => w.parentId && childStoryIds.has(w.parentId));
+        cascadeItems = [...childStories, ...childTasks].map((w) => ({
+          ...w,
+          sprintId: item.sprintId,
+          updatedAt: now,
+        }));
+      } else if (item.type === 'Epic') {
+        // Cascade to Features -> Stories -> Tasks
+        const childFeatures = workItems.filter((w) => w.parentId === item.id);
+        const featureIds = new Set(childFeatures.map((f) => f.id));
+        const childStories = workItems.filter((w) => w.parentId && featureIds.has(w.parentId));
+        const storyIds = new Set(childStories.map((s) => s.id));
+        const childTasks = workItems.filter((w) => w.parentId && storyIds.has(w.parentId));
+        cascadeItems = [...childFeatures, ...childStories, ...childTasks].map((w) => ({
+          ...w,
+          sprintId: item.sprintId,
+          updatedAt: now,
+        }));
       }
-      return [updated, ...prev];
+    }
+
+    const allToUpdate = [updated, ...cascadeItems];
+
+    setWorkItems((prev) => {
+      const copy = [...prev];
+      for (const it of allToUpdate) {
+        const idx = copy.findIndex((w) => w.id === it.id);
+        if (idx >= 0) {
+          copy[idx] = it;
+        } else {
+          copy.unshift(it);
+        }
+      }
+      return copy;
     });
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await upsertWorkItemsSafe(supabase, [updated]);
+        await upsertWorkItemsSafe(supabase, allToUpdate);
       } catch (e) {
         reportWriteFailure('Saving work item', e);
       }
     }
-    notify.success('Work Item Saved', `"${updated.title}" updated.`);
+
+    if (cascadeItems.length > 0) {
+      const targetSprint = sprints.find((s) => s.id === item.sprintId);
+      const sprintName = targetSprint ? targetSprint.name : 'Backlog (Unscheduled)';
+      notify.success(
+        'Sprint Cascade Applied',
+        `Moved "${updated.title}" and ${cascadeItems.length} linked item${cascadeItems.length === 1 ? '' : 's'} to ${sprintName}.`
+      );
+    } else {
+      notify.success('Work Item Saved', `"${updated.title}" updated.`);
+    }
+  };
+
+  const moveWorkItemToSprint = async (itemId: string, newSprintId: string | undefined) => {
+    const target = workItems.find((w) => w.id === itemId);
+    if (!target) return;
+    if (target.sprintId === newSprintId) return;
+    await saveWorkItem({ ...target, sprintId: newSprintId });
+  };
+
+  const moveTaskToStory = async (taskId: string, targetStoryId: string | undefined, alignSprint: boolean = true) => {
+    const task = workItems.find((w) => w.id === taskId);
+    if (!task) return;
+
+    if (!targetStoryId) {
+      // Unlink / make unparented
+      await saveWorkItem({ ...task, parentId: undefined });
+      notify.info('Task Unlinked', `"${task.title}" is now an unparented task.`);
+      return;
+    }
+
+    const targetStory = workItems.find((w) => w.id === targetStoryId);
+    if (!targetStory) return;
+
+    const nextSprintId = alignSprint && targetStory.sprintId ? targetStory.sprintId : task.sprintId;
+    await saveWorkItem({
+      ...task,
+      parentId: targetStoryId,
+      sprintId: nextSprintId,
+    });
+    notify.success('Task Re-linked', `Moved "${task.title}" under Story "${targetStory.title}".`);
   };
 
   const saveWorkItemsBulk = async (newItems: WorkItem[]) => {
@@ -1758,6 +1841,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         reorderWorkItems,
         deleteWorkItem,
         addWorkItemComment,
+        moveWorkItemToSprint,
+        moveTaskToStory,
         saveTeamMember,
         deleteTeamMember,
         saveWorkSettings,

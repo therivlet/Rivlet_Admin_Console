@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   Tag,
   ArrowRight,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { WorkItem, WorkItemState, Sprint } from '@/lib/types';
@@ -62,7 +63,7 @@ interface BoardViewProps {
 }
 
 export default function BoardView({ initialSprintId }: BoardViewProps) {
-  const { workItems, sprints, vendors, teamMembers, pipelineItems, saveWorkItem, reorderWorkItems } = useAdminStore();
+  const { workItems, sprints, vendors, teamMembers, pipelineItems, saveWorkItem, reorderWorkItems, moveWorkItemToSprint, moveTaskToStory } = useAdminStore();
   const [selectedSprintId, setSelectedSprintId] = useState<string | undefined>(() => initialSprintId ?? currentSprintId(sprints));
   const [modalItem, setModalItem] = useState<WorkItem | Omit<WorkItem, 'createdAt' | 'updatedAt'> | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -509,6 +510,25 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                               {row.title}
                             </p>
 
+                            {/* Parent Feature & Extra Attributes */}
+                            <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                              {row.parentId && (() => {
+                                const parentFeature = workItems.find((w) => w.id === row.parentId);
+                                return parentFeature ? (
+                                  <span
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setModalItem(parentFeature);
+                                    }}
+                                    className="text-[8px] px-1.5 py-0.5 rounded bg-purple-950/70 border border-purple-800/50 text-purple-300 font-semibold flex items-center gap-1 hover:border-purple-600 transition-colors"
+                                    title={`Parent Feature: ${parentFeature.title}. Click to view.`}
+                                  >
+                                    <Layers className="w-2.5 h-2.5 text-[#cda052]" /> {parentFeature.title}
+                                  </span>
+                                ) : null;
+                              })()}
+                            </div>
+
                             {/* Sprint Name, Assignee & Operations Info */}
                             <div className="flex items-center gap-2 text-[9px] text-[#7c869d] pt-1 flex-wrap">
                               {sprint && (
@@ -534,6 +554,30 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                                   {row.operationCategory}
                                 </span>
                               )}
+                            </div>
+
+                            {/* Move Story & Tasks quick selector */}
+                            <div className="flex items-center justify-between gap-1 pt-1.5 mt-1 border-t border-[#171d2b]/60" onClick={(e) => e.stopPropagation()}>
+                              <span className="text-[8px] text-[#7c869d] flex items-center gap-0.5 font-medium">
+                                <Calendar className="w-2 h-2 text-[#cda052]" /> Move Story & Tasks:
+                              </span>
+                              <select
+                                value={row.sprintId || ''}
+                                onChange={async (e) => {
+                                  const targetSprint = e.target.value === 'backlog' ? undefined : (e.target.value || undefined);
+                                  await moveWorkItemToSprint(row.id, targetSprint);
+                                }}
+                                title="Move this user story and all its child tasks to another sprint"
+                                className="text-[8px] font-semibold bg-[#07090e] border border-[#232d44] hover:border-[#cda052]/60 rounded px-1.5 py-0.5 text-[#cbd5e1] focus:outline-none"
+                              >
+                                <option value="" disabled>Move to...</option>
+                                {sprints.map((s) => (
+                                  <option key={s.id} value={s.id} disabled={s.id === row.sprintId}>
+                                    {s.id === row.sprintId ? `• Current: ${s.name}` : `→ ${s.name}`}
+                                  </option>
+                                ))}
+                                <option value="backlog">→ Backlog</option>
+                              </select>
                             </div>
                           </div>
                         </>
@@ -631,6 +675,23 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
 
                             {/* Extra Story Details on Board */}
                             <div className="flex items-center gap-1 flex-wrap pt-1">
+                              {/* Parent Feature if linked */}
+                              {row.parentId && (() => {
+                                const parentFeature = workItems.find((w) => w.id === row.parentId);
+                                return parentFeature ? (
+                                  <span
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setModalItem(parentFeature);
+                                    }}
+                                    className="text-[8px] px-1.5 py-0.5 rounded bg-purple-950/70 border border-purple-800/50 text-purple-300 font-semibold flex items-center gap-1 hover:border-purple-600 transition-colors cursor-pointer"
+                                    title={`Parent Feature: ${parentFeature.title}. Click to view.`}
+                                  >
+                                    <Layers className="w-2.5 h-2.5 text-[#cda052]" /> {parentFeature.title}
+                                  </span>
+                                ) : null;
+                              })()}
+
                               {row.linkedPipelineItemIds?.includes('all') ? (
                                 <span className="text-[8px] px-1.5 py-0.5 rounded bg-emerald-950/70 border border-emerald-800/50 text-emerald-300 font-semibold flex items-center gap-0.5">
                                   <Shirt className="w-2.5 h-2.5" /> All Styles
@@ -677,6 +738,33 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                                 </span>
                               )}
                             </div>
+                          </div>
+
+                          {/* Move Story & Tasks quick action */}
+                          <div
+                            className="flex items-center justify-between gap-1.5 mt-2 pt-2 border-t border-[#171d2b]"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <span className="text-[9px] text-[#7c869d] flex items-center gap-1 font-semibold" title="Move story and all its child tasks together">
+                              <Calendar className="w-2.5 h-2.5 text-[#cda052]" /> Move Story & Tasks:
+                            </span>
+                            <select
+                              value={row.sprintId || ''}
+                              onChange={async (e) => {
+                                const targetSprint = e.target.value === 'backlog' ? undefined : (e.target.value || undefined);
+                                await moveWorkItemToSprint(row.id, targetSprint);
+                              }}
+                              title={`Move "${row.title}" and its ${rowTasks.length} child task${rowTasks.length === 1 ? '' : 's'} to another sprint`}
+                              className="text-[9px] font-semibold bg-[#070a10] border border-[#232e44] hover:border-[#cda052]/60 rounded-md px-1.5 py-0.5 text-[#cbd5e1] focus:outline-none focus:border-[#cda052]"
+                            >
+                              <option value="" disabled>Select sprint...</option>
+                              {sprints.map((s) => (
+                                <option key={s.id} value={s.id} disabled={s.id === row.sprintId}>
+                                  {s.id === row.sprintId ? `• Current: ${s.name}` : `→ Move to: ${s.name}`}
+                                </option>
+                              ))}
+                              <option value="backlog">→ Move to Backlog</option>
+                            </select>
                           </div>
                         </>
                       ) : (
@@ -830,6 +918,32 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                                   {row && <span className="text-[#cda052]/80 font-bold">S{storyNumber}</span>}
                                   <span>{task.id.slice(-4)}</span>
                                 </div>
+                              </div>
+
+                              {/* Independent Move: Re-link Task to another Story */}
+                              <div
+                                className="mt-1.5 pt-1.5 border-t border-[#1a2336]/60 flex items-center justify-between gap-1 text-[9px]"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <span className="text-[#64748b] flex items-center gap-1 font-medium" title="Re-link task independently to another story">
+                                  <ArrowRightLeft className="w-2.5 h-2.5 text-[#cda052]" /> Story:
+                                </span>
+                                <select
+                                  value={task.parentId || ''}
+                                  onChange={async (e) => {
+                                    const nextStoryId = e.target.value || undefined;
+                                    await moveTaskToStory(task.id, nextStoryId);
+                                  }}
+                                  title="Move this task independently to another User Story or unparent"
+                                  className="text-[9px] max-w-[130px] truncate bg-[#080b11] border border-[#20293d] hover:border-[#cda052]/60 rounded px-1.5 py-0.5 text-[#cbd5e1] focus:outline-none"
+                                >
+                                  <option value="">(Unparented)</option>
+                                  {rows.map((r, i) => (
+                                    <option key={r.id} value={r.id}>
+                                      #{i + 1} {r.title.slice(0, 20)}{r.title.length > 20 ? '…' : ''}
+                                    </option>
+                                  ))}
+                                </select>
                               </div>
                             </div>
                           );

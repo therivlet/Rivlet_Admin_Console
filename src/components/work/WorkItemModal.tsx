@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   X,
   Save,
@@ -18,6 +18,10 @@ import {
   Clock,
   ChevronDown,
   ChevronUp,
+  ArrowRightLeft,
+  Link2,
+  Unlink,
+  Calendar,
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { WorkItem, WorkItemType, WorkItemState, WorkItemPriority } from '@/lib/types';
@@ -79,16 +83,18 @@ interface WorkItemModalProps {
 
 export default function WorkItemModal({ item, onClose, startInEditMode }: WorkItemModalProps) {
   const confirm = useConfirm();
-  const { workItems, sprints, teamMembers, vendors, pipelineItems, saveWorkItem, deleteWorkItem, addWorkItemComment } = useAdminStore();
+  const { workItems, sprints, teamMembers, vendors, pipelineItems, saveWorkItem, deleteWorkItem, addWorkItemComment, moveWorkItemToSprint, moveTaskToStory } = useAdminStore();
   const { user } = useAuth();
 
-  const isExisting = !!(item as WorkItem).createdAt;
+  const [activeItem, setActiveItem] = useState<WorkItem | (Omit<WorkItem, 'createdAt' | 'updatedAt' | 'comments'> & { comments?: WorkItem['comments'] })>(item);
+
+  const isExisting = !!(activeItem as WorkItem).createdAt;
   // If opening an existing story or task, show in read-only big screen mode by default unless explicitly asked to edit
   const [isEditing, setIsEditing] = useState<boolean>(!isExisting || !!startInEditMode);
 
   // Initialize form state
   const [form, setForm] = useState<WorkItem>(() => {
-    const raw = item as WorkItem;
+    const raw = activeItem as WorkItem;
     // Normalize linkedPipelineItemIds
     let initialStyleIds: string[] = [];
     if (Array.isArray(raw.linkedPipelineItemIds) && raw.linkedPipelineItemIds.length > 0) {
@@ -106,13 +112,40 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
     };
   });
 
+  // Sync form when active item changes (e.g. clicking parent/child in breadcrumb)
+  useEffect(() => {
+    const raw = activeItem as WorkItem;
+    let initialStyleIds: string[] = [];
+    if (Array.isArray(raw.linkedPipelineItemIds) && raw.linkedPipelineItemIds.length > 0) {
+      initialStyleIds = raw.linkedPipelineItemIds;
+    } else if (raw.linkedPipelineItemId) {
+      initialStyleIds = [raw.linkedPipelineItemId];
+    }
+    setForm({
+      ...raw,
+      comments: raw.comments || [],
+      tags: raw.tags || [],
+      linkedPipelineItemIds: initialStyleIds,
+      operationCategory: raw.operationCategory || undefined,
+    });
+    setTagsInput((raw.tags || []).join(', '));
+  }, [activeItem]);
+
+  const switchItem = (next: WorkItem) => {
+    setActiveItem(next);
+    setIsEditing(false);
+    setError(null);
+  };
+
   const [tagsInput, setTagsInput] = useState(form.tags.join(', '));
   const [commentText, setCommentText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isPostingComment, setIsPostingComment] = useState(false);
-  const [isCreatingSubTask, setIsCreatingSubTask] = useState(false);
-  const [subTaskTitle, setSubTaskTitle] = useState('');
+  const [isCreatingChildItem, setIsCreatingChildItem] = useState(false);
+  const [childItemTitle, setChildItemTitle] = useState('');
+  const [isAttachingChild, setIsAttachingChild] = useState(false);
+  const [selectedAttachId, setSelectedAttachId] = useState('');
   const [showAllComments, setShowAllComments] = useState(false);
 
   // Live item & comments from store
@@ -126,7 +159,20 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
     );
   }, [liveComments]);
 
-  // Child items (e.g. Tasks under this Story, or Stories under this Feature)
+  // Full hierarchy ancestors chain: Task -> Story -> Feature -> Epic
+  const hierarchyChain = useMemo(() => {
+    const chain: WorkItem[] = [];
+    let curParentId = currentItem.parentId;
+    while (curParentId) {
+      const p = workItems.find((w) => w.id === curParentId);
+      if (!p || chain.some((c) => c.id === p.id)) break;
+      chain.unshift(p);
+      curParentId = p.parentId;
+    }
+    return chain;
+  }, [workItems, currentItem.parentId]);
+
+  // Child items (e.g. Tasks under this Story, Stories under this Feature, Features under this Epic)
   const childItems = useMemo(
     () => workItems.filter((w) => w.parentId === currentItem.id),
     [workItems, currentItem.id]
@@ -292,16 +338,18 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
     }
   };
 
-  const handleCreateSubTask = async () => {
-    if (!subTaskTitle.trim()) return;
+  const childType: WorkItemType = currentItem.type === 'Epic' ? 'Feature' : currentItem.type === 'Feature' ? 'User Story' : 'Task';
+
+  const handleCreateChildItem = async () => {
+    if (!childItemTitle.trim()) return;
     const now = new Date().toISOString();
-    const newTask: WorkItem = {
+    const newChild: WorkItem = {
       id: `wi-${Date.now()}`,
-      type: 'Task',
-      title: subTaskTitle.trim(),
+      type: childType,
+      title: childItemTitle.trim(),
       state: 'New',
       priority: 2,
-      storyPoints: 1,
+      storyPoints: childType === 'Task' ? 1 : 3,
       parentId: currentItem.id,
       sprintId: currentItem.sprintId,
       assignee: currentItem.assignee || undefined,
@@ -313,10 +361,35 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
       createdAt: now,
       updatedAt: now,
     };
-    await saveWorkItem(newTask);
-    setSubTaskTitle('');
-    setIsCreatingSubTask(false);
+    await saveWorkItem(newChild);
+    setChildItemTitle('');
+    setIsCreatingChildItem(false);
   };
+
+  const handleAttachChildItem = async (candidateId: string) => {
+    const candidate = workItems.find((w) => w.id === candidateId);
+    if (!candidate) return;
+    await saveWorkItem({
+      ...candidate,
+      parentId: currentItem.id,
+      sprintId: currentItem.sprintId || candidate.sprintId,
+    });
+    setIsAttachingChild(false);
+    setSelectedAttachId('');
+  };
+
+  const attachableCandidates = useMemo(() => {
+    if (currentItem.type === 'User Story') {
+      return workItems.filter((w) => (w.type === 'Task' || w.type === 'Bug') && w.parentId !== currentItem.id && w.id !== currentItem.id);
+    }
+    if (currentItem.type === 'Feature') {
+      return workItems.filter((w) => w.type === 'User Story' && w.parentId !== currentItem.id && w.id !== currentItem.id);
+    }
+    if (currentItem.type === 'Epic') {
+      return workItems.filter((w) => w.type === 'Feature' && w.parentId !== currentItem.id && w.id !== currentItem.id);
+    }
+    return [];
+  }, [workItems, currentItem.type, currentItem.id]);
 
   const renderReadonlyStyles = () => {
     const ids = currentItem.linkedPipelineItemIds || (currentItem.linkedPipelineItemId ? [currentItem.linkedPipelineItemId] : []);
@@ -410,6 +483,37 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
             </div>
           </div>
 
+          {/* Interactive Hierarchy Breadcrumb Bar */}
+          {hierarchyChain.length > 0 && (
+            <div className="flex items-center gap-1.5 px-5 py-2.5 bg-[#080b11] border-b border-[#171d2b] text-xs overflow-x-auto custom-scrollbar">
+              <span className="text-[#64748b] text-[10px] font-bold uppercase tracking-wider mr-1 flex items-center gap-1">
+                <Layers className="w-3 h-3 text-[#cda052]" /> Hierarchy:
+              </span>
+              {hierarchyChain.map((ancestor, aIdx) => (
+                <React.Fragment key={ancestor.id}>
+                  {aIdx > 0 && <span className="text-[#3a4863] text-xs">/</span>}
+                  <button
+                    onClick={() => switchItem(ancestor)}
+                    className="flex items-center gap-1 px-2 py-0.5 rounded hover:bg-[#121824] text-[#94a3b8] hover:text-[#cda052] transition-colors cursor-pointer"
+                    title={`Open parent ${ancestor.type}: ${ancestor.title}`}
+                  >
+                    <span className={`text-[8px] px-1 py-0.2 rounded border font-semibold ${TYPE_COLOR[ancestor.type]}`}>
+                      {ancestor.type}
+                    </span>
+                    <span className="truncate max-w-[140px] font-medium">{ancestor.title}</span>
+                  </button>
+                </React.Fragment>
+              ))}
+              <span className="text-[#3a4863] text-xs">/</span>
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-[#101624] text-white font-semibold border border-[#232f48] shadow-sm">
+                <span className={`text-[8px] px-1 py-0.2 rounded border font-semibold ${TYPE_COLOR[currentItem.type]}`}>
+                  {currentItem.type}
+                </span>
+                <span className="truncate max-w-[170px]">{currentItem.title || 'Current Item'}</span>
+              </span>
+            </div>
+          )}
+
           {error && (
             <div className="mx-6 mt-4 text-xs text-rose-300 bg-rose-950/50 border border-rose-800/60 rounded-xl px-4 py-2.5 flex items-center justify-between">
               <span>{error}</span>
@@ -469,42 +573,64 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                     )}
                   </div>
 
-                  {/* Sub-Tasks / Child Hierarchy Items (if User Story or Feature) */}
-                  {(currentItem.type === 'User Story' || currentItem.type === 'Feature') && (
+                  {/* Child Hierarchy Items (Tasks under Story, Stories under Feature, Features under Epic) */}
+                  {(currentItem.type === 'User Story' || currentItem.type === 'Feature' || currentItem.type === 'Epic') && (
                     <div className="rounded-xl border border-[#1b2233] bg-[#0c1018] p-5 shadow-sm">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-xs font-semibold uppercase tracking-wider text-[#7c869d] flex items-center gap-1.5">
-                          <Layers className="w-3.5 h-3.5 text-[#cda052]" /> Sub-Tasks ({childItems.length})
-                        </h3>
-                        {!isCreatingSubTask && (
-                          <button
-                            onClick={() => setIsCreatingSubTask(true)}
-                            className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-[#cda052] hover:bg-[#1a2130] transition-colors"
-                          >
-                            <Plus className="w-3.5 h-3.5" /> Add Task
-                          </button>
-                        )}
+                      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-xs font-semibold uppercase tracking-wider text-[#7c869d] flex items-center gap-1.5">
+                            <Layers className="w-3.5 h-3.5 text-[#cda052]" /> {childType}s ({childItems.length})
+                          </h3>
+                          {childItems.length > 0 && currentItem.type === 'User Story' && (
+                            <span className="text-[10px] text-[#7c869d] font-mono">
+                              ({childItems.filter((c) => c.state === 'Closed' || c.state === 'Resolved').length}/{childItems.length} completed)
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {!isCreatingChildItem && !isAttachingChild && (
+                            <>
+                              <button
+                                onClick={() => setIsCreatingChildItem(true)}
+                                className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-[#cda052] bg-[#cda052]/10 hover:bg-[#cda052]/20 border border-[#cda052]/30 transition-colors"
+                              >
+                                <Plus className="w-3.5 h-3.5" /> New {childType}
+                              </button>
+                              {attachableCandidates.length > 0 && (
+                                <button
+                                  onClick={() => setIsAttachingChild(true)}
+                                  className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-[#94a3b8] hover:text-white bg-[#141824] hover:bg-[#1a2130] border border-[#232e44] transition-colors"
+                                  title={`Attach an existing ${childType} under this ${currentItem.type}`}
+                                >
+                                  <Link2 className="w-3.5 h-3.5 text-[#cda052]" /> Attach Existing
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
                       </div>
 
-                      {isCreatingSubTask && (
+                      {/* Create New Child Item Input Box */}
+                      {isCreatingChildItem && (
                         <div className="mb-3 p-3 rounded-lg border border-[#222c42] bg-[#0f1422] flex items-center gap-2">
                           <input
-                            value={subTaskTitle}
-                            onChange={(e) => setSubTaskTitle(e.target.value)}
-                            onKeyDown={(e) => { if (e.key === 'Enter') handleCreateSubTask(); }}
-                            placeholder="e.g. Inspect fabric swatch cards under D65 booth"
+                            value={childItemTitle}
+                            onChange={(e) => setChildItemTitle(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') handleCreateChildItem(); }}
+                            placeholder={`e.g. Title for new ${childType}...`}
                             className="flex-1 px-3 py-1.5 rounded bg-[#0a0c12] border border-[#1f2638] text-xs text-white focus:outline-none focus:border-[#cda052]/50"
                             autoFocus
                           />
                           <button
-                            onClick={handleCreateSubTask}
-                            disabled={!subTaskTitle.trim()}
+                            onClick={handleCreateChildItem}
+                            disabled={!childItemTitle.trim()}
                             className="px-3 py-1.5 rounded bg-[#cda052] text-black text-xs font-semibold disabled:opacity-50"
                           >
                             Add
                           </button>
                           <button
-                            onClick={() => { setIsCreatingSubTask(false); setSubTaskTitle(''); }}
+                            onClick={() => { setIsCreatingChildItem(false); setChildItemTitle(''); }}
                             className="px-2 py-1.5 text-xs text-[#94a3b8] hover:text-white"
                           >
                             Cancel
@@ -512,34 +638,114 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                         </div>
                       )}
 
-                      {childItems.length === 0 && !isCreatingSubTask ? (
-                        <p className="text-xs text-[#54627a] italic">No sub-tasks attached to this story yet.</p>
+                      {/* Attach Existing Child Item Selector */}
+                      {isAttachingChild && (
+                        <div className="mb-3 p-3 rounded-lg border border-[#222c42] bg-[#0f1422] flex items-center gap-2">
+                          <select
+                            value={selectedAttachId}
+                            onChange={(e) => setSelectedAttachId(e.target.value)}
+                            className="flex-1 px-3 py-1.5 rounded bg-[#0a0c12] border border-[#1f2638] text-xs text-white focus:outline-none focus:border-[#cda052]/50"
+                          >
+                            <option value="">Select an existing {childType} to link under here...</option>
+                            {attachableCandidates.map((cand) => (
+                              <option key={cand.id} value={cand.id}>
+                                {cand.title} {cand.parentId ? `(currently in another parent)` : '(unparented)'}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={() => selectedAttachId && handleAttachChildItem(selectedAttachId)}
+                            disabled={!selectedAttachId}
+                            className="px-3 py-1.5 rounded bg-[#cda052] text-black text-xs font-semibold disabled:opacity-50"
+                          >
+                            Link
+                          </button>
+                          <button
+                            onClick={() => { setIsAttachingChild(false); setSelectedAttachId(''); }}
+                            className="px-2 py-1.5 text-xs text-[#94a3b8] hover:text-white"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      )}
+
+                      {childItems.length === 0 && !isCreatingChildItem && !isAttachingChild ? (
+                        <p className="text-xs text-[#54627a] italic">No {childType.toLowerCase()}s linked to this {currentItem.type.toLowerCase()} yet.</p>
                       ) : (
                         <div className="space-y-2">
-                          {childItems.map((child, childIdx) => (
-                            <div
-                              key={child.id}
-                              className="flex items-center justify-between p-2.5 rounded-lg border border-[#1a2233] bg-[#080b11] hover:border-[#2a3754] transition-colors"
-                            >
-                              <div className="flex items-center gap-2.5 truncate">
-                                <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#cda052]/20 text-[#cda052] border border-[#cda052]/40">
-                                  #{childIdx + 1}
-                                </span>
-                                <span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${TYPE_COLOR[child.type]}`}>{child.type}</span>
-                                <span className="text-xs text-white font-medium truncate">#{childIdx + 1} · {child.title}</span>
-                              </div>
-                              <div className="flex items-center gap-2 flex-shrink-0">
-                                {child.assignee && (
-                                  <span className="text-[10px] text-[#7c869d] flex items-center gap-0.5">
-                                    <User className="w-2.5 h-2.5" /> {child.assignee}
+                          {childItems.map((child, childIdx) => {
+                            const childTasksCount = child.type === 'User Story' ? workItems.filter((w) => w.parentId === child.id).length : 0;
+
+                            return (
+                              <div
+                                key={child.id}
+                                onClick={() => switchItem(child)}
+                                className="flex flex-col sm:flex-row sm:items-center justify-between p-2.5 rounded-lg border border-[#1a2233] bg-[#080b11] hover:border-[#2a3754] transition-all cursor-pointer group gap-2"
+                              >
+                                <div className="flex items-center gap-2.5 truncate min-w-0 flex-1">
+                                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#cda052]/20 text-[#cda052] border border-[#cda052]/40 flex-shrink-0">
+                                    #{childIdx + 1}
                                   </span>
-                                )}
-                                <span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${STATE_COLOR[child.state]}`}>
-                                  {child.state}
-                                </span>
+                                  <span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium flex-shrink-0 ${TYPE_COLOR[child.type]}`}>
+                                    {child.type}
+                                  </span>
+                                  <span className="text-xs text-white font-medium truncate group-hover:text-[#cda052] transition-colors">
+                                    {child.title}
+                                  </span>
+                                </div>
+
+                                <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-auto" onClick={(e) => e.stopPropagation()}>
+                                  {childTasksCount > 0 && (
+                                    <span className="text-[10px] text-[#7c869d] font-mono px-1.5 py-0.5 rounded bg-[#10141e] border border-[#1e2535]">
+                                      {childTasksCount} tasks
+                                    </span>
+                                  )}
+
+                                  {child.assignee && (
+                                    <span className="text-[10px] text-[#7c869d] flex items-center gap-0.5">
+                                      <User className="w-2.5 h-2.5" /> {child.assignee}
+                                    </span>
+                                  )}
+
+                                  <span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${STATE_COLOR[child.state]}`}>
+                                    {child.state}
+                                  </span>
+
+                                  {/* Independent Move Task to another Story */}
+                                  {child.type === 'Task' && (
+                                    <select
+                                      value={child.parentId || ''}
+                                      onChange={async (e) => {
+                                        const nextStoryId = e.target.value || undefined;
+                                        await moveTaskToStory(child.id, nextStoryId);
+                                      }}
+                                      title="Move this task independently to another User Story"
+                                      className="text-[9px] bg-[#0d121c] border border-[#222d42] hover:border-[#cda052]/60 rounded px-1.5 py-0.5 text-[#cbd5e1] focus:outline-none"
+                                    >
+                                      <option value={currentItem.id}>• In this Story</option>
+                                      {workItems.filter((w) => w.type === 'User Story' && w.id !== currentItem.id).map((s) => (
+                                        <option key={s.id} value={s.id}>
+                                          → Move to: {s.title.slice(0, 20)}
+                                        </option>
+                                      ))}
+                                      <option value="">→ Make Unparented</option>
+                                    </select>
+                                  )}
+
+                                  {/* Detach button for non-tasks or quick unlink */}
+                                  <button
+                                    onClick={async () => {
+                                      await saveWorkItem({ ...child, parentId: undefined });
+                                    }}
+                                    title={`Unlink this ${child.type} from this ${currentItem.type}`}
+                                    className="p-1 rounded text-[#64748b] hover:text-rose-400 hover:bg-rose-950/30 transition-colors"
+                                  >
+                                    <Unlink className="w-3 h-3" />
+                                  </button>
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -684,15 +890,48 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                     <div>
                       <span className="text-[11px] text-[#64748b] block mb-1">Sprint Scheduling</span>
                       {sprint ? (
-                        <div className="p-2 rounded-lg bg-[#080b11] border border-[#1a2233]">
-                          <p className="text-xs font-medium text-white">{sprint.name}</p>
+                        <div className="p-2.5 rounded-lg bg-[#080b11] border border-[#1a2233]">
+                          <p className="text-xs font-semibold text-white flex items-center gap-1.5">
+                            <Clock className="w-3 h-3 text-[#cda052]" /> {sprint.name}
+                          </p>
                           <p className="text-[10px] text-[#64748b] mt-0.5">
                             {new Date(sprint.startDate).toLocaleDateString()} → {new Date(sprint.endDate).toLocaleDateString()}
                           </p>
                         </div>
                       ) : (
-                        <p className="text-xs text-[#94a3b8]">Backlog (Unscheduled)</p>
+                        <div className="p-2.5 rounded-lg bg-[#080b11] border border-[#1a2233]">
+                          <p className="text-xs text-[#94a3b8] italic">Backlog (Unscheduled)</p>
+                        </div>
                       )}
+
+                      {(currentItem.type === 'User Story' || currentItem.type === 'Feature') && childItems.length > 0 && (
+                        <p className="text-[10px] text-amber-300/80 mt-1 leading-snug">
+                          Note: Moving sprint will cascade to all {childItems.length} linked child {currentItem.type === 'User Story' ? 'task(s)' : 'story/tasks'}.
+                        </p>
+                      )}
+
+                      {/* Quick Move Sprint Selector */}
+                      <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                        <label className="text-[10px] text-[#7c869d] block mb-1 font-semibold flex items-center gap-1">
+                          <Calendar className="w-2.5 h-2.5 text-[#cda052]" /> {currentItem.type === 'Task' ? 'Change Sprint (independent):' : 'Move to Sprint (with child items):'}
+                        </label>
+                        <select
+                          value={currentItem.sprintId || ''}
+                          onChange={async (e) => {
+                            const nextSprint = e.target.value === 'backlog' ? undefined : (e.target.value || undefined);
+                            await moveWorkItemToSprint(currentItem.id, nextSprint);
+                          }}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-[#080b11] border border-[#1f2638] text-xs text-[#cbd5e1] focus:outline-none focus:border-[#cda052]/60"
+                        >
+                          <option value="" disabled>Select target sprint...</option>
+                          {sprints.map((s) => (
+                            <option key={s.id} value={s.id} disabled={s.id === currentItem.sprintId}>
+                              {s.id === currentItem.sprintId ? `• Current: ${s.name}` : `→ Move to: ${s.name}`}
+                            </option>
+                          ))}
+                          <option value="backlog">→ Move to Backlog</option>
+                        </select>
+                      </div>
                     </div>
 
                     {/* Story Points */}
@@ -715,14 +954,72 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                     <div>
                       <span className="text-[11px] text-[#64748b] block mb-1">Parent Hierarchy</span>
                       {parentItem ? (
-                        <div className="p-2 rounded-lg bg-[#080b11] border border-[#1a2233]">
-                          <span className={`text-[9px] px-1.5 py-0.2 rounded border font-medium ${TYPE_COLOR[parentItem.type]}`}>
-                            {parentItem.type}
-                          </span>
-                          <p className="text-xs text-white font-medium mt-1 truncate">{parentItem.title}</p>
+                        <div
+                          onClick={() => switchItem(parentItem)}
+                          className="p-2.5 rounded-lg bg-[#080b11] border border-[#1a2233] hover:border-[#303f5c] transition-colors cursor-pointer group"
+                          title={`Click to view parent ${parentItem.type}`}
+                        >
+                          <div className="flex items-center justify-between gap-1 mb-1">
+                            <span className={`text-[9px] px-1.5 py-0.2 rounded border font-medium ${TYPE_COLOR[parentItem.type]}`}>
+                              {parentItem.type}
+                            </span>
+                            <span className="text-[9px] text-[#64748b] group-hover:text-[#cda052]">open →</span>
+                          </div>
+                          <p className="text-xs text-white font-medium truncate group-hover:text-[#cda052]">{parentItem.title}</p>
                         </div>
                       ) : (
                         <p className="text-xs text-[#64748b] italic">No parent (Top-level {currentItem.type})</p>
+                      )}
+
+                      {/* Quick Independent Task Re-Parenting */}
+                      {(currentItem.type === 'Task' || currentItem.type === 'Bug') && (
+                        <div className="mt-2 pt-2 border-t border-[#1a2233]" onClick={(e) => e.stopPropagation()}>
+                          <label className="text-[10px] text-[#7c869d] block mb-1 font-semibold flex items-center gap-1">
+                            <ArrowRightLeft className="w-2.5 h-2.5 text-[#cda052]" /> Move Task to another Story:
+                          </label>
+                          <select
+                            value={currentItem.parentId || ''}
+                            onChange={async (e) => {
+                              const targetStoryId = e.target.value || undefined;
+                              await moveTaskToStory(currentItem.id, targetStoryId);
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#080b11] border border-[#1f2638] text-xs text-[#cbd5e1] focus:outline-none focus:border-[#cda052]/60"
+                          >
+                            <option value="">Unlink (Make Unparented)</option>
+                            {workItems.filter((w) => w.type === 'User Story' && w.id !== currentItem.id).map((s) => {
+                              const sSprint = sprints.find((sp) => sp.id === s.sprintId)?.name || 'Backlog';
+                              return (
+                                <option key={s.id} value={s.id}>
+                                  {s.title} ({sSprint})
+                                </option>
+                              );
+                            })}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Quick Story Re-Parenting to Feature */}
+                      {currentItem.type === 'User Story' && (
+                        <div className="mt-2 pt-2 border-t border-[#1a2233]" onClick={(e) => e.stopPropagation()}>
+                          <label className="text-[10px] text-[#7c869d] block mb-1 font-semibold flex items-center gap-1">
+                            <Layers className="w-2.5 h-2.5 text-[#cda052]" /> Link under Feature:
+                          </label>
+                          <select
+                            value={currentItem.parentId || ''}
+                            onChange={async (e) => {
+                              const targetFeatureId = e.target.value || undefined;
+                              await saveWorkItem({ ...currentItem, parentId: targetFeatureId });
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#080b11] border border-[#1f2638] text-xs text-[#cbd5e1] focus:outline-none focus:border-[#cda052]/60"
+                          >
+                            <option value="">No Parent Feature (Top-level Story)</option>
+                            {workItems.filter((w) => w.type === 'Feature' && w.id !== currentItem.id).map((f) => (
+                              <option key={f.id} value={f.id}>
+                                {f.title}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       )}
                     </div>
 
@@ -864,6 +1161,11 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                         <option key={s.id} value={s.id}>{s.name}</option>
                       ))}
                     </select>
+                    {(form.type === 'User Story' || form.type === 'Feature') && childItems.length > 0 && (
+                      <p className="text-[10px] text-amber-300/80 mt-1 leading-snug">
+                        Note: Moving this {form.type} will automatically move all {childItems.length} linked child {form.type === 'User Story' ? 'tasks' : 'stories/tasks'} to the new sprint.
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -881,15 +1183,26 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                   ) : (
                     <select
                       value={form.parentId || ''}
-                      onChange={(e) => setForm({ ...form, parentId: e.target.value || undefined })}
+                      onChange={(e) => {
+                        const nextParentId = e.target.value || undefined;
+                        const parent = workItems.find((w) => w.id === nextParentId);
+                        setForm({
+                          ...form,
+                          parentId: nextParentId,
+                          sprintId: (form.type === 'Task' && parent?.sprintId) ? parent.sprintId : form.sprintId,
+                        });
+                      }}
                       className="w-full px-3 py-2.5 rounded-xl bg-[#080b11] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50"
                     >
                       <option value="">No parent (Top-level {form.type})</option>
-                      {allowedParents.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.type}: {p.title}
-                        </option>
-                      ))}
+                      {allowedParents.map((p) => {
+                        const pSprint = sprints.find((s) => s.id === p.sprintId)?.name || 'Backlog';
+                        return (
+                          <option key={p.id} value={p.id}>
+                            {p.type}: {p.title} (Sprint: {pSprint})
+                          </option>
+                        );
+                      })}
                     </select>
                   )}
                   {form.type !== 'Epic' && allowedParents.length === 0 && (
