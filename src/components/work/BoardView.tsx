@@ -548,11 +548,6 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                                   <span>Unassigned</span>
                                 </span>
                               )}
-                              {row.operationCategory && (
-                                <span className="text-[8px] px-1.5 py-0.2 rounded bg-indigo-950/50 border border-indigo-800/40 text-indigo-300">
-                                  {row.operationCategory}
-                                </span>
-                              )}
                             </div>
                           </div>
                         </>
@@ -677,11 +672,6 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                                 </span>
                               ) : null}
 
-                              {row.operationCategory && (
-                                <span className="text-[8px] px-1.5 py-0.5 rounded bg-indigo-950/50 border border-indigo-800/40 text-indigo-300 truncate max-w-[130px]">
-                                  {row.operationCategory}
-                                </span>
-                              )}
                             </div>
                           </div>
 
@@ -841,12 +831,6 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                                   <Factory className="w-2 h-2 text-amber-400" /> {linkedVendor.name}
                                 </p>
                               )}
-                              {task.operationCategory && (
-                                <span className="text-[7px] px-1 py-0.2 rounded bg-[#141a28] text-indigo-300 border border-[#212b40] mt-1 inline-block truncate max-w-[140px]">
-                                  {task.operationCategory}
-                                </span>
-                              )}
-
                               {/* Task Footer: Assignee & Story/Task code aligned cleanly at the bottom */}
                               <div className="flex items-center justify-between mt-auto pt-2 border-t border-[#1a2336] text-[10px]">
                                 {task.assignee ? (

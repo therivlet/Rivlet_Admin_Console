@@ -810,12 +810,6 @@ export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusMod
                             {w.type}
                           </span>
 
-                          {w.operationCategory && (
-                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#131a29] text-[#94a3b8] font-mono truncate max-w-[140px]">
-                              {w.operationCategory}
-                            </span>
-                          )}
-
                           <span
                             className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
                               w.state === 'Active'
