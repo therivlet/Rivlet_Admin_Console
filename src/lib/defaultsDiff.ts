@@ -46,6 +46,7 @@ export function getDifferencesFromDefaults(
   // Sales Rates (%)
   const salesPercentFields: Array<{ key: keyof CalculatorDefaults & keyof PricingInputs; label: string }> = [
     { key: 'gateway', label: 'Payment Gateway Fee' },
+    { key: 'upiSurchargeRate', label: 'UPI Surcharge (> ₹2,000)' },
     { key: 'shopifyFee', label: 'Shopify Platform Fee' },
     { key: 'affiliate', label: 'Influencer / Affiliate Commission' },
     { key: 'promoter', label: 'Brand Promoter Commission' },

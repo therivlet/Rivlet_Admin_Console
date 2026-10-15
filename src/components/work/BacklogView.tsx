@@ -19,7 +19,7 @@ export default function BacklogView() {
   const [typeFilter, setTypeFilter] = useState<'All' | WorkItemType>('All');
   const [stateFilter, setStateFilter] = useState<'All' | WorkItemState>('All');
   const [assigneeFilter, setAssigneeFilter] = useState('All');
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [modalItem, setModalItem] = useState<WorkItem | Omit<WorkItem, 'createdAt' | 'updatedAt'> | null>(null);
 
   const topLevel = useMemo(() => workItems.filter((w) => !w.parentId), [workItems]);
@@ -40,11 +40,23 @@ export default function BacklogView() {
   };
 
   const sprintName = (id?: string) => sprints.find((s) => s.id === id)?.name;
-  const toggleCollapse = (id: string) => setCollapsed((prev) => ({ ...prev, [id]: !prev[id] }));
+  const toggleExpand = (id: string) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+
+  const expandAll = () => {
+    const all: Record<string, boolean> = {};
+    for (const w of workItems) all[w.id] = true;
+    setExpanded(all);
+  };
+
+  const collapseAll = () => {
+    setExpanded({});
+  };
+
+  const hasAnyExpanded = Object.values(expanded).some(Boolean);
 
   const renderRow = (item: WorkItem, depth: number) => {
     const children = childrenOf(item.id);
-    const isCollapsed = collapsed[item.id];
+    const isExpanded = !!expanded[item.id];
     const visible = matchesFilters(item) || children.some((c) => matchesFilters(c) || childrenOf(c.id).some(matchesFilters));
     if (!visible) return null;
 
@@ -56,8 +68,8 @@ export default function BacklogView() {
           onClick={() => setModalItem(item)}
         >
           {children.length > 0 ? (
-            <button onClick={(e) => { e.stopPropagation(); toggleCollapse(item.id); }} className="text-[#7c869d] hover:text-white flex-shrink-0" title="Expand/collapse">
-              {isCollapsed ? <ChevronRightIcon className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            <button onClick={(e) => { e.stopPropagation(); toggleExpand(item.id); }} className="text-[#7c869d] hover:text-white flex-shrink-0" title={isExpanded ? 'Collapse' : 'Expand'}>
+              {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRightIcon className="w-3.5 h-3.5" />}
             </button>
           ) : <span className="w-3.5 flex-shrink-0" />}
 
@@ -80,7 +92,7 @@ export default function BacklogView() {
           <span className="text-[10px] text-[#7c869d] flex-shrink-0 hidden sm:inline">{sprintName(item.sprintId) || 'Backlog'}</span>
           <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium flex-shrink-0 ${STATE_COLOR[item.state]}`}>{item.state}</span>
         </div>
-        {!isCollapsed && children.map((c) => renderRow(c, depth + 1))}
+        {isExpanded && children.map((c) => renderRow(c, depth + 1))}
       </React.Fragment>
     );
   };
@@ -88,16 +100,33 @@ export default function BacklogView() {
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4">
-        <p className="text-xs sm:text-sm text-[#94a3b8]">Epics, Features, User Stories, Tasks & Bugs - the full work hierarchy.</p>
-        <button
-          onClick={() => setModalItem(emptyItem())}
-          title="Create a new work item"
-          className="flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-xs sm:text-sm font-semibold hover:shadow-glow transition-all flex-shrink-0 self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span className="hidden xs:inline">New Work Item</span>
-          <span className="xs:hidden">New Item</span>
-        </button>
+        <p className="text-xs sm:text-sm text-[#94a3b8]">Epics, Features, User Stories, Tasks & Bugs - the full work hierarchy (collapsed by default for clarity).</p>
+        <div className="flex items-center gap-2 flex-shrink-0 self-start sm:self-auto">
+          <button
+            onClick={hasAnyExpanded ? collapseAll : expandAll}
+            title={hasAnyExpanded ? 'Collapse all work items' : 'Expand all work items'}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0e121b] border border-[#20293d] text-xs text-[#cbd5e1] hover:text-white hover:border-[#cda052]/50 transition-all cursor-pointer"
+          >
+            {hasAnyExpanded ? (
+              <>
+                <ChevronRightIcon className="w-3.5 h-3.5 text-[#cda052]" /> Collapse All
+              </>
+            ) : (
+              <>
+                <ChevronDown className="w-3.5 h-3.5 text-[#cda052]" /> Expand All
+              </>
+            )}
+          </button>
+          <button
+            onClick={() => setModalItem(emptyItem())}
+            title="Create a new work item"
+            className="flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-xs sm:text-sm font-semibold hover:shadow-glow transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden xs:inline">New Work Item</span>
+            <span className="xs:hidden">New Item</span>
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-3 mb-4">

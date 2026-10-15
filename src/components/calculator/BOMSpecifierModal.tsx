@@ -7,18 +7,21 @@ import {
   Plus, 
   Trash2, 
   Check, 
-  Sparkles, 
   Shirt, 
   Scissors, 
-  Tag, 
-  Package, 
+  Save,
   RotateCcw,
-  Info,
-  ArrowRight,
-  AlertCircle
+  AlertCircle,
+  FileText,
+  ChevronDown
 } from 'lucide-react';
 import { GarmentBOM, FabricBOMItem, TrimBOMItem } from '@/lib/types';
-import { bomPresets } from '@/lib/bomPresets';
+import { 
+  getSavedBOMs, 
+  saveCustomBOM, 
+  deleteCustomBOM, 
+  createEmptyBOM 
+} from '@/lib/bomPresets';
 import ModalPortal from '@/components/ui/ModalPortal';
 import { useConfirm } from '@/lib/confirmContext';
 
@@ -43,60 +46,53 @@ export default function BOMSpecifierModal({
   onApplyBOM,
 }: BOMSpecifierModalProps) {
   const confirm = useConfirm();
-  const [selectedPreset, setSelectedPreset] = useState<string>('hoodie');
-  const [garmentType, setGarmentType] = useState<string>('Oversized French Terry Hoodie (450 GSM)');
+  const [savedBOMs, setSavedBOMs] = useState<GarmentBOM[]>([]);
+  const [activeBOMId, setActiveBOMId] = useState<string | null>(null);
+
+  const [garmentType, setGarmentType] = useState<string>('Custom Garment Spec');
   const [fabricItems, setFabricItems] = useState<FabricBOMItem[]>([]);
   const [trimItems, setTrimItems] = useState<TrimBOMItem[]>([]);
-  const [stitchingLabor, setStitchingLabor] = useState<number>(180);
-  const [washFinishCost, setWashFinishCost] = useState<number>(65);
+  const [stitchingLabor, setStitchingLabor] = useState<number>(150);
+  const [washFinishCost, setWashFinishCost] = useState<number>(45);
   const [notes, setNotes] = useState<string>('');
   const [appliedAlert, setAppliedAlert] = useState(false);
+  const [saveSuccessAlert, setSaveSuccessAlert] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const loadPreset = useCallback((key: string) => {
-    setSelectedPreset(key);
-    const preset = bomPresets[key];
-    if (preset) {
-      setGarmentType(preset.garmentType);
-      setFabricItems(JSON.parse(JSON.stringify(preset.fabricItems)));
-      setTrimItems(JSON.parse(JSON.stringify(preset.trimItems)));
-      setStitchingLabor(preset.stitchingLabor);
-      setWashFinishCost(preset.washFinishCost);
-      setNotes(preset.notes || '');
-    }
+  // Load saved BOM library from localStorage
+  const refreshSavedBOMs = useCallback(() => {
+    const list = getSavedBOMs();
+    setSavedBOMs(list);
+    return list;
   }, []);
 
-  const handleSelectPreset = async (key: string) => {
-    if (key === selectedPreset) return;
-    const preset = bomPresets[key];
-    if (!preset) return;
+  // Set active BOM into editor fields
+  const loadBOMIntoForm = useCallback((bom: GarmentBOM) => {
+    setActiveBOMId(bom.id || null);
+    setGarmentType(bom.garmentType || 'Custom Garment Spec');
+    setFabricItems(JSON.parse(JSON.stringify(bom.fabricItems || [])));
+    setTrimItems(JSON.parse(JSON.stringify(bom.trimItems || [])));
+    setStitchingLabor(bom.stitchingLabor || 0);
+    setWashFinishCost(bom.washFinishCost || 0);
+    setNotes(bom.notes || '');
+    setValidationError(null);
+  }, []);
 
-    if (fabricItems.length > 0 || trimItems.length > 0) {
-      const ok = await confirm({
-        title: 'Switch Apparel Preset',
-        message: `Loading the "${preset.garmentType}" preset will replace all current fabric rows, trim specifications, and labor costs. Do you want to proceed?`,
-        confirmLabel: 'Load Preset',
-        danger: false,
-      });
-      if (!ok) return;
-    }
-    loadPreset(key);
-  };
-
-  // Initialize or load preset
+  // Initialize modal state on open
   useEffect(() => {
     if (!isOpen) return;
-    if (initialBOM) {
-      setGarmentType(initialBOM.garmentType || 'Custom Garment Spec');
-      setFabricItems(initialBOM.fabricItems || []);
-      setTrimItems(initialBOM.trimItems || []);
-      setStitchingLabor(initialBOM.stitchingLabor || 0);
-      setWashFinishCost(initialBOM.washFinishCost || 0);
-      setNotes(initialBOM.notes || '');
+    const list = refreshSavedBOMs();
+
+    if (initialBOM && initialBOM.fabricItems && initialBOM.fabricItems.length > 0) {
+      loadBOMIntoForm(initialBOM);
+    } else if (list.length > 0) {
+      loadBOMIntoForm(list[0]);
     } else {
-      loadPreset('hoodie');
+      // Start with a clean empty BOM (no dummy presets)
+      const fresh = createEmptyBOM('New Garment Spec');
+      loadBOMIntoForm(fresh);
     }
-  }, [initialBOM, isOpen, loadPreset]);
+  }, [isOpen, initialBOM, refreshSavedBOMs, loadBOMIntoForm]);
 
   // Calculations
   const fabricTotal = fabricItems.reduce((acc, item) => acc + (Number(item.totalCost) || 0), 0);
@@ -123,13 +119,13 @@ export default function BOMSpecifierModal({
   const addFabricRow = () => {
     const newItem: FabricBOMItem = {
       id: `fab-${Date.now()}`,
-      name: 'Secondary Fabric / Insert',
-      material: '100% Combed Cotton',
-      weightGsm: 300,
-      consumption: 0.15,
+      name: 'Fabric Component',
+      material: '100% Cotton Blend',
+      weightGsm: 280,
+      consumption: 0.8,
       unit: 'kg',
-      ratePerUnit: 600,
-      totalCost: 90,
+      ratePerUnit: 550,
+      totalCost: 440,
     };
     setFabricItems(prev => [...prev, newItem]);
   };
@@ -160,9 +156,9 @@ export default function BOMSpecifierModal({
   const addTrimRow = () => {
     const newItem: TrimBOMItem = {
       id: `trm-${Date.now()}`,
-      name: 'Custom Hardware / Accessory',
-      category: 'Trims & Hardware',
-      specification: 'Custom metal trim with engraved logo',
+      name: 'Trim / Label Component',
+      category: 'Labels & Packaging',
+      specification: 'Brand label / packaging spec',
       quantity: 1,
       ratePerUnit: 15,
       totalCost: 15,
@@ -181,17 +177,79 @@ export default function BOMSpecifierModal({
     setTrimItems(prev => prev.filter(item => item.id !== id));
   };
 
-  // Apply to Calculator
+  // Create new BOM from scratch
+  const handleCreateNew = async () => {
+    if (fabricItems.length > 0) {
+      const ok = await confirm({
+        title: 'Create New Garment BOM',
+        message: 'Start a blank Garment BOM specification? Unsaved changes to the current BOM will be cleared.',
+        confirmLabel: 'New BOM',
+        danger: false,
+      });
+      if (!ok) return;
+    }
+    const fresh = createEmptyBOM('New Garment Spec');
+    loadBOMIntoForm(fresh);
+  };
+
+  // Save or update BOM in library
+  const handleSaveToLibrary = () => {
+    if (!garmentType.trim()) {
+      setValidationError('Please enter a garment name or style code for this BOM.');
+      return;
+    }
+
+    const compiled: GarmentBOM = {
+      id: activeBOMId || `bom-${Date.now()}`,
+      garmentType: garmentType.trim(),
+      fabricItems,
+      trimItems,
+      stitchingLabor: Number(stitchingLabor) || 0,
+      washFinishCost: Number(washFinishCost) || 0,
+      totalBOMCost,
+      notes,
+    };
+
+    const updatedList = saveCustomBOM(compiled);
+    setSavedBOMs(updatedList);
+    setActiveBOMId(compiled.id!);
+    setValidationError(null);
+    setSaveSuccessAlert(true);
+    setTimeout(() => setSaveSuccessAlert(false), 2000);
+  };
+
+  // Delete BOM from library
+  const handleDeleteBOM = async () => {
+    if (!activeBOMId) return;
+    const ok = await confirm({
+      title: 'Delete Garment BOM',
+      message: `Are you sure you want to permanently delete "${garmentType}" from your saved BOM library?`,
+      confirmLabel: 'Delete BOM',
+      danger: true,
+    });
+    if (!ok) return;
+
+    const remaining = deleteCustomBOM(activeBOMId);
+    setSavedBOMs(remaining);
+    if (remaining.length > 0) {
+      loadBOMIntoForm(remaining[0]);
+    } else {
+      const fresh = createEmptyBOM('New Garment Spec');
+      loadBOMIntoForm(fresh);
+    }
+  };
+
+  // Apply BOM to Costing Sheet
   const handleApply = () => {
     setValidationError(null);
 
-    if (!garmentType || garmentType.trim().length < 2) {
-      setValidationError('Garment type description is required.');
+    if (!garmentType.trim()) {
+      setValidationError('Please enter a garment name.');
       return;
     }
 
     if (fabricItems.length === 0) {
-      setValidationError('At least one fabric layer/body must be specified in the BOM.');
+      setValidationError('Please add at least one fabric component to itemize your garment.');
       return;
     }
 
@@ -230,7 +288,6 @@ export default function BOMSpecifierModal({
       return;
     }
 
-    // Break up into Rivlet Step 1 cost buckets:
     // Factory base CMT = Fabric Total + Stitching Labor + Wash/Finish
     const factoryCost = Math.round(fabricTotal + stitchingLabor + washFinishCost);
     
@@ -256,6 +313,7 @@ export default function BOMSpecifierModal({
     );
 
     const compiledBOM: GarmentBOM = {
+      id: activeBOMId || `bom-${Date.now()}`,
       garmentType,
       fabricItems,
       trimItems,
@@ -264,6 +322,9 @@ export default function BOMSpecifierModal({
       totalBOMCost,
       notes,
     };
+
+    // Auto-save to library on apply
+    saveCustomBOM(compiledBOM);
 
     onApplyBOM(compiledBOM, {
       factoryCost,
@@ -276,7 +337,7 @@ export default function BOMSpecifierModal({
     setTimeout(() => {
       setAppliedAlert(false);
       onClose();
-    }, 1200);
+    }, 1000);
   };
 
   if (!isOpen) return null;
@@ -303,11 +364,11 @@ export default function BOMSpecifierModal({
                   Technical Bill of Materials (BOM) & Trim Specifier
                 </h3>
                 <span className="text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full bg-[rgba(205,160,82,0.15)] text-[#cda052] border border-[rgba(205,160,82,0.3)] font-semibold flex-shrink-0">
-                  Architecture
+                  Custom Architecture
                 </span>
               </div>
               <p className="text-[11px] sm:text-xs text-[#7d869d] truncate">
-                Itemize fabric blends, GSM, consumption rates, CMT labor, and luxury hardware trims.
+                Create, customize, and store exact fabric layers, consumption rates, CMT labor, and luxury trims for your garments.
               </p>
             </div>
           </div>
@@ -329,59 +390,77 @@ export default function BOMSpecifierModal({
           </div>
         )}
 
+        {/* Dynamic Garment BOM Library & Management Bar (No Dummy Presets) */}
+        <div className="p-3 sm:p-4 bg-[#0d101a] border-b border-[#181f30] flex flex-col md:flex-row md:items-center justify-between gap-3 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+            <span className="text-xs text-[#717a90] font-medium flex-shrink-0 flex items-center gap-1">
+              <FileText className="w-3.5 h-3.5 text-[#cda052]" /> Saved Garments:
+            </span>
 
-        {/* Preset Selector Banner */}
-        <div className="p-3 sm:p-4 bg-[#0d101a] border-b border-[#181f30] flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-shrink-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-[#717a90] font-medium mr-1">Apparel Presets:</span>
-            <button
-              onClick={() => handleSelectPreset('hoodie')}
-              title="Load preset specs for 450 GSM French Terry Hoodie"
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                selectedPreset === 'hoodie'
-                  ? 'bg-gradient-to-r from-[#cda052] to-[#b38536] text-black shadow-glow'
-                  : 'bg-[#141824] text-[#8e98ae] hover:text-white border border-[#22293d]'
-              }`}
-            >
-              <Shirt className="w-3.5 h-3.5" />
-              <span>450 GSM French Terry Hoodie</span>
-            </button>
-
-            <button
-              onClick={() => handleSelectPreset('tshirt')}
-              title="Load preset specs for 280 GSM Heavy Boxy Tee"
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                selectedPreset === 'tshirt'
-                  ? 'bg-gradient-to-r from-[#cda052] to-[#b38536] text-black shadow-glow'
-                  : 'bg-[#141824] text-[#8e98ae] hover:text-white border border-[#22293d]'
-              }`}
-            >
-              <Shirt className="w-3.5 h-3.5" />
-              <span>280 GSM Heavy Boxy Tee</span>
-            </button>
+            {savedBOMs.length > 0 ? (
+              <select
+                value={activeBOMId || ''}
+                onChange={(e) => {
+                  const selected = savedBOMs.find(b => b.id === e.target.value);
+                  if (selected) loadBOMIntoForm(selected);
+                }}
+                className="px-2.5 py-1.5 rounded-lg bg-[#141824] border border-[#232d44] text-xs text-white focus:outline-none focus:border-[#cda052] max-w-[220px] truncate"
+              >
+                {savedBOMs.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.garmentType}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="text-[11px] text-[#5a657c] italic">No saved specifications yet</span>
+            )}
 
             <button
-              onClick={() => handleSelectPreset('sweatpants')}
-              title="Load preset specs for 400 GSM Heavy Sweatpants"
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                selectedPreset === 'sweatpants'
-                  ? 'bg-gradient-to-r from-[#cda052] to-[#b38536] text-black shadow-glow'
-                  : 'bg-[#141824] text-[#8e98ae] hover:text-white border border-[#22293d]'
-              }`}
+              type="button"
+              onClick={handleCreateNew}
+              title="Create a fresh garment BOM from scratch"
+              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-[#141824] hover:bg-[#1a2133] text-[#cbd5e1] hover:text-white border border-[#232d44] transition-all flex items-center gap-1"
             >
-              <Shirt className="w-3.5 h-3.5" />
-              <span>400 GSM Heavy Sweatpants</span>
+              <Plus className="w-3.5 h-3.5 text-[#cda052]" />
+              <span>New BOM</span>
             </button>
+
+            {activeBOMId && (
+              <button
+                type="button"
+                onClick={handleDeleteBOM}
+                title="Delete this saved BOM from your library"
+                className="p-1.5 rounded-lg text-rose-400 hover:text-rose-200 hover:bg-rose-950/40 border border-transparent hover:border-rose-900/50 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <span className="text-xs text-[#6e778d] flex-shrink-0">Garment Name:</span>
+          {/* Garment Title and Save Button */}
+          <div className="flex items-center gap-2 w-full md:w-auto">
             <input
               type="text"
               value={garmentType}
               onChange={(e) => setGarmentType(e.target.value)}
-              className="px-2.5 py-1 rounded bg-[#07090f] border border-[#20273c] text-xs text-white outline-none focus:border-[#cda052] flex-1 sm:w-64"
+              placeholder="Garment Name (e.g. Rivlet Overshirt)"
+              className="px-3 py-1.5 rounded-lg bg-[#07090f] border border-[#20273c] text-xs text-white font-medium outline-none focus:border-[#cda052] flex-1 md:w-64"
             />
+            <button
+              type="button"
+              onClick={handleSaveToLibrary}
+              title="Save or update this Garment BOM in your library"
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#131b2c] hover:bg-[#1c273e] text-[#cbd5e1] hover:text-white border border-[#243352] hover:border-[#cda052]/50 transition-all flex items-center gap-1 flex-shrink-0"
+            >
+              <Save className="w-3.5 h-3.5 text-[#cda052]" />
+              <span>Save Spec</span>
+            </button>
+            {saveSuccessAlert && (
+              <span className="text-[11px] text-emerald-400 font-medium animate-fade-in flex items-center gap-0.5">
+                <Check className="w-3 h-3" /> Saved!
+              </span>
+            )}
           </div>
         </div>
 
@@ -398,89 +477,95 @@ export default function BOMSpecifierModal({
               </div>
               <button
                 onClick={addFabricRow}
-                title="Add a new fabric or ribbing line to the BOM"
-                className="px-2.5 py-1 rounded bg-[#131724] border border-[#22293d] hover:border-[#cda052]/50 text-xs text-[#cda052] flex items-center gap-1 transition-colors"
+                title="Add an additional fabric layer or insert"
+                className="flex items-center gap-1 text-[11px] px-2.5 py-1 rounded bg-[#161c2b] text-[#cbd5e1] hover:text-white border border-[#252f44] hover:border-[#cda052] transition-colors"
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add Fabric Layer</span>
+                <Plus className="w-3 h-3 text-[#cda052]" />
+                <span>Add Fabric Row</span>
               </button>
             </div>
 
-            <div className="border border-[#1d2437] rounded-xl overflow-x-auto bg-[#0c0f18]">
-              <table className="w-full text-xs text-left min-w-[620px]">
-                <thead className="bg-[#121623] border-b border-[#1d2437] text-[#8690a6]">
+            <div className="rounded-xl border border-[#1b2234] bg-[#0c0f18] overflow-x-auto">
+              <table className="w-full text-left text-xs min-w-[700px]">
+                <thead className="bg-[#0f1320] text-[#717a90] text-[10px] font-mono uppercase tracking-wider border-b border-[#1d2437]">
                   <tr>
-                    <th className="py-2.5 px-3 font-semibold">Fabric Layer & Composition</th>
-                    <th className="py-2.5 px-2 text-center font-semibold w-24">Weight (GSM)</th>
-                    <th className="py-2.5 px-2 text-center font-semibold w-28">Consumption</th>
-                    <th className="py-2.5 px-2 text-right font-semibold w-28">Rate ({currency}/kg)</th>
-                    <th className="py-2.5 px-3 text-right font-semibold w-28">Subtotal</th>
-                    <th className="py-2.5 px-2 text-center w-10"></th>
+                    <th className="py-2.5 px-3">Component / Placement</th>
+                    <th className="py-2.5 px-3">Material Composition</th>
+                    <th className="py-2.5 px-3 w-20">GSM</th>
+                    <th className="py-2.5 px-3 w-24">Consumption</th>
+                    <th className="py-2.5 px-3 w-16">Unit</th>
+                    <th className="py-2.5 px-3 w-24">Rate ({currency})</th>
+                    <th className="py-2.5 px-3 w-24 text-right">Cost ({currency})</th>
+                    <th className="py-2.5 px-2 w-10 text-center"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#171d2c]">
                   {fabricItems.map((item) => (
-                    <tr key={item.id} className="hover:bg-[#111522] transition-colors">
-                      <td className="py-2 px-3">
+                    <tr key={item.id} className="hover:bg-[#121624] transition-colors">
+                      <td className="p-2.5">
                         <input
                           type="text"
                           value={item.name}
                           onChange={(e) => updateFabricField(item.id, 'name', e.target.value)}
-                          placeholder="e.g. Main Body French Terry"
-                          className="w-full bg-transparent font-medium text-white outline-none placeholder:text-[#525b70]"
+                          className="w-full bg-[#07090f] px-2 py-1 rounded border border-[#1d2539] text-white text-xs focus:border-[#cda052] outline-none"
                         />
+                      </td>
+                      <td className="p-2.5">
                         <input
                           type="text"
                           value={item.material}
                           onChange={(e) => updateFabricField(item.id, 'material', e.target.value)}
-                          placeholder="e.g. 100% Combed Compact Cotton"
-                          className="w-full bg-transparent text-[11px] text-[#717b92] outline-none placeholder:text-[#424a5b]"
+                          className="w-full bg-[#07090f] px-2 py-1 rounded border border-[#1d2539] text-white text-xs focus:border-[#cda052] outline-none"
                         />
                       </td>
-                      <td className="py-2 px-2 text-center">
+                      <td className="p-2.5">
                         <input
                           type="number"
-                          value={item.weightGsm}
+                          value={item.weightGsm || ''}
                           onChange={(e) => updateFabricField(item.id, 'weightGsm', Number(e.target.value))}
-                          className="w-16 px-1.5 py-1 text-center bg-[#07090f] border border-[#20273a] rounded text-white font-mono text-xs outline-none"
+                          className="w-full bg-[#07090f] px-2 py-1 rounded border border-[#1d2539] text-white text-xs text-right focus:border-[#cda052] outline-none"
                         />
                       </td>
-                      <td className="py-2 px-2 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={item.consumption}
-                            onChange={(e) => updateFabricField(item.id, 'consumption', Number(e.target.value))}
-                            className="w-16 px-1.5 py-1 text-center bg-[#07090f] border border-[#20273a] rounded text-white font-mono text-xs outline-none"
-                          />
-                          <span className="text-[10px] text-[#6b758c]">kg</span>
-                        </div>
+                      <td className="p-2.5">
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={item.consumption || ''}
+                          onChange={(e) => updateFabricField(item.id, 'consumption', Number(e.target.value))}
+                          className="w-full bg-[#07090f] px-2 py-1 rounded border border-[#1d2539] text-white text-xs text-right focus:border-[#cda052] outline-none font-mono"
+                        />
                       </td>
-                      <td className="py-2 px-2 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <span className="text-[#6b758c]">{currency}</span>
-                          <input
-                            type="number"
-                            value={item.ratePerUnit}
-                            onChange={(e) => updateFabricField(item.id, 'ratePerUnit', Number(e.target.value))}
-                            className="w-20 px-1.5 py-1 text-right bg-[#07090f] border border-[#20273a] rounded text-white font-mono text-xs outline-none"
-                          />
-                        </div>
+                      <td className="p-2.5">
+                        <select
+                          value={item.unit}
+                          onChange={(e) => updateFabricField(item.id, 'unit', e.target.value)}
+                          className="w-full bg-[#07090f] px-1 py-1 rounded border border-[#1d2539] text-white text-xs focus:border-[#cda052] outline-none"
+                        >
+                          <option value="kg">kg</option>
+                          <option value="meters">m</option>
+                          <option value="pieces">pcs</option>
+                        </select>
                       </td>
-                      <td className="py-2 px-3 text-right font-mono font-semibold text-[#cda052]">
-                        {currency}{item.totalCost.toFixed(1)}
+                      <td className="p-2.5">
+                        <input
+                          type="number"
+                          step="1"
+                          value={item.ratePerUnit || ''}
+                          onChange={(e) => updateFabricField(item.id, 'ratePerUnit', Number(e.target.value))}
+                          className="w-full bg-[#07090f] px-2 py-1 rounded border border-[#1d2539] text-white text-xs text-right focus:border-[#cda052] outline-none font-mono"
+                        />
                       </td>
-                      <td className="py-2 px-2 text-center">
-                        {fabricItems.length > 1 && (
-                          <button
-                            onClick={() => removeFabricRow(item.id, item.name)}
-                            title="Remove fabric component"
-                            className="p-1 text-[#626a7e] hover:text-rose-400 transition-colors"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                      <td className="p-2.5 text-right font-mono font-semibold text-white">
+                        {item.totalCost?.toFixed(1) || '0.0'}
+                      </td>
+                      <td className="p-2.5 text-center">
+                        <button
+                          onClick={() => removeFabricRow(item.id, item.name)}
+                          title="Remove fabric row"
+                          className="p-1 rounded text-[#717a90] hover:text-rose-400 hover:bg-rose-950/30 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -488,7 +573,7 @@ export default function BOMSpecifierModal({
               </table>
 
               <div className="p-2.5 bg-[#0f1320] border-t border-[#1d2437] flex items-center justify-between text-xs px-4">
-                <span className="text-[#7c869e] font-medium">Subtotal Fabric Cost per Garment</span>
+                <span className="text-[#7c869e] font-medium">Subtotal Fabric Supply</span>
                 <span className="font-mono font-bold text-white text-sm">
                   {currency}{fabricTotal.toFixed(2)}
                 </span>
@@ -496,142 +581,142 @@ export default function BOMSpecifierModal({
             </div>
           </div>
 
-          {/* SECTION 2: CMT STITCHING LABOR & WASH FINISHING */}
+          {/* SECTION 2: CMT STITCHING LABOR & FINISHING */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Scissors className="w-4 h-4 text-[#cda052]" />
               <h4 className="text-xs uppercase font-mono tracking-wider text-[#cda052] font-semibold">
-                2. Cut, Make, Trim (CMT) & Chemical Wash Finishing
+                2. CMT Stitching Labor & Specialty Washing / Dyeing
               </h4>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-4 bg-[#0c0f18] border border-[#1e2538] rounded-xl flex items-center justify-between gap-4">
-                <div>
-                  <label className="text-xs font-bold text-white block">Cut & Make Labor (CMT)</label>
-                  <p className="text-[11px] text-[#717b92] mt-0.5">
-                    Skilled flatlock stitching, reinforced collar, twin-needle finish
-                  </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-3.5 bg-[#0c0f18] border border-[#1b2234] rounded-xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-white block">Cut, Make & Trim (CMT) Stitching Labor</label>
+                  <span className="text-[10px] text-[#717a90] font-mono">Per Unit</span>
                 </div>
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <span className="text-xs text-[#717b92]">{currency}</span>
+                <p className="text-[11px] text-[#788299]">Precision cutting, flatlock seams, and structural assembly.</p>
+                <div className="relative pt-1">
                   <input
                     type="number"
+                    step="5"
                     value={stitchingLabor}
-                    onChange={(e) => setStitchingLabor(Number(e.target.value))}
-                    className="w-24 px-2.5 py-1.5 bg-[#07090f] border border-[#20273a] rounded-lg text-white font-mono text-xs text-right outline-none focus:border-[#cda052]"
+                    onChange={(e) => setStitchingLabor(Number(e.target.value) || 0)}
+                    className="w-full bg-[#07090f] px-3 py-1.5 rounded-lg border border-[#1d2539] text-white text-sm font-mono focus:border-[#cda052] outline-none"
                   />
+                  <span className="absolute right-3 top-[11px] text-[#6b758b] text-xs font-mono">{currency}</span>
                 </div>
               </div>
 
-              <div className="p-4 bg-[#0c0f18] border border-[#1e2538] rounded-xl flex items-center justify-between gap-4">
-                <div>
-                  <label className="text-xs font-bold text-white block">Dyeing & Specialty Wash</label>
-                  <p className="text-[11px] text-[#717b92] mt-0.5">
-                    Reactive piece dyeing, carbon peach / suede wash, enzyme softening
-                  </p>
+              <div className="p-3.5 bg-[#0c0f18] border border-[#1b2234] rounded-xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-white block">Specialty Washing, Softening & Piece Dye</label>
+                  <span className="text-[10px] text-[#717a90] font-mono">Per Unit</span>
                 </div>
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <span className="text-xs text-[#717b92]">{currency}</span>
+                <p className="text-[11px] text-[#788299]">Garment enzyme wash, carbon suede finish, reactive dyeing.</p>
+                <div className="relative pt-1">
                   <input
                     type="number"
+                    step="5"
                     value={washFinishCost}
-                    onChange={(e) => setWashFinishCost(Number(e.target.value))}
-                    className="w-24 px-2.5 py-1.5 bg-[#07090f] border border-[#20273a] rounded-lg text-white font-mono text-xs text-right outline-none focus:border-[#cda052]"
+                    onChange={(e) => setWashFinishCost(Number(e.target.value) || 0)}
+                    className="w-full bg-[#07090f] px-3 py-1.5 rounded-lg border border-[#1d2539] text-white text-sm font-mono focus:border-[#cda052] outline-none"
                   />
+                  <span className="absolute right-3 top-[11px] text-[#6b758b] text-xs font-mono">{currency}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* SECTION 3: TRIMS, HARDWARE & LUXURY PACKAGING */}
+          {/* SECTION 3: LUXURY HARDWARE TRIMS, LABELS & PACKAGING */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Tag className="w-4 h-4 text-[#cda052]" />
+                <Shirt className="w-4 h-4 text-[#cda052]" />
                 <h4 className="text-xs uppercase font-mono tracking-wider text-[#cda052] font-semibold">
-                  3. Hardware, Trims, Woven Labels & Packaging
+                  3. Hardware Trims, Brand Labels & Packaging
                 </h4>
               </div>
               <button
                 onClick={addTrimRow}
-                title="Add a new trim, zipper, or label component"
-                className="px-2.5 py-1 rounded bg-[#131724] border border-[#22293d] hover:border-[#cda052]/50 text-xs text-[#cda052] flex items-center gap-1 transition-colors"
+                title="Add an itemized trim or label"
+                className="flex items-center gap-1 text-[11px] px-2.5 py-1 rounded bg-[#161c2b] text-[#cbd5e1] hover:text-white border border-[#252f44] hover:border-[#cda052] transition-colors"
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add Trim / Packaging</span>
+                <Plus className="w-3 h-3 text-[#cda052]" />
+                <span>Add Trim Row</span>
               </button>
             </div>
 
-            <div className="border border-[#1d2437] rounded-xl overflow-x-auto bg-[#0c0f18]">
-              <table className="w-full text-xs text-left min-w-[620px]">
-                <thead className="bg-[#121623] border-b border-[#1d2437] text-[#8690a6]">
+            <div className="rounded-xl border border-[#1b2234] bg-[#0c0f18] overflow-x-auto">
+              <table className="w-full text-left text-xs min-w-[700px]">
+                <thead className="bg-[#0f1320] text-[#717a90] text-[10px] font-mono uppercase tracking-wider border-b border-[#1d2437]">
                   <tr>
-                    <th className="py-2.5 px-3 font-semibold">Trim / Hardware Component</th>
-                    <th className="py-2.5 px-2 font-semibold">Category</th>
-                    <th className="py-2.5 px-2 text-center font-semibold w-20">Quantity</th>
-                    <th className="py-2.5 px-2 text-right font-semibold w-24">Rate ({currency})</th>
-                    <th className="py-2.5 px-3 text-right font-semibold w-24">Subtotal</th>
-                    <th className="py-2.5 px-2 text-center w-10"></th>
+                    <th className="py-2.5 px-3">Item / Trim Description</th>
+                    <th className="py-2.5 px-3 w-40">Category</th>
+                    <th className="py-2.5 px-3">Engineering Spec / Finish</th>
+                    <th className="py-2.5 px-3 w-20">Qty/Garment</th>
+                    <th className="py-2.5 px-3 w-24">Rate ({currency})</th>
+                    <th className="py-2.5 px-3 w-24 text-right">Cost ({currency})</th>
+                    <th className="py-2.5 px-2 w-10 text-center"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#171d2c]">
                   {trimItems.map((item) => (
-                    <tr key={item.id} className="hover:bg-[#111522] transition-colors">
-                      <td className="py-2 px-3">
+                    <tr key={item.id} className="hover:bg-[#121624] transition-colors">
+                      <td className="p-2.5">
                         <input
                           type="text"
                           value={item.name}
                           onChange={(e) => updateTrimField(item.id, 'name', e.target.value)}
-                          placeholder="e.g. Laser-Engraved Gunmetal Aglets"
-                          className="w-full bg-transparent font-medium text-white outline-none placeholder:text-[#525b70]"
+                          className="w-full bg-[#07090f] px-2 py-1 rounded border border-[#1d2539] text-white text-xs focus:border-[#cda052] outline-none"
                         />
+                      </td>
+                      <td className="p-2.5">
+                        <select
+                          value={item.category}
+                          onChange={(e) => updateTrimField(item.id, 'category', e.target.value)}
+                          className="w-full bg-[#07090f] px-2 py-1 rounded border border-[#1d2539] text-white text-xs focus:border-[#cda052] outline-none"
+                        >
+                          <option value="Trims & Hardware">Trims & Hardware</option>
+                          <option value="Labels & Packaging">Labels & Packaging</option>
+                          <option value="Labor & Finishing">Labor & Finishing</option>
+                        </select>
+                      </td>
+                      <td className="p-2.5">
                         <input
                           type="text"
                           value={item.specification}
                           onChange={(e) => updateTrimField(item.id, 'specification', e.target.value)}
-                          placeholder="e.g. Matte finish, 12mm loop"
-                          className="w-full bg-transparent text-[11px] text-[#717b92] outline-none placeholder:text-[#424a5b]"
+                          className="w-full bg-[#07090f] px-2 py-1 rounded border border-[#1d2539] text-white text-xs focus:border-[#cda052] outline-none"
                         />
                       </td>
-                      <td className="py-2 px-2">
-                        <select
-                          value={item.category}
-                          onChange={(e) => updateTrimField(item.id, 'category', e.target.value as any)}
-                          className="px-2 py-1 bg-[#07090f] border border-[#20273a] rounded text-[11px] text-[#cbd5e1] outline-none"
-                        >
-                          <option value="Trims & Hardware">Hardware & Trims</option>
-                          <option value="Labels & Packaging">Labels & Packaging</option>
-                        </select>
-                      </td>
-                      <td className="py-2 px-2 text-center">
+                      <td className="p-2.5">
                         <input
                           type="number"
                           step="1"
-                          value={item.quantity}
+                          value={item.quantity || ''}
                           onChange={(e) => updateTrimField(item.id, 'quantity', Number(e.target.value))}
-                          className="w-14 px-1.5 py-1 text-center bg-[#07090f] border border-[#20273a] rounded text-white font-mono text-xs outline-none"
+                          className="w-full bg-[#07090f] px-2 py-1 rounded border border-[#1d2539] text-white text-xs text-right focus:border-[#cda052] outline-none font-mono"
                         />
                       </td>
-                      <td className="py-2 px-2 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <span className="text-[#6b758c]">{currency}</span>
-                          <input
-                            type="number"
-                            value={item.ratePerUnit}
-                            onChange={(e) => updateTrimField(item.id, 'ratePerUnit', Number(e.target.value))}
-                            className="w-16 px-1.5 py-1 text-right bg-[#07090f] border border-[#20273a] rounded text-white font-mono text-xs outline-none"
-                          />
-                        </div>
+                      <td className="p-2.5">
+                        <input
+                          type="number"
+                          step="1"
+                          value={item.ratePerUnit || ''}
+                          onChange={(e) => updateTrimField(item.id, 'ratePerUnit', Number(e.target.value))}
+                          className="w-full bg-[#07090f] px-2 py-1 rounded border border-[#1d2539] text-white text-xs text-right focus:border-[#cda052] outline-none font-mono"
+                        />
                       </td>
-                      <td className="py-2 px-3 text-right font-mono font-semibold text-[#cda052]">
-                        {currency}{item.totalCost.toFixed(1)}
+                      <td className="p-2.5 text-right font-mono font-semibold text-white">
+                        {item.totalCost?.toFixed(1) || '0.0'}
                       </td>
-                      <td className="py-2 px-2 text-center">
+                      <td className="p-2.5 text-center">
                         <button
                           onClick={() => removeTrimRow(item.id, item.name)}
-                          title="Remove trim component"
-                          className="p-1 text-[#626a7e] hover:text-rose-400 transition-colors"
+                          title="Remove trim row"
+                          className="p-1 rounded text-[#717a90] hover:text-rose-400 hover:bg-rose-950/30 transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -676,14 +761,14 @@ export default function BOMSpecifierModal({
             {appliedAlert && (
               <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
                 <Check className="w-4 h-4 text-emerald-400" />
-                Applied to Step 1!
+                Applied to Pricing Engine!
               </span>
             )}
 
             <button
               onClick={onClose}
               title="Discard changes and exit"
-              className="px-4 py-2 rounded-lg bg-[#141824] hover:bg-[#1a2030] text-xs text-[#8c95ab] hover:text-white border border-[#20273a] transition-colors"
+              className="px-4 py-2 rounded-lg bg-[#141824] hover:bg-[#1a2030] text-xs text-[#8c95ab] hover:text-white border border-[#20273a] transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -691,7 +776,7 @@ export default function BOMSpecifierModal({
             <button
               onClick={handleApply}
               title="Apply itemized BOM factory cost directly to the active costing sheet"
-              className="flex items-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow transition-all"
+              className="flex items-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow transition-all cursor-pointer"
             >
               <Check className="w-4 h-4" />
               <span>Apply BOM to Pricing Engine</span>

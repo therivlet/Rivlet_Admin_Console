@@ -34,7 +34,7 @@ const SAMPLE_YAML = `
   priority: "P1"
   points: 5
   assignee: "Unassigned"
-  sprint: "Sprint 1"
+  sprint: "[Specify Target Sprint or leave empty for Backlog]"
   manufacture: "Layo Group"
   styles: "Leggings, Sports Bra"
   description: "Lead fit sessions with sample master. Verify waistband elasticity, high-rise seam placement, and 4-way squat-proof density under 240 GSM."
@@ -64,7 +64,7 @@ const SAMPLE_YAML = `
   priority: "P2"
   points: 3
   assignee: "Unassigned"
-  sprint: "Sprint 1"
+  sprint: "[Specify Target Sprint or leave empty for Backlog]"
   manufacture: "Layo Group"
   styles: "All Styles"
   description: "Inspect and sign off on fabric lab dips in Midnight and Cardamom colorways for all 6 launch styles."
@@ -92,7 +92,7 @@ const SAMPLE_JSON = JSON.stringify(
       priority: 'P1',
       points: 5,
       assignee: 'Unassigned',
-      sprint: 'Sprint 1',
+      sprint: '[Specify Target Sprint or leave empty for Backlog]',
       manufacture: 'Layo Group',
       styles: 'Leggings, Sports Bra',
       description: 'Lead fit sessions with sample master. Verify waistband elasticity, high-rise seam placement, and 4-way squat-proof density under 240 GSM.',
@@ -724,7 +724,7 @@ JSON Schema:
     "priority": "P1", // P1 (Critical), P2 (High), P3 (Medium), P4 (Low)
     "points": 5, // 1, 2, 3, 5, 8
     "assignee": "Unassigned",
-    "sprint": "Sprint 1",
+    "sprint": "[Specify Sprint Name, e.g. Sprint 2: Factory Visits, or leave blank for Backlog]",
     "manufacture": "Layo Group", // Default partner: Layo Group (or Unassigned)
     "styles": "All Styles", // Or specific styles: e.g. "Leggings, Sports Bra"
     "operation": "Operations & Sourcing",
@@ -1529,7 +1529,7 @@ JSON Schema:
                 <div className="text-[#cbd5e1]"><span className="text-[#cda052] font-semibold">priority:</span> P1, P2, P3, P4</div>
                 <div className="text-[#cbd5e1]"><span className="text-[#cda052] font-semibold">points:</span> 1 to 8 pts</div>
                 <div className="text-[#cbd5e1]"><span className="text-[#cda052] font-semibold">assignee:</span> Unassigned / Name</div>
-                <div className="text-[#cbd5e1]"><span className="text-[#cda052] font-semibold">sprint:</span> Sprint 1, Sprint 2</div>
+                <div className="text-[#cbd5e1]"><span className="text-[#cda052] font-semibold">sprint:</span> Target Sprint (or blank for Backlog)</div>
                 <div className="text-[#cbd5e1]"><span className="text-[#cda052] font-semibold">manufacture:</span> Layo Group</div>
                 <div className="text-[#cbd5e1]"><span className="text-[#cda052] font-semibold">styles:</span> All Styles / single</div>
                 <div className="text-[#cbd5e1]"><span className="text-[#cda052] font-semibold">tasks:</span> List of subtasks</div>
@@ -1561,7 +1561,7 @@ JSON Schema:
               value={rawInput}
               onChange={(e) => setRawInput(e.target.value)}
               rows={14}
-              placeholder={`Paste your AI-generated JSON or YAML here...\n\nExample JSON:\n[\n  {\n    "user_story": "Finalize proto sample fit & sizing specs",\n    "priority": "P1",\n    "points": 5,\n    "assignee": "Unassigned",\n    "sprint": "Sprint 1",\n    "manufacture": "Layo Group",\n    "styles": "All Styles",\n    "description": "Lead fit sessions with sample master...",\n    "acceptance_criteria": "Fit trial approved across XS, S, M...",\n    "tasks": [\n      {\n        "title": "Audit proto sample waist tension & stretch recovery",\n        "priority": "P1",\n        "points": 2,\n        "assignee": "Unassigned",\n        "description": "Perform tensile testing across 25 cycles...",\n        "acceptance_criteria": "Elastic recovery >= 95%..."\n      }\n    ]\n  }\n]`}
+              placeholder={`Paste your AI-generated JSON or YAML here...\n\nExample JSON:\n[\n  {\n    "user_story": "Finalize proto sample fit & sizing specs",\n    "priority": "P1",\n    "points": 5,\n    "assignee": "Unassigned",\n    "sprint": "[Specify Target Sprint or Backlog]",\n    "manufacture": "Layo Group",\n    "styles": "All Styles",\n    "description": "Lead fit sessions with sample master...",\n    "acceptance_criteria": "Fit trial approved across XS, S, M...",\n    "tasks": [\n      {\n        "title": "Audit proto sample waist tension & stretch recovery",\n        "priority": "P1",\n        "points": 2,\n        "assignee": "Unassigned",\n        "description": "Perform tensile testing across 25 cycles...",\n        "acceptance_criteria": "Elastic recovery >= 95%..."\n      }\n    ]\n  }\n]`}
               className="w-full p-4 rounded-xl bg-[#07090e] border border-[#20293d] text-xs font-mono text-white placeholder:text-[#424f67] focus:outline-none focus:border-[#cda052]/60 leading-relaxed resize-y"
             />
 

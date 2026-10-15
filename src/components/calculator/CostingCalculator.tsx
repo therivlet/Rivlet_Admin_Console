@@ -1815,6 +1815,35 @@ export default function CostingCalculator({
               />
             </div>
 
+            {/* UPI Surcharge Norm (> ₹2,000) */}
+            <div className="p-2.5 rounded-xl bg-[#090b12] border border-[#1d2436] space-y-1.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[#8e97ae] font-medium text-[11px]">UPI Surcharge (&gt; ₹2k)</span>
+                  <span className="text-[8px] px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 font-mono">
+                    NPCI
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={inputs.upiSurchargeRate ?? 0.4}
+                    min="0"
+                    max="10"
+                    onChange={(e) => updateField('upiSurchargeRate', Math.max(0, Math.min(10, Number(e.target.value))))}
+                    className="w-16 bg-[#06080d] px-2 py-1 rounded border border-[#202638] text-white text-right text-xs"
+                  />
+                  <span className="text-[#64748b] text-[10px]">%</span>
+                </div>
+              </div>
+              <p className="text-[10px] text-[#64748b] leading-tight">
+                {midResult.customerPrice > (inputs.upiThreshold ?? 2000)
+                  ? `Active on expected customer price (${curr}${midResult.customerPrice.toFixed(0)} > ${curr}${inputs.upiThreshold ?? 2000}). Incurring ${inputs.upiSurchargeRate ?? 0.4}% MDR.`
+                  : `Inactive: price (${curr}${midResult.customerPrice.toFixed(0)}) is within the ${curr}${inputs.upiThreshold ?? 2000} exempt limit.`}
+              </p>
+            </div>
+
             <div className="flex items-center justify-between">
               <span className="text-[#8e97ae]">Platform / Shopify Fee (%)</span>
               <input

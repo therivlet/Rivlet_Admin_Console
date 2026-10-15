@@ -33,6 +33,17 @@ const TYPES: WorkItemType[] = ['Epic', 'Feature', 'User Story', 'Task', 'Bug'];
 const STATES: WorkItemState[] = ['New', 'Active', 'In Review', 'Resolved', 'Closed'];
 const PRIORITIES: WorkItemPriority[] = [1, 2, 3, 4];
 
+const OPERATION_CATEGORIES = [
+  'Operations & Sourcing',
+  'Sampling & Fit',
+  'Production QC',
+  'Fabric Mill & Lab Dips',
+  'Pattern Making & Tech Packs',
+  'Packaging & Trim',
+  'Logistics & Warehouse',
+  'E-Commerce & Launch',
+];
+
 export const TYPE_COLOR: Record<WorkItemType, string> = {
   'Epic': 'bg-purple-950/70 text-purple-300 border-purple-800/60 shadow-sm shadow-purple-950/50',
   'Feature': 'bg-indigo-950/70 text-indigo-300 border-indigo-800/60 shadow-sm shadow-indigo-950/50',
@@ -1024,6 +1035,16 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                       )}
                     </div>
 
+                    {/* Operation Category */}
+                    {currentItem.operationCategory && (
+                      <div>
+                        <span className="text-[11px] text-[#64748b] block mb-1">Operation Category</span>
+                        <span className="text-xs px-2.5 py-1 rounded-md bg-[#131b2c] border border-[#1f2e4d] text-indigo-300 font-medium inline-block">
+                          {currentItem.operationCategory}
+                        </span>
+                      </div>
+                    )}
+
 
                     {/* Related Pipeline Styles */}
                     <div>
@@ -1190,19 +1211,35 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                   )}
                 </div>
 
-                {/* Related Manufacturer */}
-                <div>
-                  <label className="text-[11px] font-semibold text-[#94a3b8] block mb-1">Related Manufacturer / Vendor</label>
-                  <select
-                    value={form.linkedVendorId || ''}
-                    onChange={(e) => setForm({ ...form, linkedVendorId: e.target.value || undefined })}
-                    className="w-full px-3 py-2.5 rounded-xl bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50"
-                  >
-                    <option value="">None / Internal</option>
-                    {vendors.map((v) => (
-                      <option key={v.id} value={v.id}>{v.name} ({v.specialty || 'Manufacturer'})</option>
-                    ))}
-                  </select>
+                {/* Related Manufacturer & Operation Category */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[11px] font-semibold text-[#94a3b8] block mb-1">Related Manufacturer / Vendor</label>
+                    <select
+                      value={form.linkedVendorId || ''}
+                      onChange={(e) => setForm({ ...form, linkedVendorId: e.target.value || undefined })}
+                      className="w-full px-3 py-2.5 rounded-xl bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50"
+                    >
+                      <option value="">None / Internal</option>
+                      {vendors.map((v) => (
+                        <option key={v.id} value={v.id}>{v.name} ({v.specialty || 'Manufacturer'})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-semibold text-[#94a3b8] block mb-1">Operation Category</label>
+                    <select
+                      value={form.operationCategory || ''}
+                      onChange={(e) => setForm({ ...form, operationCategory: e.target.value || undefined })}
+                      className="w-full px-3 py-2.5 rounded-xl bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50"
+                    >
+                      <option value="">None / General</option>
+                      {OPERATION_CATEGORIES.map((op) => (
+                        <option key={op} value={op}>{op}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 {/* Related Pipeline Styles (Multi-select + All Styles toggle) */}

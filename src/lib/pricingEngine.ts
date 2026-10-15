@@ -30,6 +30,10 @@ export const defaultCalculatorDefaults: CalculatorDefaults = {
   reverse: 0,
   exchange: 0,
 
+  upiSurchargeRate: 0.4,
+  upiThreshold: 2000,
+  enableUpiSurcharge: true,
+
   salary: { low: 720000, mid: 600000, high: 500000 },
   office: { low: 180000, mid: 120000, high: 90000 },
   saas: { low: 180000, mid: 120000, high: 90000 },
@@ -118,6 +122,10 @@ export const defaultPricingInputs: PricingInputs = {
   cod: 0,
   reverse: 0,
   exchange: 0,
+
+  upiSurchargeRate: 0.4,
+  upiThreshold: 2000,
+  enableUpiSurcharge: true,
 
   salary: { low: 720000, mid: 600000, high: 500000 },
   office: { low: 180000, mid: 120000, high: 90000 },
@@ -317,12 +325,29 @@ export function candidatePrice(
 export function requiredMrp(
   inputs: PricingInputs,
   totalCosts: number,
-  salesRates: number,
+  baseSalesRates: number,
   discount: number,
   target: number
 ): number {
+  const upiThreshold = inputs.upiThreshold ?? 2000;
+  const upiRate = (inputs.enableUpiSurcharge ?? true) ? (inputs.upiSurchargeRate ?? 0.4) / 100 : 0;
+
   const candidates = [5, 18]
-    .map((rate) => candidatePrice(totalCosts, salesRates, discount, target, rate))
+    .flatMap((rate) => {
+      const pWithout = candidatePrice(totalCosts, baseSalesRates, discount, target, rate);
+      const pWith = candidatePrice(totalCosts, baseSalesRates + upiRate, discount, target, rate);
+
+      const res: number[] = [];
+      if (Number.isFinite(pWithout)) {
+        const d = pWithout * (1 - discount);
+        if (d <= upiThreshold) res.push(pWithout);
+      }
+      if (Number.isFinite(pWith)) {
+        const d = pWith * (1 - discount);
+        if (d > upiThreshold) res.push(pWith);
+      }
+      return res.length > 0 ? res : [pWith];
+    })
     .filter(Number.isFinite)
     .filter((price) => {
       const discounted = price * (1 - discount);
@@ -355,8 +380,13 @@ export function calculateScenario(inputs: PricingInputs, scenario: ScenarioKey):
   const overheadPerUnit = overheadTotal / allocationUnits;
 
   const fixedOrder = fixedSalesCost(inputs, scenario);
-  const salesRates = percentageRate(inputs);
+  const upiThreshold = inputs.upiThreshold ?? 2000;
+  const isUpiApplicable = (inputs.enableUpiSurcharge ?? true) && customerPrice > upiThreshold;
+  const upiRate = isUpiApplicable ? (inputs.upiSurchargeRate ?? 0.4) / 100 : 0;
+  const baseSalesRates = percentageRate(inputs);
+  const salesRates = baseSalesRates + upiRate;
   const salesRateCost = netSales * salesRates;
+  const upiCost = netSales * upiRate;
 
   const contributionProfit = netSales - baseProductCost - overheadPerUnit - fixedOrder - salesRateCost;
   const contributionMargin = netSales ? contributionProfit / netSales : 0;
@@ -365,8 +395,8 @@ export function calculateScenario(inputs: PricingInputs, scenario: ScenarioKey):
   const grossMargin = netSales ? grossProfit / netSales : 0;
 
   const totalCosts = baseProductCost + overheadPerUnit + fixedOrder;
-  const breakEvenMrp = requiredMrp(inputs, totalCosts, salesRates, discountRate, 0);
-  const targetMrp = requiredMrp(inputs, totalCosts, salesRates, discountRate, inputs.targetMargin / 100);
+  const breakEvenMrp = requiredMrp(inputs, totalCosts, baseSalesRates, discountRate, 0);
+  const targetMrp = requiredMrp(inputs, totalCosts, baseSalesRates, discountRate, inputs.targetMargin / 100);
 
   const maximumFactoryCost =
     netSales * (1 - salesRates - inputs.targetMargin / 100) - (totalCosts - inputs.factory);
@@ -420,6 +450,8 @@ export function calculateScenario(inputs: PricingInputs, scenario: ScenarioKey):
     status,
     customsNote: customs.note,
     customsRows: customs.rows,
+    upiCost,
+    isUpiApplicable,
   };
 }
 
@@ -524,6 +556,10 @@ export function mergeDefaultsIntoInputs(
     cod: defaults.cod ?? 0,
     reverse: defaults.reverse ?? 0,
     exchange: defaults.exchange ?? 0,
+
+    upiSurchargeRate: defaults.upiSurchargeRate ?? 0.4,
+    upiThreshold: defaults.upiThreshold ?? 2000,
+    enableUpiSurcharge: defaults.enableUpiSurcharge ?? true,
 
     salary: { ...(defaults.salary || defaultCalculatorDefaults.salary), ...(base.salary || {}) },
     office: { ...(defaults.office || defaultCalculatorDefaults.office), ...(base.office || {}) },

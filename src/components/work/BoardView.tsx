@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   Tag,
   ArrowRight,
+  Filter,
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { WorkItem, WorkItemState, Sprint } from '@/lib/types';
@@ -67,6 +68,9 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
   const [modalItem, setModalItem] = useState<WorkItem | Omit<WorkItem, 'createdAt' | 'updatedAt'> | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [assigneeFilter, setAssigneeFilter] = useState<string>('All');
+  const [boardPriorityFilter, setBoardPriorityFilter] = useState<'All' | number>('All');
+  const [boardSortBy, setBoardSortBy] = useState<'order' | 'priority' | 'points'>('order');
+  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [collapsedRowIds, setCollapsedRowIds] = useState<Set<string>>(new Set());
 
   // Always keep selected sprint synced with the active sprint based on today's date if not explicitly set
@@ -94,11 +98,20 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
   const activeSprintId = selectedSprintId ?? currentSprintId(sprints);
   const sprint = sprints.find((s) => s.id === activeSprintId);
 
-  // Rows (User Stories) in active sprint, sorted by order
+  // Rows (User Stories) in active sprint, sorted by order or priority
   const rows = useMemo(() => {
-    const list = workItems.filter((w) => w.sprintId === activeSprintId && ROW_TYPES.includes(w.type));
+    let list = workItems.filter((w) => w.sprintId === activeSprintId && ROW_TYPES.includes(w.type));
+    if (boardPriorityFilter !== 'All') {
+      list = list.filter((w) => w.priority === boardPriorityFilter);
+    }
+    if (boardSortBy === 'priority') {
+      return [...list].sort((a, b) => a.priority - b.priority);
+    }
+    if (boardSortBy === 'points') {
+      return [...list].sort((a, b) => (b.storyPoints ?? 0) - (a.storyPoints ?? 0));
+    }
     return [...list].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  }, [workItems, activeSprintId]);
+  }, [workItems, activeSprintId, boardPriorityFilter, boardSortBy]);
 
   // Tasks in active sprint, sorted by order
   const tasksInSprint = useMemo(() => {
@@ -419,9 +432,77 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
           <div className="relative max-h-[calc(100vh-140px)] min-h-[500px] overflow-auto rounded-2xl border border-[#1a2335] bg-[#07090e]/95 custom-scrollbar pb-6 shadow-2xl">
             <div className="grid gap-2 p-3 min-w-max" style={{ gridTemplateColumns: `340px repeat(${COLUMNS.length}, minmax(220px, 1fr))` }}>
               {/* Header row */}
-              <div className="text-[11px] font-bold text-[#cda052] uppercase tracking-wider px-3.5 py-2.5 sticky top-0 md:left-0 z-30 md:z-40 bg-[#0a0d14]/98 backdrop-blur-md rounded-xl border border-[#232d44] shadow-md flex items-center justify-between">
-                <span className="flex items-center gap-1.5"><Layers className="w-3.5 h-3.5 text-[#cda052]" /> Stories & Milestones</span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#161c2b] text-[#94a3b8] border border-[#232d44]">{rows.length}</span>
+              <div className="text-[11px] font-bold text-[#cda052] uppercase tracking-wider px-3.5 py-2.5 sticky top-0 md:left-0 z-30 md:z-40 bg-[#0a0d14]/98 backdrop-blur-md rounded-xl border border-[#232d44] shadow-md flex items-center justify-between relative">
+                <span className="flex items-center gap-1.5 truncate"><Layers className="w-3.5 h-3.5 text-[#cda052]" /> Stories & Milestones</span>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#161c2b] text-[#94a3b8] border border-[#232d44]">{rows.length}</span>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
+                      title="Filter & sort sprint stories"
+                      className={`p-1 rounded-md border text-[10px] transition-all flex items-center gap-1 cursor-pointer ${
+                        boardPriorityFilter !== 'All' || boardSortBy !== 'order'
+                          ? 'bg-[#cda052]/20 border-[#cda052] text-[#cda052]'
+                          : 'bg-[#141824] border-[#263148] text-[#8e9ab5] hover:text-white hover:border-[#384664]'
+                      }`}
+                    >
+                      <Filter className="w-3 h-3" />
+                      {(boardPriorityFilter !== 'All' || boardSortBy !== 'order') && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#cda052]" />
+                      )}
+                    </button>
+
+                    {isFilterDropdownOpen && (
+                      <div className="absolute right-0 top-full mt-1.5 w-48 bg-[#0d101a] border border-[#232d44] rounded-xl shadow-2xl p-2.5 z-50 text-left normal-case font-normal space-y-2">
+                        <div>
+                          <span className="text-[10px] text-[#64748b] font-semibold uppercase block mb-1">Priority</span>
+                          <div className="flex items-center gap-1">
+                            {['All', 1, 2, 3].map((p) => (
+                              <button
+                                key={p}
+                                onClick={() => setBoardPriorityFilter(p as any)}
+                                className={`px-2 py-0.5 rounded text-[10px] font-medium border ${
+                                  boardPriorityFilter === p
+                                    ? 'bg-[#cda052]/20 border-[#cda052] text-[#cda052]'
+                                    : 'bg-[#141824] border-[#222c42] text-[#8e9ab5] hover:text-white'
+                                }`}
+                              >
+                                {p === 'All' ? 'All' : `P${p}`}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] text-[#64748b] font-semibold uppercase block mb-1">Sort Stories</span>
+                          <select
+                            value={boardSortBy}
+                            onChange={(e) => setBoardSortBy(e.target.value as any)}
+                            className="w-full px-2 py-1 bg-[#141824] border border-[#222c42] rounded text-[11px] text-white focus:outline-none"
+                          >
+                            <option value="order">Custom Order</option>
+                            <option value="priority">Priority (P1 → P4)</option>
+                            <option value="points">Points (High → Low)</option>
+                          </select>
+                        </div>
+
+                        {(boardPriorityFilter !== 'All' || boardSortBy !== 'order') && (
+                          <button
+                            onClick={() => {
+                              setBoardPriorityFilter('All');
+                              setBoardSortBy('order');
+                              setIsFilterDropdownOpen(false);
+                            }}
+                            className="text-[10px] text-amber-400 hover:underline pt-1 block"
+                          >
+                            Reset filter
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             {COLUMNS.map((col) => {
               const colTasksCount = tasksInSprint.filter((t) => t.state === col).length;

@@ -82,6 +82,11 @@ export interface PricingInputs {
   marketplace: number; // %
   marketAds: number; // %
 
+  // NPCI UPI Transaction Norms (> ₹2,000)
+  upiSurchargeRate?: number; // % fee (default 0.4% under NPCI MDR guidelines for UPI > ₹2,000)
+  upiThreshold?: number;     // ₹ value threshold (default 2000)
+  enableUpiSurcharge?: boolean; // Toggle surcharge inclusion
+
   // Sales Charges (Fixed per order)
   cod: number;
   reverse: number;
@@ -135,6 +140,11 @@ export interface CalculatorDefaults {
   cod: number;
   reverse: number;
   exchange: number;
+
+  // NPCI UPI Transaction Norms (> ₹2,000)
+  upiSurchargeRate?: number;
+  upiThreshold?: number;
+  enableUpiSurcharge?: boolean;
 
   // Fixed Annual Business Overheads
   salary: ScenarioRange;
@@ -198,6 +208,7 @@ export interface TrimBOMItem {
 }
 
 export interface GarmentBOM {
+  id?: string;
   garmentType: string;
   fabricItems: FabricBOMItem[];
   trimItems: TrimBOMItem[];
@@ -205,6 +216,7 @@ export interface GarmentBOM {
   washFinishCost: number;
   totalBOMCost: number;
   notes?: string;
+  updatedAt?: string;
 }
 
 
@@ -241,6 +253,8 @@ export interface CalculationResult {
   status: 'On / above target' | 'Profitable but below target' | 'Below break-even';
   customsNote: string;
   customsRows: [string, string, number][];
+  upiCost?: number;
+  isUpiApplicable?: boolean;
 }
 
 export interface CostingSheet {

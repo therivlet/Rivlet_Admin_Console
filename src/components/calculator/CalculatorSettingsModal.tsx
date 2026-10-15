@@ -653,6 +653,48 @@ export default function CalculatorSettingsModal({
                     </div>
                   </div>
 
+                  {/* NPCI UPI Surcharge Norm (> ₹2,000) */}
+                  <div className="p-3.5 bg-[#0e121b] border border-[#1e2638] rounded-xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="font-semibold text-white block text-xs">NPCI UPI Surcharge Norm (&gt; ₹2,000)</label>
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30 font-mono font-semibold">
+                        NPCI Norm
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#94a3b8]">MDR / interchange surcharge incurred on transactions above the exempt threshold</p>
+                    <div className="grid grid-cols-2 gap-3 pt-1">
+                      <div>
+                        <span className="text-[10px] text-[#717e99] block mb-1">MDR Rate (%)</span>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="5"
+                            value={defaults.upiSurchargeRate ?? 0.4}
+                            onChange={(e) => updateField('upiSurchargeRate', Number(e.target.value))}
+                            className="w-full px-3 py-1.5 rounded-lg bg-[#07090e] border border-[#263147] text-white font-mono text-xs focus:border-[#cda052] outline-none"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94a3b8] font-mono text-[11px]">%</span>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-[#717e99] block mb-1">Threshold Amount (₹)</span>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            step="100"
+                            min="500"
+                            value={defaults.upiThreshold ?? 2000}
+                            onChange={(e) => updateField('upiThreshold', Number(e.target.value))}
+                            className="w-full px-3 py-1.5 rounded-lg bg-[#07090e] border border-[#263147] text-white font-mono text-xs focus:border-[#cda052] outline-none"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94a3b8] font-mono text-[11px]">₹</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Shopify App Fee */}
                   <div className="p-3.5 bg-[#0e121b] border border-[#1e2638] rounded-xl space-y-1.5">
                     <label className="font-semibold text-white block">Shopify Additional Transaction Fee</label>
