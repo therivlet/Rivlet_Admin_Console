@@ -70,7 +70,7 @@ interface AdminStoreContextType {
   deleteSprint: (id: string) => Promise<void>;
   saveWorkItem: (item: WorkItem) => Promise<void>;
   saveWorkItemsBulk: (items: WorkItem[]) => Promise<void>;
-  reorderWorkItems: (reordered: WorkItem[]) => Promise<void>;
+  reorderWorkItems: (reordered: WorkItem[], changedItems?: WorkItem[]) => Promise<void>;
   deleteWorkItem: (id: string) => Promise<void>;
   addWorkItemComment: (id: string, text: string, author: string) => Promise<void>;
   moveWorkItemToSprint: (itemId: string, newSprintId: string | undefined) => Promise<void>;
@@ -124,6 +124,7 @@ function buildWorkItemPayload(item: WorkItem, now: string, includeDirectExtended
   if (includeDirectExtendedCols) {
     if (item.order !== undefined && item.order !== null) {
       payload.order = item.order;
+      payload.order_index = item.order;
     }
     if (item.operationCategory) {
       payload.operation_category = item.operationCategory;
@@ -581,7 +582,9 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
           const parsedOrder = r.order !== undefined && r.order !== null
             ? Number(r.order)
-            : (tagOrder ? Number(tagOrder.replace('_order:', '')) : undefined);
+            : (r.order_index !== undefined && r.order_index !== null
+                ? Number(r.order_index)
+                : (tagOrder ? Number(tagOrder.replace('_order:', '')) : undefined));
 
           const parsedOpcat = r.operationCategory || r.operation_category || (tagOpcat ? tagOpcat.replace('_opcat:', '') : undefined);
 
@@ -614,6 +617,15 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
             createdAt: r.created_at || new Date().toISOString(),
             updatedAt: r.updated_at || new Date().toISOString(),
           };
+        });
+        formatted.sort((a, b) => {
+          const ordA = a.order ?? 999999;
+          const ordB = b.order ?? 999999;
+          if (ordA !== ordB) return ordA - ordB;
+          const dateA = a.createdAt || '';
+          const dateB = b.createdAt || '';
+          if (dateA !== dateB) return dateA.localeCompare(dateB);
+          return a.id.localeCompare(b.id);
         });
         setWorkItems(formatted);
         persistLocal(STORAGE_KEYS.WORK_ITEMS, formatted);
@@ -1604,15 +1616,14 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     notify.success('Sprint Workload Applied', `Created ${newItems.length} work items.`);
   };
 
-  const reorderWorkItems = async (reordered: WorkItem[]) => {
+  const reorderWorkItems = async (reordered: WorkItem[], changedItems?: WorkItem[]) => {
     setWorkItems(reordered);
-    try {
-      localStorage.setItem(STORAGE_KEYS.WORK_ITEMS, JSON.stringify(reordered));
-    } catch (_) {}
+    persistLocal(STORAGE_KEYS.WORK_ITEMS, reordered);
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await upsertWorkItemsSafe(supabase, reordered);
+        const toUpsert = changedItems && changedItems.length > 0 ? changedItems : reordered;
+        await upsertWorkItemsSafe(supabase, toUpsert);
       } catch (e) {
         reportWriteFailure('Reordering work items', e);
       }

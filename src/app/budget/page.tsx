@@ -20,7 +20,8 @@ import {
   Layers,
   Clock,
   CheckCircle2,
-  ArrowUpDown
+  ArrowUpDown,
+  GripVertical
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { BudgetItem, CashInflowEntry, BudgetSpendEntry } from '@/lib/types';
@@ -582,18 +583,17 @@ export default function BudgetPage() {
               {/* Category Card Header */}
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-start gap-2 min-w-0 pr-1">
-                  {/* Two-Line Drag Handle & Up/Down Buttons for Mobile */}
+                  {/* Grip Drag Handle & Up/Down Buttons for Mobile */}
                   <div className="flex items-center gap-1 flex-shrink-0 pt-0.5">
                     <div
                       draggable
                       onDragStart={(e) => handleDragStart(e, b.id)}
                       onDragEnd={() => { setDraggingBudgetId(null); setDragOverBudgetId(null); }}
-                      title="Drag two-line handle to move up or down"
-                      aria-label="Drag two-line handle to move category up or down"
-                      className="flex flex-col justify-center items-center gap-[3px] p-1.5 rounded-lg bg-[#141a28] border border-[#222c42] text-[#8e9cb5] hover:text-[#cda052] cursor-grab active:cursor-grabbing select-none"
+                      title="Drag to move up or down"
+                      aria-label="Drag to move category up or down"
+                      className="flex items-center justify-center p-1.5 rounded-lg bg-[#141a28] border border-[#222c42] text-[#8e9cb5] hover:text-[#cda052] cursor-grab active:cursor-grabbing select-none transition-colors"
                     >
-                      <span className="w-3.5 h-[2px] rounded-full bg-current" />
-                      <span className="w-3.5 h-[2px] rounded-full bg-current" />
+                      <GripVertical className="w-3.5 h-3.5" />
                     </div>
                     <div className="flex flex-col items-center bg-[#07090e] rounded-md border border-[#1b2336] p-0.5">
                       <button
@@ -813,7 +813,7 @@ export default function BudgetPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#1a1f2c] text-[11px] text-[#94a3b8] uppercase tracking-wide bg-[#0a0d14]">
-                <th className="text-center px-3 py-3 font-semibold w-16" title="Drag two-line handle to reorder categories">Order</th>
+                <th className="text-center px-3 py-3 font-semibold w-16" title="Drag handle to reorder categories">Order</th>
                 <th className="text-left px-3 py-3 font-semibold w-8"></th>
                 <th className="text-left px-4 py-3 font-semibold">Category</th>
                 <th className="text-left px-4 py-3 font-semibold">Phase</th>
@@ -846,20 +846,19 @@ export default function BudgetPage() {
                           : 'border-[#161a26] hover:bg-[#0a0c12]/60'
                       }`}
                     >
-                      {/* Order Column: Two-Line Drag Handle & Move Up/Down Buttons */}
+                      {/* Order Column: Grip Drag Handle & Move Up/Down Buttons */}
                       <td className="px-3 py-3 w-16 text-center select-none">
                         <div className="flex items-center justify-center gap-1.5">
-                          {/* Two-Line Drag Handle */}
+                          {/* Grip Drag Handle */}
                           <div
                             draggable
                             onDragStart={(e) => handleDragStart(e, b.id)}
                             onDragEnd={() => { setDraggingBudgetId(null); setDragOverBudgetId(null); }}
-                            title="Drag two-line handle to move up or down"
-                            aria-label="Drag two-line handle to move category up or down"
-                            className="flex flex-col justify-center items-center gap-[4px] p-2 rounded-lg bg-[#141b29] hover:bg-[#1f293d] border border-[#232d42] hover:border-[#cda052]/60 text-[#8e9cb5] hover:text-[#f5d58d] cursor-grab active:cursor-grabbing transition-all select-none group/handle shadow-sm"
+                            title="Drag to move up or down"
+                            aria-label="Drag to move category up or down"
+                            className="flex items-center justify-center p-2 rounded-lg bg-[#141b29] hover:bg-[#1f293d] border border-[#232d42] hover:border-[#cda052]/60 text-[#8e9cb5] hover:text-[#f5d58d] cursor-grab active:cursor-grabbing transition-all select-none group/handle shadow-sm"
                           >
-                            <span className="w-4 h-[2px] rounded-full bg-current group-hover/handle:bg-[#cda052] transition-colors" />
-                            <span className="w-4 h-[2px] rounded-full bg-current group-hover/handle:bg-[#cda052] transition-colors" />
+                            <GripVertical className="w-4 h-4" />
                           </div>
 
                           {/* Move Up / Down Buttons */}
