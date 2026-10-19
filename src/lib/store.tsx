@@ -1532,6 +1532,19 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     const prev = workItems.find((w) => w.id === item.id);
     const sprintChanged = prev !== undefined && prev.sprintId !== updated.sprintId;
 
+    // When a User Story or Bug in a sprint is marked Closed/Resolved, automatically move its order to the bottom
+    const wasClosed = prev && (prev.state === 'Closed' || prev.state === 'Resolved');
+    const isNowClosed = updated.state === 'Closed' || updated.state === 'Resolved';
+    if ((updated.type === 'User Story' || updated.type === 'Bug') && updated.sprintId && isNowClosed && !wasClosed) {
+      const otherSprintStories = workItems.filter(
+        (w) => w.id !== updated.id && w.sprintId === updated.sprintId && (w.type === 'User Story' || w.type === 'Bug')
+      );
+      if (otherSprintStories.length > 0) {
+        const maxOrder = Math.max(...otherSprintStories.map((w) => w.order ?? 0));
+        updated.order = maxOrder + 1;
+      }
+    }
+
     let cascadeItems: WorkItem[] = [];
     if (sprintChanged && updated.type === 'User Story') {
       // Cascade to direct child tasks and bugs

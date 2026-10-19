@@ -141,6 +141,13 @@ export default function BacklogView() {
   const sprintName = (id?: string) => sprints.find((s) => s.id === id)?.name;
   const toggleExpand = (id: string) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
 
+  const isFiltered =
+    sprintFilter !== 'All' ||
+    searchQuery.trim().length > 0 ||
+    typeFilter !== 'All' ||
+    stateFilter !== 'All' ||
+    assigneeFilter !== 'All';
+
   const expandAll = () => {
     const all: Record<string, boolean> = {};
     for (const w of workItems) all[w.id] = true;
@@ -148,10 +155,22 @@ export default function BacklogView() {
   };
 
   const collapseAll = () => {
-    setExpanded({});
+    const all: Record<string, boolean> = {};
+    for (const w of workItems) all[w.id] = false;
+    setExpanded(all);
   };
 
-  const hasAnyExpanded = Object.values(expanded).some(Boolean);
+  const hasAnyExpanded = useMemo(() => {
+    return workItems.some((w) => {
+      if (expanded[w.id] !== undefined) return expanded[w.id];
+      return isFiltered && hasMatchingDescendant(w.id);
+    });
+  }, [workItems, expanded, isFiltered, hasMatchingDescendant]);
+
+  // When active filter changes, reset explicit override so matching descendants auto-expand for the new filter
+  React.useEffect(() => {
+    setExpanded({});
+  }, [sprintFilter, searchQuery, typeFilter, stateFilter, assigneeFilter]);
 
   // Drag start
   const handleDragStart = (e: React.DragEvent, item: WorkItem) => {

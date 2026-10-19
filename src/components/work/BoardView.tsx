@@ -11,6 +11,10 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronsUpDown,
+  ChevronsUp,
+  ChevronsDown,
+  ArrowUpDown,
+  GripVertical,
   Calendar,
   Clock,
   Shirt,
@@ -20,14 +24,21 @@ import {
   Tag,
   ArrowRight,
   Filter,
+  Check,
+  X,
+  RotateCcw,
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { WorkItem, WorkItemState, Sprint } from '@/lib/types';
 import WorkItemModal, { TYPE_COLOR, STATE_COLOR, PRIORITY_BADGE_COLOR, PRIORITY_LABEL } from '@/components/work/WorkItemModal';
+import ModalPortal from '@/components/ui/ModalPortal';
+import { notify } from '@/lib/notificationContext';
 
 const COLUMNS: WorkItemState[] = ['New', 'Active', 'In Review', 'Resolved', 'Closed'];
 const ROW_TYPES: WorkItem['type'][] = ['User Story', 'Bug'];
 const UNPARENTED = '__unparented__';
+
+export const isStoryClosed = (w: WorkItem): boolean => w.state === 'Closed' || w.state === 'Resolved';
 
 export function currentSprintId(sprints: Sprint[]): string | undefined {
   if (!sprints || sprints.length === 0) return undefined;
@@ -73,6 +84,16 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [collapsedRowIds, setCollapsedRowIds] = useState<Set<string>>(new Set());
 
+  // Drag and drop for stories on the main board
+  const [draggingStoryId, setDraggingStoryId] = useState<string | null>(null);
+  const [dragOverStoryTarget, setDragOverStoryTarget] = useState<{ id: string; position: 'before' | 'after' } | null>(null);
+
+  // Dedicated Story Reorder Organizer Modal
+  const [showReorderModal, setShowReorderModal] = useState(false);
+  const [modalStoriesList, setModalStoriesList] = useState<WorkItem[]>([]);
+  const [modalDraggingStoryId, setModalDraggingStoryId] = useState<string | null>(null);
+  const [modalDragOverId, setModalDragOverId] = useState<string | null>(null);
+
   // Always keep selected sprint synced with the active sprint based on today's date if not explicitly set
   React.useEffect(() => {
     if (initialSprintId) {
@@ -98,20 +119,34 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
   const activeSprintId = selectedSprintId ?? currentSprintId(sprints);
   const sprint = sprints.find((s) => s.id === activeSprintId);
 
-  // Rows (User Stories) in active sprint, sorted by order or priority
+  // Rows (User Stories) in active sprint, sorted by order or priority, with Closed stories always at the bottom
   const rows = useMemo(() => {
     let list = workItems.filter((w) => w.sprintId === activeSprintId && ROW_TYPES.includes(w.type));
     if (boardPriorityFilter !== 'All') {
       list = list.filter((w) => w.priority === boardPriorityFilter);
     }
     if (boardSortBy === 'priority') {
-      return [...list].sort((a, b) => a.priority - b.priority);
+      const active = list.filter((w) => !isStoryClosed(w)).sort((a, b) => a.priority - b.priority);
+      const closed = list.filter((w) => isStoryClosed(w)).sort((a, b) => a.priority - b.priority);
+      return [...active, ...closed];
     }
     if (boardSortBy === 'points') {
-      return [...list].sort((a, b) => (b.storyPoints ?? 0) - (a.storyPoints ?? 0));
+      const active = list.filter((w) => !isStoryClosed(w)).sort((a, b) => (b.storyPoints ?? 0) - (a.storyPoints ?? 0));
+      const closed = list.filter((w) => isStoryClosed(w)).sort((a, b) => (b.storyPoints ?? 0) - (a.storyPoints ?? 0));
+      return [...active, ...closed];
     }
-    return [...list].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    // Default custom order: active stories first by order, then closed stories at the bottom by order
+    const active = list.filter((w) => !isStoryClosed(w)).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const closed = list.filter((w) => isStoryClosed(w)).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    return [...active, ...closed];
   }, [workItems, activeSprintId, boardPriorityFilter, boardSortBy]);
+
+  // Sync modalStoriesList when modal opens or rows change
+  React.useEffect(() => {
+    if (showReorderModal) {
+      setModalStoriesList([...rows]);
+    }
+  }, [showReorderModal, rows]);
 
   // Tasks in active sprint, sorted by order
   const tasksInSprint = useMemo(() => {
@@ -119,10 +154,7 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
     return [...list].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   }, [workItems, activeSprintId]);
 
-  // Stable Task Numbering Map across all flow transitions:
-  // Numbers tasks belonging to each parent story stably by taskNumber, createdAt, order, or id.
-  // When a task moves from New to Active, it keeps its number (e.g. Task #1),
-  // and sibling tasks in New retain their own numbers (Task #2, #3, #4) without collapsing/reindexing.
+  // Stable Task Numbering Map across all flow transitions
   const storyTaskNumberMap = useMemo(() => {
     const map = new Map<string, number>();
 
@@ -212,23 +244,20 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
     });
   };
 
-  // Move Story Up or Down
-  const handleMoveStory = async (storyId: string, direction: 'up' | 'down') => {
-    const idx = rows.findIndex((r) => r.id === storyId);
-    if (idx < 0) return;
-    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
-    if (targetIdx < 0 || targetIdx >= rows.length) return;
+  // Move Story to an exact target rank position (0-indexed)
+  const handleMoveStoryToPosition = async (storyId: string, targetIdx: number) => {
+    const fromIdx = rows.findIndex((r) => r.id === storyId);
+    if (fromIdx < 0) return;
+    const boundedTargetIdx = Math.max(0, Math.min(rows.length - 1, targetIdx));
+    if (fromIdx === boundedTargetIdx) return;
 
-    const current = rows[idx];
-    const target = rows[targetIdx];
-
-    const updatedRows = [...rows];
-    updatedRows[idx] = target;
-    updatedRows[targetIdx] = current;
+    const newRows = [...rows];
+    const [moved] = newRows.splice(fromIdx, 1);
+    newRows.splice(boundedTargetIdx, 0, moved);
 
     // Assign sequential order indices (1, 2, 3...)
     const updatedMap = new Map<string, number>();
-    updatedRows.forEach((r, i) => updatedMap.set(r.id, i + 1));
+    newRows.forEach((r, i) => updatedMap.set(r.id, i + 1));
 
     const newWorkItems = workItems.map((w) => {
       if (updatedMap.has(w.id)) {
@@ -238,6 +267,26 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
     });
 
     await reorderWorkItems(newWorkItems);
+  };
+
+  // Move Story by direction: top, up, down, bottom
+  const handleMoveStory = async (storyId: string, direction: 'top' | 'up' | 'down' | 'bottom') => {
+    const idx = rows.findIndex((r) => r.id === storyId);
+    if (idx < 0) return;
+
+    let targetIdx = idx;
+    if (direction === 'top') {
+      targetIdx = 0;
+    } else if (direction === 'up') {
+      targetIdx = Math.max(0, idx - 1);
+    } else if (direction === 'down') {
+      targetIdx = Math.min(rows.length - 1, idx + 1);
+    } else if (direction === 'bottom') {
+      targetIdx = rows.length - 1;
+    }
+
+    if (targetIdx === idx) return;
+    await handleMoveStoryToPosition(storyId, targetIdx);
   };
 
   // Move Task Up or Down within its cell / column
@@ -266,6 +315,75 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
     });
 
     await reorderWorkItems(newWorkItems);
+  };
+
+  // Modal: Move story inside modal preview list
+  const handleModalMoveStory = (fromIdx: number, toIdx: number) => {
+    if (fromIdx === toIdx || fromIdx < 0 || toIdx < 0 || toIdx >= modalStoriesList.length) return;
+    const next = [...modalStoriesList];
+    const [moved] = next.splice(fromIdx, 1);
+    next.splice(toIdx, 0, moved);
+    setModalStoriesList(next);
+  };
+
+  // Modal Preset: Group by Feature
+  const handleSortByFeature = () => {
+    const featuresMap = new Map<string, string>();
+    for (const w of workItems) {
+      if (w.type === 'Feature') featuresMap.set(w.id, w.title);
+    }
+
+    const sorted = [...modalStoriesList].sort((a, b) => {
+      const aClosed = isStoryClosed(a);
+      const bClosed = isStoryClosed(b);
+      if (aClosed !== bClosed) return aClosed ? 1 : -1;
+
+      const featA = a.parentId ? featuresMap.get(a.parentId) || a.parentId : 'zzz_no_feature';
+      const featB = b.parentId ? featuresMap.get(b.parentId) || b.parentId : 'zzz_no_feature';
+      if (featA !== featB) return featA.localeCompare(featB);
+
+      return (a.order ?? 0) - (b.order ?? 0);
+    });
+    setModalStoriesList(sorted);
+    notify.info('Stories grouped by feature');
+  };
+
+  // Modal Preset: Sort by Priority
+  const handleSortByPriority = () => {
+    const sorted = [...modalStoriesList].sort((a, b) => {
+      const aClosed = isStoryClosed(a);
+      const bClosed = isStoryClosed(b);
+      if (aClosed !== bClosed) return aClosed ? 1 : -1;
+      if (a.priority !== b.priority) return a.priority - b.priority;
+      return (a.order ?? 0) - (b.order ?? 0);
+    });
+    setModalStoriesList(sorted);
+    notify.info('Stories ordered by priority (P1 → P4)');
+  };
+
+  // Modal Preset: Move Closed to Bottom
+  const handleMoveClosedToBottom = () => {
+    const active = modalStoriesList.filter((s) => !isStoryClosed(s));
+    const closed = modalStoriesList.filter((s) => isStoryClosed(s));
+    setModalStoriesList([...active, ...closed]);
+    notify.info('Closed stories moved to bottom');
+  };
+
+  // Modal: Apply and Save
+  const handleApplyModalReorder = async () => {
+    const updatedMap = new Map<string, number>();
+    modalStoriesList.forEach((r, i) => updatedMap.set(r.id, i + 1));
+
+    const newWorkItems = workItems.map((w) => {
+      if (updatedMap.has(w.id)) {
+        return { ...w, order: updatedMap.get(w.id) };
+      }
+      return w;
+    });
+
+    await reorderWorkItems(newWorkItems);
+    setShowReorderModal(false);
+    notify.success(`Saved new arrangement for ${modalStoriesList.length} stories`);
   };
 
   const filteredRows = visibleRowIdsSet ? rows.filter((r) => visibleRowIdsSet.has(r.id)) : rows;
@@ -327,6 +445,17 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
             >
               <ChevronsUpDown className="w-3.5 h-3.5 text-[#cda052]" />
               <span>{allCollapsed ? 'Expand All' : 'Collapse All'}</span>
+            </button>
+          )}
+
+          {rows.length > 1 && (
+            <button
+              onClick={() => setShowReorderModal(true)}
+              title="Open high-speed story organizer to rearrange all stories at once"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#141824] border border-[#cda052]/40 text-[#f5dfa8] text-xs font-semibold hover:border-[#cda052] hover:bg-[#1a2133] transition-all cursor-pointer shadow-sm"
+            >
+              <ArrowUpDown className="w-3.5 h-3.5 text-[#cda052]" />
+              <span>Reorder Stories ({rows.length})</span>
             </button>
           )}
 
@@ -536,24 +665,101 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
               const storyIdx = row ? rows.findIndex((r) => r.id === row.id) : -1;
               const storyNumber = storyIdx + 1;
               const isCollapsed = collapsedRowIds.has(rowId);
+              const isClosed = row ? isStoryClosed(row) : false;
+              const isFirstClosed = row && isClosed && rows.slice(0, storyIdx).every((prev) => !isStoryClosed(prev));
+              const closedStoriesCount = rows.filter(isStoryClosed).length;
+              const isDraggingThisStory = draggingStoryId === rowId;
+              const isDropTarget = dragOverStoryTarget?.id === rowId;
 
               return (
                 <React.Fragment key={rowId}>
+                  {/* Closed Stories Visual Divider Banner */}
+                  {isFirstClosed && (
+                    <div
+                      style={{ gridColumn: '1 / -1' }}
+                      className="py-2.5 px-4 my-1 rounded-xl border border-dashed border-[#232d44] bg-[#0c1018]/90 backdrop-blur-sm flex items-center justify-between text-xs text-[#8e9cb5] shadow-inner select-none"
+                    >
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        <span className="font-bold text-white uppercase tracking-wider text-[11px]">
+                          Closed & Completed Stories ({closedStoriesCount})
+                        </span>
+                        <span className="text-[10px] text-[#64748b]">
+                          — Automatically organized to bottom for sprint focus
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-mono text-emerald-400 font-semibold bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-800/60">
+                        Finished
+                      </span>
+                    </div>
+                  )}
+
                   {/* Story / Row Header Cell */}
                   {isCollapsed ? (
-                    /* COLLAPSED STORY CELL (Spacious box: full story name & sprint clearly visible) */
+                    /* COLLAPSED STORY CELL (Full story name, sprint & fast reorder controls) */
                     <div
+                      draggable={!!row}
+                      onDragStart={(e) => {
+                        if (!row) return;
+                        e.dataTransfer.setData('text/story-id', row.id);
+                        e.dataTransfer.effectAllowed = 'move';
+                        setDraggingStoryId(row.id);
+                      }}
+                      onDragEnd={() => {
+                        setDraggingStoryId(null);
+                        setDragOverStoryTarget(null);
+                      }}
+                      onDragOver={(e) => {
+                        if (!draggingStoryId || draggingStoryId === rowId) return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const midY = rect.top + rect.height / 2;
+                        const position = e.clientY < midY ? 'before' : 'after';
+                        setDragOverStoryTarget({ id: rowId, position });
+                      }}
+                      onDragLeave={() => {
+                        if (dragOverStoryTarget?.id === rowId) setDragOverStoryTarget(null);
+                      }}
+                      onDrop={(e) => {
+                        if (!row) return;
+                        const sourceId = e.dataTransfer.getData('text/story-id') || draggingStoryId;
+                        if (!sourceId || sourceId === row.id) return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const fromIdx = rows.findIndex((r) => r.id === sourceId);
+                        let toIdx = rows.findIndex((r) => r.id === row.id);
+                        if (fromIdx < 0 || toIdx < 0) return;
+                        if (dragOverStoryTarget?.position === 'after' && toIdx < fromIdx) toIdx += 1;
+                        else if (dragOverStoryTarget?.position === 'before' && toIdx > fromIdx) toIdx -= 1;
+                        handleMoveStoryToPosition(sourceId, toIdx);
+                        setDraggingStoryId(null);
+                        setDragOverStoryTarget(null);
+                      }}
                       onClick={() => row && setModalItem(row)}
-                      className={`rounded-xl border p-3 flex flex-col justify-between transition-all min-h-[78px] select-none md:sticky md:left-0 md:z-20 ${
+                      className={`relative rounded-xl border p-3 flex flex-col justify-between transition-all min-h-[84px] select-none md:sticky md:left-0 md:z-20 ${
+                        isDraggingThisStory ? 'opacity-40 border-[#cda052] border-dashed' : ''
+                      } ${
                         row
-                          ? 'border-[#1f2638] bg-[#0c1018] cursor-pointer hover:border-[#33415c] shadow-sm'
+                          ? isClosed
+                            ? 'border-[#1a2233] bg-[#090c13] opacity-80 cursor-pointer hover:border-[#2a3854] shadow-sm'
+                            : 'border-[#1f2638] bg-[#0c1018] cursor-pointer hover:border-[#33415c] shadow-sm'
                           : 'border-dashed border-[#263148] bg-[#0c1018]'
                       }`}
                     >
+                      {/* Drop indicator line */}
+                      {isDropTarget && (
+                        <div
+                          className={`absolute left-0 right-0 h-1 bg-[#cda052] shadow-[0_0_8px_#cda052] z-30 pointer-events-none rounded ${
+                            dragOverStoryTarget.position === 'before' ? '-top-1' : '-bottom-1'
+                          }`}
+                        />
+                      )}
+
                       {row ? (
                         <>
                           <div className="space-y-1.5">
-                            {/* Top row: Chevron expand button, Story badge, Type, State badge, and Task Count */}
+                            {/* Top row: Chevron expand button, Story badge, Type, State badge, and Reorder Controls */}
                             <div className="flex items-center justify-between gap-1.5">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <button
@@ -577,11 +783,67 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                                 </span>
                               </div>
 
-                              {rowTasks.length > 0 && (
-                                <span className="text-[10px] font-mono text-[#7c869d] flex items-center gap-1 flex-shrink-0">
-                                  <ListChecks className="w-2.5 h-2.5 text-[#cda052]" /> {doneCount}/{rowTasks.length}
+                              {/* Story Fast Reorder Controls */}
+                              <div
+                                className="flex items-center gap-0.5 bg-[#07090e] p-0.5 rounded-lg border border-[#1a2335] shadow-sm flex-shrink-0"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <span
+                                  title="Drag story to reorder"
+                                  className="p-1 text-[#54627a] hover:text-[#cda052] cursor-grab active:cursor-grabbing"
+                                >
+                                  <GripVertical className="w-3.5 h-3.5" />
                                 </span>
-                              )}
+
+                                <button
+                                  onClick={() => handleMoveStory(row.id, 'top')}
+                                  disabled={storyIdx === 0}
+                                  title="Jump to Top (#1)"
+                                  className="p-1 rounded text-[#7c869d] hover:text-[#cda052] hover:bg-[#161d2d] disabled:opacity-20 cursor-pointer"
+                                >
+                                  <ChevronsUp className="w-3 h-3" />
+                                </button>
+
+                                <button
+                                  onClick={() => handleMoveStory(row.id, 'up')}
+                                  disabled={storyIdx === 0}
+                                  title="Move Up 1 spot"
+                                  className="p-1 rounded text-[#7c869d] hover:text-white hover:bg-[#161d2d] disabled:opacity-20 cursor-pointer"
+                                >
+                                  <ChevronUp className="w-3 h-3" />
+                                </button>
+
+                                <select
+                                  value={storyNumber}
+                                  onChange={(e) => handleMoveStoryToPosition(row.id, parseInt(e.target.value) - 1)}
+                                  title="Jump directly to position"
+                                  className="bg-[#121724] border border-[#232e44] text-[10px] font-mono text-[#cda052] font-bold rounded px-1 py-0.5 hover:border-[#cda052]/50 focus:outline-none cursor-pointer"
+                                >
+                                  {rows.map((_, i) => (
+                                    <option key={i + 1} value={i + 1}>
+                                      #{i + 1}
+                                    </option>
+                                  ))}
+                                </select>
+
+                                <button
+                                  onClick={() => handleMoveStory(row.id, 'down')}
+                                  disabled={storyIdx === rows.length - 1}
+                                  title="Move Down 1 spot"
+                                  className="p-1 rounded text-[#7c869d] hover:text-white hover:bg-[#161d2d] disabled:opacity-20 cursor-pointer"
+                                >
+                                  <ChevronDown className="w-3 h-3" />
+                                </button>
+
+                                <button
+                                  onClick={() => handleMoveStory(row.id, 'bottom')}
+                                  disabled={storyIdx === rows.length - 1}
+                                  title="Jump to Bottom"
+                                  className="p-1 rounded text-[#7c869d] hover:text-[#cda052] hover:bg-[#161d2d] disabled:opacity-20 cursor-pointer"
+                                >
+                                  <ChevronsDown className="w-3 h-3" />
+                                </button>
+                              </div>
                             </div>
 
                             {/* Full Story Name - clearly readable, not truncated */}
@@ -629,6 +891,12 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                                   <span>Unassigned</span>
                                 </span>
                               )}
+
+                              {rowTasks.length > 0 && (
+                                <span className="text-[10px] font-mono text-[#7c869d] flex items-center gap-1 ml-auto">
+                                  <ListChecks className="w-2.5 h-2.5 text-[#cda052]" /> {doneCount}/{rowTasks.length}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </>
@@ -654,13 +922,64 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                   ) : (
                     /* EXPANDED STORY CELL */
                     <div
+                      draggable={!!row}
+                      onDragStart={(e) => {
+                        if (!row) return;
+                        e.dataTransfer.setData('text/story-id', row.id);
+                        e.dataTransfer.effectAllowed = 'move';
+                        setDraggingStoryId(row.id);
+                      }}
+                      onDragEnd={() => {
+                        setDraggingStoryId(null);
+                        setDragOverStoryTarget(null);
+                      }}
+                      onDragOver={(e) => {
+                        if (!draggingStoryId || draggingStoryId === rowId) return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const midY = rect.top + rect.height / 2;
+                        const position = e.clientY < midY ? 'before' : 'after';
+                        setDragOverStoryTarget({ id: rowId, position });
+                      }}
+                      onDragLeave={() => {
+                        if (dragOverStoryTarget?.id === rowId) setDragOverStoryTarget(null);
+                      }}
+                      onDrop={(e) => {
+                        if (!row) return;
+                        const sourceId = e.dataTransfer.getData('text/story-id') || draggingStoryId;
+                        if (!sourceId || sourceId === row.id) return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const fromIdx = rows.findIndex((r) => r.id === sourceId);
+                        let toIdx = rows.findIndex((r) => r.id === row.id);
+                        if (fromIdx < 0 || toIdx < 0) return;
+                        if (dragOverStoryTarget?.position === 'after' && toIdx < fromIdx) toIdx += 1;
+                        else if (dragOverStoryTarget?.position === 'before' && toIdx > fromIdx) toIdx -= 1;
+                        handleMoveStoryToPosition(sourceId, toIdx);
+                        setDraggingStoryId(null);
+                        setDragOverStoryTarget(null);
+                      }}
                       onClick={() => row && setModalItem(row)}
-                      className={`rounded-xl border p-3 flex flex-col justify-between transition-all select-none md:sticky md:left-0 md:z-20 ${
+                      className={`relative rounded-xl border p-3 flex flex-col justify-between transition-all select-none md:sticky md:left-0 md:z-20 ${
+                        isDraggingThisStory ? 'opacity-40 border-[#cda052] border-dashed' : ''
+                      } ${
                         row
-                          ? 'border-[#1f2638] bg-[#0c1018] cursor-pointer hover:border-[#33415c] shadow-sm'
+                          ? isClosed
+                            ? 'border-[#1a2233] bg-[#090c13] opacity-80 cursor-pointer hover:border-[#2a3854] shadow-sm'
+                            : 'border-[#1f2638] bg-[#0c1018] cursor-pointer hover:border-[#33415c] shadow-sm'
                           : 'border-dashed border-[#263148] bg-[#0c1018]'
                       }`}
                     >
+                      {/* Drop indicator line */}
+                      {isDropTarget && (
+                        <div
+                          className={`absolute left-0 right-0 h-1 bg-[#cda052] shadow-[0_0_8px_#cda052] z-30 pointer-events-none rounded ${
+                            dragOverStoryTarget.position === 'before' ? '-top-1' : '-bottom-1'
+                          }`}
+                        />
+                      )}
+
                       {row ? (
                         <>
                           <div className="space-y-1.5">
@@ -695,26 +1014,65 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                                 )}
                               </div>
 
-                              {/* Move Up / Move Down buttons for Stories */}
+                              {/* Story Fast Reorder Controls */}
                               <div
-                                className="flex items-center gap-0.5 bg-[#07090e] p-0.5 rounded border border-[#1a2335]"
+                                className="flex items-center gap-0.5 bg-[#07090e] p-0.5 rounded-lg border border-[#1a2335] shadow-sm flex-shrink-0"
                                 onClick={(e) => e.stopPropagation()}
                               >
+                                <span
+                                  title="Drag story to reorder"
+                                  className="p-1 text-[#54627a] hover:text-[#cda052] cursor-grab active:cursor-grabbing"
+                                >
+                                  <GripVertical className="w-3.5 h-3.5" />
+                                </span>
+
+                                <button
+                                  onClick={() => handleMoveStory(row.id, 'top')}
+                                  disabled={storyIdx === 0}
+                                  title="Jump to Top (#1)"
+                                  className="p-1 rounded text-[#7c869d] hover:text-[#cda052] hover:bg-[#161d2d] disabled:opacity-20 cursor-pointer"
+                                >
+                                  <ChevronsUp className="w-3 h-3" />
+                                </button>
+
                                 <button
                                   onClick={() => handleMoveStory(row.id, 'up')}
                                   disabled={storyIdx === 0}
-                                  title={`Move Story #${storyNumber} Up`}
-                                  className="p-1 rounded text-[#7c869d] hover:text-white hover:bg-[#161d2d] disabled:opacity-30 disabled:hover:bg-transparent"
+                                  title="Move Up 1 spot"
+                                  className="p-1 rounded text-[#7c869d] hover:text-white hover:bg-[#161d2d] disabled:opacity-20 cursor-pointer"
                                 >
-                                  <ChevronUp className="w-3.5 h-3.5" />
+                                  <ChevronUp className="w-3 h-3" />
                                 </button>
+
+                                <select
+                                  value={storyNumber}
+                                  onChange={(e) => handleMoveStoryToPosition(row.id, parseInt(e.target.value) - 1)}
+                                  title="Jump directly to position"
+                                  className="bg-[#121724] border border-[#232e44] text-[10px] font-mono text-[#cda052] font-bold rounded px-1 py-0.5 hover:border-[#cda052]/50 focus:outline-none cursor-pointer"
+                                >
+                                  {rows.map((_, i) => (
+                                    <option key={i + 1} value={i + 1}>
+                                      #{i + 1}
+                                    </option>
+                                  ))}
+                                </select>
+
                                 <button
                                   onClick={() => handleMoveStory(row.id, 'down')}
                                   disabled={storyIdx === rows.length - 1}
-                                  title={`Move Story #${storyNumber} Down`}
-                                  className="p-1 rounded text-[#7c869d] hover:text-white hover:bg-[#161d2d] disabled:opacity-30 disabled:hover:bg-transparent"
+                                  title="Move Down 1 spot"
+                                  className="p-1 rounded text-[#7c869d] hover:text-white hover:bg-[#161d2d] disabled:opacity-20 cursor-pointer"
                                 >
-                                  <ChevronDown className="w-3.5 h-3.5" />
+                                  <ChevronDown className="w-3 h-3" />
+                                </button>
+
+                                <button
+                                  onClick={() => handleMoveStory(row.id, 'bottom')}
+                                  disabled={storyIdx === rows.length - 1}
+                                  title="Jump to Bottom"
+                                  className="p-1 rounded text-[#7c869d] hover:text-[#cda052] hover:bg-[#161d2d] disabled:opacity-20 cursor-pointer"
+                                >
+                                  <ChevronsDown className="w-3 h-3" />
                                 </button>
                               </div>
                             </div>
@@ -958,6 +1316,275 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
         </div>
       </div>
       )}
+
+      {/* Dedicated Sprint Story Organizer Modal */}
+      <ModalPortal isOpen={showReorderModal}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-4xl max-h-[90vh] bg-[#0c1018] border border-[#232d44] rounded-2xl shadow-2xl flex flex-col overflow-hidden text-white animate-in zoom-in-95 duration-150"
+          >
+            {/* Modal Header */}
+            <div className="px-5 py-4 border-b border-[#1c2438] bg-gradient-to-r from-[#0d121c] via-[#101524] to-[#0d121c] flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-[#cda052]/10 border border-[#cda052]/30 text-[#cda052]">
+                  <ArrowUpDown className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-bold text-white">Sprint Story Organizer</h2>
+                    <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-[#cda052]/20 text-[#cda052] border border-[#cda052]/40">
+                      {modalStoriesList.length} Stories
+                    </span>
+                    {sprint && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-[#161c2b] text-[#cbd5e1] border border-[#25324c]">
+                        {sprint.name}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-[#8e9cb5]">
+                    Quickly reorder 20+ stories via drag-and-drop, category grouping, or priority sorting.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowReorderModal(false)}
+                className="p-1.5 rounded-xl text-[#7c869d] hover:text-white hover:bg-[#161c2b] transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Quick Presets Toolbar */}
+            <div className="px-5 py-3 bg-[#080b11] border-b border-[#1c2438] flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[11px] font-semibold text-[#64748b] uppercase tracking-wider">Smart Presets:</span>
+                <button
+                  type="button"
+                  onClick={handleSortByFeature}
+                  title="Group all stories that belong to the same Feature together"
+                  className="px-2.5 py-1.5 rounded-lg bg-[#141824] border border-[#263148] text-purple-300 text-xs font-medium hover:bg-purple-950/40 hover:border-purple-600/50 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                >
+                  <Layers className="w-3.5 h-3.5 text-purple-400" />
+                  <span>Group by Feature</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSortByPriority}
+                  title="Sort active stories by Priority (P1 to P4) with closed at bottom"
+                  className="px-2.5 py-1.5 rounded-lg bg-[#141824] border border-[#263148] text-amber-300 text-xs font-medium hover:bg-amber-950/40 hover:border-amber-600/50 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                >
+                  <Flag className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Sort by Priority (P1 → P4)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleMoveClosedToBottom}
+                  title="Push all Resolved and Closed stories to the bottom"
+                  className="px-2.5 py-1.5 rounded-lg bg-[#141824] border border-[#263148] text-emerald-300 text-xs font-medium hover:bg-emerald-950/40 hover:border-emerald-600/50 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Move Closed to Bottom</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setModalStoriesList([...rows])}
+                  title="Reset to board order"
+                  className="px-2.5 py-1.5 rounded-lg bg-[#141824] border border-[#263148] text-[#94a3b8] text-xs font-medium hover:bg-[#1f273b] hover:text-white flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Reset</span>
+                </button>
+              </div>
+
+              <span className="text-[11px] text-[#64748b]">
+                {modalStoriesList.filter(isStoryClosed).length} closed stories
+              </span>
+            </div>
+
+            {/* Stories List (Scrollable) */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-1.5 custom-scrollbar bg-[#07090e]">
+              {modalStoriesList.length === 0 ? (
+                <div className="text-center py-12 text-[#64748b]">No stories in this sprint to organize.</div>
+              ) : (
+                modalStoriesList.map((story, idx) => {
+                  const currentNumber = idx + 1;
+                  const isClosed = isStoryClosed(story);
+                  const isModalDragging = modalDraggingStoryId === story.id;
+                  const isModalOver = modalDragOverId === story.id;
+                  const parentFeature = story.parentId ? workItems.find((w) => w.id === story.parentId) : null;
+
+                  return (
+                    <div
+                      key={story.id}
+                      draggable
+                      onDragStart={() => setModalDraggingStoryId(story.id)}
+                      onDragEnd={() => {
+                        setModalDraggingStoryId(null);
+                        setModalDragOverId(null);
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        if (modalDraggingStoryId && modalDraggingStoryId !== story.id) {
+                          setModalDragOverId(story.id);
+                        }
+                      }}
+                      onDragLeave={() => {
+                        if (modalDragOverId === story.id) setModalDragOverId(null);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (!modalDraggingStoryId || modalDraggingStoryId === story.id) return;
+                        const from = modalStoriesList.findIndex((s) => s.id === modalDraggingStoryId);
+                        const to = idx;
+                        handleModalMoveStory(from, to);
+                        setModalDraggingStoryId(null);
+                        setModalDragOverId(null);
+                      }}
+                      className={`relative flex items-center justify-between gap-3 p-2.5 rounded-xl border transition-all ${
+                        isModalDragging ? 'opacity-30 border-[#cda052] border-dashed' : ''
+                      } ${
+                        isModalOver ? 'border-[#cda052] bg-[#cda052]/10 scale-[1.01]' : ''
+                      } ${
+                        isClosed
+                          ? 'border-[#1b2336] bg-[#0b0e16]/80 opacity-75'
+                          : 'border-[#1f283d] bg-[#0d121c] hover:border-[#334262]'
+                      }`}
+                    >
+                      {/* Left: Drag Handle, Rank Number Dropdown & Story Details */}
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <span
+                          title="Drag up or down"
+                          className="p-1 text-[#54627a] hover:text-[#cda052] cursor-grab active:cursor-grabbing flex-shrink-0"
+                        >
+                          <GripVertical className="w-4 h-4" />
+                        </span>
+
+                        {/* Rank Select */}
+                        <select
+                          value={currentNumber}
+                          onChange={(e) => handleModalMoveStory(idx, parseInt(e.target.value) - 1)}
+                          title="Directly select target position"
+                          className="bg-[#141a28] border border-[#26334d] text-xs font-mono font-bold text-[#cda052] rounded-lg px-2 py-1 focus:outline-none hover:border-[#cda052]/60 cursor-pointer flex-shrink-0"
+                        >
+                          {modalStoriesList.map((_, i) => (
+                            <option key={i + 1} value={i + 1}>
+                              #{i + 1}
+                            </option>
+                          ))}
+                        </select>
+
+                        {/* Parent Feature Tag if any */}
+                        {parentFeature && (
+                          <span
+                            className="text-[9px] px-2 py-0.5 rounded bg-purple-950/70 border border-purple-800/50 text-purple-300 font-semibold flex items-center gap-1 flex-shrink-0 max-w-[150px] truncate"
+                            title={`Feature: ${parentFeature.title}`}
+                          >
+                            <Layers className="w-2.5 h-2.5 text-[#cda052]" />
+                            <span className="truncate">{parentFeature.title}</span>
+                          </span>
+                        )}
+
+                        {/* Title */}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold text-white truncate" title={story.title}>
+                            {story.title}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Right: Badges & Move Controls */}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded border font-semibold ${TYPE_COLOR[story.type]}`}>
+                          {story.type}
+                        </span>
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${PRIORITY_BADGE_COLOR[story.priority]}`}>
+                          P{story.priority}
+                        </span>
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${STATE_COLOR[story.state]}`}>
+                          {story.state}
+                        </span>
+                        {story.storyPoints !== undefined && (
+                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#141b2b] text-[#cbd5e1] border border-[#212c44]">
+                            {story.storyPoints} pts
+                          </span>
+                        )}
+
+                        {/* Action buttons */}
+                        <div className="flex items-center gap-0.5 bg-[#07090e] p-0.5 rounded-lg border border-[#1a2335]">
+                          <button
+                            type="button"
+                            onClick={() => handleModalMoveStory(idx, 0)}
+                            disabled={idx === 0}
+                            title="Jump to Top (#1)"
+                            className="p-1 rounded text-[#7c869d] hover:text-[#cda052] hover:bg-[#161d2d] disabled:opacity-20 cursor-pointer"
+                          >
+                            <ChevronsUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleModalMoveStory(idx, Math.max(0, idx - 1))}
+                            disabled={idx === 0}
+                            title="Move Up 1 spot"
+                            className="p-1 rounded text-[#7c869d] hover:text-white hover:bg-[#161d2d] disabled:opacity-20 cursor-pointer"
+                          >
+                            <ChevronUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleModalMoveStory(idx, Math.min(modalStoriesList.length - 1, idx + 1))}
+                            disabled={idx === modalStoriesList.length - 1}
+                            title="Move Down 1 spot"
+                            className="p-1 rounded text-[#7c869d] hover:text-white hover:bg-[#161d2d] disabled:opacity-20 cursor-pointer"
+                          >
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleModalMoveStory(idx, modalStoriesList.length - 1)}
+                            disabled={idx === modalStoriesList.length - 1}
+                            title="Jump to Bottom"
+                            className="p-1 rounded text-[#7c869d] hover:text-[#cda052] hover:bg-[#161d2d] disabled:opacity-20 cursor-pointer"
+                          >
+                            <ChevronsDown className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-5 py-3.5 border-t border-[#1c2438] bg-[#090d15] flex items-center justify-between gap-3">
+              <span className="text-xs text-[#7c869d]">
+                Tip: Drag rows or use preset buttons. Click Apply to save the order to the sprint board.
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowReorderModal(false)}
+                  className="px-4 py-2 rounded-xl bg-[#141824] border border-[#263148] text-[#cbd5e1] text-xs font-semibold hover:text-white hover:bg-[#1c2233] transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleApplyModalReorder}
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-xs font-bold hover:shadow-glow transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Save & Apply Order</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ModalPortal>
 
       {modalItem && <WorkItemModal item={modalItem} onClose={() => setModalItem(null)} />}
     </div>
