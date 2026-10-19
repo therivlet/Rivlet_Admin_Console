@@ -68,6 +68,24 @@ export default function Sidebar({
   });
 
   const [calculatorExpanded, setCalculatorExpanded] = useState(pathname.startsWith('/calculator'));
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-profile-trigger="true"]')) {
+        setProfileMenuOpen(false);
+      }
+    };
+    if (profileMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [profileMenuOpen]);
+
+  useEffect(() => {
+    setProfileMenuOpen(false);
+  }, [pathname]);
 
   // Load collapsed preference from localStorage if not controlled externally
   useEffect(() => {
@@ -623,51 +641,26 @@ export default function Sidebar({
         </div>
 
         <div className="space-y-1">
-          {/* Profile & Brand Settings */}
-          <div className="relative group w-full">
-            <Link
-              href="/profile"
-              onClick={handleLinkClick}
-              className={`sidebar-nav-item group/link flex items-center rounded-xl text-xs transition-colors duration-200 border flex-shrink ${
-                pathname === '/profile'
-                  ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
-                  : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
-              } ${collapsed ? 'w-10 h-10 mx-auto justify-center p-0' : 'w-full h-9 px-2.5 justify-start'}`}
+          {/* User Profile Card & Popover Trigger */}
+          <div data-profile-trigger="true" className="relative group w-full">
+            <button
+              type="button"
+              onClick={() => setProfileMenuOpen((prev) => !prev)}
+              aria-label="Account options"
+              aria-expanded={profileMenuOpen}
+              className={`flex items-center rounded-xl transition-all duration-200 cursor-pointer ${
+                collapsed
+                  ? 'w-10 h-10 mx-auto justify-center hover:bg-white/[0.08] active:scale-95'
+                  : 'h-10 w-full px-1.5 hover:bg-white/[0.06] text-left'
+              }`}
             >
-              <div className={`flex items-center justify-center flex-shrink-0 ${collapsed ? 'w-full h-full' : 'w-7 h-7'}`}>
-                <Settings className="w-4 h-4 text-[#cda052] transition-transform group-hover/link:scale-110" />
-              </div>
-              <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-                collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none hidden' : 'max-w-[150px] opacity-100 translate-x-0 ml-1.5'
-              }`}>
-                Profile & Brand Settings
-              </span>
-            </Link>
-
-            {collapsed && (
-              <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#1e140e] dark:bg-[#0d101a] border border-[#443023] dark:border-[#22293e] rounded-lg shadow-2xl text-xs text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-[90]">
-                Profile & Brand Settings
-              </div>
-            )}
-          </div>
-
-          {/* User Profile Card & Sign Out */}
-          <div className="relative group w-full">
-            <div className={`flex items-center rounded-xl transition-colors duration-200 ${
-              collapsed ? 'w-10 h-10 mx-auto justify-center' : 'h-9 w-full px-1'
-            }`}>
-              <Link
-                href="/profile"
-                onClick={handleLinkClick}
-                title={user?.name || 'Rivlet Admin'}
-                className="flex items-center justify-center flex-shrink-0 hover:scale-105 transition-transform"
-              >
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#cda052] to-[#8c672b] text-black flex items-center justify-center text-xs font-bold shadow-glow">
+              <div className="flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#cda052] to-[#8c672b] text-black flex items-center justify-center text-xs font-bold shadow-glow">
                   {user?.name?.[0]?.toUpperCase() || 'R'}
                 </div>
-              </Link>
+              </div>
               <div className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] flex-1 min-w-0 ${
-                collapsed ? 'max-w-0 opacity-0 pointer-events-none hidden' : 'max-w-[130px] opacity-100 ml-1.5'
+                collapsed ? 'max-w-0 opacity-0 pointer-events-none hidden' : 'max-w-[130px] opacity-100 ml-2'
               }`}>
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs text-[#f1f5f9] truncate font-semibold block leading-tight">
@@ -683,63 +676,71 @@ export default function Sidebar({
                   </span>
                 </div>
               </div>
-              {!collapsed && (
-                <button
-                  onClick={() => signOut()}
-                  className="p-1.5 rounded-lg text-[#a89487] dark:text-[#94a3b8] hover:text-rose-400 hover:bg-rose-950/30 transition-all flex-shrink-0 cursor-pointer"
-                  aria-label="Sign Out"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
+            </button>
 
-            {/* Elegant Account Popover when collapsed */}
-            {collapsed && (
-              <div className="absolute left-full ml-3 bottom-0 w-64 p-3 bg-[#0e121b]/98 dark:bg-[#07090e]/98 backdrop-blur-2xl border border-[#232b3e] dark:border-[#1e2638] rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.7)] text-xs opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-[95]">
-                {/* User info & permission header */}
-                <div className="flex items-start gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#cda052] to-[#8c672b] text-black flex items-center justify-center text-xs font-bold shadow-glow flex-shrink-0 mt-0.5">
-                    {user?.name?.[0]?.toUpperCase() || 'R'}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-semibold text-white text-xs truncate max-w-[120px]">
-                        {user?.name || 'Rivlet Admin'}
-                      </span>
-                      <span className="text-[9px] font-mono uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded-full bg-[#cda052]/15 text-[#e6c875] border border-[#cda052]/30 leading-none">
-                        {user?.role ? ROLE_LABELS[user.role] : 'Owner'}
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-[#8e9cb5] truncate mt-0.5" title={user?.email || 'admin@therivlet.com'}>
-                      {user?.email || 'admin@therivlet.com'}
-                    </div>
-                  </div>
+            {/* Elegant Account Popover with Light/Dark Theme Adaptability */}
+            <div
+              className={`absolute rounded-2xl p-3.5 text-xs transition-all duration-200 z-[95] border ${
+                collapsed ? 'left-full ml-3 bottom-0 w-64' : 'bottom-full mb-2 left-0 w-full min-w-[240px]'
+              } ${
+                isLight
+                  ? 'bg-[#fcfaf7] border-[#e2d5c3] shadow-[0_16px_40px_rgba(40,25,15,0.22)] text-[#2b1f17]'
+                  : 'bg-[#0c1018]/98 dark:bg-[#07090e]/98 border-[#232b3e] dark:border-[#1e2638] shadow-[0_16px_45px_rgba(0,0,0,0.75)] text-[#f1f5f9]'
+              } ${
+                profileMenuOpen
+                  ? 'opacity-100 pointer-events-auto scale-100'
+                  : 'opacity-0 pointer-events-none scale-95 group-hover:opacity-100 group-hover:pointer-events-auto group-hover:scale-100'
+              }`}
+            >
+              {/* User info & permission header */}
+              <div className="flex items-start gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#cda052] to-[#8c672b] text-black flex items-center justify-center text-xs font-bold shadow-glow flex-shrink-0 mt-0.5">
+                  {user?.name?.[0]?.toUpperCase() || 'R'}
                 </div>
-
-                {/* Subtle Divider */}
-                <div className="my-2.5 border-t border-[#1a2133]" />
-
-                {/* Navigation & Sign Out Actions */}
-                <div className="space-y-1">
-                  <Link
-                    href="/profile"
-                    onClick={handleLinkClick}
-                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs text-[#cbd5e1] hover:text-white hover:bg-white/[0.06] transition-colors"
-                  >
-                    <Settings className="w-3.5 h-3.5 text-[#cda052]" />
-                    <span>Profile & Brand Settings</span>
-                  </Link>
-                  <button
-                    onClick={() => signOut()}
-                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 transition-colors cursor-pointer text-left"
-                  >
-                    <LogOut className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span className="font-medium">Sign Out</span>
-                  </button>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="font-semibold text-[#1f1610] dark:text-white text-xs truncate max-w-[120px]">
+                      {user?.name || 'Rivlet Admin'}
+                    </span>
+                    <span className="text-[9px] font-mono uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-full bg-[#cda052]/20 dark:bg-[#cda052]/15 text-[#845b1d] dark:text-[#f3db9d] border border-[#cda052]/40 dark:border-[#cda052]/30 leading-none">
+                      {user?.role ? ROLE_LABELS[user.role] : 'Owner'}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-[#705e50] dark:text-[#8e9cb5] truncate mt-0.5" title={user?.email || 'admin@therivlet.com'}>
+                    {user?.email || 'admin@therivlet.com'}
+                  </div>
                 </div>
               </div>
-            )}
+
+              {/* Subtle Divider */}
+              <div className="my-2.5 border-t border-[#e6dcce] dark:border-[#1a2133]" />
+
+              {/* Navigation & Sign Out Actions */}
+              <div className="space-y-1">
+                <Link
+                  href="/profile"
+                  onClick={() => {
+                    setProfileMenuOpen(false);
+                    handleLinkClick();
+                  }}
+                  className="flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-medium text-[#33261d] hover:text-[#0f0a07] hover:bg-[#ebdcc9]/70 dark:text-[#cbd5e1] dark:hover:text-white dark:hover:bg-white/[0.08] transition-colors"
+                >
+                  <Settings className="w-4 h-4 text-[#a57428] dark:text-[#cda052] flex-shrink-0" />
+                  <span>Profile & Brand Settings</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProfileMenuOpen(false);
+                    signOut();
+                  }}
+                  className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-medium text-rose-700 hover:text-rose-900 hover:bg-rose-100/80 dark:text-rose-400 dark:hover:text-rose-300 dark:hover:bg-rose-950/40 transition-colors cursor-pointer text-left"
+                >
+                  <LogOut className="w-4 h-4 text-rose-600 dark:text-rose-400 flex-shrink-0" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
