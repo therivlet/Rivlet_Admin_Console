@@ -535,85 +535,84 @@ export default function Sidebar({
               </div>
             );
           })}
+          {/* GOVERNANCE & SECURITY MODULES */}
+          {(canView('access') || canView('audit')) && (
+            <div className="w-full space-y-0.5 sm:space-y-1">
+              <div className="sidebar-nav-section h-6 flex items-center px-1 my-0.5 overflow-hidden relative flex-shrink-0">
+                <span className={`text-[10px] font-semibold tracking-wider uppercase whitespace-nowrap transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                  collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[180px] opacity-100 translate-x-0 text-[#a89487] dark:text-[#94a3b8]'
+                }`}>
+                  Governance & Security
+                </span>
+                <div className={`transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] w-full ${
+                  collapsed ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                }`}>
+                  <div className="w-7 border-t border-[#3d2b20] dark:border-white/[0.08] mx-auto" />
+                </div>
+              </div>
+
+              {canView('access') && (
+                <div className="relative group w-full">
+                  <Link
+                    href="/access"
+                    onClick={handleLinkClick}
+                    className={`sidebar-nav-item group/link flex items-center rounded-xl text-xs transition-colors duration-200 border flex-shrink ${
+                      pathname === '/access'
+                        ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
+                        : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
+                    } ${collapsed ? 'w-10 h-10 mx-auto justify-center p-0' : 'w-full h-9 px-2.5 justify-start'}`}
+                  >
+                    <div className={`flex items-center justify-center flex-shrink-0 ${collapsed ? 'w-full h-full' : 'w-7 h-7'}`}>
+                      <Lock className={`w-4 h-4 flex-shrink-0 transition-transform group-hover/link:scale-110 ${pathname === '/access' ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/link:text-white'}`} />
+                    </div>
+                    <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                      collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none hidden' : 'max-w-[160px] opacity-100 translate-x-0 ml-1.5'
+                    }`}>
+                      Access Management
+                    </span>
+                  </Link>
+                  {collapsed && (
+                    <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#1e140e] dark:bg-[#0d101a] border border-[#443023] dark:border-[#22293e] rounded-lg shadow-2xl text-xs text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-[90]">
+                      Access Management
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {canView('audit') && (
+                <div className="relative group w-full">
+                  <Link
+                    href="/audit"
+                    onClick={handleLinkClick}
+                    className={`sidebar-nav-item group/link flex items-center rounded-xl text-xs transition-colors duration-200 border flex-shrink ${
+                      pathname === '/audit'
+                        ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
+                        : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
+                    } ${collapsed ? 'w-10 h-10 mx-auto justify-center p-0' : 'w-full h-9 px-2.5 justify-start'}`}
+                  >
+                    <div className={`flex items-center justify-center flex-shrink-0 ${collapsed ? 'w-full h-full' : 'w-7 h-7'}`}>
+                      <FileSearch className={`w-4 h-4 flex-shrink-0 transition-transform group-hover/link:scale-110 ${pathname === '/audit' ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/link:text-white'}`} />
+                    </div>
+                    <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                      collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none hidden' : 'max-w-[160px] opacity-100 translate-x-0 ml-1.5'
+                    }`}>
+                      Audit Log
+                    </span>
+                  </Link>
+                  {collapsed && (
+                    <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#1e140e] dark:bg-[#0d101a] border border-[#443023] dark:border-[#22293e] rounded-lg shadow-2xl text-xs text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-[90]">
+                      Audit Log
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* GOVERNANCE & SECURITY MODULES */}
-      {(canView('access') || canView('audit')) && (
-        <div className="w-full space-y-0.5 sm:space-y-1">
-          <div className="sidebar-nav-section h-6 flex items-center px-1 my-0.5 overflow-hidden relative flex-shrink-0">
-            <span className={`text-[10px] font-semibold tracking-wider uppercase whitespace-nowrap transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-              collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[180px] opacity-100 translate-x-0 text-[#a89487] dark:text-[#94a3b8]'
-            }`}>
-              Governance & Security
-            </span>
-            <div className={`transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] w-full ${
-              collapsed ? 'opacity-100' : 'opacity-0 pointer-events-none'
-            }`}>
-              <div className="w-7 border-t border-[#3d2b20] dark:border-white/[0.08] mx-auto" />
-            </div>
-          </div>
-
-          {canView('access') && (
-            <div className="relative group w-full">
-              <Link
-                href="/access"
-                onClick={handleLinkClick}
-                className={`sidebar-nav-item group/link flex items-center rounded-xl text-xs transition-colors duration-200 border flex-shrink ${
-                  pathname === '/access'
-                    ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
-                    : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
-                } ${collapsed ? 'w-10 h-10 mx-auto justify-center p-0' : 'w-full h-9 px-2.5 justify-start'}`}
-              >
-                <div className={`flex items-center justify-center flex-shrink-0 ${collapsed ? 'w-full h-full' : 'w-7 h-7'}`}>
-                  <Lock className={`w-4 h-4 flex-shrink-0 transition-transform group-hover/link:scale-110 ${pathname === '/access' ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/link:text-white'}`} />
-                </div>
-                <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-                  collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none hidden' : 'max-w-[160px] opacity-100 translate-x-0 ml-1.5'
-                }`}>
-                  Access Management
-                </span>
-              </Link>
-              {collapsed && (
-                <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#1e140e] dark:bg-[#0d101a] border border-[#443023] dark:border-[#22293e] rounded-lg shadow-2xl text-xs text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-[90]">
-                  Access Management
-                </div>
-              )}
-            </div>
-          )}
-
-          {canView('audit') && (
-            <div className="relative group w-full">
-              <Link
-                href="/audit"
-                onClick={handleLinkClick}
-                className={`sidebar-nav-item group/link flex items-center rounded-xl text-xs transition-colors duration-200 border flex-shrink ${
-                  pathname === '/audit'
-                    ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
-                    : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
-                } ${collapsed ? 'w-10 h-10 mx-auto justify-center p-0' : 'w-full h-9 px-2.5 justify-start'}`}
-              >
-                <div className={`flex items-center justify-center flex-shrink-0 ${collapsed ? 'w-full h-full' : 'w-7 h-7'}`}>
-                  <FileSearch className={`w-4 h-4 flex-shrink-0 transition-transform group-hover/link:scale-110 ${pathname === '/audit' ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/link:text-white'}`} />
-                </div>
-                <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-                  collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none hidden' : 'max-w-[160px] opacity-100 translate-x-0 ml-1.5'
-                }`}>
-                  Audit Log
-                </span>
-              </Link>
-              {collapsed && (
-                <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#1e140e] dark:bg-[#0d101a] border border-[#443023] dark:border-[#22293e] rounded-lg shadow-2xl text-xs text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-[90]">
-                  Audit Log
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* 5. ACCOUNTS & USER FOOTER */}
-      <div className="sidebar-nav-item p-2 bg-black/25 dark:bg-[#07080d]/80 text-[11px] border-t border-[#3d2b20] dark:border-[#1a2233] transition-all duration-300 overflow-hidden flex-shrink-0">
+      {/* 5. ACCOUNTS & USER FOOTER (Pinned bottom, always accessible) */}
+      <div className="p-2 bg-black/35 dark:bg-[#07080d]/95 text-[11px] border-t border-[#3d2b20] dark:border-[#1a2233] transition-all duration-300 flex-shrink-0 mt-auto relative z-20">
         <div className="px-1 mb-1 flex items-center justify-between overflow-hidden h-4">
           <span className={`text-[10px] font-semibold tracking-wider text-[#a89487] dark:text-[#94a3b8] uppercase transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
             collapsed ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[100px] opacity-100'
@@ -657,11 +656,16 @@ export default function Sidebar({
             <div className={`flex items-center rounded-xl transition-colors duration-200 ${
               collapsed ? 'w-10 h-10 mx-auto justify-center' : 'h-9 w-full px-1'
             }`}>
-              <div className="flex items-center justify-center flex-shrink-0">
+              <Link
+                href="/profile"
+                onClick={handleLinkClick}
+                title={user?.name || 'Rivlet Admin'}
+                className="flex items-center justify-center flex-shrink-0 hover:scale-105 transition-transform"
+              >
                 <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#cda052] to-[#8c672b] text-black flex items-center justify-center text-xs font-bold shadow-glow">
                   {user?.name?.[0]?.toUpperCase() || 'R'}
                 </div>
-              </div>
+              </Link>
               <div className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] flex-1 min-w-0 ${
                 collapsed ? 'max-w-0 opacity-0 pointer-events-none hidden' : 'max-w-[130px] opacity-100 ml-1.5'
               }`}>
@@ -702,6 +706,23 @@ export default function Sidebar({
               </div>
             )}
           </div>
+
+          {/* Quick Sign Out button in collapsed mode */}
+          {collapsed && (
+            <div className="relative group w-full pt-0.5">
+              <button
+                onClick={() => signOut()}
+                title="Sign Out"
+                aria-label="Sign Out"
+                className="w-10 h-8 mx-auto flex items-center justify-center rounded-xl text-[#a89487] dark:text-[#94a3b8] hover:text-rose-400 hover:bg-rose-950/30 transition-all cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+              <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#1e140e] dark:bg-[#0d101a] border border-[#443023] dark:border-[#22293e] rounded-lg shadow-2xl text-xs text-rose-300 whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-[90]">
+                Sign Out
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </aside>
@@ -710,7 +731,7 @@ export default function Sidebar({
   return (
     <>
       {/* Desktop Persistent Sidebar (Respects isCollapsed state, elevated z-index) */}
-      <div className="hidden lg:flex flex-shrink-0 h-full relative z-40">
+      <div className="hidden lg:flex flex-shrink-0 h-full max-h-full relative z-40">
         {renderNavContent(isCollapsed)}
       </div>
 
@@ -723,7 +744,7 @@ export default function Sidebar({
             onClick={onCloseMobile}
           />
           {/* Sliding Drawer */}
-          <div className="relative z-10 animate-fade-in">
+          <div className="relative z-10 animate-fade-in h-full h-[100dvh] max-h-screen">
             {renderNavContent(false)}
           </div>
         </div>
