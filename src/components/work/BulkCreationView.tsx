@@ -34,7 +34,7 @@ const SAMPLE_YAML = `
   priority: "P1"
   points: 5
   assignee: "Unassigned"
-  sprint: "[Specify Target Sprint or leave empty for Backlog]"
+  sprint: "Sprint 1: Technical Qualification"
   manufacture: "Layo Group"
   styles: "Leggings, Sports Bra"
   description: "Lead fit sessions with sample master. Verify waistband elasticity, high-rise seam placement, and 4-way squat-proof density under 240 GSM."
@@ -64,7 +64,7 @@ const SAMPLE_YAML = `
   priority: "P2"
   points: 3
   assignee: "Unassigned"
-  sprint: "[Specify Target Sprint or leave empty for Backlog]"
+  sprint: "Backlog"
   manufacture: "Layo Group"
   styles: "All Styles"
   description: "Inspect and sign off on fabric lab dips in Midnight and Cardamom colorways for all 6 launch styles."
@@ -92,7 +92,7 @@ const SAMPLE_JSON = JSON.stringify(
       priority: 'P1',
       points: 5,
       assignee: 'Unassigned',
-      sprint: '[Specify Target Sprint or leave empty for Backlog]',
+      sprint: 'Sprint 1: Technical Qualification',
       manufacture: 'Layo Group',
       styles: 'Leggings, Sports Bra',
       description: 'Lead fit sessions with sample master. Verify waistband elasticity, high-rise seam placement, and 4-way squat-proof density under 240 GSM.',
@@ -121,6 +121,28 @@ const SAMPLE_JSON = JSON.stringify(
           assignee: 'Unassigned',
           description: 'Issue revision note to Layo Group for flatlock seam stitch tension.',
           acceptance_criteria: 'Revised proto sample ticket acknowledged by factory QA.',
+        },
+      ],
+    },
+    {
+      user_story: 'Lab Dip Colorfastness & D65 Lighting Booth Verification',
+      story_type: 'User Story',
+      priority: 'P2',
+      points: 3,
+      assignee: 'Unassigned',
+      sprint: 'Backlog',
+      manufacture: 'Layo Group',
+      styles: 'All Styles',
+      description: 'Inspect and sign off on fabric lab dips in Midnight and Cardamom colorways for all 6 launch styles.',
+      acceptance_criteria: 'Delta-E color difference is under 0.8 compared to Pantone TCX standard swatch. Washing colorfastness grade 4.5+.',
+      tasks: [
+        {
+          title: 'Review color swatches under D65, TL84, and daylight lamps',
+          priority: 'P1',
+          points: 1,
+          assignee: 'Unassigned',
+          description: 'Examine lab dips under standardized light booth conditions.',
+          acceptance_criteria: 'Zero visible metamerism under multi-light comparison.',
         },
       ],
     },
@@ -199,11 +221,11 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
     return sprints.find((s) => s.id === selectedConsolidateSprintId) || activeSprint;
   }, [selectedConsolidateSprintId, activeSprint, sprints]);
 
-  // Consolidated items for the selected sprint
+  // Consolidated items for the selected sprint (User Stories only; Epics and Features never belong to sprints)
   const consolidatedStories = useMemo(() => {
     return workItems.filter((w) => {
       const matchesSprint = !resolvedConsolidateSprint || w.sprintId === resolvedConsolidateSprint.id;
-      return matchesSprint && (w.type === 'User Story' || w.type === 'Bug' || w.type === 'Feature' || w.type === 'Epic');
+      return matchesSprint && (w.type === 'User Story' || w.type === 'Bug');
     });
   }, [workItems, resolvedConsolidateSprint]);
 
@@ -216,7 +238,10 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
 
   // Sprint Progress stats
   const sprintStats = useMemo(() => {
-    const allSprintItems = workItems.filter((w) => !resolvedConsolidateSprint || w.sprintId === resolvedConsolidateSprint.id);
+    const allSprintItems = workItems.filter((w) => {
+      const matchesSprint = !resolvedConsolidateSprint || w.sprintId === resolvedConsolidateSprint.id;
+      return matchesSprint && (w.type === 'User Story' || w.type === 'Task' || w.type === 'Bug');
+    });
     const totalPoints = allSprintItems.reduce((acc, i) => acc + (i.storyPoints || 0), 0);
     const donePoints = allSprintItems
       .filter((i) => i.state === 'Closed' || i.state === 'Resolved')
@@ -238,10 +263,21 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
     };
   }, [workItems, resolvedConsolidateSprint, consolidatedStories, consolidatedTasks]);
 
-  // Helper to match sprint
+  // Helper to match sprint (returns undefined for Backlog or unassigned)
   const resolveSprintId = (sprintStr?: string): string | undefined => {
-    if (!sprintStr) return sprints[0]?.id;
+    if (!sprintStr) return undefined;
     const clean = sprintStr.trim().toLowerCase();
+    if (
+      clean === '' ||
+      clean === 'backlog' ||
+      clean === 'unscheduled' ||
+      clean === 'none' ||
+      clean.includes('backlog') ||
+      clean.includes('leave empty') ||
+      clean.includes('target sprint')
+    ) {
+      return undefined;
+    }
     const found = sprints.find(
       (s) =>
         s.id.toLowerCase() === clean ||
@@ -249,7 +285,7 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
         (clean.includes('1') && s.name.includes('1')) ||
         (clean.includes('2') && s.name.includes('2'))
     );
-    return found ? found.id : sprints[0]?.id;
+    return found ? found.id : undefined;
   };
 
   // Helper to match vendor (defaults Layo Group if not found)
@@ -640,7 +676,7 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
         order: i + 1,
         storyPoints: s.points || 3,
         assignee: s.assignee && s.assignee !== 'Unassigned' ? s.assignee : undefined,
-        sprintId: s.sprintId || sprints[0]?.id,
+        sprintId: s.sprintId, // Undefined for Backlog stories; no forced fallback
         linkedVendorId: s.vendorId,
         linkedPipelineItemIds: s.styleIds || [],
         linkedPipelineItemId: s.styleIds && s.styleIds.length > 0 && s.styleIds[0] !== 'all' ? s.styleIds[0] : undefined,
@@ -660,7 +696,7 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
 
       allItemsToSave.push(storyItem);
 
-      // Create linked tasks under this story
+      // Create linked tasks under this story (tasks inherit sprint from their parent story)
       if (s.tasks && s.tasks.length > 0) {
         for (let j = 0; j < s.tasks.length; j++) {
           const t = s.tasks[j];
@@ -679,7 +715,7 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
             taskNumber: j + 1,
             storyPoints: t.points || 1,
             parentId: storyId, // Linked to parent story
-            sprintId: s.sprintId || sprints[0]?.id,
+            sprintId: storyItem.sprintId, // Inherits directly from parent story
             assignee: t.assignee && t.assignee !== 'Unassigned' ? t.assignee : (s.assignee && s.assignee !== 'Unassigned' ? s.assignee : undefined),
             linkedVendorId: s.vendorId,
             linkedPipelineItemIds: s.styleIds || [],
@@ -713,18 +749,24 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
     const promptText = `
 Please generate apparel production / sprint work tracking user stories and child tasks for the Rivlet apparel brand in structured JSON (or YAML) format. Leave "assignee" as "Unassigned" unless specifically assigned.
 
-CRITICAL FORMAT REQUIREMENT:
-Every User Story AND every child Task MUST include both "description" and "acceptance_criteria".
+CRITICAL SPRINT SCHEDULING RULES:
+1. Sprint schedule is strictly for User Stories:
+   - In "sprint", specify the target sprint name (e.g. "Sprint 1: Technical Qualification", "Sprint 2: Factory Visits") OR set to "Backlog" / leave blank if the story is unscheduled and belongs in the Backlog.
+2. Tasks NEVER have a sprint scheduler:
+   - Tasks are tagged directly to their parent User Story and inherit the story's sprint or backlog placement. Do NOT provide a "sprint" field on child tasks.
+3. Features and Epics do NOT have sprint schedules:
+   - Epics and Features are high-level roadmap containers that stay in the backlog by default.
+4. Every User Story AND every child Task MUST include both "description" and "acceptance_criteria".
 
 JSON Schema:
 [
   {
-    "user_story": "[Title of user story or feature]",
+    "user_story": "[Title of user story]",
     "story_type": "User Story",
     "priority": "P1", // P1 (Critical), P2 (High), P3 (Medium), P4 (Low)
     "points": 5, // 1, 2, 3, 5, 8
     "assignee": "Unassigned",
-    "sprint": "[Specify Sprint Name, e.g. Sprint 2: Factory Visits, or leave blank for Backlog]",
+    "sprint": "[Specify Target Sprint Name, or Backlog]",
     "manufacture": "Layo Group", // Default partner: Layo Group (or Unassigned)
     "styles": "All Styles", // Or specific styles: e.g. "Leggings, Sports Bra"
     "operation": "Operations & Sourcing",
@@ -985,8 +1027,12 @@ JSON Schema:
       prompt += `Plan and generate the necessary User Stories and child Tasks for this sprint cadence.\n`;
     }
     prompt += `3. Every User Story AND every child Task MUST include both a detailed "description" and verifiable "acceptance_criteria".\n`;
-    prompt += `4. Manufacturer must be set to "Layo Group" (or "Unassigned").\n`;
-    prompt += `5. Output strictly in the Rivlet Bulk Creation JSON format shown below:\n\n`;
+    prompt += `4. Sprint Scheduling Rules:\n`;
+    prompt += `   - Sprint scheduling is strictly for User Stories. Specify target sprint name, or leave empty / "Backlog" for unscheduled stories.\n`;
+    prompt += `   - Tasks do NOT have sprint schedulers — they automatically inherit from their parent User Story.\n`;
+    prompt += `   - Epics and Features do NOT have sprint schedules; they remain portfolio containers in the backlog.\n`;
+    prompt += `5. Manufacturer must be set to "Layo Group" (or "Unassigned").\n`;
+    prompt += `6. Output strictly in the Rivlet Bulk Creation JSON format shown below:\n\n`;
     prompt += `[\n`;
     prompt += `  {\n`;
     prompt += `    "user_story": "[New Story Title]",\n`;
@@ -1632,9 +1678,13 @@ JSON Schema:
                     <span className="text-[10px] px-2 py-0.5 rounded bg-[#131b2c] border border-[#202d48] text-[#cda052] font-semibold flex items-center gap-1">
                       <User className="w-2.5 h-2.5" /> {story.assignee}
                     </span>
-                    {story.sprintName && (
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-[#101522] border border-[#1d273a] text-[#cbd5e1] flex items-center gap-1">
-                        <Calendar className="w-2.5 h-2.5 text-[#cda052]" /> {story.sprintName}
+                    {story.sprintId ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-[#101522] border border-[#1d273a] text-sky-300 font-medium flex items-center gap-1">
+                        <Calendar className="w-2.5 h-2.5 text-sky-400" /> {sprints.find((s) => s.id === story.sprintId)?.name || story.sprintName || 'Sprint'}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-[#141b28] border border-[#232f48] text-[#8e9cb5] font-medium flex items-center gap-1">
+                        <Calendar className="w-2.5 h-2.5 text-[#8e9cb5]" /> Backlog
                       </span>
                     )}
                     {story.vendorName && (

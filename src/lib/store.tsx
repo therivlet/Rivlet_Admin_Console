@@ -766,9 +766,15 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       } else {
         setBudgetItems(initialBudgetItems);
       }
-      setSprints(storedSprints ? JSON.parse(storedSprints) : initialSprints);
-      setWorkItems(storedWorkItems ? JSON.parse(storedWorkItems) : initialWorkItems);
-      setTeamMembers(storedTeamMembers ? JSON.parse(storedTeamMembers) : initialTeamMembers);
+      const rawWorkItems: WorkItem[] = storedWorkItems ? JSON.parse(storedWorkItems) : initialWorkItems;
+      const sanitizedWorkItems = rawWorkItems.map((w) => {
+        if ((w.type === 'Epic' || w.type === 'Feature') && w.sprintId) {
+          const { sprintId, ...rest } = w;
+          return rest;
+        }
+        return w;
+      });
+      setWorkItems(sanitizedWorkItems);
       setWorkSettings(storedWorkSettings ? JSON.parse(storedWorkSettings) : initialWorkSettings);
       if (storedBudgetSettings) {
         const parsed = JSON.parse(storedBudgetSettings);
@@ -1509,40 +1515,29 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     const now = new Date().toISOString();
     const updated: WorkItem = { ...item, updatedAt: now };
 
-    // Check if sprint changed for a container work item (User Story, Feature, or Epic)
+    // Epics and Features NEVER have a sprint schedule
+    if (updated.type === 'Epic' || updated.type === 'Feature') {
+      delete updated.sprintId;
+    }
+
+    // Tasks inherit sprintId from parent User Story if attached to one
+    if (updated.type === 'Task' && updated.parentId) {
+      const parentStory = workItems.find((w) => w.id === updated.parentId);
+      if (parentStory) {
+        updated.sprintId = parentStory.sprintId;
+      }
+    }
+
+    // Check if sprint changed for a User Story
     const prev = workItems.find((w) => w.id === item.id);
-    const sprintChanged = prev !== undefined && prev.sprintId !== item.sprintId;
+    const sprintChanged = prev !== undefined && prev.sprintId !== updated.sprintId;
 
     let cascadeItems: WorkItem[] = [];
-    if (sprintChanged) {
-      if (item.type === 'User Story') {
-        // Cascade to direct child tasks and bugs
-        cascadeItems = workItems
-          .filter((w) => w.parentId === item.id)
-          .map((w) => ({ ...w, sprintId: item.sprintId, updatedAt: now }));
-      } else if (item.type === 'Feature') {
-        // Cascade to child User Stories AND their respective child Tasks
-        const childStories = workItems.filter((w) => w.parentId === item.id);
-        const childStoryIds = new Set(childStories.map((s) => s.id));
-        const childTasks = workItems.filter((w) => w.parentId && childStoryIds.has(w.parentId));
-        cascadeItems = [...childStories, ...childTasks].map((w) => ({
-          ...w,
-          sprintId: item.sprintId,
-          updatedAt: now,
-        }));
-      } else if (item.type === 'Epic') {
-        // Cascade to Features -> Stories -> Tasks
-        const childFeatures = workItems.filter((w) => w.parentId === item.id);
-        const featureIds = new Set(childFeatures.map((f) => f.id));
-        const childStories = workItems.filter((w) => w.parentId && featureIds.has(w.parentId));
-        const storyIds = new Set(childStories.map((s) => s.id));
-        const childTasks = workItems.filter((w) => w.parentId && storyIds.has(w.parentId));
-        cascadeItems = [...childFeatures, ...childStories, ...childTasks].map((w) => ({
-          ...w,
-          sprintId: item.sprintId,
-          updatedAt: now,
-        }));
-      }
+    if (sprintChanged && updated.type === 'User Story') {
+      // Cascade to direct child tasks and bugs
+      cascadeItems = workItems
+        .filter((w) => w.parentId === updated.id)
+        .map((w) => ({ ...w, sprintId: updated.sprintId, updatedAt: now }));
     }
 
     const allToUpdate = [updated, ...cascadeItems];
@@ -1569,11 +1564,11 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     }
 
     if (cascadeItems.length > 0) {
-      const targetSprint = sprints.find((s) => s.id === item.sprintId);
+      const targetSprint = sprints.find((s) => s.id === updated.sprintId);
       const sprintName = targetSprint ? targetSprint.name : 'Backlog (Unscheduled)';
       notify.success(
         'Sprint Cascade Applied',
-        `Moved "${updated.title}" and ${cascadeItems.length} linked item${cascadeItems.length === 1 ? '' : 's'} to ${sprintName}.`
+        `Moved "${updated.title}" and ${cascadeItems.length} linked child task${cascadeItems.length === 1 ? '' : 's'} to ${sprintName}.`
       );
     } else {
       notify.success('Work Item Saved', `"${updated.title}" updated.`);
@@ -1583,11 +1578,13 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
   const moveWorkItemToSprint = async (itemId: string, newSprintId: string | undefined) => {
     const target = workItems.find((w) => w.id === itemId);
     if (!target) return;
+    // Epics, Features, and Tasks do not have independent sprint schedulers
+    if (target.type === 'Epic' || target.type === 'Feature' || target.type === 'Task') return;
     if (target.sprintId === newSprintId) return;
     await saveWorkItem({ ...target, sprintId: newSprintId });
   };
 
-  const moveTaskToStory = async (taskId: string, targetStoryId: string | undefined, alignSprint: boolean = true) => {
+  const moveTaskToStory = async (taskId: string, targetStoryId: string | undefined, _alignSprint: boolean = true) => {
     const task = workItems.find((w) => w.id === taskId);
     if (!task) return;
 
@@ -1601,7 +1598,8 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     const targetStory = workItems.find((w) => w.id === targetStoryId);
     if (!targetStory) return;
 
-    const nextSprintId = alignSprint && targetStory.sprintId ? targetStory.sprintId : task.sprintId;
+    // Task automatically takes the parent story's sprintId
+    const nextSprintId = targetStory.sprintId;
     await saveWorkItem({
       ...task,
       parentId: targetStoryId,

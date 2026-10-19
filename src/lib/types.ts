@@ -511,7 +511,7 @@ export interface WorkItem {
   assignee?: string;
   tags: string[];
   parentId?: string; // Epic -> Feature -> User Story -> Task/Bug
-  sprintId?: string; // links to Sprint.id ("Unscheduled" if omitted / backlog)
+  sprintId?: string; // links to Sprint.id (Scheduled strictly at User Story level; Tasks inherit from parent Story; Epics & Features do not use sprint schedules)
   linkedVendorId?: string; // cross-link to a Manufacturer/Vendor record
   linkedPipelineItemId?: string; // cross-link to a single Sampling & Production style (legacy/compatibility)
   linkedPipelineItemIds?: string[]; // cross-link to multiple Sampling & Production styles (or ['all'])

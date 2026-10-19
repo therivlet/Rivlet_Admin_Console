@@ -290,9 +290,17 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
         ? normalizedStyleIds[0]
         : (normalizedStyleIds.includes('all') && pipelineItems[0] ? pipelineItems[0].id : undefined);
 
+    const nextSprintId =
+      form.type === 'Epic' || form.type === 'Feature'
+        ? undefined
+        : form.type === 'Task'
+        ? (parentItem?.sprintId || undefined)
+        : form.sprintId;
+
     await saveWorkItem({
       ...form,
       title: form.title.trim(),
+      sprintId: nextSprintId,
       tags: tagsInput.split(',').map((t) => t.trim()).filter(Boolean),
       linkedPipelineItemIds: normalizedStyleIds,
       linkedPipelineItemId: primaryStyleId,
@@ -445,7 +453,7 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
               <span className={`text-[11px] px-2.5 py-0.5 rounded-full border font-medium ${PRIORITY_BADGE_COLOR[currentItem.priority]}`}>
                 {PRIORITY_LABEL[currentItem.priority]}
               </span>
-              {sprint && (
+              {sprint && currentItem.type !== 'Epic' && currentItem.type !== 'Feature' && (
                 <span className="text-[11px] px-2.5 py-0.5 rounded-full border border-[#222d42] bg-[#121724] text-[#cbd5e1] flex items-center gap-1">
                   <Clock className="w-3 h-3 text-[#cda052]" /> {sprint.name}
                 </span>
@@ -886,53 +894,67 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                       </div>
                     </div>
 
-                    {/* Sprint */}
-                    <div>
-                      <span className="text-[11px] text-[#64748b] block mb-1">Sprint Scheduling</span>
-                      {sprint ? (
+                    {/* Sprint Scheduling */}
+                    {currentItem.type === 'User Story' ? (
+                      <div>
+                        <span className="text-[11px] text-[#64748b] block mb-1">Sprint Scheduling</span>
+                        {sprint ? (
+                          <div className="p-2.5 rounded-lg bg-[#080b11] border border-[#1a2233]">
+                            <p className="text-xs font-semibold text-white flex items-center gap-1.5">
+                              <Clock className="w-3 h-3 text-[#cda052]" /> {sprint.name}
+                            </p>
+                            <p className="text-[10px] text-[#64748b] mt-0.5">
+                              {new Date(sprint.startDate).toLocaleDateString()} → {new Date(sprint.endDate).toLocaleDateString()}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="p-2.5 rounded-lg bg-[#080b11] border border-[#1a2233]">
+                            <p className="text-xs text-[#94a3b8] italic">Backlog (Unscheduled)</p>
+                          </div>
+                        )}
+
+                        {childItems.length > 0 && (
+                          <p className="text-[10px] text-amber-300/80 mt-1 leading-snug">
+                            Note: Moving sprint will cascade to all {childItems.length} linked child task{childItems.length === 1 ? '' : 's'}.
+                          </p>
+                        )}
+
+                        {/* Quick Move Sprint Selector */}
+                        <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                          <label className="text-[10px] text-[#7c869d] block mb-1 font-semibold flex items-center gap-1">
+                            <Calendar className="w-2.5 h-2.5 text-[#cda052]" /> Move to Sprint (with child tasks):
+                          </label>
+                          <select
+                            value={currentItem.sprintId || ''}
+                            onChange={async (e) => {
+                              const nextSprint = e.target.value === 'backlog' ? undefined : (e.target.value || undefined);
+                              await moveWorkItemToSprint(currentItem.id, nextSprint);
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#080b11] border border-[#1f2638] text-xs text-[#cbd5e1] focus:outline-none focus:border-[#cda052]/60"
+                          >
+                            <option value="" disabled>Select target sprint...</option>
+                            {sprints.map((s) => (
+                              <option key={s.id} value={s.id} disabled={s.id === currentItem.sprintId}>
+                                {s.id === currentItem.sprintId ? `• Current: ${s.name}` : `→ Move to: ${s.name}`}
+                              </option>
+                            ))}
+                            <option value="backlog">→ Move to Backlog</option>
+                          </select>
+                        </div>
+                      </div>
+                    ) : currentItem.type === 'Task' ? (
+                      <div>
+                        <span className="text-[11px] text-[#64748b] block mb-1">Sprint Scheduling</span>
                         <div className="p-2.5 rounded-lg bg-[#080b11] border border-[#1a2233]">
                           <p className="text-xs font-semibold text-white flex items-center gap-1.5">
-                            <Clock className="w-3 h-3 text-[#cda052]" /> {sprint.name}
+                            <Clock className="w-3 h-3 text-[#cda052]" /> {sprint ? sprint.name : 'Backlog (Unscheduled)'}
                           </p>
                           <p className="text-[10px] text-[#64748b] mt-0.5">
-                            {new Date(sprint.startDate).toLocaleDateString()} → {new Date(sprint.endDate).toLocaleDateString()}
+                            {parentItem ? `Inherited from parent User Story: "${parentItem.title}"` : 'Inherited from parent User Story'}
                           </p>
                         </div>
-                      ) : (
-                        <div className="p-2.5 rounded-lg bg-[#080b11] border border-[#1a2233]">
-                          <p className="text-xs text-[#94a3b8] italic">Backlog (Unscheduled)</p>
-                        </div>
-                      )}
-
-                      {(currentItem.type === 'User Story' || currentItem.type === 'Feature') && childItems.length > 0 && (
-                        <p className="text-[10px] text-amber-300/80 mt-1 leading-snug">
-                          Note: Moving sprint will cascade to all {childItems.length} linked child {currentItem.type === 'User Story' ? 'task(s)' : 'story/tasks'}.
-                        </p>
-                      )}
-
-                      {/* Quick Move Sprint Selector */}
-                      <div className="mt-2" onClick={(e) => e.stopPropagation()}>
-                        <label className="text-[10px] text-[#7c869d] block mb-1 font-semibold flex items-center gap-1">
-                          <Calendar className="w-2.5 h-2.5 text-[#cda052]" /> {currentItem.type === 'Task' ? 'Change Sprint (independent):' : 'Move to Sprint (with child items):'}
-                        </label>
-                        <select
-                          value={currentItem.sprintId || ''}
-                          onChange={async (e) => {
-                            const nextSprint = e.target.value === 'backlog' ? undefined : (e.target.value || undefined);
-                            await moveWorkItemToSprint(currentItem.id, nextSprint);
-                          }}
-                          className="w-full px-2.5 py-1.5 rounded-lg bg-[#080b11] border border-[#1f2638] text-xs text-[#cbd5e1] focus:outline-none focus:border-[#cda052]/60"
-                        >
-                          <option value="" disabled>Select target sprint...</option>
-                          {sprints.map((s) => (
-                            <option key={s.id} value={s.id} disabled={s.id === currentItem.sprintId}>
-                              {s.id === currentItem.sprintId ? `• Current: ${s.name}` : `→ Move to: ${s.name}`}
-                            </option>
-                          ))}
-                          <option value="backlog">→ Move to Backlog</option>
-                        </select>
                       </div>
-                    </div>
+                    ) : null}
 
                     {/* Story Points */}
                     <div className="grid grid-cols-2 gap-3">
@@ -1147,25 +1169,40 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                     </select>
                   </div>
 
-                  {/* Sprint */}
-                  <div>
-                    <label className="text-[11px] font-semibold text-[#94a3b8] block mb-1">Sprint Scheduling</label>
-                    <select
-                      value={form.sprintId || ''}
-                      onChange={(e) => setForm({ ...form, sprintId: e.target.value || undefined })}
-                      className="w-full px-3 py-2.5 rounded-xl bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50"
-                    >
-                      <option value="">Backlog (Unscheduled)</option>
-                      {sprints.map((s) => (
-                        <option key={s.id} value={s.id}>{s.name}</option>
-                      ))}
-                    </select>
-                    {(form.type === 'User Story' || form.type === 'Feature') && childItems.length > 0 && (
-                      <p className="text-[10px] text-amber-300/80 mt-1 leading-snug">
-                        Note: Moving this {form.type} will automatically move all {childItems.length} linked child {form.type === 'User Story' ? 'tasks' : 'stories/tasks'} to the new sprint.
-                      </p>
-                    )}
-                  </div>
+                  {/* Sprint Scheduling */}
+                  {form.type === 'User Story' ? (
+                    <div>
+                      <label className="text-[11px] font-semibold text-[#94a3b8] block mb-1">Sprint Scheduling</label>
+                      <select
+                        value={form.sprintId || ''}
+                        onChange={(e) => setForm({ ...form, sprintId: e.target.value || undefined })}
+                        className="w-full px-3 py-2.5 rounded-xl bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50"
+                      >
+                        <option value="">Backlog (Unscheduled)</option>
+                        {sprints.map((s) => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                      {childItems.length > 0 && (
+                        <p className="text-[10px] text-amber-300/80 mt-1 leading-snug">
+                          Note: Moving this User Story will automatically move all {childItems.length} linked child task{childItems.length === 1 ? '' : 's'} to the new sprint.
+                        </p>
+                      )}
+                    </div>
+                  ) : form.type === 'Task' ? (
+                    <div>
+                      <label className="text-[11px] font-semibold text-[#94a3b8] block mb-1">Sprint Scheduling</label>
+                      <div className="w-full px-3 py-2.5 rounded-xl bg-[#0a0d15] border border-[#1b2336] text-xs text-[#94a3b8]">
+                        <span className="text-[#cbd5e1] font-semibold flex items-center gap-1.5 mb-0.5">
+                          <Clock className="w-3.5 h-3.5 text-[#cda052]" />
+                          {sprint ? sprint.name : 'Backlog (Unscheduled)'}
+                        </span>
+                        <p className="text-[10px] text-[#64748b]">
+                          Tasks automatically inherit sprint scheduling from their parent User Story.
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
 
                 {/* Strict ADO Parent Filtering */}
@@ -1195,10 +1232,10 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                     >
                       <option value="">No parent (Top-level {form.type})</option>
                       {allowedParents.map((p) => {
-                        const pSprint = sprints.find((s) => s.id === p.sprintId)?.name || 'Backlog';
+                        const sprintInfo = p.type === 'User Story' ? ` (${sprints.find((s) => s.id === p.sprintId)?.name || 'Backlog'})` : '';
                         return (
                           <option key={p.id} value={p.id}>
-                            {p.type}: {p.title} (Sprint: {pSprint})
+                            {p.type}: {p.title}{sprintInfo}
                           </option>
                         );
                       })}

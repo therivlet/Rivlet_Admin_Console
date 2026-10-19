@@ -52,6 +52,7 @@ export default function BacklogView() {
   const [typeFilter, setTypeFilter] = useState<'All' | WorkItemType>('All');
   const [stateFilter, setStateFilter] = useState<'All' | WorkItemState>('All');
   const [assigneeFilter, setAssigneeFilter] = useState('All');
+  const [sprintFilter, setSprintFilter] = useState<'All' | 'backlog' | string>('All');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [modalItem, setModalItem] = useState<WorkItem | Omit<WorkItem, 'createdAt' | 'updatedAt'> | null>(null);
 
@@ -82,14 +83,59 @@ export default function BacklogView() {
     return Array.from(names);
   }, [teamMembers, workItems]);
 
-  const matchesFilters = (w: WorkItem) => {
+  const backlogStoryCount = useMemo(() => {
+    return workItems.filter((w) => w.type === 'User Story' && !w.sprintId).length;
+  }, [workItems]);
+
+  // Effective sprint for a work item (Tasks inherit from parent story; Epics & Features do not use sprint schedule)
+  const getEffectiveSprintId = (w: WorkItem): string | undefined => {
+    if (w.type === 'Epic' || w.type === 'Feature') return undefined;
+    if (w.type === 'Task' && w.parentId) {
+      const parent = workItems.find((p) => p.id === w.parentId);
+      if (parent) return parent.sprintId;
+    }
+    return w.sprintId;
+  };
+
+  const matchesDirect = (w: WorkItem): boolean => {
     const matchesSearch =
+      !searchQuery.trim() ||
       w.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       w.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesType = typeFilter === 'All' || w.type === typeFilter;
-    const matchesState = stateFilter === 'All' || w.state === stateFilter;
-    const matchesAssignee = assigneeFilter === 'All' || w.assignee === assigneeFilter;
-    return matchesSearch && matchesType && matchesState && matchesAssignee;
+    if (!matchesSearch) return false;
+
+    if (typeFilter !== 'All' && w.type !== typeFilter) return false;
+    if (stateFilter !== 'All' && w.state !== stateFilter) return false;
+    if (assigneeFilter !== 'All' && w.assignee !== assigneeFilter) return false;
+
+    if (sprintFilter !== 'All') {
+      // Epics and Features do NOT have sprint schedules and never match sprint filter directly
+      if (w.type === 'Epic' || w.type === 'Feature') {
+        return false;
+      }
+      const effSprint = getEffectiveSprintId(w);
+      if (sprintFilter === 'backlog') {
+        if (effSprint) return false;
+      } else {
+        if (effSprint !== sprintFilter) return false;
+      }
+    }
+
+    return true;
+  };
+
+  const hasMatchingDescendant = (itemId: string): boolean => {
+    const children = workItems.filter((w) => w.parentId === itemId);
+    for (const c of children) {
+      if (matchesDirect(c) || hasMatchingDescendant(c.id)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const isItemVisible = (w: WorkItem): boolean => {
+    return matchesDirect(w) || hasMatchingDescendant(w.id);
   };
 
   const sprintName = (id?: string) => sprints.find((s) => s.id === id)?.name;
@@ -234,10 +280,17 @@ export default function BacklogView() {
 
   const renderRow = (item: WorkItem, depth: number) => {
     const children = childrenOf(item.id);
-    const isExpanded = !!expanded[item.id];
-    const visible =
-      matchesFilters(item) ||
-      children.some((c) => matchesFilters(c) || childrenOf(c.id).some(matchesFilters));
+    const isFiltered =
+      sprintFilter !== 'All' ||
+      searchQuery.trim().length > 0 ||
+      typeFilter !== 'All' ||
+      stateFilter !== 'All' ||
+      assigneeFilter !== 'All';
+    const isExpanded =
+      expanded[item.id] !== undefined
+        ? expanded[item.id]
+        : isFiltered && hasMatchingDescendant(item.id);
+    const visible = isItemVisible(item);
     if (!visible) return null;
 
     const isDraggingThis = draggingId === item.id;
@@ -346,10 +399,20 @@ export default function BacklogView() {
             </span>
           )}
 
-          {/* Sprint Name */}
-          <span className="text-[10px] text-[#7c869d] flex-shrink-0 hidden md:inline">
-            {sprintName(item.sprintId) || 'Backlog'}
-          </span>
+          {/* Sprint Name badge: Epics and Features NEVER show a sprint or "Backlog" label! */}
+          {item.type !== 'Epic' && item.type !== 'Feature' && (
+            <span className="text-[10px] flex-shrink-0 hidden md:inline">
+              {item.sprintId ? (
+                <span className="px-2 py-0.5 rounded-full bg-sky-950/70 border border-sky-800/60 text-sky-300 font-medium">
+                  {sprintName(item.sprintId)}
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded-full bg-[#141b28] border border-[#232f48] text-[#8e9cb5] font-medium">
+                  Backlog
+                </span>
+              )}
+            </span>
+          )}
 
           {/* State Badge */}
           <span
@@ -467,14 +530,49 @@ export default function BacklogView() {
             </option>
           ))}
         </select>
+        <select
+          value={sprintFilter}
+          onChange={(e) => setSprintFilter(e.target.value)}
+          aria-label="Filter by Sprint or Backlog"
+          className="px-3 py-2.5 rounded-xl bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50 font-medium"
+        >
+          <option value="All">All Iterations & Backlog</option>
+          <option value="backlog">In Backlog ({backlogStoryCount} Stories)</option>
+          {sprints.map((s) => {
+            const sprintStoryCount = workItems.filter((w) => w.type === 'User Story' && w.sprintId === s.id).length;
+            return (
+              <option key={s.id} value={s.id}>
+                {s.name} ({sprintStoryCount} Stories)
+              </option>
+            );
+          })}
+        </select>
       </div>
 
       {/* Backlog Item List Container */}
       <div className="rounded-2xl border border-[#1a1f2c] bg-[#0a0c12] p-2">
-        {topLevel.length === 0 ? (
+        {topLevel.filter(isItemVisible).length === 0 ? (
           <div className="text-center py-16">
             <ListTree className="w-8 h-8 text-[#3d4658] mx-auto mb-3" />
-            <p className="text-sm text-[#94a3b8]">No work items yet. Create your first Epic.</p>
+            <p className="text-sm text-[#94a3b8]">
+              {sprintFilter === 'backlog'
+                ? 'No user stories found under Backlog.'
+                : 'No work items match the selected filter criteria.'}
+            </p>
+            {(sprintFilter !== 'All' || typeFilter !== 'All' || stateFilter !== 'All' || assigneeFilter !== 'All' || searchQuery) && (
+              <button
+                onClick={() => {
+                  setSprintFilter('All');
+                  setTypeFilter('All');
+                  setStateFilter('All');
+                  setAssigneeFilter('All');
+                  setSearchQuery('');
+                }}
+                className="mt-3 text-xs text-[#cda052] hover:underline font-medium inline-block"
+              >
+                Clear all filters
+              </button>
+            )}
           </div>
         ) : (
           topLevel.map((item) => renderRow(item, 0))
