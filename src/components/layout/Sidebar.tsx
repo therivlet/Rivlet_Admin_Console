@@ -694,35 +694,53 @@ export default function Sidebar({
               )}
             </div>
 
-            {/* Account Tooltip when collapsed */}
+            {/* Elegant Account Popover when collapsed */}
             {collapsed && (
-              <div className="absolute left-full ml-3 bottom-0 p-2.5 bg-[#1e140e] dark:bg-[#0d101a] border border-[#443023] dark:border-[#22293e] rounded-xl shadow-2xl text-xs whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-[90]">
-                <div className="font-semibold text-white">{user?.name || 'Rivlet Admin'}</div>
-                <div className="text-[10px] text-[#a99a8b] dark:text-[#94a3b8]">{user?.email || 'admin@therivlet.com'}</div>
-                <div className="mt-2 pt-2 border-t border-white/[0.08] flex items-center justify-between gap-4">
-                  <Link href="/profile" className="text-[11px] text-[#cda052] hover:underline">Settings</Link>
-                  <button onClick={() => signOut()} className="text-[11px] text-rose-400 hover:underline">Sign Out</button>
+              <div className="absolute left-full ml-3 bottom-0 w-64 p-3 bg-[#0e121b]/98 dark:bg-[#07090e]/98 backdrop-blur-2xl border border-[#232b3e] dark:border-[#1e2638] rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.7)] text-xs opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-[95]">
+                {/* User info & permission header */}
+                <div className="flex items-start gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#cda052] to-[#8c672b] text-black flex items-center justify-center text-xs font-bold shadow-glow flex-shrink-0 mt-0.5">
+                    {user?.name?.[0]?.toUpperCase() || 'R'}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-semibold text-white text-xs truncate max-w-[120px]">
+                        {user?.name || 'Rivlet Admin'}
+                      </span>
+                      <span className="text-[9px] font-mono uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded-full bg-[#cda052]/15 text-[#e6c875] border border-[#cda052]/30 leading-none">
+                        {user?.role ? ROLE_LABELS[user.role] : 'Owner'}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-[#8e9cb5] truncate mt-0.5" title={user?.email || 'admin@therivlet.com'}>
+                      {user?.email || 'admin@therivlet.com'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Subtle Divider */}
+                <div className="my-2.5 border-t border-[#1a2133]" />
+
+                {/* Navigation & Sign Out Actions */}
+                <div className="space-y-1">
+                  <Link
+                    href="/profile"
+                    onClick={handleLinkClick}
+                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs text-[#cbd5e1] hover:text-white hover:bg-white/[0.06] transition-colors"
+                  >
+                    <Settings className="w-3.5 h-3.5 text-[#cda052]" />
+                    <span>Profile & Brand Settings</span>
+                  </Link>
+                  <button
+                    onClick={() => signOut()}
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 transition-colors cursor-pointer text-left"
+                  >
+                    <LogOut className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span className="font-medium">Sign Out</span>
+                  </button>
                 </div>
               </div>
             )}
           </div>
-
-          {/* Quick Sign Out button in collapsed mode */}
-          {collapsed && (
-            <div className="relative group w-full pt-0.5">
-              <button
-                onClick={() => signOut()}
-                title="Sign Out"
-                aria-label="Sign Out"
-                className="w-10 h-8 mx-auto flex items-center justify-center rounded-xl text-[#a89487] dark:text-[#94a3b8] hover:text-rose-400 hover:bg-rose-950/30 transition-all cursor-pointer"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-              </button>
-              <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#1e140e] dark:bg-[#0d101a] border border-[#443023] dark:border-[#22293e] rounded-lg shadow-2xl text-xs text-rose-300 whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-[90]">
-                Sign Out
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </aside>
