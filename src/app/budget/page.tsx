@@ -20,7 +20,7 @@ import {
   Layers,
   Clock,
   CheckCircle2,
-  ArrowUpDown,
+  Loader2,
   GripVertical
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
@@ -61,23 +61,10 @@ export default function BudgetPage() {
   const [expandedSpendLogs, setExpandedSpendLogs] = useState<Record<string, boolean>>({});
   const [draggingBudgetId, setDraggingBudgetId] = useState<string | null>(null);
   const [dragOverBudgetId, setDragOverBudgetId] = useState<string | null>(null);
+  const [syncStatus, setSyncStatus] = useState<'saving' | 'synced' | null>(null);
 
   const toggleSpendLogExpand = (categoryId: string) => {
     setExpandedSpendLogs((prev) => ({ ...prev, [categoryId]: !prev[categoryId] }));
-  };
-
-  const handleMoveCategory = async (id: string, direction: 'up' | 'down') => {
-    const idx = budgetItems.findIndex((b) => b.id === id);
-    if (idx < 0) return;
-    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
-    if (targetIdx < 0 || targetIdx >= budgetItems.length) return;
-
-    const updated = [...budgetItems];
-    const item = updated[idx];
-    updated.splice(idx, 1);
-    updated.splice(targetIdx, 0, item);
-
-    await reorderBudgetItems(updated);
   };
 
   const handleDragStart = (e: React.DragEvent, id: string) => {
@@ -110,7 +97,14 @@ export default function BudgetPage() {
     const [removed] = updated.splice(sourceIdx, 1);
     updated.splice(targetIdx, 0, removed);
 
-    await reorderBudgetItems(updated);
+    setSyncStatus('saving');
+    try {
+      await reorderBudgetItems(updated);
+      setSyncStatus('synced');
+      setTimeout(() => setSyncStatus(null), 2500);
+    } catch (_) {
+      setSyncStatus(null);
+    }
   };
 
   // Category Spend Logging Modal state
@@ -436,10 +430,25 @@ export default function BudgetPage() {
       {/* Category Spending Header with ADD CATEGORY BUTTON MOVED RIGHT HERE */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
         <div>
-          <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-            <Layers className="w-4 h-4 text-[#cda052]" />
-            Budget Categories & Expenditure Ledger
-          </h2>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+              <Layers className="w-4 h-4 text-[#cda052]" />
+              Budget Categories & Expenditure Ledger
+            </h2>
+            {/* Realtime Sync Status Indicator */}
+            {syncStatus === 'saving' && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#1b1f2d] border border-[#cda052]/40 text-[#f5dfa8] text-[11px] font-medium animate-pulse">
+                <Loader2 className="w-3 h-3 animate-spin text-[#cda052]" />
+                Syncing order realtime...
+              </span>
+            )}
+            {syncStatus === 'synced' && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-600/50 text-emerald-300 text-[11px] font-medium transition-all">
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                Order synced realtime
+              </span>
+            )}
+          </div>
           <p className="text-xs text-[#94a3b8] mt-0.5">
             Granular phase allocations, spend logs, and remaining capacity.
           </p>
@@ -583,38 +592,17 @@ export default function BudgetPage() {
               {/* Category Card Header */}
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-start gap-2 min-w-0 pr-1">
-                  {/* Grip Drag Handle & Up/Down Buttons for Mobile */}
-                  <div className="flex items-center gap-1 flex-shrink-0 pt-0.5">
-                    <div
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, b.id)}
-                      onDragEnd={() => { setDraggingBudgetId(null); setDragOverBudgetId(null); }}
-                      title="Drag to move up or down"
-                      aria-label="Drag to move category up or down"
-                      className="flex items-center justify-center p-1.5 rounded-lg bg-[#141a28] border border-[#222c42] text-[#8e9cb5] hover:text-[#cda052] cursor-grab active:cursor-grabbing select-none transition-colors"
-                    >
-                      <GripVertical className="w-3.5 h-3.5" />
-                    </div>
-                    <div className="flex flex-col items-center bg-[#07090e] rounded-md border border-[#1b2336] p-0.5">
-                      <button
-                        disabled={idx === 0}
-                        onClick={() => handleMoveCategory(b.id, 'up')}
-                        title="Move category up"
-                        aria-label="Move category up"
-                        className="p-0.5 rounded text-[#8e9cb5] hover:text-[#cda052] disabled:opacity-25"
-                      >
-                        <ChevronUp className="w-3 h-3" />
-                      </button>
-                      <button
-                        disabled={idx === budgetItems.length - 1}
-                        onClick={() => handleMoveCategory(b.id, 'down')}
-                        title="Move category down"
-                        aria-label="Move category down"
-                        className="p-0.5 rounded text-[#8e9cb5] hover:text-[#cda052] disabled:opacity-25"
-                      >
-                        <ChevronDown className="w-3 h-3" />
-                      </button>
-                    </div>
+                  {/* Minimal Drag Grip Handle (matches Backlogs) */}
+                  <div
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, b.id)}
+                    onDragEnd={() => { setDraggingBudgetId(null); setDragOverBudgetId(null); }}
+                    onClick={(e) => e.stopPropagation()}
+                    title="Drag to move up or down"
+                    aria-label="Drag to move category up or down"
+                    className="flex items-center justify-center p-1.5 rounded-md text-[#8e9cb5] hover:text-[#cda052] hover:bg-[#151c2a] cursor-grab active:cursor-grabbing flex-shrink-0 transition-colors select-none pt-0.5"
+                  >
+                    <GripVertical className="w-4 h-4" />
                   </div>
 
                   <div className="min-w-0">
@@ -813,7 +801,7 @@ export default function BudgetPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#1a1f2c] text-[11px] text-[#94a3b8] uppercase tracking-wide bg-[#0a0d14]">
-                <th className="text-center px-3 py-3 font-semibold w-16" title="Drag handle to reorder categories">Order</th>
+                <th className="text-center px-2 py-3 font-semibold w-12" title="Drag handle to reorder categories"></th>
                 <th className="text-left px-3 py-3 font-semibold w-8"></th>
                 <th className="text-left px-4 py-3 font-semibold">Category</th>
                 <th className="text-left px-4 py-3 font-semibold">Phase</th>
@@ -846,41 +834,19 @@ export default function BudgetPage() {
                           : 'border-[#161a26] hover:bg-[#0a0c12]/60'
                       }`}
                     >
-                      {/* Order Column: Grip Drag Handle & Move Up/Down Buttons */}
-                      <td className="px-3 py-3 w-16 text-center select-none">
-                        <div className="flex items-center justify-center gap-1.5">
-                          {/* Grip Drag Handle */}
+                      {/* Order Column: Minimal Drag Handle (matches Backlogs) */}
+                      <td className="px-2 py-3 w-12 text-center select-none">
+                        <div className="flex items-center justify-center">
                           <div
                             draggable
                             onDragStart={(e) => handleDragStart(e, b.id)}
                             onDragEnd={() => { setDraggingBudgetId(null); setDragOverBudgetId(null); }}
+                            onClick={(e) => e.stopPropagation()}
                             title="Drag to move up or down"
                             aria-label="Drag to move category up or down"
-                            className="flex items-center justify-center p-2 rounded-lg bg-[#141b29] hover:bg-[#1f293d] border border-[#232d42] hover:border-[#cda052]/60 text-[#8e9cb5] hover:text-[#f5d58d] cursor-grab active:cursor-grabbing transition-all select-none group/handle shadow-sm"
+                            className="flex items-center justify-center p-1.5 rounded-md text-[#8e9cb5] hover:text-[#cda052] hover:bg-[#151c2a] cursor-grab active:cursor-grabbing flex-shrink-0 transition-colors select-none"
                           >
                             <GripVertical className="w-4 h-4" />
-                          </div>
-
-                          {/* Move Up / Down Buttons */}
-                          <div className="flex flex-col items-center gap-0.5">
-                            <button
-                              disabled={idx === 0}
-                              onClick={() => handleMoveCategory(b.id, 'up')}
-                              title="Move category up"
-                              aria-label="Move category up"
-                              className="p-1 rounded bg-[#101522] border border-[#1e273a] text-[#8e9cb5] hover:text-[#f5d58d] hover:bg-[#1b2336] disabled:opacity-20 transition-all cursor-pointer"
-                            >
-                              <ChevronUp className="w-2.5 h-2.5" />
-                            </button>
-                            <button
-                              disabled={idx === budgetItems.length - 1}
-                              onClick={() => handleMoveCategory(b.id, 'down')}
-                              title="Move category down"
-                              aria-label="Move category down"
-                              className="p-1 rounded bg-[#101522] border border-[#1e273a] text-[#8e9cb5] hover:text-[#f5d58d] hover:bg-[#1b2336] disabled:opacity-20 transition-all cursor-pointer"
-                            >
-                              <ChevronDown className="w-2.5 h-2.5" />
-                            </button>
                           </div>
                         </div>
                       </td>

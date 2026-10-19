@@ -521,7 +521,11 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         const initialOrderMap = new Map(initialBudgetItems.map((ib, idx) => [ib.id, idx + 1]));
 
         const formatted: BudgetItem[] = budRes.data.map((r: any) => {
-          const dbOrder = r.order !== undefined && r.order !== null ? Number(r.order) : undefined;
+          const dbOrder = (r.order !== undefined && r.order !== null)
+            ? Number(r.order)
+            : (r.order_index !== undefined && r.order_index !== null)
+              ? Number(r.order_index)
+              : undefined;
           const assignedOrder = dbOrder ?? currentOrderMap.get(r.id) ?? initialOrderMap.get(r.id) ?? 999;
           return {
             id: r.id,
@@ -751,7 +755,17 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       } else {
         setPipelineItems(initialPipelineItems);
       }
-      setBudgetItems(storedBudget ? JSON.parse(storedBudget) : initialBudgetItems);
+      if (storedBudget) {
+        try {
+          const parsedBudget: BudgetItem[] = JSON.parse(storedBudget);
+          parsedBudget.sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+          setBudgetItems(parsedBudget);
+        } catch (_) {
+          setBudgetItems(initialBudgetItems);
+        }
+      } else {
+        setBudgetItems(initialBudgetItems);
+      }
       setSprints(storedSprints ? JSON.parse(storedSprints) : initialSprints);
       setWorkItems(storedWorkItems ? JSON.parse(storedWorkItems) : initialWorkItems);
       setTeamMembers(storedTeamMembers ? JSON.parse(storedTeamMembers) : initialTeamMembers);
@@ -1424,6 +1438,14 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         }));
         const { error: writeErr } = await supabase.from('budget_items').upsert(rowsWithOrder);
         if (writeErr) {
+          if (writeErr.code === '42703' || writeErr.message?.includes('column')) {
+            const rowsWithOrderIndex = rowsWithOrder.map(({ order, ...rest }) => ({
+              ...rest,
+              order_index: order,
+            }));
+            const { error: idxErr } = await supabase.from('budget_items').upsert(rowsWithOrderIndex);
+            if (!idxErr) return;
+          }
           const rowsFallback = rowsWithOrder.map(({ order: _order, ...rest }) => rest);
           await supabase.from('budget_items').upsert(rowsFallback);
         }
