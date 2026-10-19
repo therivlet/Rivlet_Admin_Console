@@ -663,7 +663,7 @@ export default function Sidebar({
                 collapsed ? 'max-w-0 opacity-0 pointer-events-none hidden' : 'max-w-[130px] opacity-100 ml-2'
               }`}>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-[#f1f5f9] truncate font-semibold block leading-tight">
+                  <span data-profile-name="true" className="sidebar-user-name text-xs text-white !text-white truncate font-semibold block leading-tight">
                     {user?.name || 'Rivlet Admin'}
                   </span>
                 </div>
@@ -680,7 +680,8 @@ export default function Sidebar({
 
             {/* Elegant Account Popover with Light/Dark Theme Adaptability */}
             <div
-              className={`absolute rounded-2xl p-3.5 text-xs transition-all duration-200 z-[95] border ${
+              data-account-popover="true"
+              className={`account-popover absolute rounded-2xl p-3.5 text-xs transition-all duration-200 z-[95] border ${
                 collapsed ? 'left-full ml-3 bottom-0 w-64' : 'bottom-full mb-2 left-0 w-full min-w-[240px]'
               } ${
                 isLight
@@ -723,21 +724,22 @@ export default function Sidebar({
                     setProfileMenuOpen(false);
                     handleLinkClick();
                   }}
-                  className="flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-medium text-[#33261d] hover:text-[#0f0a07] hover:bg-[#ebdcc9]/70 dark:text-[#cbd5e1] dark:hover:text-white dark:hover:bg-white/[0.08] transition-colors"
+                  className="profile-settings-link flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-medium text-[#33261d] hover:text-[#0f0a07] hover:bg-[#ebdcc9]/70 dark:text-[#cbd5e1] dark:hover:text-white dark:hover:bg-white/[0.08] transition-colors"
                 >
                   <Settings className="w-4 h-4 text-[#a57428] dark:text-[#cda052] flex-shrink-0" />
                   <span>Profile & Brand Settings</span>
                 </Link>
                 <button
                   type="button"
+                  data-signout-btn="true"
                   onClick={() => {
                     setProfileMenuOpen(false);
                     signOut();
                   }}
-                  className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-medium text-rose-700 hover:text-rose-900 hover:bg-rose-100/80 dark:text-rose-400 dark:hover:text-rose-300 dark:hover:bg-rose-950/40 transition-colors cursor-pointer text-left"
+                  className="sign-out-btn w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-500/10 dark:text-rose-500 dark:hover:text-rose-400 dark:hover:bg-rose-950/40 transition-colors cursor-pointer text-left"
                 >
-                  <LogOut className="w-4 h-4 text-rose-600 dark:text-rose-400 flex-shrink-0" />
-                  <span>Sign Out</span>
+                  <LogOut className="w-4 h-4 text-rose-600 dark:text-rose-500 flex-shrink-0" />
+                  <span className="text-rose-600 dark:text-rose-500 font-semibold !text-rose-600 dark:!text-rose-500">Sign Out</span>
                 </button>
               </div>
             </div>

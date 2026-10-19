@@ -54,7 +54,6 @@ import {
   getCategoryConfig,
   getVendorCategory,
   getStageProgress,
-  getNextStage,
 } from '@/lib/vendorWorkflows';
 import VendorWorkspaceModal from '@/components/vendors/VendorWorkspaceModal';
 import VendorFormModal from '@/components/vendors/VendorFormModal';
@@ -155,13 +154,6 @@ export default function VendorsPage() {
     }
   };
 
-  const handleAdvanceStep = async (vendor: VendorItem) => {
-    const next = getNextStage(vendor);
-    if (next) {
-      await handleUpdateStage(vendor, next.name);
-    }
-  };
-
   const handleSaveInlineNotes = async (vendor: VendorItem) => {
     const note = inlineNotes[vendor.id];
     if (note !== undefined) {
@@ -250,7 +242,7 @@ export default function VendorsPage() {
               onClick={() => setViewMode('rows')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
                 viewMode === 'rows'
-                  ? 'bg-[rgba(205,160,82,0.18)] text-[#f5d58d] font-semibold border border-[#cda052]/40 shadow-sm'
+                  ? 'bg-[#cda052] text-black font-bold shadow-sm'
                   : 'text-[#8a96ae] hover:text-white'
               }`}
               title="Detailed High-Density Row View"
@@ -262,7 +254,7 @@ export default function VendorsPage() {
               onClick={() => setViewMode('board')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
                 viewMode === 'board'
-                  ? 'bg-[rgba(205,160,82,0.18)] text-[#f5d58d] font-semibold border border-[#cda052]/40 shadow-sm'
+                  ? 'bg-[#cda052] text-black font-bold shadow-sm'
                   : 'text-[#8a96ae] hover:text-white'
               }`}
               title="Workflow Pipeline Board View"
@@ -355,13 +347,13 @@ export default function VendorsPage() {
               onClick={() => setSelectedCategory(catKey)}
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
                 isSelected
-                  ? 'bg-[rgba(205,160,82,0.22)] border border-[#cda052] text-[#f5d58d] font-bold ring-1 ring-[#cda052]/40 shadow-sm'
+                  ? 'bg-[#cda052] text-black font-bold shadow-glow'
                   : 'bg-[#0e1320] border border-[#1d263b] text-[#8a96ae] hover:text-white hover:border-[#2a3754]'
               }`}
             >
-              <Icon className="w-3.5 h-3.5 text-[#cda052]" />
+              <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-black' : 'text-[#cda052]'}`} />
               <span>{cfg.shortLabel}</span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${isSelected ? 'bg-[#cda052]/30 text-[#f5d58d]' : 'bg-white/[0.06] text-[#cbd5e1]'}`}>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${isSelected ? 'bg-black/20 text-black font-bold' : 'bg-white/[0.06] text-[#cbd5e1]'}`}>
                 {count}
               </span>
             </button>
@@ -425,7 +417,6 @@ export default function VendorsPage() {
             const cfg = getCategoryConfig(cat);
             const CategoryIcon = cfg.icon;
             const progress = getStageProgress(vendor);
-            const next = getNextStage(vendor);
 
             const primaryContact = vendor.contacts?.find((c) => c.isPrimary) || vendor.contacts?.[0] || {
               name: vendor.contactName || 'No contact listed',
@@ -507,19 +498,19 @@ export default function VendorsPage() {
 
                   {/* Middle Column: Refined Workflow Stage Controls & Progress */}
                   <div className="flex-1 min-w-0 bg-[#090d16]/90 p-3 sm:p-3.5 rounded-xl border border-white/[0.05] flex flex-col justify-between space-y-2.5">
-                    {/* Top Row: Category label + Stage Dropdown + Advance Button (Single line, no awkward wrap) */}
+                    {/* Top Row: Category label + Stage Dropdown + Status Badge */}
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-[#8a96ae] flex-shrink-0">
                           {cfg.shortLabel}:
                         </span>
                         {/* Interactive Stage Dropdown */}
-                        <div className="relative inline-flex items-center min-w-0 flex-1 max-w-[240px]">
+                        <div className="relative inline-flex items-center min-w-0 flex-1 max-w-[260px]">
                           <select
                             value={vendor.stage}
                             onChange={(e) => handleUpdateStage(vendor, e.target.value)}
                             aria-label={`Update stage for ${vendor.name}`}
-                            className="w-full appearance-none pl-2.5 pr-7 py-1 rounded-lg bg-[#141b2c] hover:bg-[#1a2338] border border-[#27344e] hover:border-[#cda052]/60 text-xs font-semibold text-[#f5d58d] cursor-pointer outline-none transition-all shadow-sm focus:ring-1 focus:ring-[#cda052] truncate"
+                            className="w-full appearance-none pl-2.5 pr-7 py-1 rounded-lg bg-[#141b2c] hover:bg-[#1a2338] border border-[#27344e] hover:border-[#cda052]/60 text-xs font-semibold text-white cursor-pointer outline-none transition-all shadow-sm focus:ring-1 focus:ring-[#cda052] truncate"
                           >
                             {cfg.stages.map((stg) => (
                               <option key={stg.id} value={stg.name} className="bg-[#0e121b] text-white py-1">
@@ -531,19 +522,16 @@ export default function VendorsPage() {
                         </div>
                       </div>
 
-                      {next ? (
-                        <button
-                          onClick={() => handleAdvanceStep(vendor)}
-                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[rgba(205,160,82,0.14)] hover:bg-[rgba(205,160,82,0.25)] text-[#f5d58d] hover:text-white border border-[#cda052]/40 text-xs font-semibold transition-all cursor-pointer shadow-sm group flex-shrink-0"
-                          title={`Advance to ${next.name}`}
-                        >
-                          <span>Advance: {next.shortLabel}</span>
-                          <ArrowRight className="w-3 h-3 text-[#cda052] group-hover:translate-x-0.5 transition-transform" />
-                        </button>
+                      {/* Status / Completion Indicator */}
+                      {progress >= 100 ? (
+                        <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 font-bold flex-shrink-0 px-2.5 py-1 rounded-lg bg-emerald-950/40 border border-emerald-800/50 shadow-sm">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Approved Partner</span>
+                        </div>
                       ) : (
-                        <div className="flex items-center gap-1 text-[11px] text-emerald-400 font-semibold flex-shrink-0 px-2 py-0.5 rounded-lg bg-emerald-950/30 border border-emerald-800/40">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Complete</span>
+                        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#f3db9d] flex-shrink-0 px-2.5 py-1 rounded-lg bg-[#cda052]/15 border border-[#cda052]/30 shadow-sm">
+                          <span className="font-mono font-bold">{progress}%</span>
+                          <span className="text-[10px] text-[#a89487] hidden sm:inline">Active</span>
                         </div>
                       )}
                     </div>
@@ -554,7 +542,7 @@ export default function VendorsPage() {
                         <span className="text-[#8a96ae] truncate max-w-[320px]">
                           {cfg.stages.find((s) => s.name.toLowerCase() === vendor.stage.toLowerCase() || s.id.toLowerCase() === vendor.stage.toLowerCase())?.description || vendor.stage}
                         </span>
-                        <span className="font-mono font-semibold text-[#f5d58d] flex-shrink-0 ml-2">
+                        <span className="font-mono font-bold text-white flex-shrink-0 ml-2">
                           {progress}%
                         </span>
                       </div>
@@ -610,11 +598,11 @@ export default function VendorsPage() {
                   <div className="flex xl:flex-col items-center xl:items-end justify-between xl:justify-center gap-2 pt-2 xl:pt-0 border-t xl:border-t-0 border-white/[0.06]">
                     <button
                       onClick={() => setWorkspaceVendor(vendor)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#172033] to-[#121927] hover:bg-[#1f2b45] border border-[#263552] text-xs font-semibold text-[#f5d58d] hover:text-white transition-colors cursor-pointer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#141b2d] hover:bg-[#1d273f] border border-[#283756] text-xs font-semibold text-white hover:text-white transition-colors cursor-pointer shadow-sm"
                       title="Open full partner workspace drawer"
                     >
                       <span>Workspace</span>
-                      <ExternalLink className="w-3 h-3" />
+                      <ExternalLink className="w-3 h-3 text-[#cda052]" />
                     </button>
 
                     <div className="flex items-center gap-1">
@@ -866,7 +854,6 @@ export default function VendorsPage() {
                         stageVendors.map((vendor) => {
                           const cat = getVendorCategory(vendor);
                           const cfg = getCategoryConfig(cat);
-                          const next = getNextStage(vendor);
 
                           return (
                             <div
@@ -903,16 +890,14 @@ export default function VendorsPage() {
 
                               <div className="flex items-center justify-between text-[10px] text-[#8a96ae] pt-1 border-t border-white/[0.04]">
                                 <span className="truncate">{vendor.location || 'Location'}</span>
-                                {next && (
-                                  <button
-                                    onClick={() => handleAdvanceStep(vendor)}
-                                    className="flex items-center gap-0.5 text-[#cda052] hover:underline font-semibold cursor-pointer"
-                                    title={`Advance to ${next.name}`}
-                                  >
-                                    <span>Advance</span>
-                                    <ArrowRight className="w-2.5 h-2.5" />
-                                  </button>
-                                )}
+                                <button
+                                  onClick={() => setWorkspaceVendor(vendor)}
+                                  className="flex items-center gap-1 text-[10px] font-semibold text-[#cda052] hover:text-white cursor-pointer transition-colors"
+                                  title="Open partner workspace"
+                                >
+                                  <span>Workspace</span>
+                                  <ExternalLink className="w-2.5 h-2.5 text-[#cda052]" />
+                                </button>
                               </div>
                             </div>
                           );

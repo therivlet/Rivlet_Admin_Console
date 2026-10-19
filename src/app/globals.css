@@ -515,15 +515,79 @@ html.light header div[class*="bg-[#0d101a]"] button.text-rose-400:hover span {
 }
 
 /* Inactive links, buttons and labels inside aside */
-html.light aside a:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]):not(.brand-logo-link),
-html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]) {
+html.light aside a:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]):not(.brand-logo-link):not(.profile-settings-link),
+html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):not(.sign-out-btn):not([data-signout-btn]):not(.account-popover *):not([data-account-popover] *) {
   background-color: transparent !important;
   color: #d7cbbe !important;
 }
 
-html.light aside a:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]):not(.brand-logo-link) span,
-html.light aside a:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]):not(.brand-logo-link) svg {
+html.light aside a:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]):not(.brand-logo-link):not(.profile-settings-link) span,
+html.light aside a:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]):not(.brand-logo-link):not(.profile-settings-link) svg {
   color: #a99a8b !important;
+}
+
+/* Sidebar User Account Name in Navigation - High-Contrast Crisp White in All Modes */
+aside [data-profile-name],
+aside .sidebar-user-name,
+html.light aside [data-profile-name],
+html.light aside .sidebar-user-name,
+html.dark aside [data-profile-name],
+html.dark aside .sidebar-user-name {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+/* Profile Popover Isolated Styling */
+aside .account-popover button,
+html.light aside .account-popover button,
+html.dark aside .account-popover button {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Sign Out button in Popover - Vivid Red Text and Icon in Both Themes */
+aside .sign-out-btn,
+aside [data-signout-btn],
+aside .sign-out-btn span,
+aside [data-signout-btn] span,
+aside .sign-out-btn svg,
+aside [data-signout-btn] svg,
+html.light aside .sign-out-btn,
+html.light aside [data-signout-btn],
+html.light aside .sign-out-btn span,
+html.light aside [data-signout-btn] span,
+html.light aside .sign-out-btn svg,
+html.light aside [data-signout-btn] svg,
+html.dark aside .sign-out-btn,
+html.dark aside [data-signout-btn],
+html.dark aside .sign-out-btn span,
+html.dark aside [data-signout-btn] span,
+html.dark aside .sign-out-btn svg,
+html.dark aside [data-signout-btn] svg {
+  color: #e11d48 !important;
+  font-weight: 600 !important;
+}
+
+aside .sign-out-btn:hover,
+aside [data-signout-btn]:hover,
+aside .sign-out-btn:hover span,
+aside [data-signout-btn]:hover span,
+aside .sign-out-btn:hover svg,
+aside [data-signout-btn]:hover svg,
+html.light aside .sign-out-btn:hover,
+html.light aside [data-signout-btn]:hover,
+html.light aside .sign-out-btn:hover span,
+html.light aside [data-signout-btn]:hover span,
+html.light aside .sign-out-btn:hover svg,
+html.light aside [data-signout-btn]:hover svg,
+html.dark aside .sign-out-btn:hover,
+html.dark aside [data-signout-btn]:hover,
+html.dark aside .sign-out-btn:hover span,
+html.dark aside [data-signout-btn]:hover span,
+html.dark aside .sign-out-btn:hover svg,
+html.dark aside [data-signout-btn]:hover svg {
+  color: #be123c !important;
+  background-color: rgba(244, 63, 94, 0.12) !important;
 }
 
 /* Brand Logo Link: NEVER gets button tile backgrounds, borders, shadows or transforms in ANY theme */
@@ -910,12 +974,14 @@ html.light [class*="text-[#8493ab]"] {
   color: #6c655e !important;
 }
 
-/* Executive Gold Text */
+/* Executive Gold & Pale Yellow Text -> High-Contrast Rich Bronze in Light Mode */
+html.light [class*="text-[#f5d58d]"],
 html.light [class*="text-[#e6c875]"],
 html.light [class*="text-[#eed78a]"],
 html.light [class*="text-[#e8ca78]"],
 html.light [class*="text-[#f6d896]"] {
   color: #8c6016 !important;
+  font-weight: 600 !important;
 }
 
 /* Semantic Status Accents */
