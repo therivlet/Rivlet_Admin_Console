@@ -28,6 +28,7 @@ import { WorkItem, WorkItemType, WorkItemState, WorkItemPriority } from '@/lib/t
 import { useAuth } from '@/lib/authContext';
 import ModalPortal from '@/components/ui/ModalPortal';
 import { useConfirm } from '@/lib/confirmContext';
+import { promptAndCascadeParentClosure } from '@/lib/workCascade';
 
 const TYPES: WorkItemType[] = ['Epic', 'Feature', 'User Story', 'Task', 'Bug'];
 const STATES: WorkItemState[] = ['New', 'Active', 'In Review', 'Resolved', 'Closed'];
@@ -297,7 +298,7 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
         ? (parentItem?.sprintId || undefined)
         : form.sprintId;
 
-    await saveWorkItem({
+    const savedItem: WorkItem = {
       ...form,
       title: form.title.trim(),
       sprintId: nextSprintId,
@@ -307,9 +308,25 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
       comments: liveComments,
       createdAt: form.createdAt || now,
       updatedAt: now,
-    });
+    };
+
+    const wasClosed = isExisting && (currentItem.state === 'Closed' || currentItem.state === 'Resolved');
+    const isNowClosed = savedItem.state === 'Closed' || savedItem.state === 'Resolved';
+
+    await saveWorkItem(savedItem);
     setIsSaving(false);
     setIsEditing(false);
+
+    if (isNowClosed && !wasClosed) {
+      const updatedList = workItems.map((w) => (w.id === savedItem.id ? savedItem : w));
+      if (!isExisting) updatedList.unshift(savedItem);
+      await promptAndCascadeParentClosure({
+        itemJustClosed: savedItem,
+        allWorkItems: updatedList,
+        confirm,
+        saveWorkItem,
+      });
+    }
     if (!isExisting) {
       onClose();
     }
@@ -715,9 +732,43 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                                     </span>
                                   )}
 
-                                  <span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${STATE_COLOR[child.state]}`}>
-                                    {child.state}
-                                  </span>
+                                  <select
+                                    value={child.state}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onChange={async (e) => {
+                                      e.stopPropagation();
+                                      const nextState = e.target.value as WorkItemState;
+                                      if (nextState === child.state) return;
+                                      const nowStr = new Date().toISOString();
+                                      const updatedChild: WorkItem = {
+                                        ...child,
+                                        state: nextState,
+                                        completedDate:
+                                          nextState === 'Closed' || nextState === 'Resolved'
+                                            ? child.completedDate || nowStr.slice(0, 10)
+                                            : child.completedDate,
+                                        updatedAt: nowStr,
+                                      };
+                                      await saveWorkItem(updatedChild);
+                                      if (nextState === 'Closed' || nextState === 'Resolved') {
+                                        const updatedList = workItems.map((w) => (w.id === updatedChild.id ? updatedChild : w));
+                                        await promptAndCascadeParentClosure({
+                                          itemJustClosed: updatedChild,
+                                          allWorkItems: updatedList,
+                                          confirm,
+                                          saveWorkItem,
+                                        });
+                                      }
+                                    }}
+                                    className={`text-[9px] px-1.5 py-0.5 rounded border font-medium bg-[#0d121c] focus:outline-none cursor-pointer ${STATE_COLOR[child.state]}`}
+                                    title="Quick change state"
+                                  >
+                                    {STATES.map((s) => (
+                                      <option key={s} value={s} className="bg-[#0e121b] text-white">
+                                        {s}
+                                      </option>
+                                    ))}
+                                  </select>
 
                                   {/* Independent Move Task to another Story */}
                                   {child.type === 'Task' && (

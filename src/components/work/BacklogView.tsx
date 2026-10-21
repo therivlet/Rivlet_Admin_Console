@@ -106,7 +106,13 @@ export default function BacklogView() {
 
     if (typeFilter !== 'All' && w.type !== typeFilter) return false;
     if (stateFilter !== 'All' && w.state !== stateFilter) return false;
-    if (assigneeFilter !== 'All' && w.assignee !== assigneeFilter) return false;
+    if (assigneeFilter !== 'All') {
+      if (assigneeFilter === 'Unassigned') {
+        if (w.assignee && w.assignee.trim() !== '') return false;
+      } else if (w.assignee !== assigneeFilter) {
+        return false;
+      }
+    }
 
     if (sprintFilter !== 'All') {
       // Epics and Features do NOT have sprint schedules and never match sprint filter directly
@@ -543,6 +549,7 @@ export default function BacklogView() {
           className="px-3 py-2.5 rounded-xl bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50"
         >
           <option value="All">All Assignees</option>
+          <option value="Unassigned">Unassigned</option>
           {assigneeOptions.map((name) => (
             <option key={name} value={name}>
               {name}

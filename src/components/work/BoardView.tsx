@@ -33,6 +33,8 @@ import { WorkItem, WorkItemState, Sprint } from '@/lib/types';
 import WorkItemModal, { TYPE_COLOR, STATE_COLOR, PRIORITY_BADGE_COLOR, PRIORITY_LABEL } from '@/components/work/WorkItemModal';
 import ModalPortal from '@/components/ui/ModalPortal';
 import { notify } from '@/lib/notificationContext';
+import { useConfirm } from '@/lib/confirmContext';
+import { promptAndCascadeParentClosure } from '@/lib/workCascade';
 
 const COLUMNS: WorkItemState[] = ['New', 'Active', 'In Review', 'Resolved', 'Closed'];
 const ROW_TYPES: WorkItem['type'][] = ['User Story', 'Bug'];
@@ -74,6 +76,7 @@ interface BoardViewProps {
 }
 
 export default function BoardView({ initialSprintId }: BoardViewProps) {
+  const confirm = useConfirm();
   const { workItems, sprints, vendors, teamMembers, pipelineItems, saveWorkItem, reorderWorkItems } = useAdminStore();
   const [selectedSprintId, setSelectedSprintId] = useState<string | undefined>(() => initialSprintId ?? currentSprintId(sprints));
   const [modalItem, setModalItem] = useState<WorkItem | Omit<WorkItem, 'createdAt' | 'updatedAt'> | null>(null);
@@ -196,11 +199,25 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
 
   const tasksFor = (rowId: string) => {
     const all = rowId === UNPARENTED ? unparentedTasks : tasksInSprint.filter((t) => t.parentId === rowId);
-    return assigneeFilter === 'All' ? all : all.filter((t) => t.assignee === assigneeFilter);
+    if (assigneeFilter === 'All') return all;
+    if (assigneeFilter === 'Unassigned') return all.filter((t) => !t.assignee || t.assignee.trim() === '');
+    return all.filter((t) => t.assignee === assigneeFilter);
   };
 
   const visibleRowIdsSet = useMemo(() => {
     if (assigneeFilter === 'All') return null;
+    if (assigneeFilter === 'Unassigned') {
+      return new Set(
+        rows
+          .filter(
+            (r) =>
+              !r.assignee ||
+              r.assignee.trim() === '' ||
+              tasksInSprint.some((t) => t.parentId === r.id && (!t.assignee || t.assignee.trim() === ''))
+          )
+          .map((r) => r.id)
+      );
+    }
     return new Set(
       rows.filter((r) => r.assignee === assigneeFilter || tasksInSprint.some((t) => t.parentId === r.id && t.assignee === assigneeFilter)).map((r) => r.id)
     );
@@ -234,14 +251,26 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
     );
     const maxOrder = destTasks.reduce((max, t) => Math.max(max, t.order ?? 0), 0);
 
-    await saveWorkItem({
+    const updatedTask: WorkItem = {
       ...target,
       state,
       parentId: nextParentId,
       sprintId: activeSprintId,
       order: maxOrder + 1,
       completedDate: (state === 'Closed' || state === 'Resolved') ? (target.completedDate || new Date().toISOString().slice(0, 10)) : target.completedDate,
-    });
+    };
+
+    await saveWorkItem(updatedTask);
+
+    if (state === 'Closed' || state === 'Resolved') {
+      const updatedList = workItems.map((w) => (w.id === updatedTask.id ? updatedTask : w));
+      await promptAndCascadeParentClosure({
+        itemJustClosed: updatedTask,
+        allWorkItems: updatedList,
+        confirm,
+        saveWorkItem,
+      });
+    }
   };
 
   // Move Story to an exact target rank position (0-indexed)
@@ -387,7 +416,12 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
   };
 
   const filteredRows = visibleRowIdsSet ? rows.filter((r) => visibleRowIdsSet.has(r.id)) : rows;
-  const filteredUnparented = assigneeFilter === 'All' ? unparentedTasks : unparentedTasks.filter((t) => t.assignee === assigneeFilter);
+  const filteredUnparented =
+    assigneeFilter === 'All'
+      ? unparentedTasks
+      : assigneeFilter === 'Unassigned'
+      ? unparentedTasks.filter((t) => !t.assignee || t.assignee.trim() === '')
+      : unparentedTasks.filter((t) => t.assignee === assigneeFilter);
   const rowIds = [...filteredRows.map((r) => r.id), ...(filteredUnparented.length > 0 ? [UNPARENTED] : [])];
 
   const allCollapsed = rowIds.length > 0 && collapsedRowIds.size >= rowIds.length;
@@ -432,6 +466,7 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
             className="px-3 py-2 rounded-xl bg-[#0e121b] border border-[#222c42] text-sm text-white focus:outline-none focus:border-[#cda052]/50"
           >
             <option value="All">All Assignees</option>
+            <option value="Unassigned">Unassigned</option>
             {assigneeOptions.map((name) => <option key={name} value={name}>{name}</option>)}
           </select>
         </div>
