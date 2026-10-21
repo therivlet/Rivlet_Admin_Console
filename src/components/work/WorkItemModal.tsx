@@ -29,6 +29,7 @@ import { useAuth } from '@/lib/authContext';
 import ModalPortal from '@/components/ui/ModalPortal';
 import { useConfirm } from '@/lib/confirmContext';
 import { promptAndCascadeParentClosure } from '@/lib/workCascade';
+import AssignPromptModal from '@/components/work/AssignPromptModal';
 
 const TYPES: WorkItemType[] = ['Epic', 'Feature', 'User Story', 'Task', 'Bug'];
 const STATES: WorkItemState[] = ['New', 'Active', 'In Review', 'Resolved', 'Closed'];
@@ -148,6 +149,11 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
   const [isAttachingChild, setIsAttachingChild] = useState(false);
   const [selectedAttachId, setSelectedAttachId] = useState('');
   const [showAllComments, setShowAllComments] = useState(false);
+  const [showAssignPrompt, setShowAssignPrompt] = useState(false);
+  const [pendingChildAssign, setPendingChildAssign] = useState<{
+    child: WorkItem;
+    state: WorkItemState;
+  } | null>(null);
 
   // Live item & comments from store
   const liveItem = workItems.find((w) => w.id === form.id);
@@ -281,6 +287,12 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
       setError('Title is required (minimum 3 characters).');
       return;
     }
+    // Validation: Item cannot move to Active or beyond without an assignee. Unassigned must remain in New.
+    if (form.state !== 'New' && (!form.assignee || !form.assignee.trim())) {
+      setError(`Assignee required: An item cannot move to "${form.state}" without an assignee. Unassigned items must remain in "New".`);
+      setShowAssignPrompt(true);
+      return;
+    }
     setError(null);
     setIsSaving(true);
     const now = new Date().toISOString();
@@ -329,6 +341,89 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
     }
     if (!isExisting) {
       onClose();
+    }
+  };
+
+  const handleAssignAndSaveForm = async (assignee: string) => {
+    setShowAssignPrompt(false);
+    setForm((prev) => ({ ...prev, assignee }));
+    setError(null);
+    setIsSaving(true);
+    const now = new Date().toISOString();
+
+    const normalizedStyleIds = form.linkedPipelineItemIds || [];
+    const primaryStyleId =
+      normalizedStyleIds.length > 0 && normalizedStyleIds[0] !== 'all'
+        ? normalizedStyleIds[0]
+        : (normalizedStyleIds.includes('all') && pipelineItems[0] ? pipelineItems[0].id : undefined);
+
+    const nextSprintId =
+      form.type === 'Epic' || form.type === 'Feature'
+        ? undefined
+        : form.type === 'Task'
+        ? (parentItem?.sprintId || undefined)
+        : form.sprintId;
+
+    const savedItem: WorkItem = {
+      ...form,
+      assignee,
+      title: form.title.trim(),
+      sprintId: nextSprintId,
+      tags: tagsInput.split(',').map((t) => t.trim()).filter(Boolean),
+      linkedPipelineItemIds: normalizedStyleIds,
+      linkedPipelineItemId: primaryStyleId,
+      comments: liveComments,
+      createdAt: form.createdAt || now,
+      updatedAt: now,
+    };
+
+    const wasClosed = isExisting && (currentItem.state === 'Closed' || currentItem.state === 'Resolved');
+    const isNowClosed = savedItem.state === 'Closed' || savedItem.state === 'Resolved';
+
+    await saveWorkItem(savedItem);
+    setIsSaving(false);
+    setIsEditing(false);
+
+    if (isNowClosed && !wasClosed) {
+      const updatedList = workItems.map((w) => (w.id === savedItem.id ? savedItem : w));
+      if (!isExisting) updatedList.unshift(savedItem);
+      await promptAndCascadeParentClosure({
+        itemJustClosed: savedItem,
+        allWorkItems: updatedList,
+        confirm,
+        saveWorkItem,
+      });
+    }
+    if (!isExisting) {
+      onClose();
+    }
+  };
+
+  const handleAssignAndSaveChild = async (assignee: string) => {
+    if (!pendingChildAssign) return;
+    const { child, state: nextState } = pendingChildAssign;
+    setPendingChildAssign(null);
+
+    const nowStr = new Date().toISOString();
+    const updatedChild: WorkItem = {
+      ...child,
+      assignee,
+      state: nextState,
+      completedDate:
+        nextState === 'Closed' || nextState === 'Resolved'
+          ? child.completedDate || nowStr.slice(0, 10)
+          : child.completedDate,
+      updatedAt: nowStr,
+    };
+    await saveWorkItem(updatedChild);
+    if (nextState === 'Closed' || nextState === 'Resolved') {
+      const updatedList = workItems.map((w) => (w.id === updatedChild.id ? updatedChild : w));
+      await promptAndCascadeParentClosure({
+        itemJustClosed: updatedChild,
+        allWorkItems: updatedList,
+        confirm,
+        saveWorkItem,
+      });
     }
   };
 
@@ -444,7 +539,8 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
   const isDateApplicable = form.type === 'Epic' || form.type === 'Feature';
 
   return (
-    <ModalPortal isOpen={true}>
+    <>
+      <ModalPortal isOpen={true}>
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md" onClick={onClose}>
         <div
           className="w-full max-w-5xl max-h-[94vh] flex flex-col rounded-2xl border border-[#1f2638] bg-[#090b11] shadow-2xl shadow-black overflow-hidden"
@@ -739,6 +835,10 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                                       e.stopPropagation();
                                       const nextState = e.target.value as WorkItemState;
                                       if (nextState === child.state) return;
+                                      if (nextState !== 'New' && (!child.assignee || !child.assignee.trim())) {
+                                        setPendingChildAssign({ child, state: nextState });
+                                        return;
+                                      }
                                       const nowStr = new Date().toISOString();
                                       const updatedChild: WorkItem = {
                                         ...child,
@@ -1171,6 +1271,11 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                     >
                       {STATES.map((s) => <option key={s} value={s}>{s}</option>)}
                     </select>
+                    {form.state !== 'New' && (!form.assignee || !form.assignee.trim()) && (
+                      <p className="text-[10px] text-amber-400 font-medium mt-1">
+                        ⚠️ Assignee required for {form.state}
+                      </p>
+                    )}
                   </div>
 
                   {/* Priority */}
@@ -1202,11 +1307,17 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Assignee */}
                   <div>
-                    <label className="text-[11px] font-semibold text-[#94a3b8] block mb-1">Assignee</label>
+                    <label className="text-[11px] font-semibold text-[#94a3b8] block mb-1">
+                      Assignee {form.state !== 'New' && <span className="text-amber-400 font-normal">(Required for {form.state})</span>}
+                    </label>
                     <select
                       value={form.assignee || ''}
                       onChange={(e) => setForm({ ...form, assignee: e.target.value || undefined })}
-                      className="w-full px-3 py-2.5 rounded-xl bg-[#0e121b] border border-[#1f2638] text-sm text-white focus:outline-none focus:border-[#cda052]/50"
+                      className={`w-full px-3 py-2.5 rounded-xl bg-[#0e121b] border text-sm text-white focus:outline-none focus:border-[#cda052]/50 ${
+                        form.state !== 'New' && (!form.assignee || !form.assignee.trim())
+                          ? 'border-amber-500/80 ring-1 ring-amber-500/30'
+                          : 'border-[#1f2638]'
+                      }`}
                     >
                       <option value="">Unassigned</option>
                       {teamMembers.map((m) => (
@@ -1482,5 +1593,30 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
         </div>
       </div>
     </ModalPortal>
+
+    {showAssignPrompt && (
+      <AssignPromptModal
+        isOpen={true}
+        item={form as WorkItem}
+        targetState={form.state}
+        teamMembers={teamMembers}
+        allWorkItems={workItems}
+        onAssign={handleAssignAndSaveForm}
+        onCancel={() => setShowAssignPrompt(false)}
+      />
+    )}
+
+    {pendingChildAssign && (
+      <AssignPromptModal
+        isOpen={true}
+        item={pendingChildAssign.child}
+        targetState={pendingChildAssign.state}
+        teamMembers={teamMembers}
+        allWorkItems={workItems}
+        onAssign={handleAssignAndSaveChild}
+        onCancel={() => setPendingChildAssign(null)}
+      />
+    )}
+  </>
   );
 }

@@ -35,6 +35,7 @@ import ModalPortal from '@/components/ui/ModalPortal';
 import { notify } from '@/lib/notificationContext';
 import { useConfirm } from '@/lib/confirmContext';
 import { promptAndCascadeParentClosure } from '@/lib/workCascade';
+import AssignPromptModal from '@/components/work/AssignPromptModal';
 
 const COLUMNS: WorkItemState[] = ['New', 'Active', 'In Review', 'Resolved', 'Closed'];
 const ROW_TYPES: WorkItem['type'][] = ['User Story', 'Bug'];
@@ -96,6 +97,17 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
   const [modalStoriesList, setModalStoriesList] = useState<WorkItem[]>([]);
   const [modalDraggingStoryId, setModalDraggingStoryId] = useState<string | null>(null);
   const [modalDragOverId, setModalDragOverId] = useState<string | null>(null);
+
+  // Validation: prompt assignment when unassigned item moves to Active or beyond
+  const [pendingDropAssign, setPendingDropAssign] = useState<{
+    target: WorkItem;
+    rowId: string;
+    state: WorkItemState;
+  } | null>(null);
+  const [pendingStoryAssign, setPendingStoryAssign] = useState<{
+    story: WorkItem;
+    state: WorkItemState;
+  } | null>(null);
 
   // Always keep selected sprint synced with the active sprint based on today's date if not explicitly set
   React.useEffect(() => {
@@ -242,6 +254,12 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
     const nextParentId = rowId === UNPARENTED ? undefined : rowId;
     if (target.state === state && target.parentId === nextParentId) return;
 
+    // Validation: unassigned items cannot move to Active or beyond. Must remain in New.
+    if (state !== 'New' && (!target.assignee || !target.assignee.trim())) {
+      setPendingDropAssign({ target, rowId, state });
+      return;
+    }
+
     const destTasks = workItems.filter(
       (w) =>
         w.sprintId === activeSprintId &&
@@ -271,6 +289,98 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
         saveWorkItem,
       });
     }
+  };
+
+  const handleAssignAndDrop = async (assignee: string) => {
+    if (!pendingDropAssign) return;
+    const { target, rowId, state } = pendingDropAssign;
+    setPendingDropAssign(null);
+
+    const nextParentId = rowId === UNPARENTED ? undefined : rowId;
+    const destTasks = workItems.filter(
+      (w) =>
+        w.sprintId === activeSprintId &&
+        w.type === 'Task' &&
+        (rowId === UNPARENTED ? !w.parentId : w.parentId === rowId) &&
+        w.state === state
+    );
+    const maxOrder = destTasks.reduce((max, t) => Math.max(max, t.order ?? 0), 0);
+
+    const updatedTask: WorkItem = {
+      ...target,
+      assignee,
+      state,
+      parentId: nextParentId,
+      sprintId: activeSprintId,
+      order: maxOrder + 1,
+      completedDate:
+        state === 'Closed' || state === 'Resolved'
+          ? target.completedDate || new Date().toISOString().slice(0, 10)
+          : target.completedDate,
+    };
+
+    await saveWorkItem(updatedTask);
+    notify.success('Assigned & Moved', `"${updatedTask.title}" assigned to ${assignee} and moved to ${state}.`);
+
+    if (state === 'Closed' || state === 'Resolved') {
+      const updatedList = workItems.map((w) => (w.id === updatedTask.id ? updatedTask : w));
+      await promptAndCascadeParentClosure({
+        itemJustClosed: updatedTask,
+        allWorkItems: updatedList,
+        confirm,
+        saveWorkItem,
+      });
+    }
+  };
+
+  const handleCancelDropAssign = () => {
+    if (pendingDropAssign) {
+      notify.info(
+        'Item Kept in New',
+        `"${pendingDropAssign.target.title}" remained in New because an assignee is required to move to ${pendingDropAssign.state}.`
+      );
+    }
+    setPendingDropAssign(null);
+  };
+
+  const handleAssignAndChangeStory = async (assignee: string) => {
+    if (!pendingStoryAssign) return;
+    const { story, state } = pendingStoryAssign;
+    setPendingStoryAssign(null);
+
+    const updatedStory: WorkItem = {
+      ...story,
+      assignee,
+      state,
+      completedDate:
+        state === 'Closed' || state === 'Resolved'
+          ? story.completedDate || new Date().toISOString().slice(0, 10)
+          : story.completedDate,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await saveWorkItem(updatedStory);
+    notify.success('Story Assigned & Moved', `"${updatedStory.title}" assigned to ${assignee} and moved to ${state}.`);
+
+    if (state === 'Closed' || state === 'Resolved') {
+      const updatedList = workItems.map((w) => (w.id === updatedStory.id ? updatedStory : w));
+      await promptAndCascadeParentClosure({
+        itemJustClosed: updatedStory,
+        allWorkItems: updatedList,
+        confirm,
+        saveWorkItem,
+      });
+    }
+  };
+
+  const handleCancelStoryAssign = () => {
+    if (pendingStoryAssign) {
+      notify.info(
+        'Story Kept in New',
+        `"${pendingStoryAssign.story.title}" remained in New because an assignee is required to move to ${pendingStoryAssign.state}.`
+      );
+    }
+    setPendingStoryAssign(null);
   };
 
   // Move Story to an exact target rank position (0-indexed)
@@ -1151,9 +1261,46 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
 
                           {/* Bottom Row Attributes */}
                           <div className="flex items-center justify-between mt-auto pt-2 border-t border-[#171d2b]">
-                            <span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${STATE_COLOR[row.state]}`}>
-                              {row.state}
-                            </span>
+                            <select
+                              value={row.state}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={async (e) => {
+                                e.stopPropagation();
+                                const nextState = e.target.value as WorkItemState;
+                                if (nextState === row.state) return;
+                                if (nextState !== 'New' && (!row.assignee || !row.assignee.trim())) {
+                                  setPendingStoryAssign({ story: row, state: nextState });
+                                  return;
+                                }
+                                const updatedStory = {
+                                  ...row,
+                                  state: nextState,
+                                  completedDate:
+                                    nextState === 'Closed' || nextState === 'Resolved'
+                                      ? row.completedDate || new Date().toISOString().slice(0, 10)
+                                      : row.completedDate,
+                                  updatedAt: new Date().toISOString(),
+                                };
+                                await saveWorkItem(updatedStory);
+                                if (nextState === 'Closed' || nextState === 'Resolved') {
+                                  const updatedList = workItems.map((w) => (w.id === updatedStory.id ? updatedStory : w));
+                                  await promptAndCascadeParentClosure({
+                                    itemJustClosed: updatedStory,
+                                    allWorkItems: updatedList,
+                                    confirm,
+                                    saveWorkItem,
+                                  });
+                                }
+                              }}
+                              className={`text-[9px] px-1.5 py-0.5 rounded border font-medium bg-[#0d121c] focus:outline-none cursor-pointer ${STATE_COLOR[row.state]}`}
+                              title="Change story state"
+                            >
+                              {COLUMNS.map((s) => (
+                                <option key={s} value={s} className="bg-[#0e121b] text-white">
+                                  {s}
+                                </option>
+                              ))}
+                            </select>
 
                             <div className="flex items-center gap-2">
                               {/* Assignee pill - Highlighted & Readable */}
@@ -1620,6 +1767,30 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
           </div>
         </div>
       </ModalPortal>
+
+      {pendingDropAssign && (
+        <AssignPromptModal
+          isOpen={true}
+          item={pendingDropAssign.target}
+          targetState={pendingDropAssign.state}
+          teamMembers={teamMembers}
+          allWorkItems={workItems}
+          onAssign={handleAssignAndDrop}
+          onCancel={handleCancelDropAssign}
+        />
+      )}
+
+      {pendingStoryAssign && (
+        <AssignPromptModal
+          isOpen={true}
+          item={pendingStoryAssign.story}
+          targetState={pendingStoryAssign.state}
+          teamMembers={teamMembers}
+          allWorkItems={workItems}
+          onAssign={handleAssignAndChangeStory}
+          onCancel={handleCancelStoryAssign}
+        />
+      )}
 
       {modalItem && <WorkItemModal item={modalItem} onClose={() => setModalItem(null)} />}
     </div>

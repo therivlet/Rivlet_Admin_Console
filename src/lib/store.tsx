@@ -1528,6 +1528,11 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       }
     }
 
+    // Unassigned items must remain in 'New' state. Without an assignee, cannot move to Active or beyond.
+    if (updated.state !== 'New' && (!updated.assignee || !updated.assignee.trim())) {
+      updated.state = 'New';
+    }
+
     // Check if sprint changed for a User Story
     const prev = workItems.find((w) => w.id === item.id);
     const sprintChanged = prev !== undefined && prev.sprintId !== updated.sprintId;
