@@ -22,13 +22,14 @@ import {
   Link2,
   Unlink,
   Calendar,
+  Loader2,
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { WorkItem, WorkItemType, WorkItemState, WorkItemPriority } from '@/lib/types';
 import { useAuth } from '@/lib/authContext';
 import ModalPortal from '@/components/ui/ModalPortal';
 import { useConfirm } from '@/lib/confirmContext';
-import { promptAndCascadeParentClosure } from '@/lib/workCascade';
+import { syncParentWorkflowHierarchy } from '@/lib/workCascade';
 import AssignPromptModal from '@/components/work/AssignPromptModal';
 
 const TYPES: WorkItemType[] = ['Epic', 'Feature', 'User Story', 'Task', 'Bug'];
@@ -154,6 +155,44 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
     child: WorkItem;
     state: WorkItemState;
   } | null>(null);
+  const [isGeneratingCriteria, setIsGeneratingCriteria] = useState(false);
+
+  const handleGenerateAIAcceptanceCriteria = async () => {
+    if (!form.title?.trim()) return;
+    setIsGeneratingCriteria(true);
+    try {
+      const linkedStyle = pipelineItems.find((p) => (form.linkedPipelineItemIds || []).includes(p.id) || p.id === form.linkedPipelineItemId);
+      const linkedVendor = vendors.find((v) => v.id === form.linkedVendorId);
+
+      const res = await fetch('/api/ai/work/criteria', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: form.title,
+          type: form.type,
+          styleName: linkedStyle?.styleName || '',
+          category: form.operationCategory || linkedStyle?.category || '',
+          vendorName: linkedVendor?.name || '',
+          existingDescription: form.description || '',
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to generate criteria');
+      }
+
+      const data = await res.json();
+      setForm((prev) => ({
+        ...prev,
+        acceptanceCriteria: data.acceptanceCriteria || prev.acceptanceCriteria,
+        description: prev.description ? prev.description : (data.suggestedDescription || prev.description),
+      }));
+    } catch (err: any) {
+      console.error('Criteria error:', err);
+    } finally {
+      setIsGeneratingCriteria(false);
+    }
+  };
 
   // Live item & comments from store
   const liveItem = workItems.find((w) => w.id === form.id);
@@ -329,16 +368,14 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
     setIsSaving(false);
     setIsEditing(false);
 
-    if (isNowClosed && !wasClosed) {
-      const updatedList = workItems.map((w) => (w.id === savedItem.id ? savedItem : w));
-      if (!isExisting) updatedList.unshift(savedItem);
-      await promptAndCascadeParentClosure({
-        itemJustClosed: savedItem,
-        allWorkItems: updatedList,
-        confirm,
-        saveWorkItem,
-      });
-    }
+    const updatedList = workItems.map((w) => (w.id === savedItem.id ? savedItem : w));
+    if (!isExisting) updatedList.unshift(savedItem);
+    await syncParentWorkflowHierarchy({
+      updatedItem: savedItem,
+      allWorkItems: updatedList,
+      confirm,
+      saveWorkItem,
+    });
     if (!isExisting) {
       onClose();
     }
@@ -384,16 +421,14 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
     setIsSaving(false);
     setIsEditing(false);
 
-    if (isNowClosed && !wasClosed) {
-      const updatedList = workItems.map((w) => (w.id === savedItem.id ? savedItem : w));
-      if (!isExisting) updatedList.unshift(savedItem);
-      await promptAndCascadeParentClosure({
-        itemJustClosed: savedItem,
-        allWorkItems: updatedList,
-        confirm,
-        saveWorkItem,
-      });
-    }
+    const updatedList = workItems.map((w) => (w.id === savedItem.id ? savedItem : w));
+    if (!isExisting) updatedList.unshift(savedItem);
+    await syncParentWorkflowHierarchy({
+      updatedItem: savedItem,
+      allWorkItems: updatedList,
+      confirm,
+      saveWorkItem,
+    });
     if (!isExisting) {
       onClose();
     }
@@ -416,15 +451,13 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
       updatedAt: nowStr,
     };
     await saveWorkItem(updatedChild);
-    if (nextState === 'Closed' || nextState === 'Resolved') {
-      const updatedList = workItems.map((w) => (w.id === updatedChild.id ? updatedChild : w));
-      await promptAndCascadeParentClosure({
-        itemJustClosed: updatedChild,
-        allWorkItems: updatedList,
-        confirm,
-        saveWorkItem,
-      });
-    }
+    const updatedList = workItems.map((w) => (w.id === updatedChild.id ? updatedChild : w));
+    await syncParentWorkflowHierarchy({
+      updatedItem: updatedChild,
+      allWorkItems: updatedList,
+      confirm,
+      saveWorkItem,
+    });
   };
 
   const handleDelete = async () => {
@@ -850,15 +883,13 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
                                         updatedAt: nowStr,
                                       };
                                       await saveWorkItem(updatedChild);
-                                      if (nextState === 'Closed' || nextState === 'Resolved') {
-                                        const updatedList = workItems.map((w) => (w.id === updatedChild.id ? updatedChild : w));
-                                        await promptAndCascadeParentClosure({
-                                          itemJustClosed: updatedChild,
-                                          allWorkItems: updatedList,
-                                          confirm,
-                                          saveWorkItem,
-                                        });
-                                      }
+                                      const updatedList = workItems.map((w) => (w.id === updatedChild.id ? updatedChild : w));
+                                      await syncParentWorkflowHierarchy({
+                                        updatedItem: updatedChild,
+                                        allWorkItems: updatedList,
+                                        confirm,
+                                        saveWorkItem,
+                                      });
                                     }}
                                     className={`text-[9px] px-1.5 py-0.5 rounded border font-medium bg-[#0d121c] focus:outline-none cursor-pointer ${STATE_COLOR[child.state]}`}
                                     title="Quick change state"
@@ -1544,9 +1575,30 @@ export default function WorkItemModal({ item, onClose, startInEditMode }: WorkIt
 
                 {/* Acceptance Criteria Textarea (Generous height, full display) */}
                 <div>
-                  <label className="text-xs font-semibold text-emerald-400 block mb-1.5 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Acceptance Criteria
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Acceptance Criteria
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleGenerateAIAcceptanceCriteria}
+                      disabled={isGeneratingCriteria || !form.title?.trim()}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[rgba(205,160,82,0.15)] text-[#cda052] border border-[rgba(205,160,82,0.3)] hover:bg-[rgba(205,160,82,0.25)] text-[11px] font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                      title="Auto-generate garment QA standards and test criteria with Google Gemini"
+                    >
+                      {isGeneratingCriteria ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin text-[#cda052]" />
+                          <span>Gemini Thinking...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-3 h-3 text-[#cda052]" />
+                          <span>✨ AI Auto-Criteria</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                   <textarea
                     value={form.acceptanceCriteria || ''}
                     onChange={(e) => setForm({ ...form, acceptanceCriteria: e.target.value })}

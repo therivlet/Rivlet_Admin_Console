@@ -13,7 +13,9 @@ import {
   RotateCcw,
   AlertCircle,
   FileText,
-  ChevronDown
+  ChevronDown,
+  Sparkles,
+  Loader2,
 } from 'lucide-react';
 import { GarmentBOM, FabricBOMItem, TrimBOMItem } from '@/lib/types';
 import { 
@@ -58,6 +60,44 @@ export default function BOMSpecifierModal({
   const [appliedAlert, setAppliedAlert] = useState(false);
   const [saveSuccessAlert, setSaveSuccessAlert] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  // Gemini AI BOM Estimator State
+  const [showAIEstimator, setShowAIEstimator] = useState(false);
+  const [aiGarmentPrompt, setAiGarmentPrompt] = useState('');
+  const [isEstimatingBOM, setIsEstimatingBOM] = useState(false);
+  const [aiBOMError, setAiBOMError] = useState<string | null>(null);
+
+  const handleEstimateBOM = async (promptOverride?: string) => {
+    const text = (promptOverride || aiGarmentPrompt || garmentType).trim();
+    if (!text) return;
+    setIsEstimatingBOM(true);
+    setAiBOMError(null);
+    try {
+      const res = await fetch('/api/ai/calculator/estimate-bom', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          garmentDescription: text,
+          currency,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to estimate BOM');
+      }
+
+      const data = await res.json();
+      if (data.bom) {
+        loadBOMIntoForm(data.bom);
+        setShowAIEstimator(false);
+        setAiGarmentPrompt('');
+      }
+    } catch (err: any) {
+      setAiBOMError(err.message || 'Error estimating BOM');
+    } finally {
+      setIsEstimatingBOM(false);
+    }
+  };
 
   // Load saved BOM library from localStorage
   const refreshSavedBOMs = useCallback(() => {
@@ -449,6 +489,15 @@ export default function BOMSpecifierModal({
             />
             <button
               type="button"
+              onClick={() => setShowAIEstimator(!showAIEstimator)}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[rgba(205,160,82,0.15)] text-[#cda052] border border-[rgba(205,160,82,0.3)] hover:bg-[rgba(205,160,82,0.25)] transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer shadow-sm"
+              title="Auto-estimate full BOM with fabrics, trims, and labor using Google Gemini"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#cda052]" />
+              <span>✨ AI Auto-Estimate</span>
+            </button>
+            <button
+              type="button"
               onClick={handleSaveToLibrary}
               title="Save or update this Garment BOM in your library"
               className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#131b2c] hover:bg-[#1c273e] text-[#cbd5e1] hover:text-white border border-[#243352] hover:border-[#cda052]/50 transition-all flex items-center gap-1 flex-shrink-0"
@@ -463,6 +512,91 @@ export default function BOMSpecifierModal({
             )}
           </div>
         </div>
+
+        {/* AI Auto-Estimator Collapsible Bar */}
+        {showAIEstimator && (
+          <div className="mx-4 sm:mx-6 mt-3 p-4 rounded-xl bg-gradient-to-br from-[#12192a] to-[#0a0d16] border border-[#cda052]/40 shadow-xl space-y-3 animate-fade-in">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <h5 className="font-bold text-white text-xs flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#cda052]" />
+                  <span>Gemini Technical Garment BOM Estimator</span>
+                </h5>
+                <p className="text-[#8c9bb5] text-[11px] mt-0.5">
+                  Enter any garment description or technical silhouette. Gemini calculates realistic fabric consumption (kg), rib knit ratios, custom trims, and Indian market labor/finishing costs.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowAIEstimator(false)}
+                className="p-1 rounded text-[#64748b] hover:text-white"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                value={aiGarmentPrompt}
+                onChange={(e) => setAiGarmentPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !isEstimatingBOM && (aiGarmentPrompt.trim() || garmentType.trim())) {
+                    handleEstimateBOM();
+                  }
+                }}
+                placeholder="e.g. Oversized 480 GSM French Terry Drop Shoulder Hoodie with double hood & custom aglets"
+                className="flex-1 px-3 py-2 rounded-lg bg-[#07090e] border border-[#222d44] text-xs text-white placeholder:text-[#52607a] outline-none focus:border-[#cda052]"
+              />
+              <button
+                type="button"
+                onClick={() => handleEstimateBOM()}
+                disabled={isEstimatingBOM || (!aiGarmentPrompt.trim() && !garmentType.trim())}
+                className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b0883d] text-black text-xs font-bold hover:brightness-110 transition-all disabled:opacity-50 cursor-pointer flex-shrink-0"
+              >
+                {isEstimatingBOM ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Calculating BOM...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5 fill-black" />
+                    <span>Generate BOM</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Quick Garment Suggestions */}
+            <div className="flex items-center gap-1.5 flex-wrap pt-1">
+              <span className="text-[10px] text-[#64748b]">Quick templates:</span>
+              {[
+                'Oversized 480 GSM French Terry Hoodie with Kangaroo Pocket',
+                '260 GSM Heavyweight Compact Cotton Vintage Wash Tee',
+                '78/22 Nylon Lycra High-Rise Squat-Proof Leggings',
+              ].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  disabled={isEstimatingBOM}
+                  onClick={() => {
+                    setAiGarmentPrompt(preset);
+                    handleEstimateBOM(preset);
+                  }}
+                  className="text-[10px] px-2 py-0.5 rounded-full bg-[#182030] text-[#cbd5e1] hover:text-[#cda052] hover:bg-[#202b40] transition-colors cursor-pointer border border-[#222d42]"
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+
+            {aiBOMError && (
+              <p className="text-[11px] text-rose-400 bg-rose-950/40 border border-rose-900/50 p-2 rounded-lg">
+                {aiBOMError}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Scrollable BOM Form Body */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">

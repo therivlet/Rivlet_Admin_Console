@@ -21,7 +21,10 @@ import {
   Table,
   Eye,
   CheckCircle2,
-  Upload
+  Upload,
+  Sparkles,
+  Send,
+  MessageSquare,
 } from 'lucide-react';
 import { DocumentItem } from '@/lib/types';
 import { resolveDocumentUrl, supabase, isSupabaseConfigured } from '@/lib/supabase';
@@ -42,7 +45,77 @@ export default function UniversalDocumentViewer({
   onEditExpiry,
 }: UniversalDocumentViewerProps) {
   const confirm = useConfirm();
-  const [viewTab, setViewTab] = useState<'viewer' | 'readview'>('viewer');
+  const [viewTab, setViewTab] = useState<'viewer' | 'readview' | 'ai_audit'>('viewer');
+  const [aiSummary, setAiSummary] = useState<{
+    executiveSummary: string;
+    keyClauses: string[];
+    auditStatus: string;
+  } | null>(null);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [aiQuestion, setAiQuestion] = useState('');
+  const [aiQAHistory, setAiQAHistory] = useState<{ q: string; a: string }[]>([]);
+  const [isAskingQuestion, setIsAskingQuestion] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  const handleFetchAISummary = async () => {
+    setIsSummarizing(true);
+    setAiError(null);
+    try {
+      const textToAudit = wordText || (effectiveDoc.title + ' | Type: ' + effectiveDoc.documentType + ' | Tags: ' + (effectiveDoc.tags || []).join(', ') + ' | Expiry: ' + (effectiveDoc.expiryDate || 'N/A') + ' | Status: ' + effectiveDoc.status);
+      const res = await fetch('/api/ai/documents/summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          documentTitle: effectiveDoc.title,
+          documentType: effectiveDoc.documentType,
+          textContent: textToAudit,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to audit document');
+      }
+
+      const data = await res.json();
+      setAiSummary(data);
+    } catch (e: any) {
+      setAiError(e.message || 'Error auditing document');
+    } finally {
+      setIsSummarizing(false);
+    }
+  };
+
+  const handleAskQuestion = async () => {
+    if (!aiQuestion.trim()) return;
+    const q = aiQuestion.trim();
+    setAiQuestion('');
+    setIsAskingQuestion(true);
+    try {
+      const textToAudit = wordText || (effectiveDoc.title + ' | Type: ' + effectiveDoc.documentType + ' | Tags: ' + (effectiveDoc.tags || []).join(', ') + ' | Expiry: ' + (effectiveDoc.expiryDate || 'N/A') + ' | Status: ' + effectiveDoc.status);
+      const res = await fetch('/api/ai/documents/summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          documentTitle: effectiveDoc.title,
+          documentType: effectiveDoc.documentType,
+          textContent: textToAudit,
+          question: q,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to query document');
+      }
+
+      const data = await res.json();
+      setAiQAHistory((prev) => [...prev, { q, a: data.answer || 'No response.' }]);
+    } catch (e: any) {
+      setAiQAHistory((prev) => [...prev, { q, a: `Error: ${e.message || 'Failed to get answer'}` }]);
+    } finally {
+      setIsAskingQuestion(false);
+    }
+  };
+
   const { updateDocument } = useAdminStore();
 
   // Local override applied immediately after a successful re-upload, so the
@@ -398,6 +471,20 @@ export default function UniversalDocumentViewer({
               >
                 <FileCheck className="w-3.5 h-3.5" />
                 <span className="inline text-[11px] sm:text-xs">Data</span>
+              </button>
+              <button
+                onClick={() => {
+                  setViewTab('ai_audit');
+                  if (!aiSummary) handleFetchAISummary();
+                }}
+                className={`px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs rounded-md font-medium transition-all flex items-center gap-1.5 ${
+                  viewTab === 'ai_audit'
+                    ? 'bg-[#141824] text-[#cda052] border border-[#cda052]/40 shadow-sm font-semibold'
+                    : 'text-[#94a3b8] hover:text-[#cda052]'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-[#cda052]" />
+                <span className="inline text-[11px] sm:text-xs">✨ AI Audit</span>
               </button>
             </div>
 
@@ -773,6 +860,132 @@ export default function UniversalDocumentViewer({
                 </div>
               )}
             </>
+          ) : viewTab === 'ai_audit' ? (
+            /* AI AUDIT & INTEL VIEW */
+            <div className="flex-1 overflow-y-auto p-4 sm:p-8 custom-scrollbar">
+              <div className="max-w-3xl mx-auto space-y-6">
+                {/* AI Header Card */}
+                <div className="bg-[#0e121b] border border-[#1e2638] rounded-2xl p-6 shadow-xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#cda052]/10 to-transparent rounded-full blur-2xl pointer-events-none" />
+                  
+                  <div className="flex items-start justify-between gap-4 mb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 rounded-xl bg-gradient-to-br from-[#cda052]/20 to-[#b38536]/10 border border-[#cda052]/30 text-[#e6c875]">
+                        <Sparkles className="w-5 h-5 text-[#cda052]" />
+                      </div>
+                      <div>
+                        <h4 className="text-base font-bold text-white font-serif">Gemini 3.5 Compliance & Tech Audit</h4>
+                        <p className="text-xs text-[#94a3b8]">Automated clause extraction, certification verification & Q&A</p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={handleFetchAISummary}
+                      disabled={isSummarizing}
+                      className="px-3 py-1.5 rounded-lg bg-[#141824] border border-[#263147] hover:border-[#cda052] text-[#e6c875] text-xs font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isSummarizing ? 'animate-spin' : ''}`} />
+                      <span>Re-Audit</span>
+                    </button>
+                  </div>
+
+                  {isSummarizing && (
+                    <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
+                      <Loader2 className="w-8 h-8 text-[#cda052] animate-spin" />
+                      <p className="text-sm font-medium text-white">Analyzing document structure & compliance clauses...</p>
+                      <p className="text-xs text-[#94a3b8]">Powered by Google Gemini 3.5</p>
+                    </div>
+                  )}
+
+                  {aiError && (
+                    <div className="p-4 bg-rose-950/40 border border-rose-800/60 rounded-xl text-rose-300 text-xs flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                      <span>{aiError}</span>
+                    </div>
+                  )}
+
+                  {!isSummarizing && aiSummary && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-3 bg-[#07090e] rounded-xl border border-[#1e2638]">
+                        <span className="text-xs font-mono text-[#94a3b8] uppercase tracking-wider">Audit Rating</span>
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
+                          aiSummary.auditStatus.toLowerCase().includes('verified') || aiSummary.auditStatus.toLowerCase().includes('compliant')
+                            ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700/60'
+                            : 'bg-amber-950/80 text-amber-300 border-amber-700/60'
+                        }`}>
+                          {aiSummary.auditStatus}
+                        </span>
+                      </div>
+
+                      <div className="p-4 bg-[#07090e] rounded-xl border border-[#1e2638] space-y-1.5">
+                        <span className="text-[10px] font-mono text-[#cda052] uppercase tracking-wider font-semibold">Executive Summary</span>
+                        <p className="text-xs text-[#cbd5e1] leading-relaxed">{aiSummary.executiveSummary}</p>
+                      </div>
+
+                      {aiSummary.keyClauses && aiSummary.keyClauses.length > 0 && (
+                        <div className="space-y-2">
+                          <span className="text-[10px] font-mono text-[#94a3b8] uppercase tracking-wider font-semibold">Key Clauses & Technical Specs</span>
+                          <div className="space-y-1.5">
+                            {aiSummary.keyClauses.map((clause, idx) => (
+                              <div key={idx} className="p-3 bg-[#07090e]/60 rounded-lg border border-[#1e2638]/70 flex items-start gap-2.5 text-xs text-[#cbd5e1]">
+                                <CheckCircle2 className="w-4 h-4 text-[#cda052] flex-shrink-0 mt-0.5" />
+                                <span>{clause}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Interactive Q&A Card */}
+                <div className="bg-[#0e121b] border border-[#1e2638] rounded-2xl p-6 shadow-xl space-y-4">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-[#cda052]" />
+                    <h5 className="text-xs uppercase font-mono tracking-wider text-[#e6c875] font-semibold">Ask Document AI</h5>
+                  </div>
+
+                  {aiQAHistory.length > 0 && (
+                    <div className="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-1">
+                      {aiQAHistory.map((item, idx) => (
+                        <div key={idx} className="space-y-1.5 p-3 rounded-xl bg-[#07090e] border border-[#1e2638] text-xs">
+                          <div className="font-semibold text-[#e6c875] flex items-center gap-1.5">
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#1e2638]">Q</span>
+                            <span>{item.q}</span>
+                          </div>
+                          <div className="text-[#cbd5e1] pl-5 leading-relaxed whitespace-pre-wrap">{item.a}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="e.g. What is the shrinkage limit or payment term?"
+                      value={aiQuestion}
+                      onChange={(e) => setAiQuestion(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAskQuestion();
+                        }
+                      }}
+                      className="flex-1 bg-[#07090e] border border-[#1e2638] focus:border-[#cda052] rounded-xl px-4 py-2.5 text-xs text-white placeholder-[#64748b] focus:outline-none transition-colors"
+                    />
+                    <button
+                      onClick={handleAskQuestion}
+                      disabled={isAskingQuestion || !aiQuestion.trim()}
+                      className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-bold text-xs flex items-center gap-1.5 hover:brightness-110 disabled:opacity-50 transition-all flex-shrink-0 shadow-glow"
+                    >
+                      {isAskingQuestion ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                      <span>Ask</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           ) : (
             /* READ VIEW / COMPLIANCE METADATA VIEW */
             <div className="flex-1 overflow-y-auto p-4 sm:p-8 custom-scrollbar">

@@ -21,6 +21,7 @@ import {
   ChevronDown,
   ChevronUp,
   Printer,
+  Loader2,
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { WorkItem, WorkItemPriority, WorkItemType } from '@/lib/types';
@@ -196,6 +197,58 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
   const [createdSummary, setCreatedSummary] = useState<{ stories: number; tasks: number } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Gemini AI Decomposer States
+  const [showAIDecompose, setShowAIDecompose] = useState(false);
+  const [aiGoalPrompt, setAiGoalPrompt] = useState('');
+  const [isDecomposingAI, setIsDecomposingAI] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  const handleRunAIDecompose = async (goalToRun?: string) => {
+    const text = (goalToRun || aiGoalPrompt).trim();
+    if (!text) return;
+    setIsDecomposingAI(true);
+    setAiError(null);
+    try {
+      const res = await fetch('/api/ai/work/decompose', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: text,
+          styles: pipelineItems.map((p) => ({ id: p.id, styleName: p.styleName, category: p.category })),
+          vendors: vendors.map((v) => ({ id: v.id, name: v.name })),
+          sprintName: activeSprint?.name || 'Sprint 1',
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Failed to decompose sprint items');
+      }
+
+      const data = await res.json();
+      if (!data.stories || !Array.isArray(data.stories)) {
+        throw new Error('AI returned an unexpected response format');
+      }
+
+      const jsonStr = JSON.stringify(data.stories, null, 2);
+      setRawInput(jsonStr);
+      setFormatMode('json');
+      setShowAIDecompose(false);
+      setAiGoalPrompt('');
+
+      handleParse(jsonStr);
+
+      notify.success(
+        '✨ AI Sprint Generated',
+        `Decomposed into ${data.stories.length} User Stories with full task breakdown!`
+      );
+    } catch (err: any) {
+      setAiError(err.message || 'Failed to decompose sprint');
+    } finally {
+      setIsDecomposingAI(false);
+    }
+  };
+
   // Consolidation Modal States
   const [showConsolidateModal, setShowConsolidateModal] = useState(false);
   const [includeExistingWorkload, setIncludeExistingWorkload] = useState(true);
@@ -335,11 +388,11 @@ export default function BulkCreationView({ onNavigateToBoard, onNavigateToBacklo
   };
 
   // Smart Parser that handles JSON, YAML-like block format, and key-value entries
-  const handleParse = () => {
+  const handleParse = (textOverride?: string) => {
     setParseErrors([]);
     setIsCreatedSuccess(false);
 
-    const input = extractPayload(rawInput);
+    const input = extractPayload(textOverride !== undefined ? textOverride : rawInput);
     if (!input) {
       setParseErrors(['Please enter or paste data into the raw creation input box before running.']);
       return;
@@ -1593,15 +1646,110 @@ JSON Schema:
               <label className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
                 <ListPlus className="w-4 h-4 text-[#cda052]" /> Raw Creation Input Box
               </label>
-              {rawInput && (
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={() => { setRawInput(''); setParsedStories([]); setParseErrors([]); }}
-                  className="text-xs text-[#7c869d] hover:text-white"
+                  type="button"
+                  onClick={() => setShowAIDecompose(!showAIDecompose)}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[rgba(205,160,82,0.15)] text-[#cda052] border border-[rgba(205,160,82,0.3)] hover:bg-[rgba(205,160,82,0.25)] text-xs font-semibold transition-all cursor-pointer shadow-sm"
                 >
-                  Clear Box
+                  <Sparkles className="w-3.5 h-3.5 text-[#cda052]" />
+                  <span>✨ AI Sprint Generator</span>
                 </button>
-              )}
+                {rawInput && (
+                  <button
+                    onClick={() => { setRawInput(''); setParsedStories([]); setParseErrors([]); }}
+                    className="text-xs text-[#7c869d] hover:text-white"
+                  >
+                    Clear Box
+                  </button>
+                )}
+              </div>
             </div>
+
+            {/* AI Generator Collapsible Box */}
+            {showAIDecompose && (
+              <div className="p-4 rounded-xl bg-gradient-to-br from-[#121826] to-[#0a0d14] border border-[#cda052]/40 shadow-xl space-y-3 animate-fade-in">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-[#cda052]" />
+                      <span>Google Gemini Sprint Decomposer</span>
+                    </h4>
+                    <p className="text-[11px] text-[#8c9bb5] mt-0.5">
+                      Describe your apparel goal. Gemini generates complete User Stories, granular tasks, points, and acceptance criteria.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowAIDecompose(false)}
+                    className="p-1 rounded text-[#64748b] hover:text-white"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="text"
+                    value={aiGoalPrompt}
+                    onChange={(e) => setAiGoalPrompt(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !isDecomposingAI && aiGoalPrompt.trim()) {
+                        handleRunAIDecompose();
+                      }
+                    }}
+                    placeholder="e.g. Finalize proto sample fit & sizing specs for Drop 1 Leggings with Layo Group"
+                    className="flex-1 px-3 py-2 rounded-lg bg-[#07090e] border border-[#222c42] text-xs text-white placeholder:text-[#52607a] outline-none focus:border-[#cda052]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRunAIDecompose()}
+                    disabled={isDecomposingAI || !aiGoalPrompt.trim()}
+                    className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b0883d] text-black text-xs font-bold hover:brightness-110 transition-all disabled:opacity-50 cursor-pointer flex-shrink-0"
+                  >
+                    {isDecomposingAI ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Generating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5 fill-black" />
+                        <span>Decompose Goal</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Quick Presets */}
+                <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                  <span className="text-[10px] text-[#64748b]">Quick suggestions:</span>
+                  {[
+                    'Proto sample fit testing & lab dips for Drop 1',
+                    'Packaging, custom trims & woven label qualification',
+                    'Fabric tensile recovery & AQL 2.5 inline QC checklist',
+                  ].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      disabled={isDecomposingAI}
+                      onClick={() => {
+                        setAiGoalPrompt(preset);
+                        handleRunAIDecompose(preset);
+                      }}
+                      className="text-[10px] px-2 py-0.5 rounded-full bg-[#182030] text-[#cbd5e1] hover:text-[#cda052] hover:bg-[#202b40] transition-colors cursor-pointer border border-[#222d42]"
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+
+                {aiError && (
+                  <p className="text-[11px] text-rose-400 bg-rose-950/40 border border-rose-900/50 p-2 rounded-lg">
+                    {aiError}
+                  </p>
+                )}
+              </div>
+            )}
 
             <textarea
               value={rawInput}
@@ -1617,7 +1765,7 @@ JSON Schema:
               </span>
 
               <button
-                onClick={handleParse}
+                onClick={() => handleParse()}
                 disabled={!rawInput.trim()}
                 title="Run parser on raw box"
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#cda052] to-[#a97f38] text-black text-xs font-bold hover:shadow-glow transition-all disabled:opacity-50 cursor-pointer"

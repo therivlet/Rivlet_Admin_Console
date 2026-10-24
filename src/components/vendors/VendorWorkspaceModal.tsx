@@ -35,7 +35,8 @@ import {
   Pencil,
   Check,
   Shirt,
-  ListTodo
+  ListTodo,
+  Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
 import ModalPortal from '@/components/ui/ModalPortal';
@@ -73,6 +74,49 @@ export default function VendorWorkspaceModal({
     nextFollowUpDate: '',
     loggedBy: 'Hari',
   });
+
+  // AI Chat Parser State
+  const [showAILogParser, setShowAILogParser] = useState(false);
+  const [rawChatText, setRawChatText] = useState('');
+  const [isParsingChat, setIsParsingChat] = useState(false);
+  const [parseChatError, setParseChatError] = useState<string | null>(null);
+
+  const handleParseChatLog = async () => {
+    if (!rawChatText.trim() || !vendor) return;
+    setIsParsingChat(true);
+    setParseChatError(null);
+    try {
+      const res = await fetch('/api/ai/vendors/parse-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rawText: rawChatText,
+          vendorName: vendor.name,
+          todayDate: new Date().toISOString().split('T')[0],
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to parse chat message');
+      }
+
+      const data = await res.json();
+      setNewLog((prev) => ({
+        ...prev,
+        channel: (data.channel as any) || prev.channel,
+        summary: data.summary || prev.summary,
+        outcome: data.outcome || prev.outcome,
+        nextFollowUpDate: data.nextFollowUpDate || prev.nextFollowUpDate,
+      }));
+      setIsAddingLog(true);
+      setShowAILogParser(false);
+      setRawChatText('');
+    } catch (err: any) {
+      setParseChatError(err.message || 'Error parsing chat message');
+    } finally {
+      setIsParsingChat(false);
+    }
+  };
 
   // Document form state
   const [isAddingDoc, setIsAddingDoc] = useState(false);
@@ -1005,14 +1049,85 @@ export default function VendorWorkspaceModal({
                       Chronological log of WhatsApp chats, phone calls, in-person meetings, and negotiations.
                     </p>
                   </div>
-                  <button
-                    onClick={() => setIsAddingLog(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b0883d] text-black text-xs font-semibold hover:shadow-glow transition-all cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Log Touchpoint</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowAILogParser(!showAILogParser)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[rgba(205,160,82,0.15)] text-[#cda052] border border-[rgba(205,160,82,0.3)] hover:bg-[rgba(205,160,82,0.25)] text-xs font-semibold transition-all cursor-pointer shadow-sm"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-[#cda052]" />
+                      <span>✨ Paste Chat / Email (AI)</span>
+                    </button>
+                    <button
+                      onClick={() => setIsAddingLog(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b0883d] text-black text-xs font-semibold hover:shadow-glow transition-all cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Log Touchpoint</span>
+                    </button>
+                  </div>
                 </div>
+
+                {/* AI Chat / Email Raw Parser Box */}
+                {showAILogParser && (
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-[#12192a] to-[#0a0d16] border border-[#cda052]/40 shadow-xl space-y-3 animate-fade-in">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h5 className="font-bold text-white text-xs flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-[#cda052]" />
+                          <span>Gemini WhatsApp & Email Log Parser</span>
+                        </h5>
+                        <p className="text-[#8c9bb5] text-[11px] mt-0.5">
+                          Paste a raw chat message, forwarded email, or meeting note from {vendor.name}. Gemini will extract the summary, commitments, and calculate follow-up dates.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setShowAILogParser(false)}
+                        className="p-1 rounded text-[#64748b] hover:text-white"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <textarea
+                      rows={4}
+                      value={rawChatText}
+                      onChange={(e) => setRawChatText(e.target.value)}
+                      placeholder={`e.g. "Hi Hari, we completed the second proto sample today with the revised waistband elasticity. We are dispatching via DHL air express tomorrow. Please review lab dips and sign off by Thursday."`}
+                      className="w-full px-3 py-2 rounded-lg bg-[#07090e] border border-[#222d44] text-xs text-white placeholder:text-[#52607a] outline-none focus:border-[#cda052]"
+                    />
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-[#64748b]">
+                        Extracts: Channel, Executive Summary, Commitments & Next Date
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleParseChatLog}
+                        disabled={isParsingChat || !rawChatText.trim()}
+                        className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b0883d] text-black text-xs font-bold hover:brightness-110 transition-all disabled:opacity-50 cursor-pointer"
+                      >
+                        {isParsingChat ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>Parsing with Gemini...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3.5 h-3.5 fill-black" />
+                            <span>Extract to Journal Form</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {parseChatError && (
+                      <p className="text-[11px] text-rose-400 bg-rose-950/40 border border-rose-900/50 p-2 rounded-lg">
+                        {parseChatError}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {/* Add Log Modal/Box */}
                 {isAddingLog && (

@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@google/genai": "^2.31.0",
     "@supabase/supabase-js": "^2.45.4",
     "clsx": "^2.1.1",
     "lucide-react": "^0.446.0",

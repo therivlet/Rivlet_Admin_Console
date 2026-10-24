@@ -34,7 +34,7 @@ import WorkItemModal, { TYPE_COLOR, STATE_COLOR, PRIORITY_BADGE_COLOR, PRIORITY_
 import ModalPortal from '@/components/ui/ModalPortal';
 import { notify } from '@/lib/notificationContext';
 import { useConfirm } from '@/lib/confirmContext';
-import { promptAndCascadeParentClosure } from '@/lib/workCascade';
+import { syncParentWorkflowHierarchy } from '@/lib/workCascade';
 import AssignPromptModal from '@/components/work/AssignPromptModal';
 
 const COLUMNS: WorkItemState[] = ['New', 'Active', 'In Review', 'Resolved', 'Closed'];
@@ -280,15 +280,13 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
 
     await saveWorkItem(updatedTask);
 
-    if (state === 'Closed' || state === 'Resolved') {
-      const updatedList = workItems.map((w) => (w.id === updatedTask.id ? updatedTask : w));
-      await promptAndCascadeParentClosure({
-        itemJustClosed: updatedTask,
-        allWorkItems: updatedList,
-        confirm,
-        saveWorkItem,
-      });
-    }
+    const updatedList = workItems.map((w) => (w.id === updatedTask.id ? updatedTask : w));
+    await syncParentWorkflowHierarchy({
+      updatedItem: updatedTask,
+      allWorkItems: updatedList,
+      confirm,
+      saveWorkItem,
+    });
   };
 
   const handleAssignAndDrop = async (assignee: string) => {
@@ -322,15 +320,13 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
     await saveWorkItem(updatedTask);
     notify.success('Assigned & Moved', `"${updatedTask.title}" assigned to ${assignee} and moved to ${state}.`);
 
-    if (state === 'Closed' || state === 'Resolved') {
-      const updatedList = workItems.map((w) => (w.id === updatedTask.id ? updatedTask : w));
-      await promptAndCascadeParentClosure({
-        itemJustClosed: updatedTask,
-        allWorkItems: updatedList,
-        confirm,
-        saveWorkItem,
-      });
-    }
+    const updatedList = workItems.map((w) => (w.id === updatedTask.id ? updatedTask : w));
+    await syncParentWorkflowHierarchy({
+      updatedItem: updatedTask,
+      allWorkItems: updatedList,
+      confirm,
+      saveWorkItem,
+    });
   };
 
   const handleCancelDropAssign = () => {
@@ -362,15 +358,13 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
     await saveWorkItem(updatedStory);
     notify.success('Story Assigned & Moved', `"${updatedStory.title}" assigned to ${assignee} and moved to ${state}.`);
 
-    if (state === 'Closed' || state === 'Resolved') {
-      const updatedList = workItems.map((w) => (w.id === updatedStory.id ? updatedStory : w));
-      await promptAndCascadeParentClosure({
-        itemJustClosed: updatedStory,
-        allWorkItems: updatedList,
-        confirm,
-        saveWorkItem,
-      });
-    }
+    const updatedList = workItems.map((w) => (w.id === updatedStory.id ? updatedStory : w));
+    await syncParentWorkflowHierarchy({
+      updatedItem: updatedStory,
+      allWorkItems: updatedList,
+      confirm,
+      saveWorkItem,
+    });
   };
 
   const handleCancelStoryAssign = () => {
@@ -1282,15 +1276,13 @@ export default function BoardView({ initialSprintId }: BoardViewProps) {
                                   updatedAt: new Date().toISOString(),
                                 };
                                 await saveWorkItem(updatedStory);
-                                if (nextState === 'Closed' || nextState === 'Resolved') {
-                                  const updatedList = workItems.map((w) => (w.id === updatedStory.id ? updatedStory : w));
-                                  await promptAndCascadeParentClosure({
-                                    itemJustClosed: updatedStory,
-                                    allWorkItems: updatedList,
-                                    confirm,
-                                    saveWorkItem,
-                                  });
-                                }
+                                const updatedList = workItems.map((w) => (w.id === updatedStory.id ? updatedStory : w));
+                                await syncParentWorkflowHierarchy({
+                                  updatedItem: updatedStory,
+                                  allWorkItems: updatedList,
+                                  confirm,
+                                  saveWorkItem,
+                                });
                               }}
                               className={`text-[9px] px-1.5 py-0.5 rounded border font-medium bg-[#0d121c] focus:outline-none cursor-pointer ${STATE_COLOR[row.state]}`}
                               title="Change story state"

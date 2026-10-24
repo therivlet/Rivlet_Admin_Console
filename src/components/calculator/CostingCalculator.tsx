@@ -26,7 +26,10 @@ import {
   Unlock,
   Copy,
   ArrowLeft,
-  BookOpen
+  BookOpen,
+  Loader2,
+  RefreshCw,
+  X,
 } from 'lucide-react';
 import { PricingInputs, CalculationResult, ScenarioKey, CostingSheet, GarmentBOM, CalculatorDefaults } from '@/lib/types';
 import { 
@@ -220,6 +223,47 @@ export default function CostingCalculator({
   const currentResult: CalculationResult = allResults[activeScenario];
   const { low: lowResult, mid: midResult, high: highResult } = allResults;
 
+  // Gemini AI Pricing & Margin Advisor State
+  const [showAIAdvisor, setShowAIAdvisor] = useState(false);
+  const [advisorData, setAdvisorData] = useState<{
+    statusBadge: string;
+    gstInsight: string;
+    marginAdvice: string;
+    discountRisk: string;
+  } | null>(null);
+  const [isLoadingAdvisor, setIsLoadingAdvisor] = useState(false);
+
+  const handleFetchAdvisor = async () => {
+    setIsLoadingAdvisor(true);
+    setShowAIAdvisor(true);
+    try {
+      const res = await fetch('/api/ai/calculator/advisor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productName: inputs.productName || 'Garment',
+          mrp: inputs.mrp || 2999,
+          targetMargin: inputs.targetMargin || 25,
+          actualMargin: currentResult.grossMargin,
+          breakEvenMrp: currentResult.breakEvenMrp,
+          factoryCost: currentResult.factoryRate,
+          totalCosts: currentResult.totalCosts,
+          gstRate: currentResult.outputRate,
+          currency: curr,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setAdvisorData(data);
+      }
+    } catch (e) {
+      console.error('Advisor error:', e);
+    } finally {
+      setIsLoadingAdvisor(false);
+    }
+  };
+
   // Generic updater
   const updateField = <K extends keyof PricingInputs>(key: K, value: PricingInputs[K]) => {
     setInputs(prev => ({ ...prev, [key]: value }));
@@ -392,6 +436,32 @@ export default function CostingCalculator({
             </button>
           )}
 
+          {/* Gemini AI Pricing Advisor button */}
+          <button
+            type="button"
+            onClick={() => {
+              if (!advisorData) {
+                handleFetchAdvisor();
+              } else {
+                setShowAIAdvisor(!showAIAdvisor);
+              }
+            }}
+            className="px-3 py-1.5 rounded-lg bg-[rgba(205,160,82,0.15)] hover:bg-[rgba(205,160,82,0.25)] border border-[rgba(205,160,82,0.35)] text-[#cda052] text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+            title="Get Gemini AI strategic insights on GST slabs, target factory rates, and margin sensitivity"
+          >
+            {isLoadingAdvisor ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-[#cda052]" />
+                <span>Analyzing Margin...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-3.5 h-3.5 text-[#cda052]" />
+                <span>✨ AI Pricing Advisor</span>
+              </>
+            )}
+          </button>
+
           {/* Currency Toggle */}
           <div className="flex items-center bg-[#171b28] p-1 rounded-lg border border-[#252c40]" role="tablist" aria-label="Pricing currency">
             <button
@@ -517,6 +587,96 @@ export default function CostingCalculator({
           </button>
         </div>
       </div>
+
+      {/* Gemini AI Strategic Pricing Advisor Card */}
+      {showAIAdvisor && (
+        <div className="rounded-2xl border border-[#cda052]/50 bg-gradient-to-br from-[#131a2a] via-[#0d121e] to-[#07090e] p-5 shadow-2xl space-y-4 animate-fade-in relative overflow-hidden">
+          <div className="flex items-start justify-between gap-3 border-b border-[#212b40] pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-[rgba(205,160,82,0.15)] border border-[rgba(205,160,82,0.3)] flex items-center justify-center text-[#cda052]">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-white">Google Gemini Pricing & Margin Strategy</h4>
+                  {advisorData?.statusBadge && (
+                    <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase font-mono bg-emerald-950/60 text-emerald-400 border border-emerald-800/60">
+                      {advisorData.statusBadge}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-[#8c9bb5] mt-0.5">
+                  Real-time economic advisory on GST slab efficiency, maximum factory cost tolerance, and discount thresholds.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleFetchAdvisor}
+                disabled={isLoadingAdvisor}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#192236] hover:bg-[#202c46] text-[#cbd5e1] hover:text-white border border-[#2b3a58] text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {isLoadingAdvisor ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Analyzing...</span>
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-3 h-3 text-[#cda052]" />
+                    <span>Re-analyze</span>
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAIAdvisor(false)}
+                className="p-1 rounded-lg text-[#64748b] hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {isLoadingAdvisor ? (
+            <div className="flex items-center justify-center py-6 text-xs text-[#8c9bb5] gap-2">
+              <Loader2 className="w-4 h-4 animate-spin text-[#cda052]" />
+              <span>Gemini is evaluating multi-scenario unit contribution, GST thresholds, and target margin...</span>
+            </div>
+          ) : advisorData ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-1">
+              <div className="p-3.5 rounded-xl bg-[#080b13] border border-[#1e273b] space-y-1">
+                <span className="text-[10px] uppercase font-mono tracking-wider text-[#cda052] font-semibold block">
+                  1. GST Slab & Price Threshold
+                </span>
+                <p className="text-xs text-[#cbd5e1] leading-relaxed">
+                  {advisorData.gstInsight}
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-[#080b13] border border-[#1e273b] space-y-1">
+                <span className="text-[10px] uppercase font-mono tracking-wider text-emerald-400 font-semibold block">
+                  2. Factory Cost & Margin Target
+                </span>
+                <p className="text-xs text-[#cbd5e1] leading-relaxed">
+                  {advisorData.marginAdvice}
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-[#080b13] border border-[#1e273b] space-y-1">
+                <span className="text-[10px] uppercase font-mono tracking-wider text-purple-400 font-semibold block">
+                  3. Discount & CAC Sensitivity
+                </span>
+                <p className="text-xs text-[#cbd5e1] leading-relaxed">
+                  {advisorData.discountRisk}
+                </p>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      )}
 
       {/* Prominent Welcome & Setup Window: "You can start with your new calculator" */}
       {(!currentSheetId || showNewCalcWindow) && (

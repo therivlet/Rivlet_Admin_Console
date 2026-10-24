@@ -18,8 +18,11 @@ import {
   User,
   LineChart as LineChartIcon,
   Calendar,
-  Grid
+  Grid,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
+import { useAdminStore } from '@/lib/store';
 import { WorkItem, Sprint } from '@/lib/types';
 
 interface TodaysFocusModernProps {
@@ -77,6 +80,46 @@ export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusMod
   const closedItems = useMemo(() => sprintItems.filter((w) => w.state === 'Closed' || w.state === 'Resolved'), [sprintItems]);
   const inReviewItems = useMemo(() => sprintItems.filter((w) => w.state === 'In Review'), [sprintItems]);
   const newItems = useMemo(() => sprintItems.filter((w) => w.state === 'New'), [sprintItems]);
+
+  const { documents, budgetItems, budgetSettings, pipelineItems } = useAdminStore();
+  const [briefing, setBriefing] = useState<{ headline: string; briefing: string } | null>(null);
+  const [isLoadingBriefing, setIsLoadingBriefing] = useState(false);
+
+  const handleFetchBriefing = async () => {
+    setIsLoadingBriefing(true);
+    try {
+      const expiringDocs = documents.filter((d) => d.status === 'Expiring Soon' || d.status === 'Expired');
+      const sumPlannedBudget = budgetItems.reduce((sum, b) => sum + b.plannedAmount, 0);
+      const budgetPlanned = budgetSettings.totalPlannedOverride ?? sumPlannedBudget;
+      const budgetActual = budgetItems.reduce((sum, b) => sum + b.actualAmount, 0);
+      const budgetPct = budgetPlanned > 0 ? Math.round((budgetActual / budgetPlanned) * 100) : 0;
+      const inProdStyles = pipelineItems.filter((p) => ['PO Issued', 'In Production', 'QC Inspection'].includes(p.stage));
+
+      const res = await fetch('/api/ai/dashboard/briefing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          activeWorkItemsCount: activeItems.length,
+          overdueTasksCount: overdueItems.length,
+          dueTodayTasksCount: dueTodayItems.length,
+          expiringDocsCount: expiringDocs.length,
+          currentSprintName: currentSprint?.name || '',
+          inProductionCount: inProdStyles.length,
+          budgetBurnPercent: budgetPct,
+          activeStyles: inProdStyles.map((s) => s.styleName),
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setBriefing(data);
+      }
+    } catch (e) {
+      console.error('Briefing error:', e);
+    } finally {
+      setIsLoadingBriefing(false);
+    }
+  };
 
   // Sprint Progress & Pacing Metrics
   const totalTasks = sprintItems.length;
@@ -325,6 +368,59 @@ export default function TodaysFocusModern({ workItems, sprints }: TodaysFocusMod
             <span>Open Sprint Board</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </Link>
+        </div>
+      </div>
+
+      {/* Google Gemini AI Executive Briefing Card */}
+      <div className="mt-4 p-3.5 sm:p-4 rounded-xl bg-gradient-to-r from-[#12192a] via-[#0b101c] to-[#121724] border border-[#cda052]/30 shadow-lg relative z-10 transition-all">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-[rgba(205,160,82,0.15)] border border-[rgba(205,160,82,0.3)] flex items-center justify-center text-[#cda052] flex-shrink-0 mt-0.5">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase font-mono tracking-wider text-[#cda052] font-bold">
+                  AI Operations Pulse • Google Gemini
+                </span>
+                {briefing?.headline && (
+                  <span className="text-xs font-semibold text-white">
+                    — {briefing.headline}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-[#cbd5e1] mt-1 leading-relaxed">
+                {isLoadingBriefing ? (
+                  <span className="text-[#8c9bb5] flex items-center gap-2">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#cda052]" />
+                    Analyzing active tasks, expiring certificates, and pipeline milestones with Gemini...
+                  </span>
+                ) : briefing ? (
+                  briefing.briefing
+                ) : (
+                  `Today has ${dueTodayItems.length} task${dueTodayItems.length === 1 ? '' : 's'} due and ${overdueItems.length} overdue item${overdueItems.length === 1 ? '' : 's'} across ${activeItems.length} active priorities. Click to generate instant situational awareness with Google Gemini.`
+                )}
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={handleFetchBriefing}
+            disabled={isLoadingBriefing}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[rgba(205,160,82,0.15)] hover:bg-[rgba(205,160,82,0.25)] text-[#cda052] border border-[rgba(205,160,82,0.3)] text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer flex-shrink-0 shadow-sm"
+          >
+            {isLoadingBriefing ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Thinking...</span>
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>{briefing ? 'Refresh Pulse' : 'Generate Pulse'}</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 

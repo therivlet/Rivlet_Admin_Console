@@ -18,7 +18,11 @@ import {
   AlertCircle,
   Eye,
   Code,
-  Upload
+  Upload,
+  Sparkles,
+  Loader2,
+  Send,
+  X
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { KBArticle } from '@/lib/types';
@@ -51,6 +55,46 @@ function KnowledgeBaseContent() {
   const [editError, setEditError] = useState<string | null>(null);
   const [editorMode, setEditorMode] = useState<'write' | 'preview'>('write');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // AI Copilot state
+  const [aiCopilotQuery, setAiCopilotQuery] = useState('');
+  const [isAiSearching, setIsAiSearching] = useState(false);
+  const [aiAnswer, setAiAnswer] = useState<{
+    answer: string;
+    referencedArticles: string[];
+    confidence: string;
+  } | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  const handleAskCopilot = async () => {
+    if (!aiCopilotQuery.trim()) return;
+    setIsAiSearching(true);
+    setAiError(null);
+    try {
+      const res = await fetch('/api/ai/knowledge/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: aiCopilotQuery,
+          articles: kbArticles.map((a) => ({
+            id: a.id,
+            title: a.title,
+            category: a.category,
+            content: a.content,
+          })),
+        }),
+      });
+      if (!res.ok) {
+        throw new Error('Failed to query Knowledge Copilot');
+      }
+      const data = await res.json();
+      setAiAnswer(data);
+    } catch (e: any) {
+      setAiError(e.message || 'Error asking Copilot');
+    } finally {
+      setIsAiSearching(false);
+    }
+  };
 
   const handleUploadMdFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -167,6 +211,97 @@ function KnowledgeBaseContent() {
           <Plus className="w-4 h-4 stroke-[2.5]" />
           <span>New SOP / Article</span>
         </button>
+      </div>
+
+      {/* AI Copilot Ask Bar */}
+      <div className="bg-[#0e121b] border border-[#1e2638] rounded-2xl p-4 sm:p-5 shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-80 h-32 bg-gradient-to-br from-[#cda052]/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-[rgba(205,160,82,0.15)] text-[#e6c875] border border-[rgba(205,160,82,0.3)]">
+                <Sparkles className="w-4 h-4 text-[#cda052]" />
+              </div>
+              <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                Ask Rivlet SOPs & Guidelines Copilot
+              </span>
+            </div>
+            <span className="text-[10px] text-[#94a3b8] font-mono">Google Gemini 3.5</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="e.g. What is our acceptable AQL 2.5 defect limit or French Terry GSM shrinkage?"
+              value={aiCopilotQuery}
+              onChange={(e) => setAiCopilotQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAskCopilot();
+                }
+              }}
+              className="flex-1 bg-[#07090e] border border-[#1e2638] focus:border-[#cda052] rounded-xl px-4 py-2.5 text-xs text-white placeholder-[#64748b] focus:outline-none transition-colors"
+            />
+            <button
+              onClick={handleAskCopilot}
+              disabled={isAiSearching || !aiCopilotQuery.trim()}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-bold text-xs flex items-center gap-1.5 hover:brightness-110 disabled:opacity-50 transition-all flex-shrink-0 shadow-glow"
+            >
+              {isAiSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+              <span>Ask SOPs</span>
+            </button>
+          </div>
+
+          {aiError && (
+            <div className="text-xs text-rose-400 bg-rose-950/40 p-2.5 rounded-lg border border-rose-800/60">
+              {aiError}
+            </div>
+          )}
+
+          {aiAnswer && (
+            <div className="mt-2 p-4 bg-[#07090e] rounded-xl border border-[#1e2638] space-y-3 relative">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-[#cda052] font-semibold">
+                  SOP Verified Answer • Confidence: {aiAnswer.confidence}
+                </span>
+                <button
+                  onClick={() => setAiAnswer(null)}
+                  className="text-[#94a3b8] hover:text-white p-1 rounded hover:bg-[#141824]"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <div className="text-xs text-[#cbd5e1] leading-relaxed whitespace-pre-wrap font-sans">
+                {aiAnswer.answer}
+              </div>
+              {aiAnswer.referencedArticles && aiAnswer.referencedArticles.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] text-[#94a3b8] font-mono">Referenced:</span>
+                  {aiAnswer.referencedArticles.map((refTitle, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        const target = kbArticles.find(
+                          (a) =>
+                            a.title.toLowerCase() === refTitle.toLowerCase() ||
+                            a.title.toLowerCase().includes(refTitle.toLowerCase())
+                        );
+                        if (target) {
+                          setSelectedArticleId(target.id);
+                          setIsEditing(false);
+                        }
+                      }}
+                      className="text-[10px] px-2 py-0.5 rounded bg-[#141824] text-[#e6c875] border border-[#263147] hover:border-[#cda052] transition-colors"
+                    >
+                      {refTitle}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Main Grid: Sidebar + Article View */}
