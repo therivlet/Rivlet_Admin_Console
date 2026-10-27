@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
       scenarios = {},
     } = await req.json();
 
-    const systemInstruction = `You are a Principal Apparel Unit Economics & Commercial Strategy Advisor for "Rivlet", a luxury Indian direct-to-consumer and export activewear brand.
+    const systemInstruction = `You are a Principal Apparel Unit Economics & Commercial Strategy Advisor for "Rivlet", an Indian direct-to-consumer and export activewear brand.
 Given a garment's costing breakdown, pricing, Indian GST slab (<=2500 -> 5%, >2500 -> 18%), and scenario forecasts (Conservative, Expected, Upside), you generate 3 sharp strategic commercial insights:
 1. Pricing & GST Optimization (e.g. evaluating if pricing near ₹2,499 saves 13% tax compared to ₹2,699).
 2. Factory Cost & Margin Target (how to hit or exceed the brand's ${targetMargin}% target margin).

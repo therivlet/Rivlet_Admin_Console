@@ -22,7 +22,7 @@ export default function RivletLoader({
 
   return (
     <div className={containerClasses}>
-      {/* Background Luxury Ambient Glows */}
+      {/* Background Ambient Glows */}
       <div 
         aria-hidden="true" 
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 sm:w-[450px] h-80 sm:h-[450px] bg-[rgba(205,160,82,0.12)] rounded-full blur-[130px] pointer-events-none" 
@@ -46,7 +46,7 @@ export default function RivletLoader({
             <RivletLogo 
               variant="gold" 
               size={size === 'sm' ? 'md' : 'lg'} 
-              className="animate-luxury-pulse" 
+              className="animate-brand-pulse" 
             />
           </div>
         </div>

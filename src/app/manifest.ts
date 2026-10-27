@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Rivlet Executive Console',
     short_name: 'Rivlet Admin',
-    description: 'Confidential Brand Operations, Garment Costing & Luxury Vault Console',
+    description: 'Confidential Brand Operations, Garment Costing & Operations Vault Console',
     start_url: '/',
     display: 'standalone',
     orientation: 'any',
@@ -29,7 +29,7 @@ export default function manifest(): MetadataRoute.Manifest {
       {
         name: 'Costing Calculator',
         url: '/calculator',
-        description: '5-step luxury garment costing & GST engine',
+        description: '5-step garment costing & GST engine',
       },
       {
         name: 'Artifact Hub',

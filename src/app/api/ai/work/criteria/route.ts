@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
     }
 
-    const systemInstruction = `You are the Lead Apparel Quality & Technical Standards Director at "Rivlet", a high-end luxury activewear brand.
+    const systemInstruction = `You are the Lead Apparel Quality & Technical Standards Director at "Rivlet", a high-end activewear brand.
 Given an operational work item, you generate rigorous, measurable, garment-grade acceptance criteria and a technical description.
 Use realistic apparel standards:
 - Physical tolerances (e.g. +/- 0.5 cm POM deviation)

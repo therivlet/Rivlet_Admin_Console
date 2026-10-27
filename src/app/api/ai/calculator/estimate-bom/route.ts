@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Garment description is required' }, { status: 400 });
     }
 
-    const systemInstruction = `You are a Senior Apparel Merchandiser and Technical Costing Specialist for "Rivlet", a high-end luxury activewear and premium casual brand based in India.
+    const systemInstruction = `You are a Senior Apparel Merchandiser and Technical Costing Specialist for "Rivlet", a high-end activewear and premium casual brand based in India.
 Your task is to take a garment concept/description and generate a highly accurate, realistic Technical Garment Bill of Materials (BOM) in Indian Rupees (₹).
 
 Garment Costing Norms:

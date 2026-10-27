@@ -136,7 +136,7 @@ function CompliancePageInner() {
       />
 
       {/* Navigation Sub-Tabs Bar */}
-      <div className="bg-[#1e140e] dark:bg-[#0c101a] p-1.5 rounded-2xl border border-[#3d2b20] dark:border-[#1a2233] flex items-center gap-1 overflow-x-auto">
+      <div className="bg-[#fcfaf7] dark:bg-[#0c101a] p-1.5 rounded-2xl border border-[#e8ded3] dark:border-[#1a2233] flex items-center gap-1 overflow-x-auto shadow-sm">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.key;
@@ -146,8 +146,8 @@ function CompliancePageInner() {
               onClick={() => setTab(tab.key)}
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0 ${
                 isActive
-                  ? 'bg-[rgba(205,160,82,0.22)] text-[#f7d88c] border border-[#cda052]/50 shadow-sm'
-                  : 'text-[#a99a8b] hover:text-white hover:bg-white/[0.04] border border-transparent'
+                  ? 'bg-[rgba(205,160,82,0.18)] dark:bg-[rgba(205,160,82,0.22)] text-[#8c5d19] dark:text-[#f7d88c] border border-[#cda052]/50 shadow-sm'
+                  : 'text-[#6b584a] dark:text-[#a99a8b] hover:text-[#241812] dark:hover:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.04] border border-transparent'
               }`}
             >
               <Icon className={`w-4 h-4 ${isActive ? 'text-[#cda052]' : 'text-[#8895ad]'}`} />

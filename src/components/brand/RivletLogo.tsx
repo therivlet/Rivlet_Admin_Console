@@ -50,7 +50,7 @@ export default function RivletLogo({
         return { filter: 'brightness(0) invert(1)' };
       case 'white-gold':
         return {
-          // Softened luxury champagne-ivory tone (reduced glare/brightness, no harsh light-bulb halo)
+          // Softened champagne-ivory tone (reduced glare/brightness, no harsh light-bulb halo)
           filter: 'brightness(0) invert(82%) sepia(18%) saturate(220%) hue-rotate(5deg) brightness(92%) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4))',
         };
       case 'dark':
@@ -72,7 +72,7 @@ export default function RivletLogo({
     <div className={`inline-flex items-center select-none ${className}`}>
       <img
         src="/brand/rivlet-logo.png"
-        alt="Rivlet Luxury Apparel"
+        alt="Rivlet Apparel"
         style={getFilterStyle()}
         className={`object-contain transition-all duration-200 ${sizeMap[size]}`}
       />
@@ -111,7 +111,7 @@ export function RivletWaveIcon({
         return { filter: 'brightness(0) invert(1)' };
       case 'white-gold':
         return {
-          // Softened luxury champagne-ivory tone (reduced glare/brightness, no harsh light-bulb halo)
+          // Softened champagne-ivory tone (reduced glare/brightness, no harsh light-bulb halo)
           filter: 'brightness(0) invert(82%) sepia(18%) saturate(220%) hue-rotate(5deg) brightness(92%) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4))',
         };
       case 'dark':

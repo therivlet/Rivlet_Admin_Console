@@ -202,63 +202,63 @@ export default function IcegateCustomsView({
       {/* Overview Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Metric 1 */}
-        <div className="bg-[#18100b] dark:bg-[#090c14] p-4 rounded-xl border border-[#3d2b20] dark:border-[#1a2233]">
-          <div className="flex items-center justify-between text-xs text-[#a99a8b] mb-1">
+        <div className="bg-white dark:bg-[#090c14] p-4 rounded-xl border border-[#e8ded3] dark:border-[#1a2233] shadow-sm">
+          <div className="flex items-center justify-between text-xs text-[#6b584a] dark:text-[#a99a8b] mb-1">
             <span>Raw Material Imports (BOE)</span>
-            <ArrowDownLeft className="w-4 h-4 text-sky-400" />
+            <ArrowDownLeft className="w-4 h-4 text-sky-500 dark:text-sky-400" />
           </div>
-          <span className="text-2xl font-bold text-white font-mono">
+          <span className="text-2xl font-bold text-[#241812] dark:text-white font-mono">
             ₹{(totalImports / 100000).toFixed(2)}L
           </span>
-          <p className="text-[11px] text-[#a99a8b] mt-1">Yarns, luxury linen & trim imports</p>
+          <p className="text-[11px] text-[#6b584a] dark:text-[#a99a8b] mt-1">Yarns, premium linen & trim imports</p>
         </div>
 
         {/* Metric 2 */}
-        <div className="bg-[#18100b] dark:bg-[#090c14] p-4 rounded-xl border border-[#3d2b20] dark:border-[#1a2233]">
-          <div className="flex items-center justify-between text-xs text-[#a99a8b] mb-1">
+        <div className="bg-white dark:bg-[#090c14] p-4 rounded-xl border border-[#e8ded3] dark:border-[#1a2233] shadow-sm">
+          <div className="flex items-center justify-between text-xs text-[#6b584a] dark:text-[#a99a8b] mb-1">
             <span>Finished Garment Exports (SB)</span>
-            <ArrowUpRight className="w-4 h-4 text-emerald-400" />
+            <ArrowUpRight className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
           </div>
-          <span className="text-2xl font-bold text-emerald-400 font-mono">
+          <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-400 font-mono">
             ₹{(totalExports / 100000).toFixed(2)}L
           </span>
-          <p className="text-[11px] text-[#a99a8b] mt-1">Ready-to-wear seasonal orders</p>
+          <p className="text-[11px] text-[#6b584a] dark:text-[#a99a8b] mt-1">Ready-to-wear seasonal orders</p>
         </div>
 
         {/* Metric 3 */}
-        <div className="bg-[#18100b] dark:bg-[#090c14] p-4 rounded-xl border border-[#3d2b20] dark:border-[#1a2233]">
-          <div className="flex items-center justify-between text-xs text-[#a99a8b] mb-1">
+        <div className="bg-white dark:bg-[#090c14] p-4 rounded-xl border border-[#e8ded3] dark:border-[#1a2233] shadow-sm">
+          <div className="flex items-center justify-between text-xs text-[#6b584a] dark:text-[#a99a8b] mb-1">
             <span>Duty Drawback Realized</span>
-            <DollarSign className="w-4 h-4 text-[#f7d88c]" />
+            <DollarSign className="w-4 h-4 text-[#8c5d19] dark:text-[#f7d88c]" />
           </div>
-          <span className="text-2xl font-bold text-[#f7d88c] font-mono">
+          <span className="text-2xl font-bold text-[#8c5d19] dark:text-[#f7d88c] font-mono">
             ₹{(totalDrawback / 1000).toFixed(1)}k
           </span>
-          <p className="text-[11px] text-[#a99a8b] mt-1">All Industry Rates (AIR) credited</p>
+          <p className="text-[11px] text-[#6b584a] dark:text-[#a99a8b] mt-1">All Industry Rates (AIR) credited</p>
         </div>
 
         {/* Metric 4 */}
-        <div className="bg-[#18100b] dark:bg-[#090c14] p-4 rounded-xl border border-[#3d2b20] dark:border-[#1a2233]">
-          <div className="flex items-center justify-between text-xs text-[#a99a8b] mb-1">
+        <div className="bg-white dark:bg-[#090c14] p-4 rounded-xl border border-[#e8ded3] dark:border-[#1a2233] shadow-sm">
+          <div className="flex items-center justify-between text-xs text-[#6b584a] dark:text-[#a99a8b] mb-1">
             <span>RoDTEP Export Scrips</span>
-            <FileCheck2 className="w-4 h-4 text-purple-400" />
+            <FileCheck2 className="w-4 h-4 text-purple-500 dark:text-purple-400" />
           </div>
-          <span className="text-2xl font-bold text-purple-300 font-mono">
+          <span className="text-2xl font-bold text-purple-700 dark:text-purple-300 font-mono">
             ₹{(totalRodtep / 1000).toFixed(1)}k
           </span>
-          <p className="text-[11px] text-[#a99a8b] mt-1">Transferable electronic duty scrips</p>
+          <p className="text-[11px] text-[#6b584a] dark:text-[#a99a8b] mt-1">Transferable electronic duty scrips</p>
         </div>
       </div>
 
       {/* Consignment Planner Sheet & Actions */}
-      <div className="bg-[#18100b] dark:bg-[#090c14] rounded-2xl border border-[#3d2b20] dark:border-[#1a2233] p-5 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/10">
+      <div className="bg-white dark:bg-[#090c14] rounded-2xl border border-[#e8ded3] dark:border-[#1a2233] p-5 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#e8ded3] dark:border-white/10">
           <div>
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <h3 className="text-base font-bold text-[#241812] dark:text-white flex items-center gap-2">
               <Ship className="w-4 h-4 text-[#cda052]" />
               <span>ICEGATE Customs Clearance Planner Sheet (Apparel & Textiles)</span>
             </h3>
-            <p className="text-xs text-[#a99a8b]">
+            <p className="text-xs text-[#6b584a] dark:text-[#a99a8b]">
               Tracks cross-border consignments through statutory CBIC RMS, duty payment, and release orders
             </p>
           </div>
@@ -266,7 +266,7 @@ export default function IcegateCustomsView({
           <div className="flex items-center gap-2">
             <button
               onClick={handleExportPlanner}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/40 hover:bg-white/10 text-xs font-semibold text-white border border-white/10 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-black/40 dark:hover:bg-white/10 text-xs font-semibold text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 transition-colors"
             >
               <Download className="w-3.5 h-3.5 text-[#cda052]" />
               <span>Export Planner</span>
@@ -284,20 +284,20 @@ export default function IcegateCustomsView({
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-2 my-4">
           <div className="relative min-w-[200px] flex-1 sm:max-w-xs">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#a99a8b]" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#6b584a] dark:text-[#a99a8b]" />
             <input
               type="text"
               placeholder="Search BE/SB No, port, CHA, fabrics..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-black/40 text-xs text-white placeholder-[#8895ad] border border-white/10 focus:border-[#cda052] outline-none"
+              className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-xs text-[#241812] dark:text-white placeholder-[#8895ad] border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
             />
           </div>
 
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value as any)}
-            className="px-3 py-1.5 rounded-xl bg-black/40 text-xs text-white border border-white/10 focus:border-[#cda052] outline-none"
+            className="px-3 py-1.5 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-xs text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
           >
             <option value="all">All Declarations</option>
             <option value="import_boe">Imports (Bills of Entry)</option>
@@ -307,7 +307,7 @@ export default function IcegateCustomsView({
           <select
             value={stageFilter}
             onChange={(e) => setStageFilter(e.target.value)}
-            className="px-3 py-1.5 rounded-xl bg-black/40 text-xs text-white border border-white/10 focus:border-[#cda052] outline-none"
+            className="px-3 py-1.5 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-xs text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
           >
             <option value="all">All Stages</option>
             <option value="filed">Filed on ICEGATE</option>
@@ -319,10 +319,10 @@ export default function IcegateCustomsView({
         </div>
 
         {/* Consignments Spreadsheet Matrix */}
-        <div className="overflow-x-auto rounded-xl border border-white/5">
+        <div className="overflow-x-auto rounded-xl border border-[#e8ded3] dark:border-white/5">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="bg-black/40 text-[#a99a8b] uppercase text-[10px] border-b border-white/5">
+              <tr className="bg-[#f7f3ee] dark:bg-black/40 text-[#6b584a] dark:text-[#a99a8b] uppercase text-[10px] border-b border-[#e8ded3] dark:border-white/5">
                 <th className="py-2.5 px-3 font-semibold">Type & Number</th>
                 <th className="py-2.5 px-3 font-semibold">Port & Filing Date</th>
                 <th className="py-2.5 px-3 font-semibold">HSN & Commodity</th>
@@ -333,7 +333,7 @@ export default function IcegateCustomsView({
                 <th className="py-2.5 px-3 font-semibold text-right">Update Stage</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-[#f0e8df] dark:divide-white/5">
               {filtered.map((item) => (
                 <tr key={item.id} className="hover:bg-white/[0.02] transition-colors">
                   {/* Type & Number */}
@@ -349,10 +349,10 @@ export default function IcegateCustomsView({
                         </span>
                       )}
                       <div>
-                        <span className="font-mono font-bold text-white block">
+                        <span className="font-mono font-bold text-[#241812] dark:text-white block">
                           {item.declarationNumber}
                         </span>
-                        <span className="text-[10px] text-[#8895ad] uppercase">
+                        <span className="text-[10px] text-[#6b584a] dark:text-[#8895ad] uppercase font-semibold">
                           {item.declarationType === 'import_boe' ? 'Import BOE' : 'Export SB'}
                         </span>
                       </div>
@@ -361,23 +361,23 @@ export default function IcegateCustomsView({
 
                   {/* Port & Filing Date */}
                   <td className="py-3 px-3 whitespace-nowrap">
-                    <div className="font-semibold text-white">{item.portName}</div>
-                    <div className="text-[10px] font-mono text-[#cda052]">
+                    <div className="font-semibold text-[#241812] dark:text-white">{item.portName}</div>
+                    <div className="text-[10px] font-mono text-[#8c5d19] dark:text-[#cda052] font-semibold">
                       {item.portCode} • {item.declarationDate}
                     </div>
                   </td>
 
                   {/* HSN & Goods */}
                   <td className="py-3 px-3 max-w-[260px]">
-                    <div className="font-medium text-white truncate">{item.goodsDescription}</div>
-                    <div className="text-[10px] text-[#8895ad]">
-                      HSN Chapter: <span className="text-[#f7d88c] font-mono font-semibold">{item.hsnChapter}</span>
+                    <div className="font-medium text-[#241812] dark:text-white truncate">{item.goodsDescription}</div>
+                    <div className="text-[10px] text-[#6b584a] dark:text-[#8895ad]">
+                      HSN Chapter: <span className="text-[#8c5d19] dark:text-[#f7d88c] font-mono font-semibold">{item.hsnChapter}</span>
                       {item.esanchitIrnList.length > 0 && ` • ${item.esanchitIrnList.length} e-Sanchit IRNs`}
                     </div>
                   </td>
 
                   {/* Invoice Value */}
-                  <td className="py-3 px-3 font-mono text-white whitespace-nowrap">
+                  <td className="py-3 px-3 font-mono text-[#241812] dark:text-white font-semibold whitespace-nowrap">
                     ₹{item.invoiceValueInr.toLocaleString('en-IN')}
                   </td>
 
@@ -385,19 +385,19 @@ export default function IcegateCustomsView({
                   <td className="py-3 px-3 font-mono whitespace-nowrap">
                     {item.declarationType === 'import_boe' ? (
                       <div>
-                        <span className="text-rose-300 block">
+                        <span className="text-rose-600 dark:text-rose-300 block font-semibold">
                           Duty: ₹{item.customsDutyInr.toLocaleString('en-IN')}
                         </span>
-                        <span className="text-emerald-400 text-[10px] block">
+                        <span className="text-emerald-700 dark:text-emerald-400 text-[10px] block font-semibold">
                           IGST: ₹{item.igstPaidInr.toLocaleString('en-IN')} (ITC)
                         </span>
                       </div>
                     ) : (
                       <div>
-                        <span className="text-[#f7d88c] block">
+                        <span className="text-[#8c5d19] dark:text-[#f7d88c] block font-semibold">
                           Drawback: ₹{item.drawbackClaimedInr.toLocaleString('en-IN')}
                         </span>
-                        <span className="text-purple-300 text-[10px] block">
+                        <span className="text-purple-700 dark:text-purple-300 text-[10px] block font-semibold">
                           RoDTEP: ₹{item.rodtepClaimedInr.toLocaleString('en-IN')}
                         </span>
                       </div>
@@ -405,7 +405,7 @@ export default function IcegateCustomsView({
                   </td>
 
                   {/* CHA */}
-                  <td className="py-3 px-3 text-[#cbd5e1] whitespace-nowrap">
+                  <td className="py-3 px-3 text-[#4a3b32] dark:text-[#cbd5e1] whitespace-nowrap">
                     {item.chaName}
                   </td>
 
@@ -419,7 +419,7 @@ export default function IcegateCustomsView({
                     <select
                       value={item.currentStage}
                       onChange={(e) => handleStageChange(item.id, e.target.value as CustomsStage)}
-                      className="px-2 py-1 rounded bg-black/60 text-white text-[11px] border border-white/10 outline-none"
+                      className="px-2 py-1 rounded bg-slate-100 dark:bg-black/60 text-[#241812] dark:text-white text-[11px] border border-[#d8c8b8] dark:border-white/10 outline-none"
                     >
                       <option value="draft">Draft</option>
                       <option value="filed">Filed</option>
@@ -438,16 +438,16 @@ export default function IcegateCustomsView({
 
       {/* Modal: Add Consignment */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#1e140e] dark:bg-[#0c101a] w-full max-w-xl rounded-2xl border border-[#3d2b20] dark:border-[#1a2233] p-5 sm:p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-[#0c101a] w-full max-w-xl rounded-2xl border border-[#e8ded3] dark:border-[#1a2233] p-5 sm:p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-[#e8ded3] dark:border-white/10 mb-4">
+              <h3 className="text-base font-bold text-[#241812] dark:text-white flex items-center gap-2">
                 <Ship className="w-4 h-4 text-[#cda052]" />
                 <span>Record New ICEGATE Consignment Declaration</span>
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded-lg text-[#a99a8b] hover:text-white"
+                className="p-1 rounded-lg text-[#6b584a] dark:text-[#a99a8b] hover:text-[#241812] dark:hover:text-white"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -456,32 +456,32 @@ export default function IcegateCustomsView({
             <form onSubmit={handleCreateDeclaration} className="space-y-3.5 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[#a99a8b] mb-1 font-medium">Declaration Type</label>
+                  <label className="block text-[#4a3b32] dark:text-[#a99a8b] mb-1 font-medium">Declaration Type</label>
                   <select
                     value={decType}
                     onChange={(e) => setDecType(e.target.value as CustomsDeclarationType)}
-                    className="w-full px-3 py-2 rounded-xl bg-black/40 text-white border border-white/10 outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 outline-none"
                   >
                     <option value="import_boe">Import (Bill of Entry - BOE)</option>
                     <option value="export_sb">Export (Shipping Bill - SB)</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[#a99a8b] mb-1 font-medium">BE / SB Number *</label>
+                  <label className="block text-[#4a3b32] dark:text-[#a99a8b] mb-1 font-medium">BE / SB Number *</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. BE-9948210 / SB-10492"
                     value={decNumber}
                     onChange={(e) => setDecNumber(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-black/40 text-white font-mono border border-white/10 outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/40 text-[#241812] dark:text-white font-mono border border-[#d8c8b8] dark:border-white/10 outline-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[#a99a8b] mb-1 font-medium">Port of Clearance</label>
+                  <label className="block text-[#4a3b32] dark:text-[#a99a8b] mb-1 font-medium">Port of Clearance</label>
                   <select
                     value={portCode}
                     onChange={(e) => {
@@ -490,7 +490,7 @@ export default function IcegateCustomsView({
                       if (e.target.value === 'INBLR4') setPortName('Bangalore Air Cargo');
                       if (e.target.value === 'INNSA1') setPortName('Nhava Sheva Sea Port');
                     }}
-                    className="w-full px-3 py-2 rounded-xl bg-black/40 text-white border border-white/10 outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 outline-none"
                   >
                     <option value="INMAA1">INMAA1 - Chennai Sea</option>
                     <option value="INBLR4">INBLR4 - Bangalore Air</option>
@@ -498,74 +498,74 @@ export default function IcegateCustomsView({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[#a99a8b] mb-1 font-medium">Filing Date</label>
+                  <label className="block text-[#4a3b32] dark:text-[#a99a8b] mb-1 font-medium">Filing Date</label>
                   <input
                     type="date"
                     value={decDate}
                     onChange={(e) => setDecDate(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-black/40 text-white border border-white/10 outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[#a99a8b] mb-1 font-medium">Goods / Commodity Description *</label>
+                <label className="block text-[#4a3b32] dark:text-[#a99a8b] mb-1 font-medium">Goods / Commodity Description *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Combed Cotton Yarn, Mulberry Silk, Knitted Linen Blends"
                   value={goodsDesc}
                   onChange={(e) => setGoodsDesc(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-black/40 text-white border border-white/10 outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-[#a99a8b] mb-1 font-medium">Invoice Value (INR)</label>
+                  <label className="block text-[#4a3b32] dark:text-[#a99a8b] mb-1 font-medium">Invoice Value (INR)</label>
                   <input
                     type="number"
                     value={invValue}
                     onChange={(e) => setInvValue(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl bg-black/40 text-white font-mono border border-white/10 outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/40 text-[#241812] dark:text-white font-mono border border-[#d8c8b8] dark:border-white/10 outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-[#a99a8b] mb-1 font-medium">Customs Duty (INR)</label>
+                  <label className="block text-[#4a3b32] dark:text-[#a99a8b] mb-1 font-medium">Customs Duty (INR)</label>
                   <input
                     type="number"
                     value={dutyValue}
                     onChange={(e) => setDutyValue(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl bg-black/40 text-white font-mono border border-white/10 outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/40 text-[#241812] dark:text-white font-mono border border-[#d8c8b8] dark:border-white/10 outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-[#a99a8b] mb-1 font-medium">IGST Paid (INR)</label>
+                  <label className="block text-[#4a3b32] dark:text-[#a99a8b] mb-1 font-medium">IGST Paid (INR)</label>
                   <input
                     type="number"
                     value={igstValue}
                     onChange={(e) => setIgstValue(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl bg-black/40 text-white font-mono border border-white/10 outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/40 text-[#241812] dark:text-white font-mono border border-[#d8c8b8] dark:border-white/10 outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[#a99a8b] mb-1 font-medium">Customs Broker (CHA Name)</label>
+                <label className="block text-[#4a3b32] dark:text-[#a99a8b] mb-1 font-medium">Customs Broker (CHA Name)</label>
                 <input
                   type="text"
                   placeholder="e.g. Apex Trans-Maritime Customs Brokers"
                   value={chaName}
                   onChange={(e) => setChaName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-black/40 text-white border border-white/10 outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 outline-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/10">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#e8ded3] dark:border-white/10">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-black/40 text-[#a99a8b] hover:text-white border border-white/10"
+                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-black/40 text-[#6b584a] dark:text-[#a99a8b] hover:text-[#241812] dark:hover:text-white border border-[#d8c8b8] dark:border-white/10"
                 >
                   Cancel
                 </button>

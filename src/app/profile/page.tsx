@@ -730,7 +730,7 @@ export default function ProfilePage() {
             <div className="p-4 bg-[#07090e] border border-[#1e2638] rounded-xl flex items-center justify-between gap-4">
               <div>
                 <span className="font-semibold text-white block text-sm">Theme Mode</span>
-                <span className="text-xs text-[#94a3b8]">Obsidian luxury dark mode with champagne gold accents</span>
+                <span className="text-xs text-[#94a3b8]">Obsidian dark mode with champagne gold accents</span>
               </div>
               <span className="px-3 py-1 rounded-md bg-[#141824] text-[#e6c875] font-semibold border border-[#263147]">
                 Obsidian Gold

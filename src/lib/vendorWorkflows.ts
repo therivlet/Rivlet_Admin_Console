@@ -105,7 +105,7 @@ export const VENDOR_CATEGORIES: Record<VendorCategory, CategoryConfig> = {
     label: 'Packaging & Trims',
     pluralLabel: 'Packaging & Trims',
     shortLabel: 'Packaging',
-    description: 'Luxury rigid magnetic boxes, polybags, woven brand labels, hangtags, and custom tissue.',
+    description: 'Custom rigid magnetic boxes, polybags, woven brand labels, hangtags, and custom tissue.',
     icon: Package,
     badgeBg: 'bg-[#171324]',
     badgeText: 'text-[#d8b4fe]',

@@ -185,7 +185,7 @@ export default function CalculatorMethodologyGuide({
               <div className="p-3.5 bg-[#faf8f5] dark:bg-[#0e121e] rounded-xl border border-[#e8e2d5] dark:border-[#1f283e] space-y-1">
                 <strong className="text-stone-900 dark:text-white block font-semibold text-xs">Listed MRP Tag (Maximum Retail Price)</strong>
                 <p className="text-stone-600 dark:text-[#94a3b8] text-[11px] leading-relaxed">
-                  The legally mandated printed maximum retail price tag in India. It anchors customer perception of garment luxury and sets the ceiling for retail markup.
+                  The legally mandated printed maximum retail price tag in India. It anchors customer perception of garment quality and sets the ceiling for retail markup.
                 </p>
                 <span className="text-[10px] text-[#8c6016] dark:text-[#cda052] font-mono block font-semibold">Field: inputs.mrp</span>
               </div>
@@ -279,7 +279,7 @@ export default function CalculatorMethodologyGuide({
                   • Tech sampling &amp; pattern prototyping<br />
                   • Factory-to-warehouse inbound logistics<br />
                   • AQL 2.5 quality control inspection<br />
-                  • Luxury rigid gift box &amp; zip polybag<br />
+                  • Rigid gift box &amp; zip polybag<br />
                   • Receiving, barcoding, pick/pack fulfillment, and inventory storage reserve
                 </p>
               </div>

@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
       activeStyles = [],
     } = await req.json();
 
-    const systemInstruction = `You are the Chief Operations Officer Co-pilot for "Rivlet", a high-growth luxury activewear brand.
+    const systemInstruction = `You are the Chief Operations Officer Co-pilot for "Rivlet", a high-growth activewear brand.
 Provide a crisp, actionable, high-impact "Daily Operations Pulse" briefing for the brand founders and sourcing leaders.
 Keep it between 2 to 3 sentences maximum. Tone: Confident, executive, urgent where needed, hyper-focused on delivery deadlines and production quality.`;
 

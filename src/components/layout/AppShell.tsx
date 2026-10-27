@@ -192,7 +192,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
         onClose={() => setCommandPaletteOpen(false)} 
       />
 
-      {/* Subtle luxury brand watermark in background */}
+      {/* Subtle brand watermark in background */}
       <RivletWatermark />
 
       {/* Surfaces failed cloud writes instead of silently swallowing them */}

@@ -44,39 +44,39 @@ export default function CalendarWeekView({
   const getCategoryStyles = (category: CalendarEventCategory) => {
     switch (category) {
       case 'gst':
-        return 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] border-[#cda052]/50';
+        return 'bg-[rgba(205,160,82,0.18)] text-[#7c5b1b] dark:text-[#f7d88c] border-[#cda052]/50';
       case 'customs':
-        return 'bg-sky-500/25 text-sky-200 border-sky-500/40';
+        return 'bg-sky-500/18 text-sky-800 dark:text-sky-200 border-sky-500/40';
       case 'itr':
-        return 'bg-emerald-500/25 text-emerald-200 border-emerald-500/40';
+        return 'bg-emerald-500/18 text-emerald-800 dark:text-emerald-200 border-emerald-500/40';
       case 'dsc':
-        return 'bg-purple-500/25 text-purple-200 border-purple-500/40';
+        return 'bg-purple-500/18 text-purple-800 dark:text-purple-200 border-purple-500/40';
       case 'sprint':
-        return 'bg-indigo-500/25 text-indigo-200 border-indigo-500/40';
+        return 'bg-indigo-500/18 text-indigo-800 dark:text-indigo-200 border-indigo-500/40';
       default:
-        return 'bg-white/10 text-white border-white/20';
+        return 'bg-black/5 dark:bg-white/10 text-[#241812] dark:text-white border-black/10 dark:border-white/20';
     }
   };
 
   return (
-    <div className="bg-[#18100b] dark:bg-[#090c14] rounded-2xl border border-[#3d2b20] dark:border-[#1a2233] overflow-hidden shadow-sm">
+    <div className="bg-white dark:bg-[#18100b] rounded-2xl border border-[#e8ded3] dark:border-[#3d2b20] overflow-hidden shadow-sm">
       {/* Week Header Row */}
-      <div className="grid grid-cols-8 bg-black/40 border-b border-white/10 text-xs py-3">
-        <div className="text-center text-[#8895ad] font-mono text-[11px] self-center">
+      <div className="grid grid-cols-8 bg-[#f5efe6] dark:bg-black/40 border-b border-[#e8ded3] dark:border-white/10 text-xs py-3">
+        <div className="text-center text-[#604f41] dark:text-[#8895ad] font-mono text-[11px] self-center">
           Time
         </div>
         {weekDays.map((date, idx) => {
           const isToday = isSameDay(date, now);
           return (
             <div key={idx} className="text-center">
-              <div className="text-[10px] uppercase font-semibold text-[#8895ad]">
+              <div className="text-[10px] uppercase font-semibold text-[#7d6b5d] dark:text-[#8895ad]">
                 {dayNames[idx]}
               </div>
               <div
                 className={`text-sm font-bold font-mono inline-block px-2 py-0.5 rounded-full mt-0.5 ${
                   isToday
-                    ? 'bg-[#cda052] text-black'
-                    : 'text-white'
+                    ? 'bg-[#cda052] text-[#241812]'
+                    : 'text-[#241812] dark:text-white'
                 }`}
               >
                 {date.getDate()}
@@ -87,11 +87,11 @@ export default function CalendarWeekView({
       </div>
 
       {/* Hourly Grid Rows */}
-      <div className="divide-y divide-white/5 bg-[#140d09] dark:bg-[#07090e] max-h-[650px] overflow-y-auto">
+      <div className="divide-y divide-[#e8ded3] dark:divide-white/5 bg-[#fcfaf7] dark:bg-[#07090e] max-h-[650px] overflow-y-auto">
         {hours.map((hour) => (
-          <div key={hour} className="grid grid-cols-8 divide-x divide-white/5 min-h-[60px]">
+          <div key={hour} className="grid grid-cols-8 divide-x divide-[#e8ded3] dark:divide-white/5 min-h-[60px]">
             {/* Hour Label */}
-            <div className="p-2 text-right text-[11px] font-mono text-[#8895ad] select-none">
+            <div className="p-2 text-right text-[11px] font-mono text-[#7d6b5d] dark:text-[#8895ad] select-none">
               {hour.toString().padStart(2, '0')}:00
             </div>
 
@@ -112,7 +112,7 @@ export default function CalendarWeekView({
                     selected.setHours(hour);
                     onSelectDate(selected);
                   }}
-                  className="p-1 hover:bg-white/[0.02] transition-colors cursor-pointer relative"
+                  className="p-1 hover:bg-[#faf6f0] dark:hover:bg-white/[0.02] transition-colors cursor-pointer relative"
                 >
                   {cellEvents.map((evt) => (
                     <div
@@ -121,11 +121,11 @@ export default function CalendarWeekView({
                         e.stopPropagation();
                         onSelectEvent(evt);
                       }}
-                      className={`p-1.5 rounded-lg text-xs font-medium border mb-1 truncate shadow-sm transition-transform hover:scale-[1.02] cursor-pointer ${getCategoryStyles(
+                      className={`p-1.5 rounded-lg text-xs font-semibold border mb-1 truncate shadow-sm transition-transform hover:scale-[1.02] cursor-pointer ${getCategoryStyles(
                         evt.category
                       )}`}
                     >
-                      <div className="font-semibold truncate">{evt.title}</div>
+                      <div className="truncate">{evt.title}</div>
                       <div className="text-[10px] opacity-80 flex items-center gap-1">
                         <Clock className="w-2.5 h-2.5" />
                         <span>

@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const availableStylesText = styles.map((s: any) => s.styleName || s).join(', ');
     const availableVendorsText = vendors.map((v: any) => v.name || v).join(', ');
 
-    const systemInstruction = `You are the Lead Apparel Technical Program Manager for "Rivlet", a high-end luxury activewear brand.
+    const systemInstruction = `You are the Lead Apparel Technical Program Manager for "Rivlet", a high-end activewear brand.
 Your job is to decompose high-level manufacturing or operational sprint goals into structured, Azure DevOps (ADO) style Agile work items.
 
 Follow these strict garment engineering rules:

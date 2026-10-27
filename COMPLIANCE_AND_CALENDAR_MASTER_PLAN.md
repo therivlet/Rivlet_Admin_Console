@@ -1,7 +1,7 @@
 # 🏛️ Rivlet Enterprise: Compliance Hub, ICEGATE Customs, GST Engine & Unified Calendar Master Plan
 
 > **Architectural Blueprint, Technical Specification & Feasibility Roadmap**  
-> Tailored for **Rivlet Luxury Apparel & Manufacturing Operations**  
+> Tailored for **Rivlet Apparel & Manufacturing Operations**  
 > Status: **FINALIZED & READY FOR IMPLEMENTATION**  
 > Target Integration: **Rivlet Admin Console (`/compliance`, `/calendar`, `/work`)**  
 

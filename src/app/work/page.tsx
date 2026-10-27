@@ -101,7 +101,7 @@ function WorkPageInner() {
           })}
         </nav>
 
-        {/* Tablet & Desktop View: Classic luxury tab bar with full module names and hover animations */}
+        {/* Tablet & Desktop View: Clean tab bar with full module names and hover animations */}
         <nav
           className="hidden sm:flex items-center gap-1.5 border-b border-[#1a1f2c] overflow-x-auto custom-scrollbar"
           aria-label="Work Tracking Modules"

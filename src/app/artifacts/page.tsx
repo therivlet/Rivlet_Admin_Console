@@ -433,7 +433,7 @@ export default function ArtifactsPage() {
 
                 {/* Presets */}
                 <div className="space-y-1.5 pt-1">
-                  <span className="text-[11px] text-[#64748b]">Try a popular luxury apparel tool:</span>
+                  <span className="text-[11px] text-[#64748b]">Try a popular apparel tool:</span>
                   <div className="flex flex-wrap gap-1.5">
                     {[
                       'Fabric Yield & Cutting Waste Estimator',

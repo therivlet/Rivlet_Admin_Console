@@ -21,7 +21,7 @@ body {
   letter-spacing: -0.011em;
 }
 
-/* Custom Luxury Scrollbars */
+/* Custom Brand Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -130,7 +130,7 @@ body {
   animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-@keyframes luxuryPulse {
+@keyframes brandPulse {
   0%, 100% {
     transform: scale(1);
     opacity: 0.92;
@@ -153,8 +153,8 @@ body {
   to { transform: rotate(360deg); }
 }
 
-.animate-luxury-pulse {
-  animation: luxuryPulse 2.4s ease-in-out infinite;
+.animate-brand-pulse {
+  animation: brandPulse 2.4s ease-in-out infinite;
 }
 
 .animate-shimmer-slide {
@@ -243,7 +243,7 @@ body {
 .kb-markdown tbody tr:nth-child(even) { background: #0a0c12; }
 
 /* ==========================================================================
-   RIVLET LUXURY WARM LIGHT THEME SYSTEM
+   RIVLET WARM LIGHT THEME SYSTEM
    ========================================================================== */
 
 html.light {
@@ -341,7 +341,7 @@ html.light [class*="bg-[#07090e]/60"] {
 }
 
 /* ==========================================================================
-   NAVIGATION ASIDE & HEADER: LUXURY WARM ESPRESSO BROWN THEME IN LIGHT MODE
+   NAVIGATION ASIDE & HEADER: WARM ESPRESSO BROWN THEME IN LIGHT MODE
    Warm brown tones, gold accents, crisp hovers, zero blackness, zero glare
    ========================================================================== */
 

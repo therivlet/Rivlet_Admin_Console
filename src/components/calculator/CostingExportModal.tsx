@@ -300,7 +300,7 @@ GST Invoice: Applicable HSN Code with GST Tax Invoice.`;
                     R I V L E T
                   </span>
                   <span className="text-[10px] uppercase tracking-wider text-[#6c768c] font-mono print:text-gray-500">
-                    • Luxury Apparel Studio
+                    • Apparel Studio
                   </span>
                 </div>
                 <h1 className="text-lg font-bold text-white font-serif print:text-black">

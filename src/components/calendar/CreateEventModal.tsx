@@ -62,16 +62,16 @@ export default function CreateEventModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-      <div className="bg-[#1e140e] dark:bg-[#0c101a] w-full max-w-lg rounded-2xl border border-[#3d2b20] dark:border-[#1a2233] p-5 sm:p-6 shadow-2xl">
-        <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
-          <h3 className="text-base font-bold text-white flex items-center gap-2">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white dark:bg-[#1e140e] w-full max-w-lg rounded-2xl border border-[#e8ded3] dark:border-[#3d2b20] p-5 sm:p-6 shadow-2xl">
+        <div className="flex items-center justify-between pb-3 border-b border-[#e8ded3] dark:border-white/10 mb-4">
+          <h3 className="text-base font-bold text-[#241812] dark:text-white flex items-center gap-2">
             <Plus className="w-4 h-4 text-[#cda052]" />
             <span>Add Event to Operational Calendar</span>
           </h3>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-[#a99a8b] hover:text-white"
+            className="p-1 rounded-lg text-[#7d6b5d] dark:text-[#a99a8b] hover:text-[#241812] dark:hover:text-white"
           >
             <X className="w-4 h-4" />
           </button>
@@ -79,24 +79,24 @@ export default function CreateEventModal({
 
         <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
           <div>
-            <label className="block text-[#a99a8b] mb-1 font-medium">Event Title *</label>
+            <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">Event Title *</label>
             <input
               type="text"
               required
               placeholder="e.g. GSTR-3B Tax Settlement & Verification"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-black/40 text-white border border-white/10 focus:border-[#cda052] outline-none"
+              className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[#a99a8b] mb-1 font-medium">Category</label>
+              <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">Category</label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as CalendarEventCategory)}
-                className="w-full px-3 py-2 rounded-xl bg-black/40 text-white border border-white/10 outline-none"
+                className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
               >
                 <option value="gst">GST (Goods & Services Tax)</option>
                 <option value="customs">ICEGATE Customs Clearance</option>
@@ -108,11 +108,11 @@ export default function CreateEventModal({
             </div>
 
             <div>
-              <label className="block text-[#a99a8b] mb-1 font-medium">Priority Level</label>
+              <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">Priority Level</label>
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as CalendarEventPriority)}
-                className="w-full px-3 py-2 rounded-xl bg-black/40 text-white border border-white/10 outline-none"
+                className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
               >
                 <option value="critical">Critical (Statutory Due Date)</option>
                 <option value="high">High (Audit / Customs)</option>
@@ -123,15 +123,15 @@ export default function CreateEventModal({
           </div>
 
           {/* Date & Time Settings */}
-          <div className="space-y-2 bg-black/30 p-3 rounded-xl border border-white/5">
+          <div className="space-y-2 bg-[#fcfaf7] dark:bg-black/30 p-3 rounded-xl border border-[#e8ded3] dark:border-white/5">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-white">Date & Schedule</span>
-              <label className="flex items-center gap-2 cursor-pointer text-[#cbd5e1]">
+              <span className="font-semibold text-[#241812] dark:text-white">Date & Schedule</span>
+              <label className="flex items-center gap-2 cursor-pointer text-[#4a3b30] dark:text-[#cbd5e1]">
                 <input
                   type="checkbox"
                   checked={allDay}
                   onChange={(e) => setAllDay(e.target.checked)}
-                  className="rounded border-white/20 text-[#cda052] focus:ring-0"
+                  className="rounded border-[#d8c8b8] dark:border-white/20 text-[#cda052] focus:ring-0"
                 />
                 <span>All Day Event</span>
               </label>
@@ -139,46 +139,46 @@ export default function CreateEventModal({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[#8895ad] mb-1 text-[11px]">Start Date *</label>
+                <label className="block text-[#7d6b5d] dark:text-[#8895ad] mb-1 text-[11px]">Start Date *</label>
                 <input
                   type="date"
                   required
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full px-2.5 py-1.5 rounded-lg bg-black/50 text-white border border-white/10 outline-none"
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-black/50 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 outline-none"
                 />
               </div>
               {!allDay && (
                 <div>
-                  <label className="block text-[#8895ad] mb-1 text-[11px]">Start Time</label>
+                  <label className="block text-[#7d6b5d] dark:text-[#8895ad] mb-1 text-[11px]">Start Time</label>
                   <input
                     type="time"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full px-2.5 py-1.5 rounded-lg bg-black/50 text-white border border-white/10 outline-none"
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-black/50 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 outline-none"
                   />
                 </div>
               )}
             </div>
 
             {!allDay && (
-              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-white/5">
+              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-[#e8ded3] dark:border-white/5">
                 <div>
-                  <label className="block text-[#8895ad] mb-1 text-[11px]">End Date</label>
+                  <label className="block text-[#7d6b5d] dark:text-[#8895ad] mb-1 text-[11px]">End Date</label>
                   <input
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full px-2.5 py-1.5 rounded-lg bg-black/50 text-white border border-white/10 outline-none"
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-black/50 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-[#8895ad] mb-1 text-[11px]">End Time</label>
+                  <label className="block text-[#7d6b5d] dark:text-[#8895ad] mb-1 text-[11px]">End Time</label>
                   <input
                     type="time"
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full px-2.5 py-1.5 rounded-lg bg-black/50 text-white border border-white/10 outline-none"
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-black/50 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 outline-none"
                   />
                 </div>
               </div>
@@ -186,38 +186,38 @@ export default function CreateEventModal({
           </div>
 
           <div>
-            <label className="block text-[#a99a8b] mb-1 font-medium">Linked Module Route</label>
+            <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">Linked Module Route</label>
             <input
               type="text"
               placeholder="e.g. /compliance?tab=gst or /work?tab=board"
               value={relatedLink}
               onChange={(e) => setRelatedLink(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-black/40 text-white border border-white/10 outline-none"
+              className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-[#a99a8b] mb-1 font-medium">Description / Notes</label>
+            <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">Description / Notes</label>
             <textarea
               rows={2}
               placeholder="Filing guidelines, payment amounts, CHA instructions..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-black/40 text-white border border-white/10 outline-none"
+              className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
             />
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/10">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#e8ded3] dark:border-white/10">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-black/40 text-[#a99a8b] hover:text-white border border-white/10"
+              className="px-4 py-2 rounded-xl bg-[#f5efe6] dark:bg-black/40 text-[#604f41] dark:text-[#a99a8b] hover:text-[#241812] dark:hover:text-white border border-[#d8c8b8] dark:border-white/10"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl bg-[#cda052] text-black font-semibold hover:bg-[#dfb56c]"
+              className="px-5 py-2 rounded-xl bg-[#cda052] text-[#241812] font-semibold hover:bg-[#dfb56c]"
             >
               Save to Calendar
             </button>

@@ -74,64 +74,68 @@ export default function CalendarHeader({
   const formattedMonthYear = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
 
   const categories: { key: CalendarEventCategory; label: string; color: string }[] = [
-    { key: 'gst', label: 'GST (10th/20th)', color: 'text-[#f7d88c] bg-[rgba(205,160,82,0.15)] border-[#cda052]/30' },
-    { key: 'customs', label: 'ICEGATE Customs', color: 'text-sky-300 bg-sky-500/15 border-sky-500/30' },
-    { key: 'itr', label: 'ITR & Direct Tax', color: 'text-emerald-300 bg-emerald-500/15 border-emerald-500/30' },
-    { key: 'dsc', label: 'DSC Expiry', color: 'text-purple-300 bg-purple-500/15 border-purple-500/30' },
-    { key: 'sprint', label: 'Sprint Gates', color: 'text-indigo-300 bg-indigo-500/15 border-indigo-500/30' },
+    { key: 'gst', label: 'GST (10th/20th)', color: 'text-[#8c6b2d] dark:text-[#f7d88c] bg-[rgba(205,160,82,0.12)] border-[#cda052]/40' },
+    { key: 'customs', label: 'ICEGATE Customs', color: 'text-sky-800 dark:text-sky-300 bg-sky-500/15 border-sky-500/40' },
+    { key: 'itr', label: 'ITR & Direct Tax', color: 'text-emerald-800 dark:text-emerald-300 bg-emerald-500/15 border-emerald-500/40' },
+    { key: 'dsc', label: 'DSC Expiry', color: 'text-purple-800 dark:text-purple-300 bg-purple-500/15 border-purple-500/40' },
+    { key: 'sprint', label: 'Sprint Gates', color: 'text-indigo-800 dark:text-indigo-300 bg-indigo-500/15 border-indigo-500/40' },
   ];
 
   return (
     <div className="space-y-3">
       {/* Top Controls Row */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-[#1e140e] dark:bg-[#0c101a] p-4 rounded-2xl border border-[#3d2b20] dark:border-[#1a2233] shadow-md">
-        {/* Title, Month/Year & Navigation */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            <span className="p-2 rounded-xl bg-[rgba(205,160,82,0.15)] text-[#f7d88c] border border-[rgba(205,160,82,0.3)]">
-              <CalendarIcon className="w-5 h-5 text-[#cda052]" />
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white dark:bg-[#1e140e] p-4 sm:p-5 rounded-2xl border border-[#e8ded3] dark:border-[#3d2b20] shadow-sm">
+        {/* Left Column: Fixed Date Navigation (Buttons stay anchored directly under the month & year) */}
+        <div className="flex flex-col justify-center min-w-[220px]">
+          {/* 1. Month & Year Title */}
+          <div className="flex items-center gap-2.5">
+            <span className="p-1.5 rounded-xl bg-[rgba(205,160,82,0.15)] text-[#cda052] border border-[rgba(205,160,82,0.3)] flex-shrink-0">
+              <CalendarIcon className="w-4 h-4 text-[#cda052]" />
             </span>
-            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+            <h1 className="text-lg sm:text-xl font-bold text-[#241812] dark:text-white tracking-tight">
               {formattedMonthYear}
             </h1>
           </div>
 
-          <div className="flex items-center gap-1.5 ml-2">
+          {/* 2. Anchor Fixed Controls Directly Below Month & Year */}
+          <div className="flex items-center gap-1.5 mt-2 ml-0.5">
             <button
               onClick={handlePrev}
               aria-label="Previous period"
-              className="p-1.5 rounded-xl bg-black/40 hover:bg-white/10 text-[#a99a8b] hover:text-white border border-white/10 transition-colors"
+              className="p-1.5 rounded-lg bg-[#f5efe6] dark:bg-black/40 hover:bg-[#ebdccb] dark:hover:bg-white/10 text-[#604f41] dark:text-[#a99a8b] hover:text-[#241812] dark:hover:text-white border border-[#d8c8b8] dark:border-white/10 transition-colors"
+              title="Previous Period"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={handleToday}
-              className="px-3 py-1.5 rounded-xl bg-black/40 hover:bg-white/10 text-xs font-semibold text-white border border-white/10 transition-colors"
+              className="px-3 py-1 rounded-lg bg-[#f5efe6] dark:bg-black/40 hover:bg-[#ebdccb] dark:hover:bg-white/10 text-xs font-semibold text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 transition-colors"
             >
               Today
             </button>
             <button
               onClick={handleNext}
               aria-label="Next period"
-              className="p-1.5 rounded-xl bg-black/40 hover:bg-white/10 text-[#a99a8b] hover:text-white border border-white/10 transition-colors"
+              className="p-1.5 rounded-lg bg-[#f5efe6] dark:bg-black/40 hover:bg-[#ebdccb] dark:hover:bg-white/10 text-[#604f41] dark:text-[#a99a8b] hover:text-[#241812] dark:hover:text-white border border-[#d8c8b8] dark:border-white/10 transition-colors"
+              title="Next Period"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
-        {/* View Switcher & Action Buttons */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Mode Tabs */}
-          <div className="flex items-center bg-black/40 p-1 rounded-xl border border-white/10">
+        {/* Right Section: View Switcher & Action Buttons */}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {/* View Mode Switcher */}
+          <div className="flex items-center bg-[#f5efe6] dark:bg-black/40 p-1 rounded-xl border border-[#d8c8b8] dark:border-white/10">
             {(['month', 'week', 'day', 'agenda'] as CalendarViewMode[]).map((mode) => (
               <button
                 key={mode}
                 onClick={() => onViewModeChange(mode)}
                 className={`px-3 py-1 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all ${
                   viewMode === mode
-                    ? 'bg-[#cda052] text-black shadow-sm'
-                    : 'text-[#a99a8b] hover:text-white'
+                    ? 'bg-[#cda052] text-[#241812] shadow-sm font-bold'
+                    : 'text-[#604f41] dark:text-[#a99a8b] hover:text-[#241812] dark:hover:text-white'
                 }`}
               >
                 {mode}
@@ -142,7 +146,7 @@ export default function CalendarHeader({
           {/* Export to ICS button */}
           <button
             onClick={onExportIcs}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/40 hover:bg-white/10 text-xs font-semibold text-white border border-white/10 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#f5efe6] dark:bg-black/40 hover:bg-[#ebdccb] dark:hover:bg-white/10 text-xs font-semibold text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 transition-colors"
             title="Download .ICS file to sync with Google Calendar, Teams, or Apple Calendar"
           >
             <Download className="w-3.5 h-3.5 text-[#cda052]" />
@@ -152,7 +156,7 @@ export default function CalendarHeader({
           {/* Add Event Button */}
           <button
             onClick={onOpenCreateModal}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#cda052] hover:bg-[#dfb56c] text-black font-semibold text-xs transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#cda052] hover:bg-[#dfb56c] text-[#241812] font-semibold text-xs transition-colors shadow-sm"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>New Event</span>
@@ -162,7 +166,7 @@ export default function CalendarHeader({
 
       {/* Category Filter Pills */}
       <div className="flex items-center gap-2 flex-wrap text-xs">
-        <span className="text-[11px] text-[#8895ad] uppercase tracking-wider font-semibold mr-1 flex items-center gap-1">
+        <span className="text-[11px] text-[#604f41] dark:text-[#8895ad] uppercase tracking-wider font-semibold mr-1 flex items-center gap-1">
           <Filter className="w-3 h-3 text-[#cda052]" />
           Filters:
         </span>
@@ -172,10 +176,10 @@ export default function CalendarHeader({
             <button
               key={cat.key}
               onClick={() => onToggleCategory(cat.key)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
                 isSelected
                   ? cat.color
-                  : 'bg-black/20 text-[#8895ad] border-white/5 line-through opacity-50'
+                  : 'bg-[#f5efe6]/50 dark:bg-black/20 text-[#7d6b5d] dark:text-[#8895ad] border-[#d8c8b8]/50 dark:border-white/5 line-through opacity-50'
               }`}
             >
               {cat.label}

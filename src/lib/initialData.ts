@@ -41,7 +41,7 @@ export const initialCostingSheets: CostingSheet[] = [
       tags: 25,
       branding: 45,
     },
-    notes: 'Flagship heavyweight luxury hoodie. Target MRP ₹4,499 with 15% promotional discount.',
+    notes: 'Flagship heavyweight premium hoodie. Target MRP ₹4,499 with 15% promotional discount.',
     createdAt: '2026-09-12T14:00:00Z',
     updatedAt: '2026-09-25T16:20:00Z',
   },
@@ -163,7 +163,7 @@ This Standard Operating Procedure defines the mandatory inspection criteria for 
     updatedAt: '2026-09-20T16:00:00Z',
     content: `# Brand Tone & Packaging Unboxing Experience
 
-Rivlet is built on understated luxury, structural silhouettes, and uncompromising heavyweight textiles.
+Rivlet is built on understated elegance, structural silhouettes, and uncompromising heavyweight textiles.
 
 ---
 
@@ -281,7 +281,7 @@ India enforces a dual-tier step GST system for apparel under HSN Chapter 61 & 62
 
 ### Step Function Threshold Rule:
 - **MRP / Selling Price $\\le$ ₹2,500**: Taxed at **5% GST** (HSN standard concessional rate).
-- **MRP / Selling Price $>$ ₹2,500**: Taxed at **18% GST** (luxury & high-value apparel bracket).
+- **MRP / Selling Price $>$ ₹2,500**: Taxed at **18% GST** (standard high-value apparel bracket).
 
 ### Net Realized Revenue Calculation (Reverse Tax Extraction):
 Because the consumer price (MRP) is inclusive of taxes, the output GST must be extracted:
@@ -407,7 +407,7 @@ $$\\text{Net Profit Margin} = \\frac{₹1,622.52}{₹4,236.44} = \\mathbf{38.3\\
 
 | Input Field Name | Calculation / Source | Economic Impact | Optimal Target Range |
 | :--- | :--- | :--- | :--- |
-| **Retail MRP (₹)** | Master consumer selling price | Defines output tax bracket (5% vs 18%) & revenue top line | Determined by competitive luxury benchmark |
+| **Retail MRP (₹)** | Master consumer selling price | Defines output tax bracket (5% vs 18%) & revenue top line | Determined by competitive brand benchmark |
 | **Fabric GSM & Consumption** | Weight in grams/m² & consumption in kg/m | Direct BOM cost; heavyweight textiles demand higher allowances | Tees: 220–280 GSM; Hoodies: 400–520 GSM |
 | **Shrinkage Allowance (%)** | Natural dimensional change post wash | Underestimating leads to undersized garments or fabric shortfall | Standard 4% – 7% for premium cotton |
 | **Cutting Wastage (%)** | Marker efficiency & end-loss | Direct fabric cost multiplier | Standard 5% – 8% |
@@ -638,7 +638,7 @@ export const initialVendors: VendorItem[] = [
     id: 'ven-007',
     name: 'Prestige Craft Packaging',
     category: 'Packaging',
-    subcategory: 'Luxury Rigid Boxes & Polybags',
+    subcategory: 'Custom Rigid Boxes & Polybags',
     location: 'Mumbai, Maharashtra',
     healthStatus: 'Good',
     rating: 5,
@@ -663,7 +663,7 @@ export const initialVendors: VendorItem[] = [
     ],
     lastContactedAt: '2026-09-28',
     nextFollowUpAt: '2026-10-11',
-    notes: 'Essential for luxury unboxing experience. High quality paper stock.',
+    notes: 'Essential for premium unboxing experience. High quality paper stock.',
     createdAt: '2026-09-15T09:00:00Z',
     updatedAt: '2026-09-28T15:00:00Z',
   },

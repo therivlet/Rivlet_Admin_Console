@@ -685,7 +685,7 @@ export interface ComplianceWorkflowItem {
   id: string;
   title: string;
   category: ComplianceCategory;
-  entityName: string; // e.g. 'Rivlet Luxury Apparel Pvt Ltd'
+  entityName: string; // e.g. 'Rivlet Apparel Pvt Ltd'
   returnType: string; // e.g. 'GSTR-1', 'GSTR-3B', 'ITR-6', '26Q', 'BOE Import'
   taxPeriod: string; // e.g. 'October 2026'
   dueDate: string; // YYYY-MM-DD

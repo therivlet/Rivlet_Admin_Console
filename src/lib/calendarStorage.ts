@@ -8,7 +8,7 @@ export const INITIAL_CALENDAR_EVENTS: CalendarEventItem[] = [
   {
     id: 'evt-gst-gstr1-nov26',
     title: 'Statutory Filing: GSTR-1 Monthly Return',
-    description: 'Outward supplies and invoice furnishing cutoff for Rivlet Luxury Apparel. Mandatory upload before portal cutoff.',
+    description: 'Outward supplies and invoice furnishing cutoff for Rivlet Apparel. Mandatory upload before portal cutoff.',
     startTime: '2026-11-10T09:00:00Z',
     endTime: '2026-11-10T18:00:00Z',
     allDay: true,
@@ -166,7 +166,7 @@ export function generateIcsData(events: CalendarEventItem[]): string {
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Rivlet Luxury Apparel//Operations & Compliance Calendar//EN',
+    'PRODID:-//Rivlet Apparel//Operations & Compliance Calendar//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
   ];

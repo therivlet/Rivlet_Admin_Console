@@ -173,7 +173,7 @@ function CalculatorContent() {
             </span>
           </div>
           <p className="text-xs text-[#8e98ad]">
-            Consolidated portfolio analytics, automated Indian step GST, factory ITC, annual overhead allocation, and luxury unit economics.
+            Consolidated portfolio analytics, automated Indian step GST, factory ITC, annual overhead allocation, and commercial unit economics.
           </p>
         </div>
 

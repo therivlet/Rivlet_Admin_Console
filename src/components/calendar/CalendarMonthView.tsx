@@ -85,35 +85,35 @@ export default function CalendarMonthView({
   const getCategoryStyles = (category: CalendarEventCategory) => {
     switch (category) {
       case 'gst':
-        return 'bg-[rgba(205,160,82,0.2)] text-[#f7d88c] border-[#cda052]/40 hover:bg-[rgba(205,160,82,0.3)]';
+        return 'bg-[rgba(205,160,82,0.18)] text-[#7c5b1b] dark:text-[#f7d88c] border-[#cda052]/40 hover:bg-[rgba(205,160,82,0.28)]';
       case 'customs':
-        return 'bg-sky-500/20 text-sky-300 border-sky-500/30 hover:bg-sky-500/30';
+        return 'bg-sky-500/18 text-sky-800 dark:text-sky-300 border-sky-500/40 hover:bg-sky-500/28';
       case 'itr':
-        return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/30';
+        return 'bg-emerald-500/18 text-emerald-800 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/28';
       case 'dsc':
-        return 'bg-purple-500/20 text-purple-300 border-purple-500/30 hover:bg-purple-500/30';
+        return 'bg-purple-500/18 text-purple-800 dark:text-purple-300 border-purple-500/40 hover:bg-purple-500/28';
       case 'sprint':
-        return 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/30';
+        return 'bg-indigo-500/18 text-indigo-800 dark:text-indigo-300 border-indigo-500/40 hover:bg-indigo-500/28';
       default:
-        return 'bg-white/10 text-white border-white/20 hover:bg-white/20';
+        return 'bg-black/5 dark:bg-white/10 text-[#241812] dark:text-white border-black/10 dark:border-white/20';
     }
   };
 
   const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
-    <div className="bg-[#18100b] dark:bg-[#090c14] rounded-2xl border border-[#3d2b20] dark:border-[#1a2233] overflow-hidden shadow-sm">
+    <div className="bg-white dark:bg-[#18100b] rounded-2xl border border-[#e8ded3] dark:border-[#3d2b20] overflow-hidden shadow-sm">
       {/* Day of Week Header */}
-      <div className="grid grid-cols-7 bg-black/40 border-b border-white/10 text-center text-xs font-semibold uppercase tracking-wider text-[#a99a8b] py-2.5">
+      <div className="grid grid-cols-7 bg-[#f5efe6] dark:bg-black/40 border-b border-[#e8ded3] dark:border-white/10 text-center text-xs font-semibold uppercase tracking-wider text-[#604f41] dark:text-[#a99a8b] py-2.5">
         {dayHeaders.map((name, idx) => (
-          <div key={idx} className={idx === 0 || idx === 6 ? 'text-[#8895ad]' : 'text-white'}>
+          <div key={idx} className={idx === 0 || idx === 6 ? 'text-[#887768] dark:text-[#8895ad]' : 'text-[#241812] dark:text-white'}>
             {name}
           </div>
         ))}
       </div>
 
       {/* Grid of Calendar Days */}
-      <div className="grid grid-cols-7 divide-x divide-y divide-white/5 bg-[#140d09] dark:bg-[#07090e]">
+      <div className="grid grid-cols-7 divide-x divide-y divide-[#e8ded3] dark:divide-white/5 bg-[#fcfaf7] dark:bg-[#140d09]">
         {gridCells.map((cell, idx) => {
           // Find matching events for this cell date
           const cellEvents = events.filter((evt) => {
@@ -128,26 +128,26 @@ export default function CalendarMonthView({
               onClick={() => onSelectDate(cell.date)}
               className={`min-h-[110px] sm:min-h-[130px] p-2 flex flex-col justify-between transition-colors cursor-pointer group ${
                 cell.isCurrentMonth
-                  ? 'hover:bg-white/[0.03]'
-                  : 'bg-black/40 text-[#8895ad] opacity-60 hover:opacity-90'
-              } ${cell.isToday ? 'bg-[rgba(205,160,82,0.06)] ring-1 ring-[#cda052]/50' : ''}`}
+                  ? 'bg-white dark:bg-[#140d09] hover:bg-[#faf6f0] dark:hover:bg-white/[0.03]'
+                  : 'bg-[#f4ede3] dark:bg-black/40 text-[#887768] dark:text-[#8895ad] opacity-70 hover:opacity-100'
+              } ${cell.isToday ? 'bg-[rgba(205,160,82,0.08)] ring-1 ring-[#cda052]' : ''}`}
             >
               {/* Day Header Row */}
               <div className="flex items-center justify-between">
                 <span
                   className={`text-xs font-mono font-bold ${
                     cell.isToday
-                      ? 'w-6 h-6 rounded-full bg-[#cda052] text-black flex items-center justify-center font-semibold shadow-sm'
+                      ? 'w-6 h-6 rounded-full bg-[#cda052] text-[#241812] flex items-center justify-center font-bold shadow-sm'
                       : cell.isCurrentMonth
-                      ? 'text-white group-hover:text-[#f7d88c]'
-                      : 'text-[#8895ad]'
+                      ? 'text-[#241812] dark:text-white group-hover:text-[#cda052] dark:group-hover:text-[#f7d88c]'
+                      : 'text-[#887768] dark:text-[#8895ad]'
                   }`}
                 >
                   {cell.dayNumber}
                 </span>
 
                 {cellEvents.length > 0 && (
-                  <span className="text-[10px] font-mono text-[#a99a8b]">
+                  <span className="text-[10px] font-mono text-[#604f41] dark:text-[#a99a8b]">
                     {cellEvents.length} {cellEvents.length === 1 ? 'item' : 'items'}
                   </span>
                 )}
@@ -162,7 +162,7 @@ export default function CalendarMonthView({
                       e.stopPropagation();
                       onSelectEvent(evt);
                     }}
-                    className={`px-1.5 py-0.5 rounded text-[11px] font-medium border truncate cursor-pointer transition-all ${getCategoryStyles(
+                    className={`px-1.5 py-0.5 rounded text-[11px] font-semibold border truncate cursor-pointer transition-all ${getCategoryStyles(
                       evt.category
                     )}`}
                     title={`${evt.title} (${evt.category.toUpperCase()})`}
@@ -171,7 +171,7 @@ export default function CalendarMonthView({
                   </div>
                 ))}
                 {cellEvents.length > 3 && (
-                  <div className="text-[10px] font-semibold text-[#cda052] px-1">
+                  <div className="text-[10px] font-bold text-[#cda052] px-1">
                     +{cellEvents.length - 3} more
                   </div>
                 )}

@@ -542,13 +542,13 @@ export default function CalculatorSettingsModal({
                 <div className="p-3 bg-[#111624] border border-[#232c42] rounded-xl flex items-start gap-2.5 text-[#94a3b8]">
                   <Truck className="w-4 h-4 text-[#cda052] flex-shrink-0 mt-0.5" />
                   <div className="leading-relaxed">
-                    <strong className="text-white">Fixed Operational Rates (Per Unit)</strong> define the standard non-fabric costs that apply to standard luxury garment production. Total standard surcharge per garment: <strong className="text-[#e6c875]">{curr}{totalStandardInbound}</strong>.
+                    <strong className="text-white">Fixed Operational Rates (Per Unit)</strong> define the standard non-fabric costs that apply to standard garment production. Total standard surcharge per garment: <strong className="text-[#e6c875]">{curr}{totalStandardInbound}</strong>.
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {[
-                    { key: 'packaging' as const, label: 'Luxury Garment Box & Polybag', desc: 'Rigid magnetic gift box + biodegradable inner zip polybag' },
+                    { key: 'packaging' as const, label: 'Premium Garment Box & Polybag', desc: 'Rigid magnetic gift box + biodegradable inner zip polybag' },
                     { key: 'branding' as const, label: 'Branding Hardware & Heavy Hangtags', desc: 'Matte black metal eyelet tag, embossed cord, authenticity seal' },
                     { key: 'tags' as const, label: 'Woven Labels & Care Specs', desc: 'Damask woven neck label + satin QR care instruction set' },
                     { key: 'inbound' as const, label: 'Inbound Freight per Unit', desc: 'Trucking freight from manufacturer factory to central Rivlet warehouse' },
@@ -1140,7 +1140,7 @@ export default function CalculatorSettingsModal({
                         )}
                       </div>
                       <p className="text-[11px] text-[#94a3b8] leading-relaxed">
-                        Standard luxury packaging ({curr}{defaults.packaging}), care tags ({curr}{defaults.tags}), hardware ({curr}{defaults.branding}), freight ({curr}{defaults.inbound}), and warehousing will be locked from direct inline editing.
+                        Standard packaging ({curr}{defaults.packaging}), care tags ({curr}{defaults.tags}), hardware ({curr}{defaults.branding}), freight ({curr}{defaults.inbound}), and warehousing will be locked from direct inline editing.
                       </p>
                     </div>
 

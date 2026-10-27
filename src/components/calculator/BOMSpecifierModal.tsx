@@ -408,7 +408,7 @@ export default function BOMSpecifierModal({
                 </span>
               </div>
               <p className="text-[11px] sm:text-xs text-[#7d869d] truncate">
-                Create, customize, and store exact fabric layers, consumption rates, CMT labor, and luxury trims for your garments.
+                Create, customize, and store exact fabric layers, consumption rates, CMT labor, and custom trims for your garments.
               </p>
             </div>
           </div>
@@ -763,7 +763,7 @@ export default function BOMSpecifierModal({
             </div>
           </div>
 
-          {/* SECTION 3: LUXURY HARDWARE TRIMS, LABELS & PACKAGING */}
+          {/* SECTION 3: HARDWARE TRIMS, LABELS & PACKAGING */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">

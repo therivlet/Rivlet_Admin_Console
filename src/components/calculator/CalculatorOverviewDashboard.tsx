@@ -336,7 +336,7 @@ export default function CalculatorOverviewDashboard({
           <div className="border-b border-[#182032] pb-3">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
               <Percent className="w-4 h-4 text-[#cda052]" />
-              <span>Modern Luxury Ratios</span>
+              <span>Modern Commercial Ratios</span>
             </h3>
             <p className="text-[11px] text-[#717a90]">
               Key commercial benchmarks for garment margin health and operating leverage.
@@ -351,7 +351,7 @@ export default function CalculatorOverviewDashboard({
                 <span className="font-mono font-bold text-[#cda052]">{portfolioStats.avgMultiplier.toFixed(2)}x</span>
               </div>
               <p className="text-[10px] text-[#717a90]">
-                Formula: Listed MRP ÷ Factory FOB. Luxury benchmark is 3.5x–5.0x for healthy retail markup.
+                Formula: Listed MRP ÷ Factory FOB. Target benchmark is 3.5x–5.0x for healthy retail markup.
               </p>
               <div className="w-full h-1.5 rounded-full bg-[#141a28] overflow-hidden mt-1">
                 <div
