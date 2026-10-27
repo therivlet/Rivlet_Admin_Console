@@ -10,6 +10,8 @@ import {
 export const ALL_MODULES: AppModule[] = [
   'dashboard',
   'work',
+  'compliance',
+  'calendar',
   'vendors',
   'pipeline',
   'documents',
@@ -46,6 +48,16 @@ export const MODULE_CONFIG: Record<
     name: 'Work Tracking & Sprints',
     description: 'Sprint backlog, kanban boards, and task execution',
     path: '/work',
+  },
+  compliance: {
+    name: 'Statutory Compliance & Customs Hub',
+    description: 'GST filings, ITC reconciliation, ICEGATE customs clearance, DSC, and vault',
+    path: '/compliance',
+  },
+  calendar: {
+    name: 'Operations & Compliance Calendar',
+    description: 'Multi-view interactive schedule, statutory filing cutoffs, and sprint cadences',
+    path: '/calendar',
   },
   vendors: {
     name: 'Vendors & Mills Ecosystem',
@@ -197,6 +209,8 @@ export function getRoleTemplateDefaults(role: AppRole): UserPermissionMap {
       switch (mod) {
         case 'dashboard':
         case 'work':
+        case 'compliance':
+        case 'calendar':
         case 'vendors':
         case 'pipeline':
         case 'documents':
@@ -241,6 +255,7 @@ export function getRoleTemplateDefaults(role: AppRole): UserPermissionMap {
     switch (mod) {
       case 'dashboard':
       case 'work':
+      case 'calendar':
       case 'documents':
       case 'knowledge':
       case 'notifications':
@@ -255,6 +270,7 @@ export function getRoleTemplateDefaults(role: AppRole): UserPermissionMap {
           manage_access: false,
         };
         break;
+      case 'compliance':
       case 'vendors':
       case 'pipeline':
         map[mod] = {

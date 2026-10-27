@@ -563,6 +563,8 @@ export type UserStatus = 'active' | 'invited' | 'deactivated';
 export type AppModule =
   | 'dashboard'
   | 'work'
+  | 'compliance'
+  | 'calendar'
   | 'vendors'
   | 'pipeline'
   | 'documents'
@@ -673,3 +675,158 @@ export interface VendorActivity {
   nextFollowUpDate?: string; // YYYY-MM-DD
   createdAt: string;
 }
+
+// --- Compliance, Statutory Filings & Customs Operations ---
+
+export type ComplianceCategory = 'gst' | 'icegate' | 'itr' | 'dsc' | 'tds' | 'other';
+export type ComplianceStatus = 'upcoming' | 'in_progress' | 'filed' | 'pending_review' | 'overdue';
+
+export interface ComplianceWorkflowItem {
+  id: string;
+  title: string;
+  category: ComplianceCategory;
+  entityName: string; // e.g. 'Rivlet Luxury Apparel Pvt Ltd'
+  returnType: string; // e.g. 'GSTR-1', 'GSTR-3B', 'ITR-6', '26Q', 'BOE Import'
+  taxPeriod: string; // e.g. 'October 2026'
+  dueDate: string; // YYYY-MM-DD
+  statutoryDeadline: string; // YYYY-MM-DD
+  status: ComplianceStatus;
+  assignedTo: string;
+  arnNumber?: string;
+  challanAmount?: number;
+  itcClaimed?: number;
+  attachmentUrl?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type GstFilingFrequency = 'monthly' | 'quarterly';
+
+export interface GstSettings {
+  id: string;
+  gstin: string;
+  legalName: string;
+  tradeName?: string;
+  filingFrequency: GstFilingFrequency;
+  gstr1DueDay: number; // statutory default: 10
+  gstr3bDueDay: number; // statutory default: 20
+  reminderDays: number[]; // e.g. [7, 3, 1, 0]
+  isActive: boolean;
+  stateCode?: string;
+}
+
+export interface GstTaxCalculation {
+  taxPeriod: string;
+  outputIgst: number;
+  outputCgst: number;
+  outputSgst: number;
+  inputIgst: number;
+  inputCgst: number;
+  inputSgst: number;
+  eligibleItc: number;
+  ineligibleItc: number;
+  netPayableIgst: number;
+  netPayableCgst: number;
+  netPayableSgst: number;
+  netTotalPayable: number;
+  itcBalanceIgst: number;
+  itcBalanceCgst: number;
+  itcBalanceSgst: number;
+}
+
+export interface GstReconciliationInvoice {
+  id: string;
+  vendorName: string;
+  vendorGstin: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  invoiceValue: number;
+  taxableValue: number;
+  taxAmount: number;
+  inBooks: boolean;
+  inGstr2b: boolean;
+  matchStatus: 'matched' | 'missing_in_2b' | 'missing_in_books' | 'value_mismatch';
+  itcEligibility: 'eligible' | 'ineligible_17_5' | 'pending';
+}
+
+export type CustomsDeclarationType = 'import_boe' | 'export_sb';
+export type CustomsStage =
+  | 'draft'
+  | 'filed'
+  | 'rms_assessment'
+  | 'duty_paid'
+  | 'under_examination'
+  | 'cleared_ooc_leo'
+  | 'rejected';
+
+export interface CustomsDeclaration {
+  id: string;
+  declarationType: CustomsDeclarationType;
+  declarationNumber: string; // BE / SB number
+  declarationDate: string; // YYYY-MM-DD
+  portCode: string; // e.g., 'INMAA1' (Chennai), 'INBLR4' (Bangalore Air)
+  portName: string;
+  hsnChapter: string; // e.g., '52' (Cotton), '61' (Knitted Apparel), '62' (Woven Apparel)
+  goodsDescription: string;
+  invoiceValueInr: number;
+  customsDutyInr: number;
+  igstPaidInr: number;
+  drawbackClaimedInr: number;
+  rodtepClaimedInr: number;
+  chaName: string;
+  currentStage: CustomsStage;
+  esanchitIrnList: string[];
+  shippingLineOrCarrier?: string;
+  containerOrAwbNumber?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DscRegistryItem {
+  id: string;
+  tokenLabel: string;
+  holderName: string;
+  designation: string;
+  certAuthority: string; // e.g., 'eMudhra', 'Vsign', 'Capricorn'
+  serialNumber: string;
+  issuedDate: string; // YYYY-MM-DD
+  expiryDate: string; // YYYY-MM-DD
+  tokenLocation: string; // Physical storage location / safe
+  status: 'active' | 'expiring_soon' | 'expired' | 'revoked';
+  portalsBound: string[]; // e.g., ['GSTN', 'ICEGATE', 'Income Tax', 'MCA']
+}
+
+export type VaultServiceType = 'gst' | 'icegate' | 'dgft' | 'incometax' | 'traces' | 'bank_ad' | 'other';
+
+export interface CredentialVaultItem {
+  id: string;
+  title: string;
+  serviceType: VaultServiceType;
+  identifier: string; // Username, PAN, TAN, GSTIN
+  secret: string; // Masked password / PIN
+  portalUrl?: string;
+  notes?: string;
+  lastVerifiedAt?: string;
+  updatedAt: string;
+}
+
+export type CalendarEventCategory = 'gst' | 'customs' | 'itr' | 'dsc' | 'sprint' | 'vendor' | 'general';
+export type CalendarEventPriority = 'low' | 'medium' | 'high' | 'critical';
+export type CalendarEventStatus = 'pending' | 'in_progress' | 'completed' | 'overdue';
+
+export interface CalendarEventItem {
+  id: string;
+  title: string;
+  description?: string;
+  startTime: string; // ISO String (e.g. 2026-10-10T09:00:00Z)
+  endTime: string;
+  allDay: boolean;
+  category: CalendarEventCategory;
+  priority: CalendarEventPriority;
+  relatedEntityId?: string;
+  relatedLink?: string;
+  status: CalendarEventStatus;
+  createdAt: string;
+}
+

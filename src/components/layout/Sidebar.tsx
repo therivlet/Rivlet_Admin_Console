@@ -18,6 +18,13 @@ import {
   ListTree,
   KanbanSquare,
   CalendarRange,
+  Calendar as CalendarIcon,
+  Scale,
+  ShieldCheck,
+  FileCheck2,
+  BadgePercent,
+  Ship,
+  KeyRound,
   Sparkles,
   Users,
   ChevronLeft,
@@ -68,6 +75,7 @@ export default function Sidebar({
   });
 
   const [calculatorExpanded, setCalculatorExpanded] = useState(pathname.startsWith('/calculator'));
+  const [complianceExpanded, setComplianceExpanded] = useState(pathname.startsWith('/compliance'));
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -110,6 +118,9 @@ export default function Sidebar({
   const isStylesActive = isCalcPath && (calcTab === 'styles' || calcTab === 'saved');
   const isGuideActive = isCalcPath && (calcTab === 'guide' || calcTab === 'help');
 
+  const isCompliancePath = pathname === '/compliance';
+  const complianceTab = searchParams.get('tab') || 'workflows';
+
   const isDocsActive = pathname === '/documents' || pathname === '/knowledge-base' || pathname === '/artifacts';
 
   const handleLinkClick = () => {
@@ -120,8 +131,15 @@ export default function Sidebar({
     { label: 'Backlogs', href: '/work?tab=backlog', tab: 'backlog', icon: ListTree },
     { label: 'Sprint Board', href: '/work?tab=board', tab: 'board', icon: KanbanSquare },
     { label: 'Sprints', href: '/work?tab=sprints', tab: 'sprints', icon: CalendarRange },
-    { label: 'Sprint Bulk Creation', href: '/work?tab=bulk', tab: 'bulk', icon: Sparkles },
-    { label: 'Teams', href: '/work?tab=settings', tab: 'settings', icon: Users },
+  ];
+
+  const complianceSubmenuItems = [
+    { label: 'Overview & Workflows', href: '/compliance?tab=workflows', tab: 'workflows', icon: FileCheck2 },
+    { label: 'GST Engine & ITC', href: '/compliance?tab=gst', tab: 'gst', icon: BadgePercent },
+    { label: 'IEC & ICEGATE Customs', href: '/compliance?tab=icegate', tab: 'icegate', icon: Ship },
+    { label: 'ITR & Direct Tax', href: '/compliance?tab=itr', tab: 'itr', icon: FileText },
+    { label: 'DSC Token Registry', href: '/compliance?tab=dsc', tab: 'dsc', icon: ShieldCheck },
+    { label: 'Secure Credential Vault', href: '/compliance?tab=vault', tab: 'vault', icon: KeyRound },
   ];
 
   const docsSubmenuItems = [
@@ -260,6 +278,129 @@ export default function Sidebar({
               <div className="w-7 border-t border-[#3d2b20] dark:border-white/[0.08] mx-auto" />
             </div>
           </div>
+
+          {/* Operations & Compliance Calendar */}
+          {canView('calendar') && (
+            <div className="relative group w-full">
+              <Link
+                href="/calendar"
+                onClick={handleLinkClick}
+                className={`sidebar-nav-item group/link flex items-center rounded-xl text-xs transition-colors duration-200 border flex-shrink ${
+                  pathname === '/calendar'
+                    ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
+                    : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
+                } ${collapsed ? 'w-10 h-10 mx-auto justify-center p-0' : 'w-full h-9 px-2.5 justify-start'}`}
+              >
+                <div className={`flex items-center justify-center flex-shrink-0 ${collapsed ? 'w-full h-full' : 'w-7 h-7'}`}>
+                  <CalendarIcon className={`w-4 h-4 flex-shrink-0 transition-transform group-hover/link:scale-110 ${pathname === '/calendar' ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/link:text-white'}`} />
+                </div>
+                <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                  collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none hidden' : 'max-w-[160px] opacity-100 translate-x-0 ml-1.5'
+                }`}>
+                  Calendar
+                </span>
+              </Link>
+              {collapsed && (
+                <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#1e140e] dark:bg-[#0d101a] border border-[#443023] dark:border-[#22293e] rounded-lg shadow-2xl text-xs text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-[90]">
+                  Calendar
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Statutory Compliance & Customs Hub */}
+          {canView('compliance') && (
+            <div className="relative group w-full">
+              <div
+                className={`sidebar-nav-item nav-expandable-row group/row flex items-center rounded-xl text-xs transition-colors duration-200 border cursor-pointer flex-shrink ${
+                  isCompliancePath
+                    ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
+                    : 'border-transparent text-[#d7cbbe] dark:text-[#cbd5e1]'
+                } ${collapsed ? 'w-10 h-10 mx-auto justify-center p-0' : 'w-full h-9 px-2.5 justify-between'}`}
+              >
+                <Link
+                  href="/compliance"
+                  onClick={handleLinkClick}
+                  className={`flex items-center h-full min-w-0 outline-none ${collapsed ? 'w-full justify-center' : 'flex-1'}`}
+                >
+                  <div className={`flex items-center justify-center flex-shrink-0 ${collapsed ? 'w-full h-full' : 'w-7 h-7'}`}>
+                    <Scale className={`w-4 h-4 flex-shrink-0 transition-transform group-hover/row:scale-110 ${isCompliancePath ? 'text-[#cda052]' : 'text-[#a99a8b] dark:text-[#8895ad] group-hover/row:text-[#f7d88c]'}`} />
+                  </div>
+                  <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                    collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none hidden' : 'max-w-[140px] opacity-100 translate-x-0 ml-1.5 group-hover/row:text-white'
+                  }`}>
+                    Compliance
+                  </span>
+                </Link>
+                {!collapsed && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setComplianceExpanded((v) => !v);
+                    }}
+                    className="p-1 rounded text-[#a99a8b] hover:text-[#cda052] transition-all flex-shrink-0 cursor-pointer outline-none mr-0.5"
+                    aria-label="Toggle compliance sub-modules"
+                  >
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${complianceExpanded ? '' : '-rotate-90'}`} />
+                  </button>
+                )}
+              </div>
+
+              {/* Submodules in expanded view */}
+              {!collapsed && complianceExpanded && (
+                <div className="ml-4 pl-2.5 py-1 space-y-0.5 border-l border-[#3d2b20] dark:border-[#1f2638] text-[11px] animate-fade-in">
+                  {complianceSubmenuItems.map((item) => {
+                    const isSubActive = isCompliancePath && complianceTab === item.tab;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={handleLinkClick}
+                        className={`nav-sub-link block px-2.5 py-1 rounded-md transition-colors ${
+                          isSubActive
+                            ? 'text-[#cda052] font-semibold bg-[rgba(205,160,82,0.14)]'
+                            : 'text-[#d7cbbe] dark:text-[#94a3b8]'
+                        }`}
+                      >
+                        • {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Hover Floating Dropdown Flyout when collapsed */}
+              {collapsed && (
+                <div className="absolute left-full ml-3 top-0 p-3 bg-[#1e140e] dark:bg-[#0d101a] border border-[#443023] dark:border-[#22293e] rounded-2xl shadow-2xl text-xs whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-[90] min-w-[210px]">
+                  <div className="flex items-center gap-2 font-bold text-[#f7d88c] dark:text-[#e6c875] pb-2 mb-2 border-b border-white/[0.08]">
+                    <Scale className="w-4 h-4 text-[#cda052]" />
+                    <span>Statutory Compliance</span>
+                  </div>
+                  <div className="space-y-1 text-[11px]">
+                    {complianceSubmenuItems.map((item) => {
+                      const isSubActive = isCompliancePath && complianceTab === item.tab;
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={handleLinkClick}
+                          className={`block px-2.5 py-1.5 rounded-lg transition-colors ${
+                            isSubActive
+                              ? 'bg-[rgba(205,160,82,0.22)] text-[#f7d88c] font-semibold'
+                              : 'text-[#d7cbbe] dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
+                          }`}
+                        >
+                          • {item.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Business Calculations */}
           <div className="relative group w-full">
