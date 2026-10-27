@@ -1,12 +1,14 @@
 import { supabase } from '@/lib/supabase';
+import { syncDeleteFromServer, syncUpsertToServer } from '@/lib/serverSync';
 import { CalendarEventItem } from '@/lib/types';
+import { ensureValidUuid, isValidUuid } from '@/lib/complianceStorage';
 
 export const STORAGE_KEY_CALENDAR_EVENTS = 'rivlet_calendar_events';
 
-// Real production events for current operational period
+// Real production events for current operational period with valid Postgres UUIDs
 export const INITIAL_CALENDAR_EVENTS: CalendarEventItem[] = [
   {
-    id: 'evt-gst-gstr1-nov26',
+    id: '60000000-0000-0000-0000-000000000001',
     title: 'Statutory Filing: GSTR-1 Monthly Return',
     description: 'Outward supplies and invoice furnishing cutoff for Rivlet Apparel. Mandatory upload before portal cutoff.',
     startTime: '2026-11-10T09:00:00Z',
@@ -19,7 +21,7 @@ export const INITIAL_CALENDAR_EVENTS: CalendarEventItem[] = [
     createdAt: new Date().toISOString(),
   },
   {
-    id: 'evt-gst-gstr3b-nov26',
+    id: '60000000-0000-0000-0000-000000000002',
     title: 'Statutory Filing: GSTR-3B Summary & Tax Settlement',
     description: 'Net tax settlement under Rule 88A. Settle output tax liability through available Input Tax Credit and PMT-06 challans.',
     startTime: '2026-11-20T09:00:00Z',
@@ -32,7 +34,7 @@ export const INITIAL_CALENDAR_EVENTS: CalendarEventItem[] = [
     createdAt: new Date().toISOString(),
   },
   {
-    id: 'evt-customs-boe-chennai',
+    id: '60000000-0000-0000-0000-000000000003',
     title: 'Customs Duty Payment: Giza Cotton Yarn (BE-8492019)',
     description: 'Port INMAA1 Chennai Sea Customs. Pay assessed basic customs duty and IGST via ICEGATE payment gateway.',
     startTime: '2026-11-05T10:00:00Z',
@@ -45,7 +47,7 @@ export const INITIAL_CALENDAR_EVENTS: CalendarEventItem[] = [
     createdAt: new Date().toISOString(),
   },
   {
-    id: 'evt-tds-26q-oct26',
+    id: '60000000-0000-0000-0000-000000000004',
     title: 'TDS Quarterly Return: Form 26Q (Q2 Non-Salary)',
     description: 'Statutory quarterly filing for vendor contracts, mill job-work (194C), and professional legal retainers (194J).',
     startTime: '2026-10-31T09:00:00Z',
@@ -58,7 +60,7 @@ export const INITIAL_CALENDAR_EVENTS: CalendarEventItem[] = [
     createdAt: new Date().toISOString(),
   },
   {
-    id: 'evt-dsc-renewal-director',
+    id: '60000000-0000-0000-0000-000000000005',
     title: 'Digital Signature Certificate Expiry Warning (Director DSC)',
     description: 'eMudhra Class 3 token expires soon. Physical token in Executive Safe A-1. Complete eKYC video verification with issuing authority.',
     startTime: '2026-11-28T11:00:00Z',
@@ -71,7 +73,7 @@ export const INITIAL_CALENDAR_EVENTS: CalendarEventItem[] = [
     createdAt: new Date().toISOString(),
   },
   {
-    id: 'evt-itr-adv-tax-q3',
+    id: '60000000-0000-0000-0000-000000000006',
     title: 'Advance Tax 3rd Installment (75% Cumulative)',
     description: 'Challan 280 payment on Income Tax E-Filing portal. Section 208/211 corporate obligation.',
     startTime: '2026-12-15T09:00:00Z',
@@ -84,7 +86,7 @@ export const INITIAL_CALENDAR_EVENTS: CalendarEventItem[] = [
     createdAt: new Date().toISOString(),
   },
   {
-    id: 'evt-sprint-autumn-launch',
+    id: '60000000-0000-0000-0000-000000000007',
     title: 'Sprint Cadence: Autumn/Winter RTW Sample Gate',
     description: 'Milestone review for initial 12 tailored styles, BOM pricing lock, and vendor fabric yield checks.',
     startTime: '2026-11-14T14:00:00Z',
@@ -102,14 +104,14 @@ export function getLocalCalendarEvents(): CalendarEventItem[] {
   if (typeof window === 'undefined') return INITIAL_CALENDAR_EVENTS;
   try {
     const raw = localStorage.getItem(STORAGE_KEY_CALENDAR_EVENTS);
-    if (!raw) {
+    if (raw === null) {
       localStorage.setItem(STORAGE_KEY_CALENDAR_EVENTS, JSON.stringify(INITIAL_CALENDAR_EVENTS));
       return INITIAL_CALENDAR_EVENTS;
     }
     return JSON.parse(raw);
   } catch (err) {
     console.error('Error reading calendar events:', err);
-    return INITIAL_CALENDAR_EVENTS;
+    return [];
   }
 }
 
@@ -194,48 +196,64 @@ export async function loadMergedCalendarEvents(): Promise<CalendarEventItem[]> {
       .select('*')
       .order('start_time', { ascending: true });
 
-    if (error || !data || data.length === 0) return localList;
+    if (!error && data) {
+      if (data.length > 0) {
+        const remoteItems: CalendarEventItem[] = data.map((d: any) => {
+          let recurrence: CalendarEventItem['recurrence'] = 'none';
+          let recurrenceRule: string | undefined = undefined;
+          let groupId: string | undefined = undefined;
 
-    const remoteItems: CalendarEventItem[] = data.map((d: any) => {
-      let recurrence: CalendarEventItem['recurrence'] = 'none';
-      let recurrenceRule: string | undefined = undefined;
-      let groupId: string | undefined = undefined;
+          // Extract recurrence metadata if stored in description JSON or standard field
+          if (d.description && d.description.includes('__REC_META__:')) {
+            try {
+              const parts = d.description.split('__REC_META__:');
+              const meta = JSON.parse(parts[1]);
+              recurrence = meta.recurrence;
+              recurrenceRule = meta.recurrenceRule;
+              groupId = meta.groupId;
+            } catch {
+              // ignore parsing error
+            }
+          }
 
-      // Extract recurrence metadata if stored in description JSON or standard field
-      if (d.description && d.description.includes('__REC_META__:')) {
-        try {
-          const parts = d.description.split('__REC_META__:');
-          const meta = JSON.parse(parts[1]);
-          recurrence = meta.recurrence;
-          recurrenceRule = meta.recurrenceRule;
-          groupId = meta.groupId;
-        } catch {
-          // ignore parsing error
-        }
+          return {
+            id: d.id,
+            title: d.title,
+            description: d.description ? d.description.split('__REC_META__:')[0].trim() : '',
+            startTime: d.start_time,
+            endTime: d.end_time,
+            allDay: Boolean(d.all_day),
+            category: d.event_category,
+            priority: d.priority,
+            relatedEntityId: d.related_entity_id,
+            relatedLink: d.related_link,
+            status: d.status,
+            recurrence,
+            recurrenceRule,
+            groupId,
+            createdAt: d.created_at,
+            updatedAt: d.updated_at,
+          };
+        });
+
+        saveLocalCalendarEvents(remoteItems);
+        return remoteItems;
       }
 
-      return {
-        id: d.id,
-        title: d.title,
-        description: d.description ? d.description.split('__REC_META__:')[0].trim() : '',
-        startTime: d.start_time,
-        endTime: d.end_time,
-        allDay: Boolean(d.all_day),
-        category: d.event_category,
-        priority: d.priority,
-        relatedEntityId: d.related_entity_id,
-        relatedLink: d.related_link,
-        status: d.status,
-        recurrence,
-        recurrenceRule,
-        groupId,
-        createdAt: d.created_at,
-        updatedAt: d.updated_at,
-      };
-    });
+      const hasInit = typeof window !== 'undefined' && localStorage.getItem('rivlet_cal_initialized') === 'true';
+      if (!hasInit && data.length === 0 && localList.length > 0) {
+        if (typeof window !== 'undefined') localStorage.setItem('rivlet_cal_initialized', 'true');
+        saveMergedCalendarEvents(localList);
+        return localList;
+      }
 
-    saveLocalCalendarEvents(remoteItems);
-    return remoteItems;
+      if (data.length === 0 && hasInit) {
+        saveLocalCalendarEvents([]);
+        return [];
+      }
+    }
+
+    return localList;
   } catch (err) {
     console.warn('Notice loading calendar events from Supabase:', err);
     return localList;
@@ -251,7 +269,7 @@ export async function saveMergedCalendarEvents(events: CalendarEventItem[]): Pro
     const nonVirtual = events.filter((e) => !e.id.includes('-rec-'));
 
     for (const evt of nonVirtual) {
-      const isUuid = evt.id.length === 36 && evt.id.includes('-');
+      const validId = ensureValidUuid(evt.id);
       
       // Embed recurrence metadata in description if recurring
       let finalDescription = evt.description || '';
@@ -259,12 +277,13 @@ export async function saveMergedCalendarEvents(events: CalendarEventItem[]): Pro
         const meta = JSON.stringify({
           recurrence: evt.recurrence,
           recurrenceRule: evt.recurrenceRule,
-          groupId: evt.groupId || evt.id,
+          groupId: evt.groupId || validId,
         });
         finalDescription = `${finalDescription}\n\n__REC_META__:${meta}`;
       }
 
       const payload: any = {
+        id: validId,
         title: evt.title,
         description: finalDescription,
         start_time: evt.startTime,
@@ -277,12 +296,8 @@ export async function saveMergedCalendarEvents(events: CalendarEventItem[]): Pro
         updated_at: new Date().toISOString(),
       };
 
-      if (isUuid) {
-        payload.id = evt.id;
-        await supabase.from('calendar_events').upsert(payload);
-      } else {
-        await supabase.from('calendar_events').insert(payload);
-      }
+      await syncUpsertToServer('calendar_events', payload);
+      await supabase.from('calendar_events').upsert(payload);
     }
   } catch (err) {
     console.error('Notice persisting calendar events to Supabase:', err);
@@ -293,13 +308,14 @@ export async function deleteMergedCalendarEvent(id: string): Promise<void> {
   const current = getLocalCalendarEvents();
   const updated = current.filter((e) => e.id !== id && e.groupId !== id);
   saveLocalCalendarEvents(updated);
-  if (!supabase) return;
+  if (typeof window !== 'undefined') localStorage.setItem('rivlet_cal_initialized', 'true');
 
+  const validId = isValidUuid(id) ? id : ensureValidUuid(id);
+  syncDeleteFromServer('calendar_events', validId);
+
+  if (!supabase) return;
   try {
-    const isUuid = id.length === 36 && id.includes('-');
-    if (isUuid) {
-      await supabase.from('calendar_events').delete().eq('id', id);
-    }
+    await supabase.from('calendar_events').delete().eq('id', validId);
   } catch (err) {
     console.error('Notice deleting calendar event from Supabase:', err);
   }

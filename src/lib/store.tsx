@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { ArtifactItem, CostingSheet, DocumentItem, KBArticle, ArtifactStatus, VendorItem, PipelineItem, BudgetItem, Sprint, WorkItem, TeamMember, WorkSettings, BudgetSettings, CashInflowEntry } from './types';
 import { initialArtifacts, initialCostingSheets, initialDocuments, initialKBArticles, initialVendors, initialPipelineItems, initialBudgetItems, initialSprints, initialWorkItems, initialTeamMembers, initialWorkSettings, initialBudgetSettings, initialCashInflows } from './initialData';
 import { supabase, isSupabaseConfigured } from './supabase';
+import { syncDeleteFromServer, syncUpsertToServer, syncUpdateToServer } from './serverSync';
 import { notify } from './notificationContext';
 import { getVendorCategory } from './vendorWorkflows';
 import { useAuth } from './authContext';
@@ -983,7 +984,13 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
   };
 
   const deleteArtifact = async (id: string) => {
-    setArtifacts((prev) => prev.filter((a) => a.id !== id));
+    setArtifacts((prev) => {
+      const updated = prev.filter((a) => a.id !== id);
+      persistLocal(STORAGE_KEYS.ARTIFACTS, updated);
+      return updated;
+    });
+
+    syncDeleteFromServer('artifacts', id);
 
     if (isSupabaseConfigured && supabase) {
       try {
@@ -1002,12 +1009,16 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     setCostingSheets((prev) => {
       const idx = prev.findIndex((s) => s.id === sheet.id);
+      let updated: CostingSheet[];
       if (idx >= 0) {
         const copy = [...prev];
         copy[idx] = updatedSheet;
-        return copy;
+        updated = copy;
+      } else {
+        updated = [updatedSheet, ...prev];
       }
-      return [updatedSheet, ...prev];
+      persistLocal(STORAGE_KEYS.COSTING_SHEETS, updated);
+      return updated;
     });
 
     if (isSupabaseConfigured && supabase) {
@@ -1035,7 +1046,13 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
   };
 
   const deleteCostingSheet = async (id: string) => {
-    setCostingSheets((prev) => prev.filter((s) => s.id !== id));
+    setCostingSheets((prev) => {
+      const updated = prev.filter((s) => s.id !== id);
+      persistLocal(STORAGE_KEYS.COSTING_SHEETS, updated);
+      return updated;
+    });
+
+    syncDeleteFromServer('costing_sheets', id);
 
     if (isSupabaseConfigured && supabase) {
       try {
@@ -1058,30 +1075,37 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       updatedAt: now,
     };
 
-    setDocuments((prev) => [newDoc, ...prev]);
+    setDocuments((prev) => {
+      const updated = [newDoc, ...prev];
+      persistLocal(STORAGE_KEYS.DOCUMENTS, updated);
+      return updated;
+    });
+
+    const docPayload = {
+      id: newDoc.id,
+      title: newDoc.title,
+      document_type: newDoc.documentType,
+      file_name: newDoc.fileName,
+      file_url: newDoc.fileUrl,
+      file_size_bytes: newDoc.fileSizeBytes,
+      file_format: newDoc.fileFormat,
+      expiry_date: newDoc.expiryDate || null,
+      status: newDoc.status,
+      tags: newDoc.tags,
+      associated_vendor: newDoc.associatedVendor || null,
+      vendor_id: newDoc.vendorId || null,
+      pipeline_item_id: newDoc.pipelineItemId || null,
+      created_at: now,
+      updated_at: now,
+    };
+
+    syncUpsertToServer('documents', docPayload);
 
     if (isSupabaseConfigured && supabase) {
       try {
-        const { error: writeErr } = await supabase.from('documents').insert({
-          id: newDoc.id,
-          title: newDoc.title,
-          document_type: newDoc.documentType,
-          file_name: newDoc.fileName,
-          file_url: newDoc.fileUrl,
-          file_size_bytes: newDoc.fileSizeBytes,
-          file_format: newDoc.fileFormat,
-          expiry_date: newDoc.expiryDate || null,
-          status: newDoc.status,
-          tags: newDoc.tags,
-          associated_vendor: newDoc.associatedVendor || null,
-          vendor_id: newDoc.vendorId || null,
-          pipeline_item_id: newDoc.pipelineItemId || null,
-          created_at: now,
-          updated_at: now,
-        });
-        if (writeErr) throw writeErr;
+        await supabase.from('documents').insert(docPayload);
       } catch (e) {
-        reportWriteFailure('Saving document', e);
+        // server sync via syncUpsertToServer handles privileged insert
       }
     }
 
@@ -1091,41 +1115,49 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
   const updateDocument = async (id: string, updates: Partial<DocumentItem>) => {
     const now = new Date().toISOString();
-    setDocuments((prev) =>
-      prev.map((doc) => (doc.id === id ? { ...doc, ...updates, updatedAt: now } : doc))
-    );
+    setDocuments((prev) => {
+      const updated = prev.map((doc) => (doc.id === id ? { ...doc, ...updates, updatedAt: now } : doc));
+      persistLocal(STORAGE_KEYS.DOCUMENTS, updated);
+      return updated;
+    });
+
+    const payload: Record<string, any> = { updated_at: now };
+    if (updates.title !== undefined) payload.title = updates.title;
+    if (updates.documentType !== undefined) payload.document_type = updates.documentType;
+    if (updates.fileName !== undefined) payload.file_name = updates.fileName;
+    if (updates.fileUrl !== undefined) payload.file_url = updates.fileUrl;
+    if (updates.fileFormat !== undefined) payload.file_format = updates.fileFormat;
+    if (updates.expiryDate !== undefined) payload.expiry_date = updates.expiryDate || null;
+    if (updates.status !== undefined) payload.status = updates.status;
+    if (updates.tags !== undefined) payload.tags = updates.tags;
+    if (updates.associatedVendor !== undefined) payload.associated_vendor = updates.associatedVendor || null;
+    if (updates.vendorId !== undefined) payload.vendor_id = updates.vendorId || null;
+    if (updates.pipelineItemId !== undefined) payload.pipeline_item_id = updates.pipelineItemId || null;
+
+    syncUpdateToServer('documents', id, payload);
 
     if (isSupabaseConfigured && supabase) {
       try {
-        const payload: Record<string, any> = { updated_at: now };
-        if (updates.title !== undefined) payload.title = updates.title;
-        if (updates.documentType !== undefined) payload.document_type = updates.documentType;
-        if (updates.fileName !== undefined) payload.file_name = updates.fileName;
-        if (updates.fileUrl !== undefined) payload.file_url = updates.fileUrl;
-        if (updates.fileFormat !== undefined) payload.file_format = updates.fileFormat;
-        if (updates.expiryDate !== undefined) payload.expiry_date = updates.expiryDate || null;
-        if (updates.status !== undefined) payload.status = updates.status;
-        if (updates.tags !== undefined) payload.tags = updates.tags;
-        if (updates.associatedVendor !== undefined) payload.associated_vendor = updates.associatedVendor || null;
-        if (updates.vendorId !== undefined) payload.vendor_id = updates.vendorId || null;
-        if (updates.pipelineItemId !== undefined) payload.pipeline_item_id = updates.pipelineItemId || null;
-
-        const { error: writeErr } = await supabase.from('documents').update(payload).eq('id', id);
-        if (writeErr) throw writeErr;
+        await supabase.from('documents').update(payload).eq('id', id);
       } catch (e) {
-        reportWriteFailure('Updating document', e);
+        // server sync already called
       }
     }
     notify.success('Document Saved', 'Metadata and file index updated.');
   };
 
   const deleteDocument = async (id: string) => {
-    setDocuments((prev) => prev.filter((d) => d.id !== id));
+    setDocuments((prev) => {
+      const updated = prev.filter((d) => d.id !== id);
+      persistLocal(STORAGE_KEYS.DOCUMENTS, updated);
+      return updated;
+    });
+
+    syncDeleteFromServer('documents', id);
 
     if (isSupabaseConfigured && supabase) {
       try {
-        const { error: writeErr } = await supabase.from('documents').delete().eq('id', id);
-        if (writeErr) throw writeErr;
+        await supabase.from('documents').delete().eq('id', id);
       } catch (e) {
         reportWriteFailure('Deleting document', e);
       }
@@ -1140,12 +1172,16 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     setKbArticles((prev) => {
       const idx = prev.findIndex((a) => a.id === article.id);
+      let updated: KBArticle[];
       if (idx >= 0) {
         const copy = [...prev];
         copy[idx] = updatedArticle;
-        return copy;
+        updated = copy;
+      } else {
+        updated = [updatedArticle, ...prev];
       }
-      return [updatedArticle, ...prev];
+      persistLocal(STORAGE_KEYS.KB_ARTICLES, updated);
+      return updated;
     });
 
     if (isSupabaseConfigured && supabase) {
@@ -1170,7 +1206,13 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
   };
 
   const deleteArticle = async (id: string) => {
-    setKbArticles((prev) => prev.filter((a) => a.id !== id));
+    setKbArticles((prev) => {
+      const updated = prev.filter((a) => a.id !== id);
+      persistLocal(STORAGE_KEYS.KB_ARTICLES, updated);
+      return updated;
+    });
+
+    syncDeleteFromServer('kb_articles', id);
 
     if (isSupabaseConfigured && supabase) {
       try {
@@ -1257,7 +1299,14 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
   };
 
   const deleteVendor = async (id: string) => {
-    setVendors((prev) => prev.filter((v) => v.id !== id));
+    setVendors((prev) => {
+      const updated = prev.filter((v) => v.id !== id);
+      persistLocal(STORAGE_KEYS.VENDORS, updated);
+      return updated;
+    });
+
+    syncDeleteFromServer('vendors', id);
+
     if (isSupabaseConfigured && supabase) {
       try {
         const { error: writeErr } = await supabase.from('vendors').delete().eq('id', id);
@@ -1276,12 +1325,16 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     setPipelineItems((prev) => {
       const idx = prev.findIndex((p) => p.id === item.id);
+      let updatedList: PipelineItem[];
       if (idx >= 0) {
         const copy = [...prev];
         copy[idx] = updated;
-        return copy;
+        updatedList = copy;
+      } else {
+        updatedList = [updated, ...prev];
       }
-      return [updated, ...prev];
+      persistLocal(STORAGE_KEYS.PIPELINE_ITEMS, updatedList);
+      return updatedList;
     });
 
     if (isSupabaseConfigured && supabase) {
@@ -1322,7 +1375,14 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
   };
 
   const deletePipelineItem = async (id: string) => {
-    setPipelineItems((prev) => prev.filter((p) => p.id !== id));
+    setPipelineItems((prev) => {
+      const updated = prev.filter((p) => p.id !== id);
+      persistLocal(STORAGE_KEYS.PIPELINE_ITEMS, updated);
+      return updated;
+    });
+
+    syncDeleteFromServer('pipeline_items', id);
+
     if (isSupabaseConfigured && supabase) {
       try {
         const { error: writeErr } = await supabase.from('pipeline_items').delete().eq('id', id);
@@ -1392,7 +1452,14 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
   };
 
   const deleteBudgetItem = async (id: string) => {
-    setBudgetItems((prev) => prev.filter((b) => b.id !== id));
+    setBudgetItems((prev) => {
+      const updated = prev.filter((b) => b.id !== id);
+      persistLocal(STORAGE_KEYS.BUDGET_ITEMS, updated);
+      return updated;
+    });
+
+    syncDeleteFromServer('budget_items', id);
+
     if (isSupabaseConfigured && supabase) {
       try {
         const { error: writeErr } = await supabase.from('budget_items').delete().eq('id', id);
@@ -1452,12 +1519,16 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     setSprints((prev) => {
       const idx = prev.findIndex((s) => s.id === sprint.id);
+      let updatedList: Sprint[];
       if (idx >= 0) {
         const copy = [...prev];
         copy[idx] = updated;
-        return copy;
+        updatedList = copy;
+      } else {
+        updatedList = [...prev, updated];
       }
-      return [...prev, updated];
+      persistLocal(STORAGE_KEYS.SPRINTS, updatedList);
+      return updatedList;
     });
 
     if (isSupabaseConfigured && supabase) {
@@ -1480,9 +1551,21 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
   };
 
   const deleteSprint = async (id: string) => {
-    setSprints((prev) => prev.filter((s) => s.id !== id));
+    setSprints((prev) => {
+      const updated = prev.filter((s) => s.id !== id);
+      persistLocal(STORAGE_KEYS.SPRINTS, updated);
+      return updated;
+    });
+
     // Unschedule any work items that pointed at this sprint back to the backlog
-    setWorkItems((prev) => prev.map((w) => (w.sprintId === id ? { ...w, sprintId: undefined } : w)));
+    setWorkItems((prev) => {
+      const updated = prev.map((w) => (w.sprintId === id ? { ...w, sprintId: undefined } : w));
+      persistLocal(STORAGE_KEYS.WORK_ITEMS, updated);
+      return updated;
+    });
+
+    syncDeleteFromServer('sprints', id);
+
     if (isSupabaseConfigured && supabase) {
       try {
         const { error: writeErr } = await supabase.from('sprints').delete().eq('id', id);
@@ -1653,7 +1736,14 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
   };
 
   const deleteWorkItem = async (id: string) => {
-    setWorkItems((prev) => prev.filter((w) => w.id !== id && w.parentId !== id));
+    setWorkItems((prev) => {
+      const updated = prev.filter((w) => w.id !== id && w.parentId !== id);
+      persistLocal(STORAGE_KEYS.WORK_ITEMS, updated);
+      return updated;
+    });
+
+    syncDeleteFromServer('work_items', id);
+
     if (isSupabaseConfigured && supabase) {
       try {
         const { error: writeErr } = await supabase.from('work_items').delete().eq('id', id);
@@ -1679,12 +1769,16 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
 
     setTeamMembers((prev) => {
       const idx = prev.findIndex((m) => m.id === member.id);
+      let updatedList: TeamMember[];
       if (idx >= 0) {
         const copy = [...prev];
         copy[idx] = updated;
-        return copy;
+        updatedList = copy;
+      } else {
+        updatedList = [...prev, updated];
       }
-      return [...prev, updated];
+      persistLocal(STORAGE_KEYS.TEAM_MEMBERS, updatedList);
+      return updatedList;
     });
 
     if (isSupabaseConfigured && supabase) {
@@ -1705,7 +1799,14 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
   };
 
   const deleteTeamMember = async (id: string) => {
-    setTeamMembers((prev) => prev.filter((m) => m.id !== id));
+    setTeamMembers((prev) => {
+      const updated = prev.filter((m) => m.id !== id);
+      persistLocal(STORAGE_KEYS.TEAM_MEMBERS, updated);
+      return updated;
+    });
+
+    syncDeleteFromServer('team_members', id);
+
     if (isSupabaseConfigured && supabase) {
       try {
         const { error: writeErr } = await supabase.from('team_members').delete().eq('id', id);

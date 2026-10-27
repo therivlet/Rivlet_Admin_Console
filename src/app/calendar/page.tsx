@@ -40,7 +40,7 @@ function CalendarPageInner() {
   useEffect(() => {
     setRawEvents(getLocalCalendarEvents());
     loadMergedCalendarEvents().then((merged) => {
-      if (merged && merged.length > 0) setRawEvents(merged);
+      if (merged !== undefined && merged !== null) setRawEvents(merged);
     });
   }, []);
 

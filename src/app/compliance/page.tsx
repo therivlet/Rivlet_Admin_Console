@@ -106,19 +106,19 @@ function CompliancePageInner() {
     });
 
     loadMergedComplianceWorkflows().then((merged) => {
-      if (merged && merged.length > 0) setWorkflows(merged);
+      if (merged !== undefined && merged !== null) setWorkflows(merged);
     });
 
     loadMergedCustomsDeclarations().then((declarations) => {
-      if (declarations && declarations.length > 0) setCustomsDeclarations(declarations);
+      if (declarations !== undefined && declarations !== null) setCustomsDeclarations(declarations);
     });
 
     loadMergedDscRegistry().then((items) => {
-      if (items && items.length > 0) setDscItems(items);
+      if (items !== undefined && items !== null) setDscItems(items);
     });
 
     loadMergedCredentialVault().then((items) => {
-      if (items && items.length > 0) setVaultItems(items);
+      if (items !== undefined && items !== null) setVaultItems(items);
     });
   }, []);
 

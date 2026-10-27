@@ -25,6 +25,7 @@ import {
   ComplianceCategory,
   ComplianceStatus,
 } from '@/lib/types';
+import { deleteMergedComplianceWorkflow } from '@/lib/complianceStorage';
 import { addDurableNotification } from '@/lib/notificationStorage';
 
 interface WorkflowTrackerViewProps {
@@ -177,6 +178,7 @@ export default function WorkflowTrackerView({
     if (confirm('Are you sure you want to remove this statutory compliance workflow?')) {
       const updated = workflows.filter((w) => w.id !== id);
       onSaveWorkflows(updated);
+      deleteMergedComplianceWorkflow(id);
       setOpenMenuId(null);
     }
   };

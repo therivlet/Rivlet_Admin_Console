@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { syncDeleteFromServer, syncUpsertToServer } from '@/lib/serverSync';
 import {
   ComplianceWorkflowItem,
   GstSettings,
@@ -370,14 +371,14 @@ export function getLocalComplianceWorkflows(): ComplianceWorkflowItem[] {
   if (typeof window === 'undefined') return INITIAL_COMPLIANCE_WORKFLOWS;
   try {
     const raw = localStorage.getItem(STORAGE_KEY_WORKFLOWS);
-    if (!raw) {
+    if (raw === null) {
       localStorage.setItem(STORAGE_KEY_WORKFLOWS, JSON.stringify(INITIAL_COMPLIANCE_WORKFLOWS));
       return INITIAL_COMPLIANCE_WORKFLOWS;
     }
     return JSON.parse(raw);
   } catch (err) {
     console.error('Error reading compliance workflows:', err);
-    return INITIAL_COMPLIANCE_WORKFLOWS;
+    return [];
   }
 }
 
@@ -408,6 +409,7 @@ export async function loadMergedComplianceWorkflows(): Promise<ComplianceWorkflo
         d.return_type !== 'ITR-TDS-RECORD-SET'
       );
 
+      // If user deleted all regular items and local list was also cleared or data is legitimately empty
       if (regularItems.length > 0) {
         const remoteItems: ComplianceWorkflowItem[] = regularItems.map((d: any) => ({
           id: d.id,
@@ -433,8 +435,18 @@ export async function loadMergedComplianceWorkflows(): Promise<ComplianceWorkflo
         return remoteItems;
       }
 
-      if (regularItems.length === 0 && localList.length > 0) {
+      // Check if user has initialized previously
+      const hasInitialized = typeof window !== 'undefined' && localStorage.getItem('rivlet_wf_initialized') === 'true';
+      if (!hasInitialized && regularItems.length === 0 && localList.length > 0) {
+        if (typeof window !== 'undefined') localStorage.setItem('rivlet_wf_initialized', 'true');
         saveMergedComplianceWorkflows(localList);
+        return localList;
+      }
+
+      // If remote table has 0 regular workflows and user has initialized before, return empty list (reflect deletion!)
+      if (regularItems.length === 0 && hasInitialized) {
+        saveLocalComplianceWorkflows([]);
+        return [];
       }
     }
 
@@ -621,8 +633,16 @@ export async function loadMergedCustomsDeclarations(): Promise<CustomsDeclaratio
       return items;
     }
 
-    if (!error && data && data.length === 0 && local.length > 0) {
+    const hasInit = typeof window !== 'undefined' && localStorage.getItem('rivlet_customs_initialized') === 'true';
+    if (!hasInit && !error && data && data.length === 0 && local.length > 0) {
+      if (typeof window !== 'undefined') localStorage.setItem('rivlet_customs_initialized', 'true');
       saveMergedCustomsDeclarations(local);
+      return local;
+    }
+
+    if (!error && data && data.length === 0 && hasInit) {
+      saveLocalCustomsDeclarations([]);
+      return [];
     }
     return local;
   } catch (err) {
@@ -633,6 +653,7 @@ export async function loadMergedCustomsDeclarations(): Promise<CustomsDeclaratio
 
 export async function saveMergedCustomsDeclarations(items: CustomsDeclaration[]): Promise<void> {
   saveLocalCustomsDeclarations(items);
+  if (typeof window !== 'undefined') localStorage.setItem('rivlet_customs_initialized', 'true');
   if (!supabase) return;
 
   try {
@@ -658,6 +679,7 @@ export async function saveMergedCustomsDeclarations(items: CustomsDeclaration[])
       updated_at: new Date().toISOString(),
     }));
 
+    await syncUpsertToServer('customs_declarations', payload);
     await supabase.from('customs_declarations').upsert(payload);
   } catch (err) {
     console.error('Notice persisting customs declarations to Supabase:', err);
@@ -667,12 +689,14 @@ export async function saveMergedCustomsDeclarations(items: CustomsDeclaration[])
 export async function deleteMergedCustomsDeclaration(id: string): Promise<void> {
   const local = getLocalCustomsDeclarations().filter((d) => d.id !== id);
   saveLocalCustomsDeclarations(local);
+  if (typeof window !== 'undefined') localStorage.setItem('rivlet_customs_initialized', 'true');
+
+  const validId = isValidUuid(id) ? id : ensureValidUuid(id);
+  syncDeleteFromServer('customs_declarations', validId);
 
   if (!supabase) return;
   try {
-    if (isValidUuid(id)) {
-      await supabase.from('customs_declarations').delete().eq('id', id);
-    }
+    await supabase.from('customs_declarations').delete().eq('id', validId);
   } catch (err) {
     console.error('Notice deleting customs declaration from Supabase:', err);
   }
@@ -729,8 +753,16 @@ export async function loadMergedDscRegistry(): Promise<DscRegistryItem[]> {
       return items;
     }
 
-    if (!error && data && data.length === 0 && local.length > 0) {
+    const hasInit = typeof window !== 'undefined' && localStorage.getItem('rivlet_dsc_initialized') === 'true';
+    if (!hasInit && !error && data && data.length === 0 && local.length > 0) {
+      if (typeof window !== 'undefined') localStorage.setItem('rivlet_dsc_initialized', 'true');
       saveMergedDscRegistry(local);
+      return local;
+    }
+
+    if (!error && data && data.length === 0 && hasInit) {
+      saveLocalDscRegistry([]);
+      return [];
     }
     return local;
   } catch (err) {
@@ -741,6 +773,7 @@ export async function loadMergedDscRegistry(): Promise<DscRegistryItem[]> {
 
 export async function saveMergedDscRegistry(items: DscRegistryItem[]): Promise<void> {
   saveLocalDscRegistry(items);
+  if (typeof window !== 'undefined') localStorage.setItem('rivlet_dsc_initialized', 'true');
   if (!supabase) return;
 
   try {
@@ -759,6 +792,7 @@ export async function saveMergedDscRegistry(items: DscRegistryItem[]): Promise<v
       updated_at: new Date().toISOString(),
     }));
 
+    await syncUpsertToServer('dsc_registry', payload);
     await supabase.from('dsc_registry').upsert(payload);
   } catch (err) {
     console.error('Notice persisting DSC registry to Supabase:', err);
@@ -768,12 +802,14 @@ export async function saveMergedDscRegistry(items: DscRegistryItem[]): Promise<v
 export async function deleteMergedDscItem(id: string): Promise<void> {
   const local = getLocalDscRegistry().filter((d) => d.id !== id);
   saveLocalDscRegistry(local);
+  if (typeof window !== 'undefined') localStorage.setItem('rivlet_dsc_initialized', 'true');
+
+  const validId = isValidUuid(id) ? id : ensureValidUuid(id);
+  syncDeleteFromServer('dsc_registry', validId);
 
   if (!supabase) return;
   try {
-    if (isValidUuid(id)) {
-      await supabase.from('dsc_registry').delete().eq('id', id);
-    }
+    await supabase.from('dsc_registry').delete().eq('id', validId);
   } catch (err) {
     console.error('Notice deleting DSC item from Supabase:', err);
   }
@@ -783,13 +819,13 @@ export function getLocalCredentialVault(): CredentialVaultItem[] {
   if (typeof window === 'undefined') return INITIAL_CREDENTIAL_VAULT;
   try {
     const raw = localStorage.getItem(STORAGE_KEY_VAULT);
-    if (!raw) {
+    if (raw === null) {
       localStorage.setItem(STORAGE_KEY_VAULT, JSON.stringify(INITIAL_CREDENTIAL_VAULT));
       return INITIAL_CREDENTIAL_VAULT;
     }
     return JSON.parse(raw);
   } catch (err) {
-    return INITIAL_CREDENTIAL_VAULT;
+    return [];
   }
 }
 
@@ -812,25 +848,36 @@ export async function loadMergedCredentialVault(): Promise<CredentialVaultItem[]
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (!error && data && data.length > 0) {
-      const items: CredentialVaultItem[] = data.map((d: any) => ({
-        id: d.id,
-        title: d.title,
-        serviceType: d.service_type,
-        identifier: d.identifier,
-        secret: d.secret,
-        portalUrl: d.portal_url || undefined,
-        notes: d.notes || undefined,
-        lastVerifiedAt: d.last_verified_at || undefined,
-        updatedAt: d.updated_at || new Date().toISOString(),
-      }));
-      saveLocalCredentialVault(items);
-      return items;
+    if (!error && data) {
+      if (data.length > 0) {
+        const items: CredentialVaultItem[] = data.map((d: any) => ({
+          id: d.id,
+          title: d.title,
+          serviceType: d.service_type,
+          identifier: d.identifier,
+          secret: d.secret,
+          portalUrl: d.portal_url || undefined,
+          notes: d.notes || undefined,
+          lastVerifiedAt: d.last_verified_at || undefined,
+          updatedAt: d.updated_at || new Date().toISOString(),
+        }));
+        saveLocalCredentialVault(items);
+        return items;
+      }
+
+      const hasInit = typeof window !== 'undefined' && localStorage.getItem('rivlet_vault_initialized') === 'true';
+      if (!hasInit && data.length === 0 && local.length > 0) {
+        if (typeof window !== 'undefined') localStorage.setItem('rivlet_vault_initialized', 'true');
+        saveMergedCredentialVault(local);
+        return local;
+      }
+
+      if (data.length === 0 && hasInit) {
+        saveLocalCredentialVault([]);
+        return [];
+      }
     }
 
-    if (!error && data && data.length === 0 && local.length > 0) {
-      saveMergedCredentialVault(local);
-    }
     return local;
   } catch (err) {
     console.warn('Notice loading credential vault from Supabase:', err);
@@ -855,6 +902,7 @@ export async function saveMergedCredentialVault(items: CredentialVaultItem[]): P
       updated_at: new Date().toISOString(),
     }));
 
+    await syncUpsertToServer('credential_vault', payload);
     await supabase.from('credential_vault').upsert(payload);
   } catch (err) {
     console.error('Notice persisting credential vault to Supabase:', err);
@@ -864,12 +912,14 @@ export async function saveMergedCredentialVault(items: CredentialVaultItem[]): P
 export async function deleteMergedVaultItem(id: string): Promise<void> {
   const local = getLocalCredentialVault().filter((d) => d.id !== id);
   saveLocalCredentialVault(local);
+  if (typeof window !== 'undefined') localStorage.setItem('rivlet_vault_initialized', 'true');
+
+  const validId = isValidUuid(id) ? id : ensureValidUuid(id);
+  syncDeleteFromServer('credential_vault', validId);
 
   if (!supabase) return;
   try {
-    if (isValidUuid(id)) {
-      await supabase.from('credential_vault').delete().eq('id', id);
-    }
+    await supabase.from('credential_vault').delete().eq('id', validId);
   } catch (err) {
     console.error('Notice deleting credential from Supabase:', err);
   }
@@ -1044,6 +1094,11 @@ export async function saveMergedReconInvoices(invoices: GstReconciliationInvoice
 export async function deleteMergedReconInvoice(id: string): Promise<void> {
   const localList = getLocalReconInvoices().filter((i) => i.id !== id);
   saveLocalReconInvoices(localList);
+
+  syncDeleteFromServer('gst_reconciliation_invoices', id);
+  if (id.length === 36 && id.includes('-')) {
+    syncDeleteFromServer('compliance_workflows', id);
+  }
 
   if (!supabase) return;
   try {
@@ -1460,6 +1515,7 @@ export async function saveMergedComplianceWorkflows(items: ComplianceWorkflowIte
       updated_at: new Date().toISOString(),
     }));
 
+    await syncUpsertToServer('compliance_workflows', records);
     for (const r of records) {
       await supabase.from('compliance_workflows').upsert(r);
     }
@@ -1471,10 +1527,13 @@ export async function saveMergedComplianceWorkflows(items: ComplianceWorkflowIte
 export async function deleteMergedComplianceWorkflow(id: string): Promise<void> {
   const current = getLocalComplianceWorkflows();
   saveLocalComplianceWorkflows(current.filter((item) => item.id !== id));
-  if (!supabase) return;
+  if (typeof window !== 'undefined') localStorage.setItem('rivlet_wf_initialized', 'true');
 
+  const validId = isValidUuid(id) ? id : ensureValidUuid(id);
+  syncDeleteFromServer('compliance_workflows', validId);
+
+  if (!supabase) return;
   try {
-    const validId = isValidUuid(id) ? id : ensureValidUuid(id);
     await supabase.from('compliance_workflows').delete().eq('id', validId);
   } catch (err) {
     console.error('Notice deleting compliance workflow from Supabase:', err);
