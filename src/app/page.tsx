@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Sparkles,
@@ -26,11 +26,15 @@ import {
   CalendarClock,
   Flag,
   Lock,
-  Shield
+  Shield,
+  BadgePercent,
+  Scale,
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { useAuth } from '@/lib/authContext';
 import TodaysFocusModern from '@/components/dashboard/TodaysFocusModern';
+import { loadMergedGstTaxInputs, loadMergedGstSettings, loadMergedReconInvoices, GstTaxInputs } from '@/lib/complianceStorage';
+import { GstSettings } from '@/lib/types';
 
 function isOverdue(item: { targetDate?: string; state: string }) {
   if (!item.targetDate || item.state === 'Closed' || item.state === 'Resolved') return false;
@@ -46,6 +50,17 @@ export default function DashboardOverviewPage() {
   const { artifacts, costingSheets, documents, kbArticles, vendors, pipelineItems, budgetItems, budgetSettings, workItems, sprints, activeSeason } = useAdminStore();
   const { user, canView, can } = useAuth();
   const [showAllTools, setShowAllTools] = useState(false);
+
+  // Live GST & Statutory Data State
+  const [gstInputs, setGstInputs] = useState<GstTaxInputs | null>(null);
+  const [gstSettings, setGstSettings] = useState<GstSettings | null>(null);
+  const [reconInvoiceCount, setReconInvoiceCount] = useState<number>(0);
+
+  useEffect(() => {
+    loadMergedGstTaxInputs().then(setGstInputs);
+    loadMergedGstSettings().then(setGstSettings);
+    loadMergedReconInvoices().then((invs) => setReconInvoiceCount(invs.length));
+  }, []);
 
   const todayStr = new Date().toISOString().slice(0, 10);
   const currentSprint = sprints.find((s) => s.startDate <= todayStr && s.endDate >= todayStr);
@@ -224,8 +239,8 @@ export default function DashboardOverviewPage() {
         )}
       </div>
 
-      {/* Business Workflow Widgets: Vendors, Pipeline, Budget */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* Business Workflow Widgets: Vendors, Pipeline, Budget, Statutory Compliance */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {canView('vendors') && (
           <Link
             href="/vendors"
@@ -304,6 +319,45 @@ export default function DashboardOverviewPage() {
             )}
           </Link>
         )}
+
+        {/* Metric 4: Statutory GST & ITC Engine */}
+        <Link
+          href="/compliance?tab=gst"
+          className="bg-[#0e121b] border border-[#1e2638] hover:border-[#cda052]/50 p-5 rounded-xl transition-all duration-150 group shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-semibold text-[#94a3b8] uppercase tracking-wider">GST Engine & ITC</span>
+              <div className="p-2 rounded-lg bg-[rgba(205,160,82,0.15)] text-[#cda052] group-hover:scale-110 transition-transform">
+                <BadgePercent className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-2xl font-bold text-white font-mono tabular-nums">
+              ₹{(gstInputs?.grossOutwardTurnover || 0).toLocaleString('en-IN')}
+            </div>
+            <div className="text-[10px] text-slate-400 font-semibold uppercase mt-0.5">Gross Outward Turnover</div>
+            
+            <div className="flex items-center justify-between text-xs mt-3 pt-2.5 border-t border-[#182032] text-[#94a3b8]">
+              <div>
+                <span className="text-[10px] block text-slate-500">Output Tax</span>
+                <span className="text-amber-400 font-mono font-semibold">
+                  ₹{(((gstInputs?.outputIgst || 0) + (gstInputs?.outputCgst || 0) + (gstInputs?.outputSgst || 0)) / 1000).toFixed(1)}k
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] block text-slate-500">Eligible ITC</span>
+                <span className="text-emerald-400 font-mono font-semibold">
+                  ₹{(((gstInputs?.inputIgst || 0) + (gstInputs?.inputCgst || 0) + (gstInputs?.inputSgst || 0)) / 1000).toFixed(1)}k
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="pt-2.5 mt-2.5 border-t border-[#182032] flex items-center justify-between text-[11px] text-[#cda052] font-semibold">
+            <span>{reconInvoiceCount} Supplier Invoices</span>
+            <span className="group-hover:translate-x-1 transition-transform">Manage GST →</span>
+          </div>
+        </Link>
       </div>
 
       {/* Promoted Claude Tools Quick Launcher */}

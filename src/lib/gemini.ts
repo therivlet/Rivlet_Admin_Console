@@ -189,3 +189,44 @@ export async function generateGeminiMultimodal(options: GeminiMultimodalOptions)
 
   throw new Error(`All Gemini models failed: ${lastError?.message || 'Unknown error'}`);
 }
+
+/**
+ * Multimodal Structured JSON Extraction (e.g. Invoices, GST returns, scanned bills)
+ */
+export async function generateGeminiMultimodalJSON<T>(options: GeminiMultimodalOptions): Promise<T> {
+  const jsonPrompt = `${options.prompt}\n\nIMPORTANT: Respond ONLY with a valid, raw JSON object. Do NOT wrap the JSON in markdown code blocks like \`\`\`json or \`\`\`. Output raw JSON characters only.`;
+  const rawText = await generateGeminiMultimodal({
+    ...options,
+    prompt: jsonPrompt,
+  });
+
+  let cleaned = rawText.trim();
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+  }
+
+  try {
+    return JSON.parse(cleaned) as T;
+  } catch (err: any) {
+    const firstBrace = cleaned.indexOf('{');
+    const firstBracket = cleaned.indexOf('[');
+    let startIdx = -1;
+    let endIdx = -1;
+
+    if (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
+      startIdx = firstBrace;
+      endIdx = cleaned.lastIndexOf('}');
+    } else if (firstBracket !== -1) {
+      startIdx = firstBracket;
+      endIdx = cleaned.lastIndexOf(']');
+    }
+
+    if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+      const slice = cleaned.slice(startIdx, endIdx + 1);
+      return JSON.parse(slice) as T;
+    }
+
+    throw new Error(`Failed to parse Gemini Multimodal JSON output: ${err.message}. Raw output: ${cleaned.slice(0, 200)}`);
+  }
+}
+

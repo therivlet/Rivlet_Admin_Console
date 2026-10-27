@@ -423,9 +423,6 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
             cached.forEach((c: any) => cachedVendorsMap.set(c.id, c));
           }
         } catch (_) {}
-        initialVendors.forEach((iv) => {
-          if (!cachedVendorsMap.has(iv.id)) cachedVendorsMap.set(iv.id, iv);
-        });
 
         const formatted: VendorItem[] = venRes.data.map((r: any) => {
           const cached = cachedVendorsMap.get(r.id);
@@ -464,13 +461,6 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
             updatedAt: r.updated_at || cached?.updatedAt || new Date().toISOString(),
           };
         });
-
-        // Ensure newly added diverse partner categories are present
-        for (const iv of initialVendors) {
-          if (!formatted.some((f) => f.id === iv.id)) {
-            formatted.push(iv);
-          }
-        }
 
         setVendors(formatted);
         persistLocal(STORAGE_KEYS.VENDORS, formatted);
@@ -723,18 +713,12 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       if (storedVendors) {
         try {
           const parsed = JSON.parse(storedVendors);
-          const merged = Array.isArray(parsed) ? [...parsed] : [];
-          for (const iv of initialVendors) {
-            if (!merged.some((v: any) => v.id === iv.id)) {
-              merged.push(iv);
-            }
-          }
-          setVendors(merged);
+          setVendors(Array.isArray(parsed) ? parsed : []);
         } catch (_) {
-          setVendors(initialVendors);
+          setVendors([]);
         }
       } else {
-        setVendors(initialVendors);
+        setVendors([]);
       }
       if (storedPipeline) {
         try {

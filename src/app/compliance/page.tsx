@@ -30,10 +30,15 @@ import {
   getLocalComplianceWorkflows,
   saveLocalComplianceWorkflows,
   loadMergedComplianceWorkflows,
+  saveMergedComplianceWorkflows,
   getLocalGstSettings,
   saveLocalGstSettings,
+  loadMergedGstSettings,
+  saveMergedGstSettings,
   getLocalReconInvoices,
   saveLocalReconInvoices,
+  loadMergedReconInvoices,
+  saveMergedReconInvoices,
   getLocalCustomsDeclarations,
   saveLocalCustomsDeclarations,
   getLocalDscRegistry,
@@ -75,8 +80,9 @@ function CompliancePageInner() {
   const [dscItems, setDscItems] = useState<DscRegistryItem[]>([]);
   const [vaultItems, setVaultItems] = useState<CredentialVaultItem[]>([]);
 
-  // Load datasets on mount
+  // Load datasets on mount and synchronize with Supabase Cloud
   useEffect(() => {
+    // 1. Initial fast local hydration
     setWorkflows(getLocalComplianceWorkflows());
     setGstSettings(getLocalGstSettings());
     setReconInvoices(getLocalReconInvoices());
@@ -84,7 +90,15 @@ function CompliancePageInner() {
     setDscItems(getLocalDscRegistry());
     setVaultItems(getLocalCredentialVault());
 
-    // Merged load
+    // 2. Direct Supabase Cloud synchronization
+    loadMergedGstSettings().then((settings) => {
+      if (settings) setGstSettings(settings);
+    });
+
+    loadMergedReconInvoices().then((invoices) => {
+      if (invoices) setReconInvoices(invoices);
+    });
+
     loadMergedComplianceWorkflows().then((merged) => {
       if (merged && merged.length > 0) setWorkflows(merged);
     });
@@ -96,17 +110,17 @@ function CompliancePageInner() {
 
   const handleSaveWorkflows = (updated: ComplianceWorkflowItem[]) => {
     setWorkflows(updated);
-    saveLocalComplianceWorkflows(updated);
+    saveMergedComplianceWorkflows(updated);
   };
 
   const handleUpdateGstSettings = (updated: GstSettings) => {
     setGstSettings(updated);
-    saveLocalGstSettings(updated);
+    saveMergedGstSettings(updated);
   };
 
   const handleUpdateReconInvoices = (updated: GstReconciliationInvoice[]) => {
     setReconInvoices(updated);
-    saveLocalReconInvoices(updated);
+    saveMergedReconInvoices(updated);
   };
 
   const handleUpdateCustoms = (updated: CustomsDeclaration[]) => {
@@ -133,6 +147,8 @@ function CompliancePageInner() {
         customsDeclarations={customsDeclarations}
         onTabSelect={(t) => setTab(t as ComplianceTab)}
         activeTab={activeTab}
+        settings={gstSettings}
+        onUpdateSettings={handleUpdateGstSettings}
       />
 
       {/* Navigation Sub-Tabs Bar */}

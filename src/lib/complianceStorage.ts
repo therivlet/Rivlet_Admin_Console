@@ -24,16 +24,18 @@ export const STORAGE_KEY_GST_TAX_INPUTS = 'rivlet_gst_tax_inputs';
 // --- Production Initial Statutory Datasets (Clean Indian Apparel Compliance) ---
 
 export const INITIAL_GST_SETTINGS: GstSettings = {
-  id: 'gst-settings-rivlet-primary',
-  gstin: '33AABCR1234F1Z8',
-  legalName: 'Rivlet Apparel Private Limited',
-  tradeName: 'Rivlet Studios',
+  id: 'gst-settings-primary',
+  gstin: '',
+  legalName: 'My Enterprise',
+  tradeName: '',
+  pan: '',
+  iec: '',
   filingFrequency: 'monthly',
   gstr1DueDay: 10,
   gstr3bDueDay: 20,
   reminderDays: [7, 3, 1, 0],
   isActive: true,
-  stateCode: '33', // Tamil Nadu
+  stateCode: '33', // Default jurisdiction
 };
 
 export const INITIAL_COMPLIANCE_WORKFLOWS: ComplianceWorkflowItem[] = [
@@ -260,64 +262,7 @@ export const INITIAL_CREDENTIAL_VAULT: CredentialVaultItem[] = [
   },
 ];
 
-export const INITIAL_RECON_INVOICES: GstReconciliationInvoice[] = [
-  {
-    id: 'inv-recon-01',
-    vendorName: 'Coimbatore Heritage Spinners Ltd',
-    vendorGstin: '33AAACH1094J1Z2',
-    invoiceNumber: 'CHS-26-8819',
-    invoiceDate: '2026-10-04',
-    invoiceValue: 472000,
-    taxableValue: 400000,
-    taxAmount: 72000,
-    inBooks: true,
-    inGstr2b: true,
-    matchStatus: 'matched',
-    itcEligibility: 'eligible',
-  },
-  {
-    id: 'inv-recon-02',
-    vendorName: 'Surat Luxe Trims & Zippers Pvt Ltd',
-    vendorGstin: '24AABCS8891F1Z4',
-    invoiceNumber: 'SLT/OCT/104',
-    invoiceDate: '2026-10-08',
-    invoiceValue: 212400,
-    taxableValue: 180000,
-    taxAmount: 32400,
-    inBooks: true,
-    inGstr2b: false,
-    matchStatus: 'missing_in_2b',
-    itcEligibility: 'pending',
-  },
-  {
-    id: 'inv-recon-03',
-    vendorName: 'Tirupur Precision Dyeing & Processing',
-    vendorGstin: '33AABCT9981K1Z9',
-    invoiceNumber: 'TPD-2026-90',
-    invoiceDate: '2026-10-12',
-    invoiceValue: 354000,
-    taxableValue: 300000,
-    taxAmount: 54000,
-    inBooks: true,
-    inGstr2b: true,
-    matchStatus: 'matched',
-    itcEligibility: 'eligible',
-  },
-  {
-    id: 'inv-recon-04',
-    vendorName: 'Bangalore Executive Fleet & Transport',
-    vendorGstin: '29AABCE1123D1ZX',
-    invoiceNumber: 'BEF-9941',
-    invoiceDate: '2026-10-15',
-    invoiceValue: 59000,
-    taxableValue: 50000,
-    taxAmount: 9000,
-    inBooks: true,
-    inGstr2b: true,
-    matchStatus: 'matched',
-    itcEligibility: 'ineligible_17_5',
-  },
-];
+export const INITIAL_RECON_INVOICES: GstReconciliationInvoice[] = [];
 
 // --- Statutory Rule 88A Tax Calculation Engine ---
 
@@ -470,7 +415,6 @@ export function getLocalGstSettings(): GstSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_GST_SETTINGS);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEY_GST_SETTINGS, JSON.stringify(INITIAL_GST_SETTINGS));
       return INITIAL_GST_SETTINGS;
     }
     return JSON.parse(raw);
@@ -484,7 +428,99 @@ export function saveLocalGstSettings(settings: GstSettings): void {
   try {
     localStorage.setItem(STORAGE_KEY_GST_SETTINGS, JSON.stringify(settings));
   } catch (err) {
-    console.error('Error saving GST settings:', err);
+    console.error('Error saving GST settings locally:', err);
+  }
+}
+
+export async function loadMergedGstSettings(): Promise<GstSettings> {
+  const local = getLocalGstSettings();
+  if (!supabase) return local;
+
+  try {
+    const { data, error } = await supabase
+      .from('gst_settings')
+      .select('*')
+      .limit(1);
+
+    if (error || !data || data.length === 0) return local;
+
+    const row = data[0];
+    const panFromGstin = row.gstin && row.gstin.length >= 12 ? row.gstin.slice(2, 12).toUpperCase() : '';
+    const merged: GstSettings = {
+      id: row.id,
+      gstin: row.gstin || local.gstin || '',
+      legalName: row.legal_name || local.legalName || 'My Enterprise',
+      tradeName: row.trade_name || local.tradeName || '',
+      pan: (row as any).pan || local.pan || panFromGstin || '',
+      iec: (row as any).iec || local.iec || '',
+      filingFrequency: row.filing_frequency || local.filingFrequency || 'monthly',
+      gstr1DueDay: row.gstr1_due_day || 10,
+      gstr3bDueDay: row.gstr3b_due_day || 20,
+      reminderDays: row.reminder_days || [7, 3, 1, 0],
+      isActive: row.is_active ?? true,
+      stateCode: row.state_code || '33',
+    };
+
+    saveLocalGstSettings(merged);
+    return merged;
+  } catch (err) {
+    console.warn('Notice loading gst_settings from Supabase:', err);
+    return local;
+  }
+}
+
+export async function saveMergedGstSettings(settings: GstSettings): Promise<void> {
+  saveLocalGstSettings(settings);
+  if (!supabase) return;
+
+  try {
+    const pan = settings.pan || (settings.gstin && settings.gstin.length >= 12 ? settings.gstin.slice(2, 12).toUpperCase() : '');
+    const payload: any = {
+      id: settings.id && settings.id.length === 36 ? settings.id : undefined,
+      gstin: settings.gstin.trim().toUpperCase(),
+      legal_name: settings.legalName.trim(),
+      trade_name: settings.tradeName?.trim() || null,
+      filing_frequency: settings.filingFrequency,
+      gstr1_due_day: settings.gstr1DueDay,
+      gstr3b_due_day: settings.gstr3bDueDay,
+      reminder_days: settings.reminderDays,
+      is_active: settings.isActive,
+      state_code: settings.stateCode || '33',
+      updated_at: new Date().toISOString(),
+    };
+
+    if (payload.id) {
+      await supabase.from('gst_settings').upsert(payload);
+    } else {
+      // Check existing row
+      const { data } = await supabase.from('gst_settings').select('id').limit(1);
+      if (data && data.length > 0) {
+        payload.id = data[0].id;
+        await supabase.from('gst_settings').update(payload).eq('id', payload.id);
+      } else {
+        await supabase.from('gst_settings').insert(payload);
+      }
+    }
+
+    // Also sync PAN to credential vault for direct tax access
+    if (pan) {
+      try {
+        const { data: vaultRows } = await supabase
+          .from('credential_vault')
+          .select('id')
+          .eq('service_type', 'incometax')
+          .limit(1);
+
+        if (vaultRows && vaultRows.length > 0) {
+          await supabase.from('credential_vault').update({
+            identifier: pan,
+            updated_at: new Date().toISOString(),
+          }).eq('id', vaultRows[0].id);
+        }
+      } catch (_) {}
+    }
+  } catch (err) {
+    console.error('Notice persisting gst_settings to Supabase:', err);
   }
 }
 
@@ -562,7 +598,6 @@ export function getLocalReconInvoices(): GstReconciliationInvoice[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_RECON_INVOICES);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEY_RECON_INVOICES, JSON.stringify(INITIAL_RECON_INVOICES));
       return INITIAL_RECON_INVOICES;
     }
     return JSON.parse(raw);
@@ -576,7 +611,166 @@ export function saveLocalReconInvoices(invoices: GstReconciliationInvoice[]): vo
   try {
     localStorage.setItem(STORAGE_KEY_RECON_INVOICES, JSON.stringify(invoices));
   } catch (err) {
-    console.error('Error saving recon invoices:', err);
+    console.error('Error saving recon invoices locally:', err);
+  }
+}
+
+export async function loadMergedReconInvoices(): Promise<GstReconciliationInvoice[]> {
+  const localList = getLocalReconInvoices();
+  if (!supabase) return localList;
+
+  try {
+    // 1. Try dedicated table first
+    const { data: dedicatedData, error: dedicatedErr } = await supabase
+      .from('gst_reconciliation_invoices')
+      .select('*')
+      .order('invoice_date', { ascending: false });
+
+    if (!dedicatedErr && dedicatedData && dedicatedData.length > 0) {
+      const items: GstReconciliationInvoice[] = dedicatedData.map((d: any) => ({
+        id: d.id,
+        vendorName: d.vendor_name,
+        vendorGstin: d.vendor_gstin,
+        invoiceNumber: d.invoice_number,
+        invoiceDate: d.invoice_date,
+        invoiceValue: Number(d.invoice_value || 0),
+        taxableValue: Number(d.taxable_value || 0),
+        taxAmount: Number(d.tax_amount || 0),
+        igstAmount: Number(d.igst_amount || 0),
+        cgstAmount: Number(d.cgst_amount || 0),
+        sgstAmount: Number(d.sgst_amount || 0),
+        inBooks: d.in_books ?? true,
+        inGstr2b: d.in_gstr2b ?? true,
+        matchStatus: d.match_status || 'matched',
+        itcEligibility: d.itc_eligibility || 'eligible',
+        invoiceType: d.invoice_type || 'purchase_inward',
+        source: d.source || 'manual',
+        notes: d.notes,
+      }));
+      saveLocalReconInvoices(items);
+      return items;
+    }
+
+    // 2. Fallback to compliance_workflows where return_type = 'GST-RECON-INVOICE'
+    const { data: wfData, error: wfErr } = await supabase
+      .from('compliance_workflows')
+      .select('*')
+      .eq('return_type', 'GST-RECON-INVOICE');
+
+    if (!wfErr && wfData && wfData.length > 0) {
+      const parsedItems: GstReconciliationInvoice[] = wfData.map((d: any) => {
+        try {
+          if (d.notes && d.notes.startsWith('{')) {
+            const parsed = JSON.parse(d.notes);
+            return {
+              ...parsed,
+              id: d.id,
+            };
+          }
+        } catch (_) {}
+
+        return {
+          id: d.id,
+          vendorName: d.title,
+          vendorGstin: d.entity_name,
+          invoiceNumber: d.arn_number || 'INV',
+          invoiceDate: d.due_date,
+          taxableValue: Number(d.challan_amount || 0),
+          taxAmount: Number(d.itc_claimed || 0),
+          invoiceValue: Number(d.challan_amount || 0) + Number(d.itc_claimed || 0),
+          inBooks: true,
+          inGstr2b: true,
+          matchStatus: d.status === 'filed' ? 'matched' : 'missing_in_2b',
+          itcEligibility: 'eligible',
+          invoiceType: 'purchase_inward',
+          notes: d.notes,
+        };
+      });
+
+      saveLocalReconInvoices(parsedItems);
+      return parsedItems;
+    }
+
+    return localList;
+  } catch (err) {
+    console.warn('Notice loading recon invoices from Supabase:', err);
+    return localList;
+  }
+}
+
+export async function saveMergedReconInvoices(invoices: GstReconciliationInvoice[]): Promise<void> {
+  saveLocalReconInvoices(invoices);
+  if (!supabase) return;
+
+  try {
+    // 1. Try dedicated table first
+    const dedicatedPayload = invoices.map((inv) => ({
+      id: inv.id,
+      vendor_name: inv.vendorName,
+      vendor_gstin: inv.vendorGstin,
+      invoice_number: inv.invoiceNumber,
+      invoice_date: inv.invoiceDate,
+      taxable_value: inv.taxableValue,
+      tax_amount: inv.taxAmount,
+      invoice_value: inv.invoiceValue,
+      igst_amount: inv.igstAmount || 0,
+      cgst_amount: inv.cgstAmount || 0,
+      sgst_amount: inv.sgstAmount || 0,
+      in_books: inv.inBooks,
+      in_gstr2b: inv.inGstr2b,
+      match_status: inv.matchStatus,
+      itc_eligibility: inv.itcEligibility,
+      invoice_type: inv.invoiceType || 'purchase_inward',
+      source: inv.source || 'manual',
+      notes: inv.notes,
+      updated_at: new Date().toISOString(),
+    }));
+
+    const { error } = await supabase.from('gst_reconciliation_invoices').upsert(dedicatedPayload);
+    if (!error) return;
+
+    // 2. Seamless fallback: sync with compliance_workflows
+    for (const inv of invoices) {
+      const payload: any = {
+        title: inv.vendorName,
+        category: 'gst',
+        entity_name: inv.vendorGstin,
+        return_type: 'GST-RECON-INVOICE',
+        tax_period: inv.invoiceDate,
+        due_date: inv.invoiceDate,
+        statutory_deadline: inv.invoiceDate,
+        arn_number: inv.invoiceNumber,
+        challan_amount: inv.taxableValue,
+        itc_claimed: inv.taxAmount,
+        status: inv.matchStatus === 'matched' ? 'filed' : 'in_progress',
+        notes: JSON.stringify(inv),
+        updated_at: new Date().toISOString(),
+      };
+
+      if (inv.id && inv.id.length === 36 && inv.id.includes('-')) {
+        payload.id = inv.id;
+        await supabase.from('compliance_workflows').upsert(payload);
+      } else {
+        await supabase.from('compliance_workflows').insert(payload);
+      }
+    }
+  } catch (err) {
+    console.error('Notice persisting recon invoices to Supabase:', err);
+  }
+}
+
+export async function deleteMergedReconInvoice(id: string): Promise<void> {
+  const localList = getLocalReconInvoices().filter((i) => i.id !== id);
+  saveLocalReconInvoices(localList);
+
+  if (!supabase) return;
+  try {
+    await supabase.from('gst_reconciliation_invoices').delete().eq('id', id);
+    if (id.length === 36 && id.includes('-')) {
+      await supabase.from('compliance_workflows').delete().eq('id', id);
+    }
+  } catch (err) {
+    console.error('Notice deleting recon invoice from Supabase:', err);
   }
 }
 
@@ -706,6 +900,7 @@ export function saveLocalTdsRecords(records: TdsReturnRecord[]): void {
 
 export interface GstTaxInputs {
   taxPeriod: string;
+  grossOutwardTurnover: number;
   outputIgst: number;
   outputCgst: number;
   outputSgst: number;
@@ -716,14 +911,15 @@ export interface GstTaxInputs {
 }
 
 export const DEFAULT_GST_TAX_INPUTS: GstTaxInputs = {
-  taxPeriod: 'October 2026',
-  outputIgst: 420000,
-  outputCgst: 180000,
-  outputSgst: 180000,
-  inputIgst: 380000,
-  inputCgst: 140000,
-  inputSgst: 140000,
-  ineligibleItc: 9000,
+  taxPeriod: 'Current Month',
+  grossOutwardTurnover: 0,
+  outputIgst: 0,
+  outputCgst: 0,
+  outputSgst: 0,
+  inputIgst: 0,
+  inputCgst: 0,
+  inputSgst: 0,
+  ineligibleItc: 0,
 };
 
 export function getLocalGstTaxInputs(): GstTaxInputs {
@@ -731,7 +927,6 @@ export function getLocalGstTaxInputs(): GstTaxInputs {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_GST_TAX_INPUTS);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEY_GST_TAX_INPUTS, JSON.stringify(DEFAULT_GST_TAX_INPUTS));
       return DEFAULT_GST_TAX_INPUTS;
     }
     return JSON.parse(raw);
@@ -745,6 +940,140 @@ export function saveLocalGstTaxInputs(inputs: GstTaxInputs): void {
   try {
     localStorage.setItem(STORAGE_KEY_GST_TAX_INPUTS, JSON.stringify(inputs));
   } catch (err) {
-    console.error('Error saving GST tax inputs:', err);
+    console.error('Error saving GST tax inputs locally:', err);
+  }
+}
+
+export async function loadMergedGstTaxInputs(): Promise<GstTaxInputs> {
+  const local = getLocalGstTaxInputs();
+  if (!supabase) return local;
+
+  try {
+    // 1. Try dedicated table first
+    const { data: dedicatedData, error: dedicatedErr } = await supabase
+      .from('gst_tax_inputs')
+      .select('*')
+      .eq('id', 'default')
+      .limit(1);
+
+    if (!dedicatedErr && dedicatedData && dedicatedData.length > 0) {
+      const row = dedicatedData[0];
+      const merged: GstTaxInputs = {
+        taxPeriod: row.tax_period || local.taxPeriod || 'Current Month',
+        grossOutwardTurnover: Number(row.gross_outward_turnover || 0),
+        outputIgst: Number(row.output_igst || 0),
+        outputCgst: Number(row.output_cgst || 0),
+        outputSgst: Number(row.output_sgst || 0),
+        inputIgst: Number(row.input_igst || 0),
+        inputCgst: Number(row.input_cgst || 0),
+        inputSgst: Number(row.input_sgst || 0),
+        ineligibleItc: Number(row.ineligible_itc || 0),
+      };
+      saveLocalGstTaxInputs(merged);
+      return merged;
+    }
+
+    // 2. Fallback to compliance_workflows where return_type = 'GST-TAX-INPUTS'
+    const { data: wfData, error: wfErr } = await supabase
+      .from('compliance_workflows')
+      .select('*')
+      .eq('return_type', 'GST-TAX-INPUTS')
+      .limit(1);
+
+    if (!wfErr && wfData && wfData.length > 0) {
+      const row = wfData[0];
+      if (row.notes && row.notes.startsWith('{')) {
+        const parsed = JSON.parse(row.notes);
+        saveLocalGstTaxInputs(parsed);
+        return parsed;
+      }
+    }
+
+    return local;
+  } catch (err) {
+    console.warn('Notice loading GST tax inputs from Supabase:', err);
+    return local;
+  }
+}
+
+export async function saveMergedGstTaxInputs(inputs: GstTaxInputs): Promise<void> {
+  saveLocalGstTaxInputs(inputs);
+  if (!supabase) return;
+
+  try {
+    // 1. Try dedicated table first
+    const payload = {
+      id: 'default',
+      tax_period: inputs.taxPeriod,
+      gross_outward_turnover: inputs.grossOutwardTurnover,
+      output_igst: inputs.outputIgst,
+      output_cgst: inputs.outputCgst,
+      output_sgst: inputs.outputSgst,
+      input_igst: inputs.inputIgst,
+      input_cgst: inputs.inputCgst,
+      input_sgst: inputs.inputSgst,
+      ineligible_itc: inputs.ineligibleItc,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error } = await supabase.from('gst_tax_inputs').upsert(payload);
+    if (!error) return;
+
+    // 2. Seamless fallback: sync with compliance_workflows
+    const wfPayload: any = {
+      id: '00000000-0000-0000-0000-000000000001',
+      title: 'Statutory GST Tax Inputs & Turnover State',
+      category: 'gst',
+      entity_name: 'GST Engine & ITC',
+      return_type: 'GST-TAX-INPUTS',
+      tax_period: inputs.taxPeriod,
+      due_date: '2099-12-31',
+      statutory_deadline: '2099-12-31',
+      status: 'filed',
+      challan_amount: inputs.grossOutwardTurnover,
+      itc_claimed: inputs.inputIgst + inputs.inputCgst + inputs.inputSgst,
+      notes: JSON.stringify(inputs),
+      updated_at: new Date().toISOString(),
+    };
+
+    await supabase.from('compliance_workflows').upsert(wfPayload);
+  } catch (err) {
+    console.error('Notice persisting GST tax inputs to Supabase:', err);
+  }
+}
+
+export async function saveMergedComplianceWorkflows(items: ComplianceWorkflowItem[]): Promise<void> {
+  saveLocalComplianceWorkflows(items);
+  if (!supabase) return;
+
+  try {
+    const records = items.map((w) => ({
+      id: w.id && w.id.length === 36 && w.id.includes('-') ? w.id : undefined,
+      title: w.title,
+      category: w.category,
+      entity_name: w.entityName,
+      return_type: w.returnType,
+      tax_period: w.taxPeriod,
+      due_date: w.dueDate,
+      statutory_deadline: w.statutoryDeadline,
+      status: w.status,
+      assigned_to: w.assignedTo || null,
+      arn_number: w.arnNumber || null,
+      challan_amount: w.challanAmount || 0,
+      itc_claimed: w.itcClaimed || 0,
+      attachment_url: w.attachmentUrl || null,
+      notes: w.notes || null,
+      updated_at: new Date().toISOString(),
+    }));
+
+    for (const r of records) {
+      if (r.id) {
+        await supabase.from('compliance_workflows').upsert(r);
+      } else {
+        await supabase.from('compliance_workflows').insert(r);
+      }
+    }
+  } catch (err) {
+    console.error('Notice persisting compliance workflows to Supabase:', err);
   }
 }

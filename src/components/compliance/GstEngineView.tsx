@@ -24,6 +24,11 @@ import {
   CreditCard,
   FileText,
   Sparkles,
+  UploadCloud,
+  FileUp,
+  ScanText,
+  CheckCheck,
+  FileSearch,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import VendorNoticeModal from './VendorNoticeModal';
@@ -37,9 +42,14 @@ import {
 import {
   calculateStatutoryGst,
   saveLocalGstSettings,
+  saveMergedGstSettings,
   saveLocalReconInvoices,
+  saveMergedReconInvoices,
+  deleteMergedReconInvoice,
   getLocalGstTaxInputs,
   saveLocalGstTaxInputs,
+  loadMergedGstTaxInputs,
+  saveMergedGstTaxInputs,
   GstTaxInputs,
 } from '@/lib/complianceStorage';
 import { addDurableNotification } from '@/lib/notificationStorage';
@@ -61,43 +71,99 @@ export default function GstEngineView({
   workflows,
   onUpdateWorkflows,
 }: GstEngineViewProps) {
-  // Settings modal
+  // Settings modal state
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [frequency, setFrequency] = useState<'monthly' | 'quarterly'>(settings.filingFrequency);
-  const [gstr1Day, setGstr1Day] = useState(settings.gstr1DueDay);
-  const [gstr3bDay, setGstr3bDay] = useState(settings.gstr3bDueDay);
+  const [legalName, setLegalName] = useState(settings.legalName || 'My Enterprise');
+  const [tradeName, setTradeName] = useState(settings.tradeName || '');
+  const [gstin, setGstin] = useState(settings.gstin || '');
+  const [pan, setPan] = useState(settings.pan || '');
+  const [iec, setIec] = useState(settings.iec || '');
+  const [frequency, setFrequency] = useState<'monthly' | 'quarterly'>(settings.filingFrequency || 'monthly');
+  const [gstr1Day, setGstr1Day] = useState(settings.gstr1DueDay || 10);
+  const [gstr3bDay, setGstr3bDay] = useState(settings.gstr3bDueDay || 20);
 
-  // Statutory Tax Calculator State (loaded from storage)
-  const [taxPeriod, setTaxPeriod] = useState('October 2026');
-  const [outputIgst, setOutputIgst] = useState(420000);
-  const [outputCgst, setOutputCgst] = useState(180000);
-  const [outputSgst, setOutputSgst] = useState(180000);
-  const [inputIgst, setInputIgst] = useState(380000);
-  const [inputCgst, setInputCgst] = useState(140000);
-  const [inputSgst, setInputSgst] = useState(140000);
-  const [ineligibleItc, setIneligibleItc] = useState(9000);
+  // Statutory Tax Figures State (defaults to 0 as requested, loads from Supabase)
+  const [taxPeriod, setTaxPeriod] = useState('Current Month');
+  const [grossOutwardTurnover, setGrossOutwardTurnover] = useState<number>(0);
+  const [outputIgst, setOutputIgst] = useState<number>(0);
+  const [outputCgst, setOutputCgst] = useState<number>(0);
+  const [outputSgst, setOutputSgst] = useState<number>(0);
+  const [inputIgst, setInputIgst] = useState<number>(0);
+  const [inputCgst, setInputCgst] = useState<number>(0);
+  const [inputSgst, setInputSgst] = useState<number>(0);
+  const [ineligibleItc, setIneligibleItc] = useState<number>(0);
   const [hasUnsavedTaxChanges, setHasUnsavedTaxChanges] = useState(false);
   const [taxSavedBanner, setTaxSavedBanner] = useState(false);
+  const [bannerMessage, setBannerMessage] = useState('Saved to Cloud Database');
+
+  // Turnover Editing Modal State
+  const [isTurnoverModalOpen, setIsTurnoverModalOpen] = useState(false);
+  const [editingTurnoverVal, setEditingTurnoverVal] = useState<number>(0);
+
+  // Return Ingestion Modal State (GSTR-1, GSTR-3B, GSTR-2B)
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+  const [isParsingReturn, setIsParsingReturn] = useState(false);
+  const [returnParseError, setReturnParseError] = useState<string | null>(null);
+  const [extractedReturnData, setExtractedReturnData] = useState<any>(null);
 
   // AI Modal States
   const [isAiAuditOpen, setIsAiAuditOpen] = useState(false);
   const [vendorNoticeInvoice, setVendorNoticeInvoice] = useState<any>(null);
 
+  // Invoice Modal State (Add & Edit with AI File Upload)
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [invoiceModalTab, setInvoiceModalTab] = useState<'upload' | 'manual'>('upload');
+  const [isParsingInvoice, setIsParsingInvoice] = useState(false);
+  const [invoiceParseError, setInvoiceParseError] = useState<string | null>(null);
+  const [aiConfidence, setAiConfidence] = useState<number | null>(null);
+
+  const [editingInvoice, setEditingInvoice] = useState<GstReconciliationInvoice | null>(null);
+  const [vendorName, setVendorName] = useState('');
+  const [vendorGstin, setVendorGstin] = useState('');
+  const [invoiceNumber, setInvoiceNumber] = useState('');
+  const [invoiceDate, setInvoiceDate] = useState('');
+  const [taxableValue, setTaxableValue] = useState<number>(0);
+  const [taxAmount, setTaxAmount] = useState<number>(0);
+  const [igstAmount, setIgstAmount] = useState<number>(0);
+  const [cgstAmount, setCgstAmount] = useState<number>(0);
+  const [sgstAmount, setSgstAmount] = useState<number>(0);
+  const [inBooks, setInBooks] = useState(true);
+  const [inGstr2b, setInGstr2b] = useState(true);
+  const [matchStatus, setMatchStatus] = useState<GstReconciliationInvoice['matchStatus']>('matched');
+  const [itcEligibility, setItcEligibility] = useState<GstReconciliationInvoice['itcEligibility']>('eligible');
+
+  // Load tax figures from Supabase on mount
   useEffect(() => {
-    const saved = getLocalGstTaxInputs();
-    setTaxPeriod(saved.taxPeriod);
-    setOutputIgst(saved.outputIgst);
-    setOutputCgst(saved.outputCgst);
-    setOutputSgst(saved.outputSgst);
-    setInputIgst(saved.inputIgst);
-    setInputCgst(saved.inputCgst);
-    setInputSgst(saved.inputSgst);
-    setIneligibleItc(saved.ineligibleItc);
+    loadMergedGstTaxInputs().then((saved) => {
+      setTaxPeriod(saved.taxPeriod || 'Current Month');
+      setGrossOutwardTurnover(saved.grossOutwardTurnover || 0);
+      setOutputIgst(saved.outputIgst || 0);
+      setOutputCgst(saved.outputCgst || 0);
+      setOutputSgst(saved.outputSgst || 0);
+      setInputIgst(saved.inputIgst || 0);
+      setInputCgst(saved.inputCgst || 0);
+      setInputSgst(saved.inputSgst || 0);
+      setIneligibleItc(saved.ineligibleItc || 0);
+    });
   }, []);
 
-  const handleSaveTaxFigures = () => {
+  // Sync settings inputs when prop updates
+  useEffect(() => {
+    setLegalName(settings.legalName || 'My Enterprise');
+    setTradeName(settings.tradeName || '');
+    setGstin(settings.gstin || '');
+    setPan(settings.pan || (settings.gstin && settings.gstin.length >= 12 ? settings.gstin.slice(2, 12) : ''));
+    setIec(settings.iec || '');
+    setFrequency(settings.filingFrequency || 'monthly');
+    setGstr1Day(settings.gstr1DueDay || 10);
+    setGstr3bDay(settings.gstr3bDueDay || 20);
+  }, [settings]);
+
+  // Save tax figures directly to database
+  const handleSaveTaxFigures = async () => {
     const payload: GstTaxInputs = {
       taxPeriod,
+      grossOutwardTurnover,
       outputIgst,
       outputCgst,
       outputSgst,
@@ -106,13 +172,38 @@ export default function GstEngineView({
       inputSgst,
       ineligibleItc,
     };
-    saveLocalGstTaxInputs(payload);
+    await saveMergedGstTaxInputs(payload);
     setHasUnsavedTaxChanges(false);
+    setBannerMessage('Tax Calculations & Turnover Saved to Database');
     setTaxSavedBanner(true);
     setTimeout(() => setTaxSavedBanner(false), 2500);
   };
 
-  // Calculate live Rule 88A settlement
+  // Save edited Gross Outward Turnover
+  const handleSaveGrossTurnover = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const updatedTurnover = Number(editingTurnoverVal) || 0;
+    setGrossOutwardTurnover(updatedTurnover);
+
+    const payload: GstTaxInputs = {
+      taxPeriod,
+      grossOutwardTurnover: updatedTurnover,
+      outputIgst,
+      outputCgst,
+      outputSgst,
+      inputIgst,
+      inputCgst,
+      inputSgst,
+      ineligibleItc,
+    };
+    await saveMergedGstTaxInputs(payload);
+    setIsTurnoverModalOpen(false);
+    setBannerMessage('Gross Outward Turnover Updated & Saved to Database');
+    setTaxSavedBanner(true);
+    setTimeout(() => setTaxSavedBanner(false), 2500);
+  };
+
+  // Calculate live Rule 88A statutory settlement
   const taxCalculation: GstTaxCalculation = useMemo(() => {
     return calculateStatutoryGst(
       taxPeriod,
@@ -126,20 +217,7 @@ export default function GstEngineView({
     );
   }, [taxPeriod, outputIgst, outputCgst, outputSgst, inputIgst, inputCgst, inputSgst, ineligibleItc]);
 
-  // Invoice Modal State (Add & Edit)
-  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
-  const [editingInvoice, setEditingInvoice] = useState<GstReconciliationInvoice | null>(null);
-  const [vendorName, setVendorName] = useState('');
-  const [vendorGstin, setVendorGstin] = useState('');
-  const [invoiceNumber, setInvoiceNumber] = useState('');
-  const [invoiceDate, setInvoiceDate] = useState('');
-  const [taxableValue, setTaxableValue] = useState<number>(0);
-  const [taxAmount, setTaxAmount] = useState<number>(0);
-  const [inBooks, setInBooks] = useState(true);
-  const [inGstr2b, setInGstr2b] = useState(true);
-  const [matchStatus, setMatchStatus] = useState<GstReconciliationInvoice['matchStatus']>('matched');
-  const [itcEligibility, setItcEligibility] = useState<GstReconciliationInvoice['itcEligibility']>('eligible');
-
+  // Open Add Invoice modal
   const handleOpenAddInvoice = () => {
     setEditingInvoice(null);
     setVendorName('');
@@ -148,13 +226,20 @@ export default function GstEngineView({
     setInvoiceDate(new Date().toISOString().split('T')[0]);
     setTaxableValue(0);
     setTaxAmount(0);
+    setIgstAmount(0);
+    setCgstAmount(0);
+    setSgstAmount(0);
     setInBooks(true);
     setInGstr2b(true);
     setMatchStatus('matched');
     setItcEligibility('eligible');
+    setAiConfidence(null);
+    setInvoiceParseError(null);
+    setInvoiceModalTab('upload');
     setIsInvoiceModalOpen(true);
   };
 
+  // Open Edit Invoice modal
   const handleOpenEditInvoice = (inv: GstReconciliationInvoice) => {
     setEditingInvoice(inv);
     setVendorName(inv.vendorName);
@@ -163,19 +248,72 @@ export default function GstEngineView({
     setInvoiceDate(inv.invoiceDate);
     setTaxableValue(inv.taxableValue);
     setTaxAmount(inv.taxAmount);
+    setIgstAmount(inv.igstAmount || 0);
+    setCgstAmount(inv.cgstAmount || 0);
+    setSgstAmount(inv.sgstAmount || 0);
     setInBooks(inv.inBooks);
     setInGstr2b(inv.inGstr2b);
     setMatchStatus(inv.matchStatus);
     setItcEligibility(inv.itcEligibility);
+    setAiConfidence(null);
+    setInvoiceParseError(null);
+    setInvoiceModalTab('manual');
     setIsInvoiceModalOpen(true);
   };
 
-  const handleSaveInvoice = (e: React.FormEvent) => {
+  // AI Invoice File Upload Handler
+  const handleInvoiceFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsParsingInvoice(true);
+    setInvoiceParseError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/ai/compliance/parse-invoice', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const json = await res.json();
+      if (!json.success || !json.data) {
+        throw new Error(json.error || 'Failed to extract invoice details.');
+      }
+
+      const d = json.data;
+      setVendorName(d.vendorName || '');
+      setVendorGstin(d.vendorGstin || '');
+      setInvoiceNumber(d.invoiceNumber || '');
+      setInvoiceDate(d.invoiceDate || new Date().toISOString().split('T')[0]);
+      setTaxableValue(d.taxableValue || 0);
+      setTaxAmount(d.taxAmount || 0);
+      setIgstAmount(d.igstAmount || 0);
+      setCgstAmount(d.cgstAmount || 0);
+      setSgstAmount(d.sgstAmount || 0);
+      setMatchStatus(d.matchStatus || 'matched');
+      setItcEligibility(d.itcEligibility || 'eligible');
+      setAiConfidence(Math.round((d.confidenceScore || 0.95) * 100));
+      // Automatically switch to review form so user sees populated values
+      setInvoiceModalTab('manual');
+    } catch (err: any) {
+      setInvoiceParseError(err.message || 'Error processing invoice file with AI');
+    } finally {
+      setIsParsingInvoice(false);
+    }
+  };
+
+  // Save invoice (Add or Edit) to Supabase database
+  const handleSaveInvoice = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!vendorName || !invoiceNumber) return;
 
+    let updatedList: GstReconciliationInvoice[] = [];
+
     if (editingInvoice) {
-      const updated = reconInvoices.map((inv) =>
+      updatedList = reconInvoices.map((inv) =>
         inv.id === editingInvoice.id
           ? {
               ...inv,
@@ -185,6 +323,9 @@ export default function GstEngineView({
               invoiceDate,
               taxableValue: Number(taxableValue) || 0,
               taxAmount: Number(taxAmount) || 0,
+              igstAmount: Number(igstAmount) || 0,
+              cgstAmount: Number(cgstAmount) || 0,
+              sgstAmount: Number(sgstAmount) || 0,
               invoiceValue: (Number(taxableValue) || 0) + (Number(taxAmount) || 0),
               inBooks,
               inGstr2b,
@@ -193,8 +334,6 @@ export default function GstEngineView({
             }
           : inv
       );
-      onUpdateReconInvoices(updated);
-      saveLocalReconInvoices(updated);
     } else {
       const newInv: GstReconciliationInvoice = {
         id: `inv-recon-${Date.now()}`,
@@ -204,27 +343,128 @@ export default function GstEngineView({
         invoiceDate: invoiceDate || new Date().toISOString().split('T')[0],
         taxableValue: Number(taxableValue) || 0,
         taxAmount: Number(taxAmount) || 0,
+        igstAmount: Number(igstAmount) || 0,
+        cgstAmount: Number(cgstAmount) || 0,
+        sgstAmount: Number(sgstAmount) || 0,
         invoiceValue: (Number(taxableValue) || 0) + (Number(taxAmount) || 0),
         inBooks,
         inGstr2b,
         matchStatus,
         itcEligibility,
+        source: aiConfidence ? 'ai_upload' : 'manual',
       };
-      const updated = [newInv, ...reconInvoices];
-      onUpdateReconInvoices(updated);
-      saveLocalReconInvoices(updated);
+      updatedList = [newInv, ...reconInvoices];
     }
 
+    onUpdateReconInvoices(updatedList);
+    await saveMergedReconInvoices(updatedList);
     setIsInvoiceModalOpen(false);
+
+    setBannerMessage('Invoice Saved to Cloud Database');
+    setTaxSavedBanner(true);
+    setTimeout(() => setTaxSavedBanner(false), 2500);
   };
 
-  const handleDeleteInvoice = (id: string, invNo: string) => {
-    if (!window.confirm(`Are you sure you want to delete invoice ${invNo}? This action cannot be undone.`)) {
+  // Delete invoice from Supabase database
+  const handleDeleteInvoice = async (id: string, invNo: string) => {
+    if (!window.confirm(`Delete invoice ${invNo}? This will remove it from the database.`)) {
       return;
     }
     const updated = reconInvoices.filter((i) => i.id !== id);
     onUpdateReconInvoices(updated);
-    saveLocalReconInvoices(updated);
+    await deleteMergedReconInvoice(id);
+
+    setBannerMessage(`Invoice ${invNo} Removed from Database`);
+    setTaxSavedBanner(true);
+    setTimeout(() => setTaxSavedBanner(false), 2500);
+  };
+
+  // GST Return Statement Upload Handler (GSTR-1, GSTR-3B, GSTR-2B)
+  const handleReturnFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsParsingReturn(true);
+    setReturnParseError(null);
+    setExtractedReturnData(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/ai/compliance/parse-gst-return', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const json = await res.json();
+      if (!json.success || !json.data) {
+        throw new Error(json.error || 'Failed to parse GST return statement.');
+      }
+
+      setExtractedReturnData(json.data);
+    } catch (err: any) {
+      setReturnParseError(err.message || 'Error processing GST return file with AI');
+    } finally {
+      setIsParsingReturn(false);
+    }
+  };
+
+  // Write Extracted Return Data to Database
+  const handleApplyExtractedReturn = async () => {
+    if (!extractedReturnData) return;
+
+    const d = extractedReturnData;
+
+    // 1. Update and save statutory tax inputs
+    const updatedInputs: GstTaxInputs = {
+      taxPeriod: d.taxPeriod || taxPeriod,
+      grossOutwardTurnover: d.grossOutwardTurnover !== undefined ? d.grossOutwardTurnover : grossOutwardTurnover,
+      outputIgst: d.outputIgst !== undefined ? d.outputIgst : outputIgst,
+      outputCgst: d.outputCgst !== undefined ? d.outputCgst : outputCgst,
+      outputSgst: d.outputSgst !== undefined ? d.outputSgst : outputSgst,
+      inputIgst: d.inputIgst !== undefined ? d.inputIgst : inputIgst,
+      inputCgst: d.inputCgst !== undefined ? d.inputCgst : inputCgst,
+      inputSgst: d.inputSgst !== undefined ? d.inputSgst : inputSgst,
+      ineligibleItc: d.ineligibleItc !== undefined ? d.ineligibleItc : ineligibleItc,
+    };
+
+    setGrossOutwardTurnover(updatedInputs.grossOutwardTurnover);
+    setOutputIgst(updatedInputs.outputIgst);
+    setOutputCgst(updatedInputs.outputCgst);
+    setOutputSgst(updatedInputs.outputSgst);
+    setInputIgst(updatedInputs.inputIgst);
+    setInputCgst(updatedInputs.inputCgst);
+    setInputSgst(updatedInputs.inputSgst);
+    setIneligibleItc(updatedInputs.ineligibleItc);
+    setTaxPeriod(updatedInputs.taxPeriod);
+
+    await saveMergedGstTaxInputs(updatedInputs);
+
+    // 2. If supplier invoices were extracted (e.g. from GSTR-2B), merge and write to database
+    if (d.invoices && d.invoices.length > 0) {
+      const mergedInvoices = [...d.invoices, ...reconInvoices];
+      onUpdateReconInvoices(mergedInvoices);
+      await saveMergedReconInvoices(mergedInvoices);
+    }
+
+    // 3. If business credentials were found in the return statement
+    if (d.gstin || d.legalName) {
+      const updatedSettings: GstSettings = {
+        ...settings,
+        gstin: d.gstin || settings.gstin,
+        legalName: d.legalName || settings.legalName,
+        pan: d.pan || settings.pan,
+      };
+      onUpdateSettings(updatedSettings);
+      await saveMergedGstSettings(updatedSettings);
+    }
+
+    setIsReturnModalOpen(false);
+    setExtractedReturnData(null);
+    setBannerMessage(`Applied ${d.returnType || 'GST Return'} & Saved to Database`);
+    setTaxSavedBanner(true);
+    setTimeout(() => setTaxSavedBanner(false), 3000);
   };
 
   // Reconciliation Filter
@@ -246,17 +486,31 @@ export default function GstEngineView({
     .filter((c) => c.matchStatus === 'missing_in_2b')
     .reduce((a, c) => a + c.taxAmount, 0);
 
-  const handleSaveSettings = (e: React.FormEvent) => {
+  // Save Settings Modal
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
+    const gstinFormatted = gstin.trim().toUpperCase();
+    const panFormatted = pan.trim().toUpperCase() || (gstinFormatted.length >= 12 ? gstinFormatted.slice(2, 12) : '');
+
     const updated: GstSettings = {
       ...settings,
+      legalName: legalName.trim() || 'My Enterprise',
+      tradeName: tradeName.trim() || undefined,
+      gstin: gstinFormatted,
+      pan: panFormatted,
+      iec: iec.trim().toUpperCase() || undefined,
       filingFrequency: frequency,
-      gstr1DueDay: Number(gstr1Day),
-      gstr3bDueDay: Number(gstr3bDay),
+      gstr1DueDay: Number(gstr1Day) || 10,
+      gstr3bDueDay: Number(gstr3bDay) || 20,
     };
+
     onUpdateSettings(updated);
-    saveLocalGstSettings(updated);
+    await saveMergedGstSettings(updated);
     setIsSettingsOpen(false);
+
+    setBannerMessage('GST Settings & Entity Profile Saved to Database');
+    setTaxSavedBanner(true);
+    setTimeout(() => setTaxSavedBanner(false), 2500);
   };
 
   const handleExportReconciliation = () => {
@@ -283,7 +537,7 @@ export default function GstEngineView({
     try {
       await addDurableNotification({
         title: `GST Statutory Due Date Alert: ${type}`,
-        message: `${type} for ${taxPeriod} is due within the ${dueDay}th of this month. Please finalize registers and file.`,
+        message: `${type} for ${taxPeriod} is due on the ${dueDay}th of this month. Please finalize registers and file.`,
         link: '/compliance?tab=gst',
         type: 'reminder',
         priority: 'urgent',
@@ -297,7 +551,47 @@ export default function GstEngineView({
 
   return (
     <div className="space-y-6">
-      {/* 1. Statutory Due Date Cards (GSTR-1 on the 10th & GSTR-3B on the 20th) */}
+      {/* Live Cloud Save Toast Banner */}
+      {taxSavedBanner && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-xl animate-fade-in border border-emerald-400">
+          <CheckCircle2 className="w-4 h-4 text-white" />
+          <span>{bannerMessage}</span>
+        </div>
+      )}
+
+      {/* 1. Top Action Toolbar: Ingestion & Settings */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#0e121b] p-4 rounded-2xl border border-slate-200 dark:border-[#1e2638] shadow-sm">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => setIsReturnModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#cda052] hover:bg-[#dfb56c] text-black text-xs font-bold transition-all shadow-sm"
+            title="Upload GST Portal Downloaded Return (GSTR-3B, GSTR-1, GSTR-2B)"
+          >
+            <UploadCloud className="w-4 h-4" />
+            <span>Upload GST Return (3B / 1 / 2B)</span>
+          </button>
+
+          <button
+            onClick={handleOpenAddInvoice}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold border border-slate-200 dark:border-slate-700 transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5 text-[#cda052]" />
+            <span>Add Invoice (AI Scan / Manual)</span>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-colors"
+          >
+            <SettingsIcon className="w-3.5 h-3.5 text-[#cda052]" />
+            <span>GST Settings & PAN</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 2. Statutory Due Date Cards (GSTR-1 on the 10th & GSTR-3B on the 20th) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* GSTR-1 Return Card */}
         <div className="bg-white dark:bg-[#0e121b] p-5 rounded-2xl border border-slate-200 dark:border-[#1e2638] shadow-sm relative overflow-hidden">
@@ -308,14 +602,17 @@ export default function GstEngineView({
                   Outward Supplies
                 </span>
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-semibold">
-                  {settings.filingFrequency} Cadence
+                  {settings.filingFrequency || 'monthly'} Cadence
                 </span>
               </div>
               <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-1.5 flex items-center gap-2">
                 GSTR-1 Filing
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Statutory Due Date: <span className="text-amber-700 dark:text-[#f7d88c] font-semibold font-mono">{settings.gstr1DueDay}th of Every Month</span>
+                Statutory Due Date:{' '}
+                <span className="text-amber-700 dark:text-[#f7d88c] font-semibold font-mono">
+                  {settings.gstr1DueDay || 10}th of Every Month
+                </span>
               </p>
             </div>
             <button
@@ -329,33 +626,58 @@ export default function GstEngineView({
 
           <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-3 text-xs">
             <div>
-              <span className="text-slate-500 dark:text-[#8a96ae] block text-[11px]">Gross Outward Turnover</span>
-              <span className="text-base font-bold text-slate-900 dark:text-white font-mono">₹43.33L</span>
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-slate-500 dark:text-[#8a96ae] block text-[11px]">Gross Outward Turnover</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingTurnoverVal(grossOutwardTurnover);
+                    setIsTurnoverModalOpen(true);
+                  }}
+                  className="text-[10px] text-[#cda052] hover:underline font-semibold flex items-center gap-0.5"
+                  title="Edit Gross Outward Turnover"
+                >
+                  <Pencil className="w-2.5 h-2.5" />
+                  <span>Edit</span>
+                </button>
+              </div>
+              <span className="text-base font-bold text-slate-900 dark:text-white font-mono">
+                ₹{grossOutwardTurnover.toLocaleString('en-IN')}
+              </span>
             </div>
             <div>
               <span className="text-slate-500 dark:text-[#8a96ae] block text-[11px]">Output Tax Declared</span>
               <span className="text-base font-bold text-amber-600 dark:text-[#f7d88c] font-mono">
-                ₹{((outputIgst + outputCgst + outputSgst) / 1000).toFixed(1)}k
+                ₹{(outputIgst + outputCgst + outputSgst).toLocaleString('en-IN')}
               </span>
             </div>
           </div>
 
-          <div className="mt-4 flex items-center justify-between gap-2">
+          <div className="mt-4 flex items-center justify-between gap-2 flex-wrap">
             <button
-              onClick={() => handleTriggerReminder('GSTR-1', settings.gstr1DueDay)}
+              onClick={() => handleTriggerReminder('GSTR-1', settings.gstr1DueDay || 10)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-colors"
             >
               <BellRing className="w-3.5 h-3.5 text-[#cda052]" />
-              <span>Send Reminder</span>
+              <span>Reminder</span>
             </button>
+
+            <button
+              onClick={() => setIsReturnModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-xs font-semibold text-amber-700 dark:text-amber-400 border border-amber-500/20 transition-colors"
+            >
+              <FileUp className="w-3.5 h-3.5" />
+              <span>Upload GSTR-1 File</span>
+            </button>
+
             <a
               href="https://services.gst.gov.in"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#cda052] hover:bg-[#dfb56c] text-black text-xs font-semibold transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-white text-xs font-semibold transition-colors"
             >
-              <span>Upload to GSTN</span>
-              <ExternalLink className="w-3.5 h-3.5" />
+              <span>GSTN Portal</span>
+              <ExternalLink className="w-3 h-3" />
             </a>
           </div>
         </div>
@@ -376,292 +698,277 @@ export default function GstEngineView({
                 GSTR-3B Summary Return
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Statutory Due Date: <span className="text-emerald-600 dark:text-emerald-400 font-semibold font-mono">{settings.gstr3bDueDay}th of Every Month</span>
+                Statutory Due Date:{' '}
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
+                  {settings.gstr3bDueDay || 20}th of Every Month
+                </span>
               </p>
             </div>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-              <Check className="w-3 h-3" />
-              ITC Offset Ready
-            </span>
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              title="Configure GST Schedule & Reminders"
+            >
+              <SettingsIcon className="w-4 h-4" />
+            </button>
           </div>
 
           <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-3 text-xs">
             <div>
-              <span className="text-slate-500 dark:text-[#8a96ae] block text-[11px]">Eligible ITC Credit</span>
+              <span className="text-slate-500 dark:text-[#8a96ae] block text-[11px]">Eligible Input Tax Credit (ITC)</span>
               <span className="text-base font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                ₹{(taxCalculation.eligibleItc / 1000).toFixed(1)}k
+                ₹{taxCalculation.eligibleItc.toLocaleString('en-IN')}
               </span>
             </div>
             <div>
               <span className="text-slate-500 dark:text-[#8a96ae] block text-[11px]">Net Cash Payable (PMT-06)</span>
               <span className="text-base font-bold text-slate-900 dark:text-white font-mono">
-                ₹{(taxCalculation.netTotalPayable / 1000).toFixed(1)}k
+                ₹{taxCalculation.netTotalPayable.toLocaleString('en-IN')}
               </span>
             </div>
           </div>
 
-          <div className="mt-4 flex items-center justify-between gap-2">
+          <div className="mt-4 flex items-center justify-between gap-2 flex-wrap">
             <button
-              onClick={() => handleTriggerReminder('GSTR-3B', settings.gstr3bDueDay)}
+              onClick={() => handleTriggerReminder('GSTR-3B', settings.gstr3bDueDay || 20)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-colors"
             >
               <BellRing className="w-3.5 h-3.5 text-[#cda052]" />
-              <span>Send Reminder</span>
+              <span>Reminder</span>
             </button>
+
+            <button
+              onClick={() => setIsReturnModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-xs font-semibold text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 transition-colors"
+            >
+              <FileUp className="w-3.5 h-3.5" />
+              <span>Upload GSTR-3B File</span>
+            </button>
+
             <a
               href="https://services.gst.gov.in"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-white text-xs font-semibold transition-colors"
             >
-              <span>Pay & File Return</span>
-              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Challan Pay</span>
+              <ExternalLink className="w-3 h-3" />
             </a>
           </div>
         </div>
       </div>
 
-      {/* 2. Statutory Rule 88A Tax Calculation & Set-off Simulator */}
-      <div className="bg-white dark:bg-[#0e121b] p-5 rounded-2xl border border-slate-200 dark:border-[#1e2638] shadow-sm">
+      {/* 3. Live Rule 88A Tax Calculation Engine & Breakdown */}
+      <div className="bg-white dark:bg-[#0e121b] p-5 sm:p-6 rounded-2xl border border-slate-200 dark:border-[#1e2638] shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
           <div>
             <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <BadgePercent className="w-4 h-4 text-[#cda052]" />
-              <span>Statutory Rule 88A GST Calculation & Set-off Simulator</span>
+              <span>Rule 88A GST Tax Offset & Settlement Engine</span>
             </h3>
             <p className="text-xs text-slate-500 dark:text-[#8a96ae] mt-0.5">
-              Edit outward liability & ITC figures. Automatically computes sequential Input Tax Credit (ITC) utilization.
+              Live calculation of outward liabilities, input credits, and statutory cash settlement for {taxPeriod}
             </p>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs text-slate-500 dark:text-[#8a96ae]">Tax Period:</span>
-              <input
-                type="text"
-                value={taxPeriod}
-                onChange={(e) => {
-                  setTaxPeriod(e.target.value);
-                  setHasUnsavedTaxChanges(true);
-                }}
-                className="px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-[#080b12] text-xs text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] font-medium focus:border-[#cda052] outline-none"
-              />
-            </div>
+
+          <div className="flex items-center gap-2">
+            {hasUnsavedTaxChanges && (
+              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold animate-pulse">
+                Unsaved modifications
+              </span>
+            )}
             <button
               onClick={handleSaveTaxFigures}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                hasUnsavedTaxChanges
-                  ? 'bg-[#cda052] text-black shadow-md hover:bg-[#dfb56c]'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-[#cda052]'
-              }`}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#cda052] hover:bg-[#dfb56c] text-black text-xs font-semibold transition-colors shadow-sm"
             >
               <Save className="w-3.5 h-3.5" />
-              <span>{hasUnsavedTaxChanges ? 'Save Changes' : 'Saved'}</span>
+              <span>Save Tax Figures to Database</span>
             </button>
           </div>
         </div>
 
-        {taxSavedBanner && (
-          <div className="mt-3 p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2 animate-fade-in font-medium">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-            <span>Statutory GST liability & ITC figures successfully saved to compliance profile!</span>
-          </div>
-        )}
-
-        {/* Two-Column Inputs: Outward Tax vs Inward ITC */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4">
-          {/* Outward Liability */}
-          <div className="space-y-3 bg-slate-50 dark:bg-[#080b12] p-4 rounded-xl border border-slate-200 dark:border-[#1e2638]">
-            <div className="flex items-center justify-between">
-              <h4 className="text-xs font-bold text-amber-700 dark:text-[#f7d88c] uppercase tracking-wider">
-                1. Outward Tax Liability (Sales)
-              </h4>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">Editable</span>
-            </div>
-            <div>
-              <label className="flex justify-between text-xs text-slate-700 dark:text-slate-300 mb-1">
-                <span>Output IGST (Inter-state garment sales):</span>
-                <span className="font-mono text-slate-900 dark:text-white font-semibold">₹{outputIgst.toLocaleString('en-IN')}</span>
-              </label>
-              <input
-                type="number"
-                value={outputIgst}
-                onChange={(e) => {
-                  setOutputIgst(Number(e.target.value) || 0);
-                  setHasUnsavedTaxChanges(true);
-                }}
-                className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-[#0e121b] text-xs text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] font-mono focus:border-[#cda052] outline-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] text-slate-700 dark:text-slate-300 mb-1">Output CGST (Local sales):</label>
-                <input
-                  type="number"
-                  value={outputCgst}
-                  onChange={(e) => {
-                    setOutputCgst(Number(e.target.value) || 0);
-                    setHasUnsavedTaxChanges(true);
-                  }}
-                  className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-[#0e121b] text-xs text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] font-mono focus:border-[#cda052] outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] text-slate-700 dark:text-slate-300 mb-1">Output SGST (Local sales):</label>
-                <input
-                  type="number"
-                  value={outputSgst}
-                  onChange={(e) => {
-                    setOutputSgst(Number(e.target.value) || 0);
-                    setHasUnsavedTaxChanges(true);
-                  }}
-                  className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-[#0e121b] text-xs text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] font-mono focus:border-[#cda052] outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex justify-between text-xs font-semibold">
-              <span className="text-slate-500 dark:text-[#8a96ae]">Total Outward Tax:</span>
-              <span className="text-slate-900 dark:text-white font-mono font-bold">
-                ₹{(outputIgst + outputCgst + outputSgst).toLocaleString('en-IN')}
-              </span>
-            </div>
+        {/* Tax Inputs Grid */}
+        <div className="mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+          {/* Output IGST */}
+          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#080b12] border border-slate-200 dark:border-[#1e2638]">
+            <label className="block text-slate-500 dark:text-[#8a96ae] mb-1 font-medium">Output IGST (₹)</label>
+            <input
+              type="number"
+              value={outputIgst}
+              onChange={(e) => {
+                setOutputIgst(Number(e.target.value));
+                setHasUnsavedTaxChanges(true);
+              }}
+              className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-[#121623] text-slate-900 dark:text-white font-mono font-bold border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+            />
           </div>
 
-          {/* Inward ITC Available */}
-          <div className="space-y-3 bg-slate-50 dark:bg-[#080b12] p-4 rounded-xl border border-slate-200 dark:border-[#1e2638]">
-            <div className="flex items-center justify-between">
-              <h4 className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
-                2. Inward Input Tax Credit (ITC from 2B)
-              </h4>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">Editable</span>
-            </div>
-            <div>
-              <label className="flex justify-between text-xs text-slate-700 dark:text-slate-300 mb-1">
-                <span>Input IGST (Fabric imports & interstate trims):</span>
-                <span className="font-mono text-slate-900 dark:text-white font-semibold">₹{inputIgst.toLocaleString('en-IN')}</span>
-              </label>
-              <input
-                type="number"
-                value={inputIgst}
-                onChange={(e) => {
-                  setInputIgst(Number(e.target.value) || 0);
-                  setHasUnsavedTaxChanges(true);
-                }}
-                className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-[#0e121b] text-xs text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] font-mono focus:border-[#cda052] outline-none"
-              />
-            </div>
+          {/* Output CGST */}
+          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#080b12] border border-slate-200 dark:border-[#1e2638]">
+            <label className="block text-slate-500 dark:text-[#8a96ae] mb-1 font-medium">Output CGST (₹)</label>
+            <input
+              type="number"
+              value={outputCgst}
+              onChange={(e) => {
+                setOutputCgst(Number(e.target.value));
+                setHasUnsavedTaxChanges(true);
+              }}
+              className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-[#121623] text-slate-900 dark:text-white font-mono font-bold border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+            />
+          </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] text-slate-700 dark:text-slate-300 mb-1">Input CGST (Local mills):</label>
-                <input
-                  type="number"
-                  value={inputCgst}
-                  onChange={(e) => {
-                    setInputCgst(Number(e.target.value) || 0);
-                    setHasUnsavedTaxChanges(true);
-                  }}
-                  className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-[#0e121b] text-xs text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] font-mono focus:border-[#cda052] outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] text-slate-700 dark:text-slate-300 mb-1">Input SGST (Local mills):</label>
-                <input
-                  type="number"
-                  value={inputSgst}
-                  onChange={(e) => {
-                    setInputSgst(Number(e.target.value) || 0);
-                    setHasUnsavedTaxChanges(true);
-                  }}
-                  className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-[#0e121b] text-xs text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] font-mono focus:border-[#cda052] outline-none"
-                />
-              </div>
-            </div>
+          {/* Output SGST */}
+          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#080b12] border border-slate-200 dark:border-[#1e2638]">
+            <label className="block text-slate-500 dark:text-[#8a96ae] mb-1 font-medium">Output SGST (₹)</label>
+            <input
+              type="number"
+              value={outputSgst}
+              onChange={(e) => {
+                setOutputSgst(Number(e.target.value));
+                setHasUnsavedTaxChanges(true);
+              }}
+              className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-[#121623] text-slate-900 dark:text-white font-mono font-bold border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+            />
+          </div>
 
-            <div>
-              <label className="block text-[11px] text-rose-600 dark:text-rose-400 mb-1 font-medium">Ineligible ITC u/s 17(5) (Reversal):</label>
-              <input
-                type="number"
-                value={ineligibleItc}
-                onChange={(e) => {
-                  setIneligibleItc(Number(e.target.value) || 0);
-                  setHasUnsavedTaxChanges(true);
-                }}
-                className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-[#0e121b] text-xs text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-500/30 font-mono focus:border-rose-500 outline-none"
-              />
-            </div>
+          {/* Input IGST */}
+          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#080b12] border border-slate-200 dark:border-[#1e2638]">
+            <label className="block text-slate-500 dark:text-[#8a96ae] mb-1 font-medium">Input IGST Credit (₹)</label>
+            <input
+              type="number"
+              value={inputIgst}
+              onChange={(e) => {
+                setInputIgst(Number(e.target.value));
+                setHasUnsavedTaxChanges(true);
+              }}
+              className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-[#121623] text-slate-900 dark:text-white font-mono font-bold border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+            />
+          </div>
 
-            <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex justify-between text-xs font-semibold">
-              <span className="text-slate-500 dark:text-[#8a96ae]">Net Eligible ITC:</span>
-              <span className="text-emerald-700 dark:text-emerald-400 font-mono font-bold">
-                ₹{taxCalculation.eligibleItc.toLocaleString('en-IN')}
-              </span>
-            </div>
+          {/* Input CGST */}
+          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#080b12] border border-slate-200 dark:border-[#1e2638]">
+            <label className="block text-slate-500 dark:text-[#8a96ae] mb-1 font-medium">Input CGST Credit (₹)</label>
+            <input
+              type="number"
+              value={inputCgst}
+              onChange={(e) => {
+                setInputCgst(Number(e.target.value));
+                setHasUnsavedTaxChanges(true);
+              }}
+              className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-[#121623] text-slate-900 dark:text-white font-mono font-bold border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+            />
+          </div>
+
+          {/* Input SGST */}
+          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#080b12] border border-slate-200 dark:border-[#1e2638]">
+            <label className="block text-slate-500 dark:text-[#8a96ae] mb-1 font-medium">Input SGST Credit (₹)</label>
+            <input
+              type="number"
+              value={inputSgst}
+              onChange={(e) => {
+                setInputSgst(Number(e.target.value));
+                setHasUnsavedTaxChanges(true);
+              }}
+              className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-[#121623] text-slate-900 dark:text-white font-mono font-bold border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+            />
+          </div>
+
+          {/* Ineligible ITC */}
+          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#080b12] border border-slate-200 dark:border-[#1e2638]">
+            <label className="block text-slate-500 dark:text-[#8a96ae] mb-1 font-medium">Ineligible ITC u/s 17(5) (₹)</label>
+            <input
+              type="number"
+              value={ineligibleItc}
+              onChange={(e) => {
+                setIneligibleItc(Number(e.target.value));
+                setHasUnsavedTaxChanges(true);
+              }}
+              className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-[#121623] text-rose-600 dark:text-rose-400 font-mono font-bold border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+            />
+          </div>
+
+          {/* Tax Period Selector */}
+          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#080b12] border border-slate-200 dark:border-[#1e2638]">
+            <label className="block text-slate-500 dark:text-[#8a96ae] mb-1 font-medium">Tax Period</label>
+            <input
+              type="text"
+              value={taxPeriod}
+              onChange={(e) => {
+                setTaxPeriod(e.target.value);
+                setHasUnsavedTaxChanges(true);
+              }}
+              className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-[#121623] text-slate-900 dark:text-white font-medium border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+            />
           </div>
         </div>
 
-        {/* -------------------------------------------------------------
-            REDESIGNED PMT-06 SETTLEMENT BREAKDOWN (Clean, Sleek Slate Cards)
-            ------------------------------------------------------------- */}
-        <div className="mt-5 p-5 rounded-2xl bg-slate-50 dark:bg-[#080b12] border border-slate-200 dark:border-[#1e2638] shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-4 border-b border-slate-200 dark:border-slate-800">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                <CreditCard className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider block">
-                  Settlement Breakdown (Cash Payable via PMT-06 Challan)
-                </span>
-                <span className="text-[11px] text-slate-500 dark:text-[#8a96ae]">
-                  Statutory Rule 88A Sequence: IGST credit offset first against IGST liability, then CGST & SGST
-                </span>
-              </div>
-            </div>
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 self-start sm:self-auto">
-              Challan PMT-06 Generator
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-            <div className="p-3.5 rounded-xl bg-white dark:bg-[#0e121b] border border-slate-200 dark:border-[#1e2638] shadow-sm">
-              <span className="text-slate-500 dark:text-[#8a96ae] block text-[11px] font-medium">Net Cash IGST</span>
-              <span className="text-lg font-bold text-slate-900 dark:text-white font-mono mt-0.5 block">
-                ₹{taxCalculation.netPayableIgst.toLocaleString('en-IN')}
-              </span>
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block">Inter-state balance</span>
-            </div>
-            <div className="p-3.5 rounded-xl bg-white dark:bg-[#0e121b] border border-slate-200 dark:border-[#1e2638] shadow-sm">
-              <span className="text-slate-500 dark:text-[#8a96ae] block text-[11px] font-medium">Net Cash CGST</span>
-              <span className="text-lg font-bold text-slate-900 dark:text-white font-mono mt-0.5 block">
-                ₹{taxCalculation.netPayableCgst.toLocaleString('en-IN')}
-              </span>
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block">Central tax challan</span>
-            </div>
-            <div className="p-3.5 rounded-xl bg-white dark:bg-[#0e121b] border border-slate-200 dark:border-[#1e2638] shadow-sm">
-              <span className="text-slate-500 dark:text-[#8a96ae] block text-[11px] font-medium">Net Cash SGST</span>
-              <span className="text-lg font-bold text-slate-900 dark:text-white font-mono mt-0.5 block">
-                ₹{taxCalculation.netPayableSgst.toLocaleString('en-IN')}
-              </span>
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block">State tax challan</span>
-            </div>
-            <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 shadow-sm">
-              <span className="text-emerald-700 dark:text-emerald-400 block text-[11px] font-bold uppercase tracking-wider">
-                Total PMT-06 Challan
-              </span>
-              <span className="text-xl font-bold text-emerald-900 dark:text-emerald-300 font-mono mt-0.5 block">
-                ₹{taxCalculation.netTotalPayable.toLocaleString('en-IN')}
-              </span>
-              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1 block font-medium">
-                Net liability payable
-              </span>
-            </div>
-          </div>
+        {/* Summary Offset Table */}
+        <div className="mt-5 overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1e2638]">
+          <table className="w-full text-xs text-left">
+            <thead className="bg-slate-100 dark:bg-[#121623] text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-[#1e2638]">
+              <tr>
+                <th className="py-2.5 px-4">Tax Head</th>
+                <th className="py-2.5 px-4">Output Liability</th>
+                <th className="py-2.5 px-4">Input Credit Available</th>
+                <th className="py-2.5 px-4">Net Cash Payable (Challan)</th>
+                <th className="py-2.5 px-4">Remaining Credit Carried Forward</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono">
+              <tr>
+                <td className="py-2.5 px-4 font-sans font-semibold text-slate-900 dark:text-white">IGST (Inter-State)</td>
+                <td className="py-2.5 px-4">₹{outputIgst.toLocaleString('en-IN')}</td>
+                <td className="py-2.5 px-4">₹{inputIgst.toLocaleString('en-IN')}</td>
+                <td className="py-2.5 px-4 font-bold text-amber-600 dark:text-[#f7d88c]">
+                  ₹{taxCalculation.netPayableIgst.toLocaleString('en-IN')}
+                </td>
+                <td className="py-2.5 px-4 text-emerald-600 dark:text-emerald-400">
+                  ₹{taxCalculation.itcBalanceIgst.toLocaleString('en-IN')}
+                </td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-4 font-sans font-semibold text-slate-900 dark:text-white">CGST (Central)</td>
+                <td className="py-2.5 px-4">₹{outputCgst.toLocaleString('en-IN')}</td>
+                <td className="py-2.5 px-4">₹{inputCgst.toLocaleString('en-IN')}</td>
+                <td className="py-2.5 px-4 font-bold text-amber-600 dark:text-[#f7d88c]">
+                  ₹{taxCalculation.netPayableCgst.toLocaleString('en-IN')}
+                </td>
+                <td className="py-2.5 px-4 text-emerald-600 dark:text-emerald-400">
+                  ₹{taxCalculation.itcBalanceCgst.toLocaleString('en-IN')}
+                </td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-4 font-sans font-semibold text-slate-900 dark:text-white">SGST (State)</td>
+                <td className="py-2.5 px-4">₹{outputSgst.toLocaleString('en-IN')}</td>
+                <td className="py-2.5 px-4">₹{inputSgst.toLocaleString('en-IN')}</td>
+                <td className="py-2.5 px-4 font-bold text-amber-600 dark:text-[#f7d88c]">
+                  ₹{taxCalculation.netPayableSgst.toLocaleString('en-IN')}
+                </td>
+                <td className="py-2.5 px-4 text-emerald-600 dark:text-emerald-400">
+                  ₹{taxCalculation.itcBalanceSgst.toLocaleString('en-IN')}
+                </td>
+              </tr>
+              <tr className="bg-slate-50 dark:bg-[#0c1017] font-bold">
+                <td className="py-3 px-4 font-sans text-slate-900 dark:text-white">Total Settlement</td>
+                <td className="py-3 px-4 text-slate-900 dark:text-white">
+                  ₹{(outputIgst + outputCgst + outputSgst).toLocaleString('en-IN')}
+                </td>
+                <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400">
+                  ₹{taxCalculation.eligibleItc.toLocaleString('en-IN')}
+                </td>
+                <td className="py-3 px-4 text-amber-600 dark:text-[#f7d88c] text-sm">
+                  ₹{taxCalculation.netTotalPayable.toLocaleString('en-IN')}
+                </td>
+                <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400">
+                  ₹{(taxCalculation.itcBalanceIgst + taxCalculation.itcBalanceCgst + taxCalculation.itcBalanceSgst).toLocaleString('en-IN')}
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {/* 3. GSTR-2B vs Books Purchase Reconciliation Engine */}
+      {/* 4. GSTR-2B vs Books Purchase Reconciliation Engine */}
       <div className="bg-white dark:bg-[#0e121b] rounded-2xl border border-slate-200 dark:border-[#1e2638] p-5 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
           <div>
@@ -674,13 +981,20 @@ export default function GstEngineView({
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setIsReturnModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-[#cda052] border border-[#cda052]/30 text-xs font-semibold transition-colors shadow-sm"
+              title="Upload GSTR-2B / GSTR-3B statement from portal"
+            >
+              <UploadCloud className="w-3.5 h-3.5" />
+              <span>Import 2B / 3B File</span>
+            </button>
             <button
               onClick={() => setIsAiAuditOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#cda052]/10 hover:bg-[#cda052]/20 text-[#cda052] border border-[#cda052]/30 text-xs font-bold transition-colors shadow-sm"
-              title="Run AI GSTR-2B Mismatch & Tax Liability Audit"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-colors"
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <Sparkles className="w-3.5 h-3.5 text-[#cda052]" />
               <span>AI 2B Audit</span>
             </button>
             <button
@@ -705,19 +1019,19 @@ export default function GstEngineView({
           <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#080b12] border border-slate-200 dark:border-[#1e2638]">
             <span className="text-slate-500 dark:text-[#8a96ae] block text-[11px]">Total Supplier Invoices</span>
             <span className="text-base font-bold text-slate-900 dark:text-white font-mono mt-0.5 block">
-              ₹{(totalReconValue / 1000).toFixed(1)}k Tax Amount ({reconInvoices.length} Invoices)
+              ₹{totalReconValue.toLocaleString('en-IN')} Tax ({reconInvoices.length} Invoices)
             </span>
           </div>
           <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50">
             <span className="text-emerald-700 dark:text-emerald-400 block text-[11px] font-medium">Matched & 100% Eligible</span>
             <span className="text-base font-bold text-emerald-800 dark:text-emerald-300 font-mono mt-0.5 block">
-              ₹{(matchedValue / 1000).toFixed(1)}k Ready to Claim
+              ₹{matchedValue.toLocaleString('en-IN')} Ready to Claim
             </span>
           </div>
           <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50">
             <span className="text-amber-700 dark:text-amber-400 block text-[11px] font-medium">Pending Vendor 2B Upload</span>
             <span className="text-base font-bold text-amber-800 dark:text-amber-300 font-mono mt-0.5 block">
-              ₹{(pendingValue / 1000).toFixed(1)}k Follow-up Needed
+              ₹{pendingValue.toLocaleString('en-IN')} Follow-up Needed
             </span>
           </div>
         </div>
@@ -762,274 +1076,175 @@ export default function GstEngineView({
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            Ineligible u/s 17(5) ({reconInvoices.filter((i) => i.itcEligibility === 'ineligible_17_5').length})
+            Blocked 17(5) ({reconInvoices.filter((i) => i.itcEligibility === 'ineligible_17_5').length})
           </button>
         </div>
 
-        {/* Table with Edit & Delete Options */}
+        {/* Invoices Table */}
         <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1e2638]">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="bg-slate-50 dark:bg-[#080b12] text-slate-600 dark:text-[#8a96ae] uppercase text-[10px] border-b border-slate-200 dark:border-slate-800">
-                <th className="py-2.5 px-3 font-semibold">Vendor & GSTIN</th>
-                <th className="py-2.5 px-3 font-semibold">Invoice No & Date</th>
-                <th className="py-2.5 px-3 font-semibold">Taxable Amount</th>
-                <th className="py-2.5 px-3 font-semibold">GST Amount</th>
-                <th className="py-2.5 px-3 font-semibold">2B Match</th>
-                <th className="py-2.5 px-3 font-semibold">Eligibility</th>
-                <th className="py-2.5 px-3 font-semibold text-right">Actions</th>
+          <table className="w-full text-xs text-left">
+            <thead className="bg-slate-100 dark:bg-[#121623] text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-[#1e2638]">
+              <tr>
+                <th className="py-2.5 px-3">Supplier Name & GSTIN</th>
+                <th className="py-2.5 px-3">Invoice No & Date</th>
+                <th className="py-2.5 px-3">Taxable Value</th>
+                <th className="py-2.5 px-3">GST Tax</th>
+                <th className="py-2.5 px-3">ERP Books</th>
+                <th className="py-2.5 px-3">GSTR-2B</th>
+                <th className="py-2.5 px-3">Reconciliation Status</th>
+                <th className="py-2.5 px-3">ITC Claim</th>
+                <th className="py-2.5 px-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-              {filteredInvoices.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-400 dark:text-slate-500">
-                    No reconciliation invoices found for this filter.
+              {filteredInvoices.map((inv) => (
+                <tr key={inv.id} className="hover:bg-slate-50/50 dark:hover:bg-[#121623]/50 transition-colors">
+                  <td className="py-2.5 px-3">
+                    <span className="font-semibold text-slate-900 dark:text-white block truncate max-w-[200px]">
+                      {inv.vendorName}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">{inv.vendorGstin || 'No GSTIN'}</span>
                   </td>
-                </tr>
-              ) : (
-                filteredInvoices.map((inv) => (
-                  <tr key={inv.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
-                    <td className="py-2.5 px-3">
-                      <div className="font-semibold text-slate-900 dark:text-white">{inv.vendorName}</div>
-                      <div className="text-[10px] text-slate-500 dark:text-[#8a96ae] font-mono">{inv.vendorGstin}</div>
-                    </td>
-                    <td className="py-2.5 px-3 whitespace-nowrap">
-                      <div className="font-mono text-slate-900 dark:text-white font-medium">{inv.invoiceNumber}</div>
-                      <div className="text-[10px] text-slate-500 dark:text-[#8a96ae]">{inv.invoiceDate}</div>
-                    </td>
-                    <td className="py-2.5 px-3 font-mono text-slate-900 dark:text-white whitespace-nowrap font-semibold">
-                      ₹{inv.taxableValue.toLocaleString('en-IN')}
-                    </td>
-                    <td className="py-2.5 px-3 font-mono font-semibold text-amber-600 dark:text-[#f7d88c] whitespace-nowrap">
-                      ₹{inv.taxAmount.toLocaleString('en-IN')}
-                    </td>
-                    <td className="py-2.5 px-3 whitespace-nowrap">
-                      {inv.matchStatus === 'matched' ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
-                          <Check className="w-3 h-3" />
-                          Matched
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 font-medium">
-                          <Clock className="w-3 h-3" />
-                          Missing in 2B
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-2.5 px-3 whitespace-nowrap">
-                      {inv.itcEligibility === 'eligible' && (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                          Eligible ITC
-                        </span>
-                      )}
-                      {inv.itcEligibility === 'pending' && (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
-                          Follow-up Pending
-                        </span>
-                      )}
-                      {inv.itcEligibility === 'ineligible_17_5' && (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20">
-                          Blocked u/s 17(5)
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-2.5 px-3 text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-1.5">
+                  <td className="py-2.5 px-3 font-mono">
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 block">{inv.invoiceNumber}</span>
+                    <span className="text-[10px] text-slate-400">{inv.invoiceDate}</span>
+                  </td>
+                  <td className="py-2.5 px-3 font-mono">₹{inv.taxableValue.toLocaleString('en-IN')}</td>
+                  <td className="py-2.5 px-3 font-mono font-semibold text-amber-600 dark:text-[#f7d88c]">
+                    ₹{inv.taxAmount.toLocaleString('en-IN')}
+                  </td>
+                  <td className="py-2.5 px-3">
+                    {inv.inBooks ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold">
+                        <Check className="w-3 h-3" /> Yes
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-rose-500 font-semibold">No</span>
+                    )}
+                  </td>
+                  <td className="py-2.5 px-3">
+                    {inv.inGstr2b ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold">
+                        <Check className="w-3 h-3" /> Auto-drafted
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">Missing</span>
+                    )}
+                  </td>
+                  <td className="py-2.5 px-3">
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                        inv.matchStatus === 'matched'
+                          ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
+                          : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20'
+                      }`}
+                    >
+                      {inv.matchStatus.replace(/_/g, ' ')}
+                    </span>
+                  </td>
+                  <td className="py-2.5 px-3">
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                        inv.itcEligibility === 'eligible'
+                          ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                          : inv.itcEligibility === 'ineligible_17_5'
+                          ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400'
+                          : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                      }`}
+                    >
+                      {inv.itcEligibility === 'eligible'
+                        ? 'Eligible'
+                        : inv.itcEligibility === 'ineligible_17_5'
+                        ? 'Blocked 17(5)'
+                        : 'Pending'}
+                    </span>
+                  </td>
+                  <td className="py-2.5 px-3 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      {inv.matchStatus === 'missing_in_2b' && (
                         <button
-                          onClick={() => setVendorNoticeInvoice({
-                            id: inv.id,
-                            supplierName: inv.vendorName,
-                            gstin: inv.vendorGstin,
-                            invoiceNumber: inv.invoiceNumber,
-                            invoiceDate: inv.invoiceDate,
-                            taxableValue: inv.taxableValue,
-                            igst: inv.taxAmount,
-                            cgst: 0,
-                            sgst: 0,
-                            matchStatus: inv.matchStatus as any,
-                            itcEligibility: inv.itcEligibility as any,
-                          })}
-                          className="p-1.5 rounded-lg bg-[#cda052]/10 hover:bg-[#cda052]/20 text-[#cda052] transition-colors"
-                          title="Draft AI Vendor Notice (Section 16(2)(aa))"
-                          aria-label={`Draft AI Vendor Notice for ${inv.invoiceNumber}`}
+                          onClick={() => setVendorNoticeInvoice(inv)}
+                          className="p-1 rounded text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40"
+                          title="Generate AI Demand Notice"
                         >
                           <Sparkles className="w-3.5 h-3.5" />
                         </button>
-                        <button
-                          onClick={() => handleOpenEditInvoice(inv)}
-                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors"
-                          title="Edit Invoice"
-                          aria-label={`Edit invoice ${inv.invoiceNumber}`}
-                        >
-                          <Pencil className="w-3.5 h-3.5 text-[#cda052]" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteInvoice(inv.id, inv.invoiceNumber)}
-                          className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-colors"
-                          title="Delete Invoice"
-                          aria-label={`Delete invoice ${inv.invoiceNumber}`}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      )}
+                      <button
+                        onClick={() => handleOpenEditInvoice(inv)}
+                        className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-white"
+                        title="Edit Invoice"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteInvoice(inv.id, inv.invoiceNumber)}
+                        className="p-1 rounded text-rose-400 hover:text-rose-600"
+                        title="Delete Invoice"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+
+              {filteredInvoices.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="py-8 text-center text-xs text-slate-400">
+                    No supplier invoices found in this view. Use "Add Invoice" or "Upload GST Return" to populate.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Invoice Edit/Add Modal */}
-      {isInvoiceModalOpen && (
+      {/* MODAL 1: Edit Gross Outward Turnover Modal */}
+      {isTurnoverModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-[#0e121b] w-full max-w-lg rounded-2xl border border-slate-200 dark:border-[#1e2638] p-5 sm:p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <FileText className="w-4 h-4 text-[#cda052]" />
-                <span>{editingInvoice ? 'Edit Reconciliation Invoice' : 'Add Reconciliation Invoice'}</span>
+          <div className="bg-white dark:bg-[#0e121b] w-full max-w-sm rounded-2xl border border-slate-200 dark:border-[#1e2638] p-5 shadow-2xl">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                <Pencil className="w-4 h-4 text-[#cda052]" />
+                <span>Edit Gross Outward Turnover</span>
               </h3>
-              <button
-                onClick={() => setIsInvoiceModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white"
-              >
+              <button onClick={() => setIsTurnoverModalOpen(false)} className="text-slate-400 hover:text-white">
                 <X className="w-4 h-4" />
               </button>
             </div>
-
-            <form onSubmit={handleSaveInvoice} className="space-y-3.5 text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">Vendor Name *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Coimbatore Heritage Spinners"
-                    value={vendorName}
-                    onChange={(e) => setVendorName(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">Vendor GSTIN</label>
-                  <input
-                    type="text"
-                    placeholder="33AAACH1094J1Z2"
-                    value={vendorGstin}
-                    onChange={(e) => setVendorGstin(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white font-mono border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">Invoice Number *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="CHS-26-8819"
-                    value={invoiceNumber}
-                    onChange={(e) => setInvoiceNumber(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white font-mono border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">Invoice Date</label>
-                  <input
-                    type="date"
-                    value={invoiceDate}
-                    onChange={(e) => setInvoiceDate(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">Taxable Value (₹)</label>
-                  <input
-                    type="number"
-                    value={taxableValue}
-                    onChange={(e) => setTaxableValue(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white font-mono border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">GST Tax Amount (₹)</label>
-                  <input
-                    type="number"
-                    value={taxAmount}
-                    onChange={(e) => setTaxAmount(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white font-mono border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">Reconciliation Match</label>
-                  <select
-                    value={matchStatus}
-                    onChange={(e) => setMatchStatus(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
-                  >
-                    <option value="matched">Matched in 2B</option>
-                    <option value="missing_in_2b">Missing in 2B</option>
-                    <option value="missing_in_books">Missing in Books</option>
-                    <option value="value_mismatch">Value Mismatch</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">ITC Eligibility</label>
-                  <select
-                    value={itcEligibility}
-                    onChange={(e) => setItcEligibility(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
-                  >
-                    <option value="eligible">Eligible ITC</option>
-                    <option value="ineligible_17_5">Blocked u/s 17(5)</option>
-                    <option value="pending">Pending Follow-up</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 pt-1">
-                <label className="flex items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300">
-                  <input
-                    type="checkbox"
-                    checked={inBooks}
-                    onChange={(e) => setInBooks(e.target.checked)}
-                    className="rounded border-slate-300 text-[#cda052] focus:ring-[#cda052]"
-                  />
-                  <span>Recorded in ERP Books</span>
+            <p className="text-xs text-slate-500 dark:text-[#8a96ae] mb-4">
+              Enter your gross outward turnover for {taxPeriod}. Will save directly to the database.
+            </p>
+            <form onSubmit={handleSaveGrossTurnover} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">
+                  Gross Outward Turnover (₹)
                 </label>
-                <label className="flex items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300">
-                  <input
-                    type="checkbox"
-                    checked={inGstr2b}
-                    onChange={(e) => setInGstr2b(e.target.checked)}
-                    className="rounded border-slate-300 text-[#cda052] focus:ring-[#cda052]"
-                  />
-                  <span>Reported in GSTR-2B</span>
-                </label>
+                <input
+                  type="number"
+                  min={0}
+                  step="any"
+                  required
+                  value={editingTurnoverVal}
+                  onChange={(e) => setEditingTurnoverVal(Number(e.target.value))}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white font-mono font-bold text-base border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+                />
               </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-end gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => setIsInvoiceModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                  onClick={() => setIsTurnoverModalOpen(false)}
+                  className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#cda052] text-black font-semibold hover:bg-[#dfb56c]"
+                  className="px-4 py-2 rounded-xl bg-[#cda052] text-black font-semibold hover:bg-[#dfb56c]"
                 >
-                  {editingInvoice ? 'Update Invoice' : 'Add Invoice'}
+                  Save to Database
                 </button>
               </div>
             </form>
@@ -1037,19 +1252,435 @@ export default function GstEngineView({
         </div>
       )}
 
-      {/* Settings Modal */}
+      {/* MODAL 2: Add / Edit Invoice Modal (With AI Upload & Manual Form) */}
+      {isInvoiceModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-[#0e121b] w-full max-w-lg rounded-2xl border border-slate-200 dark:border-[#1e2638] p-5 shadow-2xl max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-3">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-[#cda052]" />
+                <span>{editingInvoice ? 'Edit Reconciliation Invoice' : 'Add Invoice to Reconciliation'}</span>
+              </h3>
+              <button
+                onClick={() => setIsInvoiceModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Mode Tabs */}
+            {!editingInvoice && (
+              <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/60 rounded-xl mb-4">
+                <button
+                  type="button"
+                  onClick={() => setInvoiceModalTab('upload')}
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                    invoiceModalTab === 'upload'
+                      ? 'bg-white dark:bg-[#0e121b] text-slate-900 dark:text-white shadow-sm'
+                      : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#cda052]" />
+                  <span>Upload File (AI Auto-Fill)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInvoiceModalTab('manual')}
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                    invoiceModalTab === 'manual'
+                      ? 'bg-white dark:bg-[#0e121b] text-slate-900 dark:text-white shadow-sm'
+                      : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Pencil className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Manual Form Entry</span>
+                </button>
+              </div>
+            )}
+
+            {/* AI Upload Dropzone */}
+            {!editingInvoice && invoiceModalTab === 'upload' && (
+              <div className="space-y-4 mb-4">
+                <div className="border-2 border-dashed border-amber-500/30 hover:border-[#cda052] rounded-2xl p-6 text-center bg-amber-500/5 transition-colors">
+                  {isParsingInvoice ? (
+                    <div className="py-6 flex flex-col items-center gap-3">
+                      <RefreshCw className="w-8 h-8 text-[#cda052] animate-spin" />
+                      <div>
+                        <p className="text-xs font-bold text-slate-900 dark:text-white">
+                          Gemini AI is reading statutory line items...
+                        </p>
+                        <p className="text-[11px] text-slate-500 dark:text-[#8a96ae] mt-0.5">
+                          Extracting GSTIN, invoice value, tax components, and Rule 88A eligibility
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="cursor-pointer block">
+                      <FileUp className="w-10 h-10 text-[#cda052] mx-auto mb-2" />
+                      <span className="text-xs font-bold text-slate-900 dark:text-white block">
+                        Click or drag invoice file here
+                      </span>
+                      <span className="text-[11px] text-slate-500 dark:text-[#8a96ae] block mt-1">
+                        Supports PDF invoices, scans (PNG/JPG), and vendor Excel spreadsheets
+                      </span>
+                      <input
+                        type="file"
+                        accept=".pdf,.png,.jpg,.jpeg,.webp,.xlsx,.xls,.csv"
+                        onChange={handleInvoiceFileUpload}
+                        className="hidden"
+                      />
+                      <span className="inline-block mt-3 px-3.5 py-1.5 rounded-xl bg-[#cda052] text-black text-xs font-semibold">
+                        Browse Invoice
+                      </span>
+                    </label>
+                  )}
+                </div>
+
+                {invoiceParseError && (
+                  <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs">
+                    {invoiceParseError}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* AI Confidence Banner */}
+            {aiConfidence && (
+              <div className="mb-3 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-700 dark:text-emerald-400 flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#cda052]" />
+                  <span>Extracted via Gemini AI with {aiConfidence}% confidence</span>
+                </div>
+                <span className="text-[10px] font-semibold uppercase">Verify & Save</span>
+              </div>
+            )}
+
+            {/* Invoice Form (Manual or Reviewing AI extraction) */}
+            {(invoiceModalTab === 'manual' || editingInvoice) && (
+              <form onSubmit={handleSaveInvoice} className="space-y-3.5 text-xs">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">Vendor Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Coimbatore Heritage Spinners"
+                      value={vendorName}
+                      onChange={(e) => setVendorName(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">Vendor GSTIN</label>
+                    <input
+                      type="text"
+                      placeholder="33AAACH1094J1Z2"
+                      value={vendorGstin}
+                      onChange={(e) => setVendorGstin(e.target.value.toUpperCase())}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white font-mono border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">Invoice Number *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="CHS-26-8819"
+                      value={invoiceNumber}
+                      onChange={(e) => setInvoiceNumber(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white font-mono border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">Invoice Date</label>
+                    <input
+                      type="date"
+                      value={invoiceDate}
+                      onChange={(e) => setInvoiceDate(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">Taxable Value (₹)</label>
+                    <input
+                      type="number"
+                      value={taxableValue}
+                      onChange={(e) => setTaxableValue(Number(e.target.value))}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white font-mono border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">GST Tax Amount (₹)</label>
+                    <input
+                      type="number"
+                      value={taxAmount}
+                      onChange={(e) => setTaxAmount(Number(e.target.value))}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white font-mono border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">Reconciliation Match</label>
+                    <select
+                      value={matchStatus}
+                      onChange={(e) => setMatchStatus(e.target.value as any)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+                    >
+                      <option value="matched">Matched in 2B</option>
+                      <option value="missing_in_2b">Missing in 2B</option>
+                      <option value="missing_in_books">Missing in Books</option>
+                      <option value="value_mismatch">Value Mismatch</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">ITC Eligibility</label>
+                    <select
+                      value={itcEligibility}
+                      onChange={(e) => setItcEligibility(e.target.value as any)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+                    >
+                      <option value="eligible">Eligible ITC</option>
+                      <option value="ineligible_17_5">Blocked u/s 17(5)</option>
+                      <option value="pending">Pending Follow-up</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 pt-1">
+                  <label className="flex items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={inBooks}
+                      onChange={(e) => setInBooks(e.target.checked)}
+                      className="rounded border-slate-300 text-[#cda052] focus:ring-[#cda052]"
+                    />
+                    <span>Recorded in ERP Books</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={inGstr2b}
+                      onChange={(e) => setInGstr2b(e.target.checked)}
+                      className="rounded border-slate-300 text-[#cda052] focus:ring-[#cda052]"
+                    />
+                    <span>Reported in GSTR-2B</span>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsInvoiceModalOpen(false)}
+                    className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#cda052] text-black font-semibold hover:bg-[#dfb56c]"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>{editingInvoice ? 'Update Database' : 'Save & Write to Database'}</span>
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: GST Portal Return Statement Ingestion (GSTR-1, GSTR-3B, GSTR-2B) */}
+      {isReturnModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-[#0e121b] w-full max-w-xl rounded-2xl border border-slate-200 dark:border-[#1e2638] p-6 shadow-2xl max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-[#cda052]/10 text-[#cda052]">
+                  <UploadCloud className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    Upload GST Portal Return / Statement
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-[#8a96ae]">
+                    Upload GSTR-3B, GSTR-1, or GSTR-2B files downloaded from the GST portal
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setIsReturnModalOpen(false)} className="text-slate-400 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Upload Area */}
+            {!extractedReturnData && (
+              <div className="space-y-4">
+                <div className="border-2 border-dashed border-amber-500/30 hover:border-[#cda052] rounded-2xl p-8 text-center bg-amber-500/5 transition-colors">
+                  {isParsingReturn ? (
+                    <div className="py-6 flex flex-col items-center gap-3">
+                      <RefreshCw className="w-8 h-8 text-[#cda052] animate-spin" />
+                      <div>
+                        <p className="text-xs font-bold text-slate-900 dark:text-white">
+                          Gemini AI is parsing the statutory return statement...
+                        </p>
+                        <p className="text-[11px] text-slate-500 dark:text-[#8a96ae] mt-0.5">
+                          Reading turnover, Rule 88A offsets, available ITC, and line item invoices
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="cursor-pointer block">
+                      <FileSearch className="w-10 h-10 text-[#cda052] mx-auto mb-2" />
+                      <span className="text-xs font-bold text-slate-900 dark:text-white block">
+                        Select GST Portal File (.json, .xlsx, .pdf)
+                      </span>
+                      <span className="text-[11px] text-slate-500 dark:text-[#8a96ae] block mt-1">
+                        Compatible with GSTR-3B JSON/PDF, GSTR-1 Excel/JSON, or GSTR-2B ITC exports
+                      </span>
+                      <input
+                        type="file"
+                        accept=".json,.xlsx,.xls,.csv,.pdf"
+                        onChange={handleReturnFileUpload}
+                        className="hidden"
+                      />
+                      <span className="inline-block mt-3 px-4 py-2 rounded-xl bg-[#cda052] text-black text-xs font-semibold">
+                        Browse Return File
+                      </span>
+                    </label>
+                  )}
+                </div>
+
+                {returnParseError && (
+                  <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs">
+                    {returnParseError}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Extracted Return Preview & Confirmation */}
+            {extractedReturnData && (
+              <div className="space-y-4 text-xs">
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-semibold flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <CheckCheck className="w-4 h-4" />
+                    <span>Return Ingestion Ready: {extractedReturnData.returnType}</span>
+                  </div>
+                  <span className="font-mono">{extractedReturnData.taxPeriod}</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-[#080b12] border border-slate-200 dark:border-[#1e2638]">
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 block text-[11px]">Gross Outward Turnover</span>
+                    <span className="text-base font-bold text-slate-900 dark:text-white font-mono">
+                      ₹{extractedReturnData.grossOutwardTurnover?.toLocaleString('en-IN') || 0}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 block text-[11px]">Total Output Tax</span>
+                    <span className="text-base font-bold text-amber-600 dark:text-[#f7d88c] font-mono">
+                      ₹{(extractedReturnData.outputIgst + extractedReturnData.outputCgst + extractedReturnData.outputSgst).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 block text-[11px]">Eligible ITC (Table 4A)</span>
+                    <span className="text-base font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                      ₹{(extractedReturnData.inputIgst + extractedReturnData.inputCgst + extractedReturnData.inputSgst).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 block text-[11px]">Invoices Discovered</span>
+                    <span className="text-base font-bold text-slate-900 dark:text-white font-mono">
+                      {extractedReturnData.invoices?.length || 0} Supplier Invoices
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setExtractedReturnData(null)}
+                    className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                  >
+                    Upload Different File
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleApplyExtractedReturn}
+                    className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#cda052] text-black font-semibold hover:bg-[#dfb56c]"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Confirm & Write to Database</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: Settings & Business Entity Profile Modal */}
       {isSettingsOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-white dark:bg-[#0e121b] w-full max-w-md rounded-2xl border border-slate-200 dark:border-[#1e2638] p-5 shadow-2xl">
             <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
               <SettingsIcon className="w-4 h-4 text-[#cda052]" />
-              <span>GST Compliance & Cadence Settings</span>
+              <span>GST Compliance & Profile Configuration</span>
             </h3>
             <p className="text-xs text-slate-500 dark:text-[#8a96ae] mb-4">
-              Configure statutory return schedules and automated reminder rules
+              Update legal entity details, PAN, GSTIN, and statutory return frequencies
             </p>
 
-            <form onSubmit={handleSaveSettings} className="space-y-4 text-xs">
+            <form onSubmit={handleSaveSettings} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Legal Company Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={legalName}
+                  onChange={(e) => setLegalName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">GSTIN (15 Digits)</label>
+                  <input
+                    type="text"
+                    maxLength={15}
+                    value={gstin}
+                    onChange={(e) => {
+                      const val = e.target.value.toUpperCase();
+                      setGstin(val);
+                      if (val.length >= 12 && !pan) {
+                        setPan(val.slice(2, 12));
+                      }
+                    }}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white font-mono uppercase border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">PAN (10 Digits)</label>
+                  <input
+                    type="text"
+                    maxLength={10}
+                    value={pan}
+                    onChange={(e) => setPan(e.target.value.toUpperCase())}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white font-mono uppercase border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">Filing Cadence Mode</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -1089,7 +1720,6 @@ export default function GstEngineView({
                     onChange={(e) => setGstr1Day(Number(e.target.value))}
                     className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white font-mono border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
                   />
-                  <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 block">Default: 10th (Buffer)</span>
                 </div>
                 <div>
                   <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">GSTR-3B Due Day</label>
@@ -1101,7 +1731,6 @@ export default function GstEngineView({
                     onChange={(e) => setGstr3bDay(Number(e.target.value))}
                     className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white font-mono border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
                   />
-                  <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 block">Default: 20th</span>
                 </div>
               </div>
 
@@ -1115,9 +1744,10 @@ export default function GstEngineView({
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#cda052] text-black font-semibold hover:bg-[#dfb56c]"
+                  className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#cda052] text-black font-semibold hover:bg-[#dfb56c]"
                 >
-                  Save Configuration
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save to Database</span>
                 </button>
               </div>
             </form>
@@ -1142,17 +1772,22 @@ export default function GstEngineView({
           netCashPayable: taxCalculation.netTotalPayable,
           invoicesSummary: {
             total: reconInvoices.length,
-            matched: reconInvoices.filter(i => i.matchStatus === 'matched').length,
-            mismatched: reconInvoices.filter(i => i.matchStatus === 'value_mismatch').length,
-            pending: reconInvoices.filter(i => i.matchStatus === 'missing_in_2b').length,
+            matched: reconInvoices.filter((i) => i.matchStatus === 'matched').length,
+            mismatched: reconInvoices.filter((i) => i.matchStatus === 'value_mismatch').length,
+            pending: reconInvoices.filter((i) => i.matchStatus === 'missing_in_2b').length,
           },
-          mismatchedVendors: reconInvoices.filter(i => i.matchStatus !== 'matched').map(i => ({
-            vendor: i.vendorName,
-            gstin: i.vendorGstin,
-            inv: i.invoiceNumber,
-            taxAmount: i.taxAmount,
-            status: i.matchStatus,
-          })),
+          mismatchedVendors: reconInvoices
+            .filter((i) => i.matchStatus !== 'matched')
+            .map((i) => ({
+              vendor: i.vendorName,
+              invoiceNo: i.invoiceNumber,
+              status: i.matchStatus,
+              taxAmount: i.taxAmount,
+            })),
+          consignmentsSummary: { total: 0, pendingCustomsDuty: 0, activePorts: [] },
+          advanceTaxSummary: { currentFiscalYear: 'FY 2026-27', totalPaid: 0, installmentsComplete: 0, totalEstimated: 0 },
+          dscTokensSummary: { active: 0, expiringSoon: 0 },
+          upcomingDeadlines: [`GSTR-1 (${settings.gstr1DueDay || 10}th)`, `GSTR-3B (${settings.gstr3bDueDay || 20}th)`],
         }}
       />
     </div>

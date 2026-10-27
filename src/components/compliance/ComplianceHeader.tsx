@@ -12,8 +12,12 @@ import {
   Ship,
   FileCheck2,
   Sparkles,
+  Pencil,
+  Building2,
+  X,
+  Save,
 } from 'lucide-react';
-import { ComplianceWorkflowItem, DscRegistryItem, CustomsDeclaration } from '@/lib/types';
+import { ComplianceWorkflowItem, DscRegistryItem, CustomsDeclaration, GstSettings } from '@/lib/types';
 import ComplianceAiAdvisorModal from './ComplianceAiAdvisorModal';
 
 interface ComplianceHeaderProps {
@@ -22,6 +26,8 @@ interface ComplianceHeaderProps {
   customsDeclarations: CustomsDeclaration[];
   activeTab: string;
   onTabSelect: (tab: string) => void;
+  settings?: GstSettings;
+  onUpdateSettings?: (settings: GstSettings) => void;
 }
 
 export default function ComplianceHeader({
@@ -30,8 +36,51 @@ export default function ComplianceHeader({
   customsDeclarations,
   activeTab,
   onTabSelect,
+  settings,
+  onUpdateSettings,
 }: ComplianceHeaderProps) {
   const [isAiAdvisorOpen, setIsAiAdvisorOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
+  // Profile modal state
+  const [editLegalName, setEditLegalName] = useState(settings?.legalName || '');
+  const [editTradeName, setEditTradeName] = useState(settings?.tradeName || '');
+  const [editGstin, setEditGstin] = useState(settings?.gstin || '');
+  const [editPan, setEditPan] = useState(settings?.pan || '');
+  const [editIec, setEditIec] = useState(settings?.iec || '');
+  const [editStateCode, setEditStateCode] = useState(settings?.stateCode || '33');
+
+  const openProfileModal = () => {
+    setEditLegalName(settings?.legalName || '');
+    setEditTradeName(settings?.tradeName || '');
+    setEditGstin(settings?.gstin || '');
+    setEditPan(settings?.pan || (settings?.gstin && settings.gstin.length >= 12 ? settings.gstin.slice(2, 12) : ''));
+    setEditIec(settings?.iec || '');
+    setEditStateCode(settings?.stateCode || '33');
+    setIsProfileModalOpen(true);
+  };
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!settings || !onUpdateSettings) return;
+
+    const gstinFormatted = editGstin.trim().toUpperCase();
+    const panFormatted = editPan.trim().toUpperCase() || (gstinFormatted.length >= 12 ? gstinFormatted.slice(2, 12) : '');
+
+    const updated: GstSettings = {
+      ...settings,
+      legalName: editLegalName.trim() || 'My Enterprise',
+      tradeName: editTradeName.trim() || undefined,
+      gstin: gstinFormatted,
+      pan: panFormatted,
+      iec: editIec.trim().toUpperCase() || undefined,
+      stateCode: editStateCode.trim() || '33',
+    };
+
+    onUpdateSettings(updated);
+    setIsProfileModalOpen(false);
+  };
+
   const now = new Date();
   const next7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   const next30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -67,6 +116,8 @@ export default function ComplianceHeader({
 
   const filingHealthPercentage = totalWorkflows > 0 ? Math.round((filedCount / totalWorkflows) * 100) : 100;
 
+  const displayPan = settings?.pan || (settings?.gstin && settings.gstin.length >= 12 ? settings.gstin.slice(2, 12) : '');
+
   return (
     <div className="space-y-4">
       {/* Title & Statutory Overview */}
@@ -77,11 +128,33 @@ export default function ComplianceHeader({
               <Scale className="w-5 h-5" />
             </span>
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                Statutory Compliance & Customs Hub
-              </h1>
-              <p className="text-xs text-slate-500 dark:text-[#8a96ae] mt-0.5">
-                Rivlet Apparel Private Limited • GSTIN 33AABCR1234F1Z8 • IEC 0420088912
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+                  Statutory Compliance & Customs Hub
+                </h1>
+                <button
+                  onClick={openProfileModal}
+                  className="px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-[#cda052] border border-slate-200 dark:border-slate-700 flex items-center gap-1 transition-colors"
+                  title="Update entity name, PAN & GSTIN"
+                >
+                  <Pencil className="w-3 h-3" />
+                  <span>Edit Profile</span>
+                </button>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-[#8a96ae] mt-0.5 flex items-center gap-2 flex-wrap">
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  {settings?.legalName || 'My Enterprise'}
+                </span>
+                <span>•</span>
+                <span>GSTIN: <span className="font-mono text-amber-600 dark:text-[#f7d88c] font-semibold">{settings?.gstin || 'Not set'}</span></span>
+                <span>•</span>
+                <span>PAN: <span className="font-mono text-emerald-600 dark:text-emerald-400 font-semibold">{displayPan || 'Not set'}</span></span>
+                {settings?.iec && (
+                  <>
+                    <span>•</span>
+                    <span>IEC: <span className="font-mono text-sky-600 dark:text-sky-400 font-semibold">{settings.iec}</span></span>
+                  </>
+                )}
               </p>
             </div>
           </div>
@@ -239,6 +312,150 @@ export default function ComplianceHeader({
           </p>
         </div>
       </div>
+
+      {/* Edit Enterprise & Tax Profile Modal */}
+      {isProfileModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-[#0e121b] w-full max-w-lg rounded-2xl border border-slate-200 dark:border-[#1e2638] p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-[#cda052]/10 text-[#cda052] border border-[#cda052]/20">
+                  <Building2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    Edit Enterprise & Tax Profile
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-[#8a96ae]">
+                    Update your permanent PAN, GSTIN, and legal company credentials
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsProfileModalOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveProfile} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">
+                  Legal Entity Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. My Apparel Enterprise Pvt Ltd"
+                  value={editLegalName}
+                  onChange={(e) => setEditLegalName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">
+                  Trade / Brand Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Rivlet Studios"
+                  value={editTradeName}
+                  onChange={(e) => setEditTradeName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">
+                    GSTIN (15 Digits)
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={15}
+                    placeholder="33AAAAA0000A1Z5"
+                    value={editGstin}
+                    onChange={(e) => {
+                      const val = e.target.value.toUpperCase();
+                      setEditGstin(val);
+                      if (val.length >= 12 && !editPan) {
+                        setEditPan(val.slice(2, 12));
+                      }
+                    }}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white font-mono uppercase border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+                  />
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 block">Goods & Services Tax ID</span>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">
+                    PAN (10 Digits) *
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={10}
+                    placeholder="AAAAA0000A"
+                    value={editPan}
+                    onChange={(e) => setEditPan(e.target.value.toUpperCase())}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white font-mono uppercase border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+                  />
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 block">Income Tax Entity PAN</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">
+                    IEC Code (Import Export Code)
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={10}
+                    placeholder="0420088912"
+                    value={editIec}
+                    onChange={(e) => setEditIec(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white font-mono border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">
+                    State / Jurisdiction Code
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={2}
+                    placeholder="33"
+                    value={editStateCode}
+                    onChange={(e) => setEditStateCode(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-[#080b12] text-slate-900 dark:text-white font-mono border border-slate-200 dark:border-[#1e2638] outline-none focus:border-[#cda052]"
+                  />
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 block">e.g. 33 (TN), 27 (MH), 29 (KA)</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsProfileModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#cda052] text-black font-semibold hover:bg-[#dfb56c] transition-all shadow-sm"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save to Database</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

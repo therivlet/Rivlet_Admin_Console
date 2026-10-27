@@ -708,6 +708,8 @@ export interface GstSettings {
   gstin: string;
   legalName: string;
   tradeName?: string;
+  pan?: string;
+  iec?: string;
   filingFrequency: GstFilingFrequency;
   gstr1DueDay: number; // statutory default: 10
   gstr3bDueDay: number; // statutory default: 20
@@ -718,6 +720,7 @@ export interface GstSettings {
 
 export interface GstTaxCalculation {
   taxPeriod: string;
+  grossOutwardTurnover?: number;
   outputIgst: number;
   outputCgst: number;
   outputSgst: number;
@@ -744,10 +747,17 @@ export interface GstReconciliationInvoice {
   invoiceValue: number;
   taxableValue: number;
   taxAmount: number;
+  igstAmount?: number;
+  cgstAmount?: number;
+  sgstAmount?: number;
   inBooks: boolean;
   inGstr2b: boolean;
-  matchStatus: 'matched' | 'missing_in_2b' | 'missing_in_books' | 'value_mismatch';
-  itcEligibility: 'eligible' | 'ineligible_17_5' | 'pending';
+  matchStatus: 'matched' | 'missing_in_2b' | 'missing_in_books' | 'value_mismatch' | 'tax_mismatch' | 'manual_override';
+  itcEligibility: 'eligible' | 'ineligible_17_5' | 'pending' | 'claimed';
+  invoiceType?: 'purchase_inward' | 'sales_outward';
+  source?: 'manual' | 'ai_upload' | 'gstr2b_portal' | 'gstr1_portal' | 'gstr3b_portal';
+  attachmentUrl?: string;
+  notes?: string;
 }
 
 export type CustomsDeclarationType = 'import_boe' | 'export_sb';
