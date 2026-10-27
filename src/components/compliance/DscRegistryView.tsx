@@ -17,7 +17,11 @@ import {
   Trash2,
 } from 'lucide-react';
 import { DscRegistryItem } from '@/lib/types';
-import { saveLocalDscRegistry } from '@/lib/complianceStorage';
+import {
+  saveLocalDscRegistry,
+  saveMergedDscRegistry,
+  deleteMergedDscItem,
+} from '@/lib/complianceStorage';
 import { addDurableNotification } from '@/lib/notificationStorage';
 
 interface DscRegistryViewProps {
@@ -93,10 +97,10 @@ export default function DscRegistryView({
           : item
       );
       onUpdateDsc(updated);
-      saveLocalDscRegistry(updated);
+      saveMergedDscRegistry(updated);
     } else {
       const newItem: DscRegistryItem = {
-        id: `dsc-${Date.now()}`,
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `dsc-${Date.now()}`,
         tokenLabel: label.trim(),
         holderName: holder.trim(),
         designation: designation.trim() || 'Director',
@@ -110,7 +114,7 @@ export default function DscRegistryView({
       };
       const updated = [newItem, ...dscItems];
       onUpdateDsc(updated);
-      saveLocalDscRegistry(updated);
+      saveMergedDscRegistry(updated);
     }
 
     setIsModalOpen(false);
@@ -122,7 +126,7 @@ export default function DscRegistryView({
     }
     const updated = dscItems.filter((i) => i.id !== id);
     onUpdateDsc(updated);
-    saveLocalDscRegistry(updated);
+    deleteMergedDscItem(id);
   };
 
   const handleTriggerRenewalAlert = async (item: DscRegistryItem) => {

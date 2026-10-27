@@ -22,8 +22,12 @@ import { AdvanceTaxRecord, TdsReturnRecord } from '@/lib/types';
 import {
   getLocalAdvanceTaxRecords,
   saveLocalAdvanceTaxRecords,
+  loadMergedAdvanceTaxRecords,
+  saveMergedAdvanceTaxRecords,
   getLocalTdsRecords,
   saveLocalTdsRecords,
+  loadMergedTdsRecords,
+  saveMergedTdsRecords,
 } from '@/lib/complianceStorage';
 import { addDurableNotification } from '@/lib/notificationStorage';
 
@@ -54,8 +58,18 @@ export default function ItrScheduleView() {
   const [tdsToken, setTdsToken] = useState('');
 
   useEffect(() => {
+    // 1. Initial fast local hydration
     setAdvanceTaxList(getLocalAdvanceTaxRecords());
     setTdsList(getLocalTdsRecords());
+
+    // 2. Direct Supabase Cloud synchronization
+    loadMergedAdvanceTaxRecords().then((records) => {
+      if (records && records.length > 0) setAdvanceTaxList(records);
+    });
+
+    loadMergedTdsRecords().then((records) => {
+      if (records && records.length > 0) setTdsList(records);
+    });
   }, []);
 
   const handleTriggerReminder = async (title: string, date: string, desc: string) => {
@@ -119,10 +133,10 @@ export default function ItrScheduleView() {
           : t
       );
       setAdvanceTaxList(updated);
-      saveLocalAdvanceTaxRecords(updated);
+      saveMergedAdvanceTaxRecords(updated);
     } else {
       const newItem: AdvanceTaxRecord = {
-        id: `adv-tax-${Date.now()}`,
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `adv-tax-${Date.now()}`,
         quarter: advQuarter.trim(),
         dueDate: advDueDate.trim() || '15th',
         statutoryDate: advStatutoryDate || new Date().toISOString().split('T')[0],
@@ -133,7 +147,7 @@ export default function ItrScheduleView() {
       };
       const updated = [...advanceTaxList, newItem];
       setAdvanceTaxList(updated);
-      saveLocalAdvanceTaxRecords(updated);
+      saveMergedAdvanceTaxRecords(updated);
     }
     setIsAdvModalOpen(false);
   };
@@ -142,7 +156,7 @@ export default function ItrScheduleView() {
     if (!window.confirm(`Are you sure you want to delete ${name}?`)) return;
     const updated = advanceTaxList.filter((t) => t.id !== id);
     setAdvanceTaxList(updated);
-    saveLocalAdvanceTaxRecords(updated);
+    saveMergedAdvanceTaxRecords(updated);
   };
 
   // --- TDS Handlers ---
@@ -190,10 +204,10 @@ export default function ItrScheduleView() {
           : item
       );
       setTdsList(updated);
-      saveLocalTdsRecords(updated);
+      saveMergedTdsRecords(updated);
     } else {
       const newItem: TdsReturnRecord = {
-        id: `tds-${Date.now()}`,
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `tds-${Date.now()}`,
         form: tdsForm.trim(),
         period: tdsPeriod.trim(),
         dueDate: tdsDueDate || '2026-10-31',
@@ -204,7 +218,7 @@ export default function ItrScheduleView() {
       };
       const updated = [...tdsList, newItem];
       setTdsList(updated);
-      saveLocalTdsRecords(updated);
+      saveMergedTdsRecords(updated);
     }
     setIsTdsModalOpen(false);
   };
@@ -213,7 +227,7 @@ export default function ItrScheduleView() {
     if (!window.confirm(`Are you sure you want to delete ${form}?`)) return;
     const updated = tdsList.filter((t) => t.id !== id);
     setTdsList(updated);
-    saveLocalTdsRecords(updated);
+    saveMergedTdsRecords(updated);
   };
 
   return (

@@ -41,10 +41,16 @@ import {
   saveMergedReconInvoices,
   getLocalCustomsDeclarations,
   saveLocalCustomsDeclarations,
+  loadMergedCustomsDeclarations,
+  saveMergedCustomsDeclarations,
   getLocalDscRegistry,
   saveLocalDscRegistry,
+  loadMergedDscRegistry,
+  saveMergedDscRegistry,
   getLocalCredentialVault,
   saveLocalCredentialVault,
+  loadMergedCredentialVault,
+  saveMergedCredentialVault,
 } from '@/lib/complianceStorage';
 
 type ComplianceTab = 'workflows' | 'gst' | 'icegate' | 'itr' | 'dsc' | 'vault';
@@ -102,6 +108,18 @@ function CompliancePageInner() {
     loadMergedComplianceWorkflows().then((merged) => {
       if (merged && merged.length > 0) setWorkflows(merged);
     });
+
+    loadMergedCustomsDeclarations().then((declarations) => {
+      if (declarations && declarations.length > 0) setCustomsDeclarations(declarations);
+    });
+
+    loadMergedDscRegistry().then((items) => {
+      if (items && items.length > 0) setDscItems(items);
+    });
+
+    loadMergedCredentialVault().then((items) => {
+      if (items && items.length > 0) setVaultItems(items);
+    });
   }, []);
 
   const setTab = (nextTab: ComplianceTab) => {
@@ -125,17 +143,17 @@ function CompliancePageInner() {
 
   const handleUpdateCustoms = (updated: CustomsDeclaration[]) => {
     setCustomsDeclarations(updated);
-    saveLocalCustomsDeclarations(updated);
+    saveMergedCustomsDeclarations(updated);
   };
 
   const handleUpdateDsc = (updated: DscRegistryItem[]) => {
     setDscItems(updated);
-    saveLocalDscRegistry(updated);
+    saveMergedDscRegistry(updated);
   };
 
   const handleUpdateVault = (updated: CredentialVaultItem[]) => {
     setVaultItems(updated);
-    saveLocalCredentialVault(updated);
+    saveMergedCredentialVault(updated);
   };
 
   return (

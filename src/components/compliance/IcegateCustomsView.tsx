@@ -28,7 +28,11 @@ import {
   CustomsDeclarationType,
   CustomsStage,
 } from '@/lib/types';
-import { saveLocalCustomsDeclarations } from '@/lib/complianceStorage';
+import {
+  saveLocalCustomsDeclarations,
+  saveMergedCustomsDeclarations,
+  deleteMergedCustomsDeclaration,
+} from '@/lib/complianceStorage';
 
 interface IcegateCustomsViewProps {
   declarations: CustomsDeclaration[];
@@ -96,7 +100,7 @@ export default function IcegateCustomsView({
       return d;
     });
     onUpdateDeclarations(updated);
-    saveLocalCustomsDeclarations(updated);
+    saveMergedCustomsDeclarations(updated);
   };
 
   const handleOpenAdd = () => {
@@ -171,10 +175,10 @@ export default function IcegateCustomsView({
           : d
       );
       onUpdateDeclarations(updated);
-      saveLocalCustomsDeclarations(updated);
+      saveMergedCustomsDeclarations(updated);
     } else {
       const newItem: CustomsDeclaration = {
-        id: `cust-${Date.now()}`,
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `cust-${Date.now()}`,
         declarationType: decType,
         declarationNumber: decNumber.trim(),
         declarationDate: decDate || new Date().toISOString().split('T')[0],
@@ -197,7 +201,7 @@ export default function IcegateCustomsView({
       };
       const updated = [newItem, ...declarations];
       onUpdateDeclarations(updated);
-      saveLocalCustomsDeclarations(updated);
+      saveMergedCustomsDeclarations(updated);
     }
 
     setIsModalOpen(false);
@@ -209,7 +213,7 @@ export default function IcegateCustomsView({
     }
     const updated = declarations.filter((d) => d.id !== id);
     onUpdateDeclarations(updated);
-    saveLocalCustomsDeclarations(updated);
+    deleteMergedCustomsDeclaration(id);
   };
 
   const handleExportPlanner = () => {

@@ -18,7 +18,11 @@ import {
   Trash2,
 } from 'lucide-react';
 import { CredentialVaultItem, VaultServiceType } from '@/lib/types';
-import { saveLocalCredentialVault } from '@/lib/complianceStorage';
+import {
+  saveLocalCredentialVault,
+  saveMergedCredentialVault,
+  deleteMergedVaultItem,
+} from '@/lib/complianceStorage';
 
 interface CredentialVaultViewProps {
   vaultItems: CredentialVaultItem[];
@@ -105,10 +109,10 @@ export default function CredentialVaultView({
           : item
       );
       onUpdateVault(updated);
-      saveLocalCredentialVault(updated);
+      saveMergedCredentialVault(updated);
     } else {
       const newItem: CredentialVaultItem = {
-        id: `vault-${Date.now()}`,
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `vault-${Date.now()}`,
         title: title.trim(),
         serviceType,
         identifier: identifier.trim(),
@@ -120,7 +124,7 @@ export default function CredentialVaultView({
       };
       const updated = [newItem, ...vaultItems];
       onUpdateVault(updated);
-      saveLocalCredentialVault(updated);
+      saveMergedCredentialVault(updated);
     }
 
     setIsModalOpen(false);
@@ -132,7 +136,7 @@ export default function CredentialVaultView({
     }
     const updated = vaultItems.filter((v) => v.id !== id);
     onUpdateVault(updated);
-    saveLocalCredentialVault(updated);
+    deleteMergedVaultItem(id);
   };
 
   return (

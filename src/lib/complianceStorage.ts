@@ -21,10 +21,29 @@ export const STORAGE_KEY_ADVANCE_TAX = 'rivlet_advance_tax_records';
 export const STORAGE_KEY_TDS_RECORDS = 'rivlet_tds_return_records';
 export const STORAGE_KEY_GST_TAX_INPUTS = 'rivlet_gst_tax_inputs';
 
+// --- UUID Validation and Normalization Helpers ---
+
+export function isValidUuid(id?: string): boolean {
+  if (!id) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+}
+
+export function ensureValidUuid(id?: string): string {
+  if (id && isValidUuid(id)) return id;
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 // --- Production Initial Statutory Datasets (Clean Indian Apparel Compliance) ---
 
 export const INITIAL_GST_SETTINGS: GstSettings = {
-  id: 'gst-settings-primary',
+  id: '00000000-0000-0000-0000-000000000001',
   gstin: '',
   legalName: 'My Enterprise',
   tradeName: '',
@@ -40,7 +59,7 @@ export const INITIAL_GST_SETTINGS: GstSettings = {
 
 export const INITIAL_COMPLIANCE_WORKFLOWS: ComplianceWorkflowItem[] = [
   {
-    id: 'wf-gst-gstr1-current',
+    id: '40000000-0000-0000-0000-000000000001',
     title: 'GSTR-1 Monthly Return (Outward Supplies)',
     category: 'gst',
     entityName: 'Rivlet Apparel Private Limited',
@@ -57,7 +76,7 @@ export const INITIAL_COMPLIANCE_WORKFLOWS: ComplianceWorkflowItem[] = [
     updatedAt: new Date().toISOString(),
   },
   {
-    id: 'wf-gst-gstr3b-current',
+    id: '40000000-0000-0000-0000-000000000002',
     title: 'GSTR-3B Monthly Summary & Net Tax Settlement',
     category: 'gst',
     entityName: 'Rivlet Apparel Private Limited',
@@ -67,14 +86,14 @@ export const INITIAL_COMPLIANCE_WORKFLOWS: ComplianceWorkflowItem[] = [
     statutoryDeadline: '2026-11-20',
     status: 'upcoming',
     assignedTo: 'Finance & Accounts Lead',
-    challanAmount: 345200,
-    itcClaimed: 520400,
+    challanAmount: 0,
+    itcClaimed: 0,
     notes: 'Rule 88A tax offset sequence to be executed after GSTR-2B purchase reconciliation.',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
   {
-    id: 'wf-itr-adv-tax-q3',
+    id: '40000000-0000-0000-0000-000000000003',
     title: 'Advance Tax Installment Q3 (75% Cumulative)',
     category: 'itr',
     entityName: 'Rivlet Apparel Private Limited',
@@ -84,13 +103,13 @@ export const INITIAL_COMPLIANCE_WORKFLOWS: ComplianceWorkflowItem[] = [
     statutoryDeadline: '2026-12-15',
     status: 'upcoming',
     assignedTo: 'Statutory Auditor & Tax Lead',
-    challanAmount: 750000,
+    challanAmount: 0,
     notes: 'Section 208/211 compliance. Net profit estimate review scheduled with external CA.',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
   {
-    id: 'wf-tds-26q-q2',
+    id: '40000000-0000-0000-0000-000000000004',
     title: 'Quarterly TDS Return - Non-Salary (Form 26Q)',
     category: 'tds',
     entityName: 'Rivlet Apparel Private Limited',
@@ -100,13 +119,13 @@ export const INITIAL_COMPLIANCE_WORKFLOWS: ComplianceWorkflowItem[] = [
     statutoryDeadline: '2026-10-31',
     status: 'in_progress',
     assignedTo: 'Compliance Officer',
-    challanAmount: 185600,
+    challanAmount: 0,
     notes: 'Fabric mill job-work TDS (Section 194C) and professional charges (Section 194J) reconciliation.',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
   {
-    id: 'wf-icegate-boe-clearance',
+    id: '40000000-0000-0000-0000-000000000005',
     title: 'Customs Clearance: Egyptian Cotton Yarn Consignment',
     category: 'icegate',
     entityName: 'Rivlet Apparel Private Limited',
@@ -116,14 +135,14 @@ export const INITIAL_COMPLIANCE_WORKFLOWS: ComplianceWorkflowItem[] = [
     statutoryDeadline: '2026-11-06',
     status: 'in_progress',
     assignedTo: 'Logistics & Customs Agent',
-    challanAmount: 428000,
-    itcClaimed: 245000,
+    challanAmount: 0,
+    itcClaimed: 0,
     notes: 'BE No: 8492019 / Chennai Sea Port. e-Sanchit IRN generated. Awaiting duty payment receipt.',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
   {
-    id: 'wf-dsc-audit-renewal',
+    id: '40000000-0000-0000-0000-000000000006',
     title: 'Director Class 3 DSC Token Renewal',
     category: 'dsc',
     entityName: 'Managing Director Office',
@@ -141,7 +160,7 @@ export const INITIAL_COMPLIANCE_WORKFLOWS: ComplianceWorkflowItem[] = [
 
 export const INITIAL_CUSTOMS_DECLARATIONS: CustomsDeclaration[] = [
   {
-    id: 'cust-boe-01',
+    id: '10000000-0000-0000-0000-000000000001',
     declarationType: 'import_boe',
     declarationNumber: 'BE-8492019',
     declarationDate: '2026-10-24',
@@ -163,14 +182,14 @@ export const INITIAL_CUSTOMS_DECLARATIONS: CustomsDeclaration[] = [
     updatedAt: new Date().toISOString(),
   },
   {
-    id: 'cust-sb-02',
+    id: '10000000-0000-0000-0000-000000000002',
     declarationType: 'export_sb',
     declarationNumber: 'SB-1948204',
     declarationDate: '2026-10-26',
     portCode: 'INBLR4',
     portName: 'Kempegowda Bangalore Air Cargo',
     hsnChapter: '62',
-    goodsDescription: 'Tailored Ready-to-Wear Linen & Wool Overcoats (Autumn Collection)',
+    goodsDescription: 'Tailored Ready-to-Wear Activewear & Jackets',
     invoiceValueInr: 4650000,
     customsDutyInr: 0,
     igstPaidInr: 0, // Zero-rated export under LUT
@@ -188,9 +207,9 @@ export const INITIAL_CUSTOMS_DECLARATIONS: CustomsDeclaration[] = [
 
 export const INITIAL_DSC_REGISTRY: DscRegistryItem[] = [
   {
-    id: 'dsc-01',
+    id: '20000000-0000-0000-0000-000000000001',
     tokenLabel: 'Director Primary Statutory DSC',
-    holderName: 'K. R. Harichandru',
+    holderName: 'Authorized Director',
     designation: 'Managing Director',
     certAuthority: 'eMudhra Limited',
     serialNumber: '7B3A-4F91-C820-99E1',
@@ -201,9 +220,9 @@ export const INITIAL_DSC_REGISTRY: DscRegistryItem[] = [
     portalsBound: ['GSTN', 'ICEGATE', 'Income Tax E-Filing', 'MCA-21 V3'],
   },
   {
-    id: 'dsc-02',
+    id: '20000000-0000-0000-0000-000000000002',
     tokenLabel: 'Finance Controller & Authorized Signatory DSC',
-    holderName: 'V. S. Narayan',
+    holderName: 'Finance Officer',
     designation: 'Head of Finance & Operations',
     certAuthority: 'Vsign Technologies',
     serialNumber: '4C90-8812-E571-00B3',
@@ -217,44 +236,44 @@ export const INITIAL_DSC_REGISTRY: DscRegistryItem[] = [
 
 export const INITIAL_CREDENTIAL_VAULT: CredentialVaultItem[] = [
   {
-    id: 'vault-01',
+    id: '30000000-0000-0000-0000-000000000001',
     title: 'Goods & Services Tax Network (GSTN)',
     serviceType: 'gst',
-    identifier: '33AABCR1234F1Z8',
-    secret: 'Rivlet#Gstn@2026!Sec',
+    identifier: '',
+    secret: '••••••••••••',
     portalUrl: 'https://services.gst.gov.in',
-    notes: 'Principal place of business GSTIN. GSP API client access active.',
+    notes: 'Principal place of business GSTIN portal access.',
     lastVerifiedAt: '2026-10-25T10:00:00Z',
     updatedAt: new Date().toISOString(),
   },
   {
-    id: 'vault-02',
+    id: '30000000-0000-0000-0000-000000000002',
     title: 'ICEGATE Customs Electronic Gateway',
     serviceType: 'icegate',
-    identifier: 'RIVLET_ICEGATE_ADM',
-    secret: 'Icegate$Rivlet#Customs99',
+    identifier: '',
+    secret: '••••••••••••',
     portalUrl: 'https://www.icegate.gov.in',
-    notes: 'Mapped with Director Class 3 DSC. AD Code registered for Chennai & Bangalore ports.',
+    notes: 'Mapped with Director Class 3 DSC. AD Code registered ports.',
     lastVerifiedAt: '2026-10-22T14:30:00Z',
     updatedAt: new Date().toISOString(),
   },
   {
-    id: 'vault-03',
+    id: '30000000-0000-0000-0000-000000000003',
     title: 'DGFT (Directorate General of Foreign Trade)',
     serviceType: 'dgft',
-    identifier: '0420088912', // IEC Code
-    secret: 'Dgft!Export@LinenBrand2026',
+    identifier: '',
+    secret: '••••••••••••',
     portalUrl: 'https://www.dgft.gov.in',
-    notes: 'Import Export Code (IEC) holder login. RoDTEP / RoSCTL scrip issuance portal.',
+    notes: 'Import Export Code (IEC) holder login. RoDTEP / RoSCTL scrip portal.',
     lastVerifiedAt: '2026-10-15T09:15:00Z',
     updatedAt: new Date().toISOString(),
   },
   {
-    id: 'vault-04',
+    id: '30000000-0000-0000-0000-000000000004',
     title: 'Income Tax E-Filing Portal',
     serviceType: 'incometax',
-    identifier: 'AABCR1234F', // PAN
-    secret: 'Rivlet#TaxAudit$2026',
+    identifier: '',
+    secret: '••••••••••••',
     portalUrl: 'https://www.incometax.gov.in',
     notes: 'Corporate PAN login. Advance tax and ITR-6 assessment tracking.',
     lastVerifiedAt: '2026-10-20T11:45:00Z',
@@ -381,29 +400,45 @@ export async function loadMergedComplianceWorkflows(): Promise<ComplianceWorkflo
       .select('*')
       .order('due_date', { ascending: true });
 
-    if (error || !data || data.length === 0) return localList;
+    if (!error && data) {
+      const regularItems = data.filter((d: any) =>
+        d.return_type !== 'GST-TAX-INPUTS' &&
+        d.return_type !== 'GST-RECON-INVOICE' &&
+        d.return_type !== 'ITR-ADVANCE-TAX-SET' &&
+        d.return_type !== 'ITR-TDS-RECORD-SET'
+      );
 
-    const remoteItems: ComplianceWorkflowItem[] = data.map((d: any) => ({
-      id: d.id,
-      title: d.title,
-      category: d.category,
-      entityName: d.entity_name,
-      returnType: d.return_type,
-      taxPeriod: d.tax_period,
-      dueDate: d.due_date,
-      statutoryDeadline: d.statutory_deadline,
-      status: d.status,
-      assignedTo: d.assigned_to,
-      arnNumber: d.arn_number,
-      challanAmount: Number(d.challan_amount || 0),
-      itcClaimed: Number(d.itc_claimed || 0),
-      attachmentUrl: d.attachment_url,
-      notes: d.notes,
-      createdAt: d.created_at,
-      updatedAt: d.updated_at,
-    }));
+      if (regularItems.length > 0) {
+        const remoteItems: ComplianceWorkflowItem[] = regularItems.map((d: any) => ({
+          id: d.id,
+          title: d.title,
+          category: d.category,
+          entityName: d.entity_name,
+          returnType: d.return_type,
+          taxPeriod: d.tax_period,
+          dueDate: d.due_date,
+          statutoryDeadline: d.statutory_deadline,
+          status: d.status,
+          assignedTo: d.assigned_to,
+          arnNumber: d.arn_number,
+          challanAmount: Number(d.challan_amount || 0),
+          itcClaimed: Number(d.itc_claimed || 0),
+          attachmentUrl: d.attachment_url,
+          notes: d.notes,
+          createdAt: d.created_at,
+          updatedAt: d.updated_at,
+        }));
 
-    return remoteItems;
+        saveLocalComplianceWorkflows(remoteItems);
+        return remoteItems;
+      }
+
+      if (regularItems.length === 0 && localList.length > 0) {
+        saveMergedComplianceWorkflows(localList);
+      }
+    }
+
+    return localList;
   } catch (err) {
     console.warn('Notice loading compliance workflows from Supabase:', err);
     return localList;
@@ -475,34 +510,36 @@ export async function saveMergedGstSettings(settings: GstSettings): Promise<void
 
   try {
     const pan = settings.pan || (settings.gstin && settings.gstin.length >= 12 ? settings.gstin.slice(2, 12).toUpperCase() : '');
+    const targetId = settings.id && isValidUuid(settings.id) ? settings.id : '00000000-0000-0000-0000-000000000001';
+    
     const payload: any = {
-      id: settings.id && settings.id.length === 36 ? settings.id : undefined,
-      gstin: settings.gstin.trim().toUpperCase(),
-      legal_name: settings.legalName.trim(),
+      id: targetId,
+      gstin: settings.gstin?.trim()?.toUpperCase() || '',
+      legal_name: settings.legalName?.trim() || 'My Enterprise',
       trade_name: settings.tradeName?.trim() || null,
-      filing_frequency: settings.filingFrequency,
-      gstr1_due_day: settings.gstr1DueDay,
-      gstr3b_due_day: settings.gstr3bDueDay,
-      reminder_days: settings.reminderDays,
-      is_active: settings.isActive,
+      pan: pan || null,
+      iec: settings.iec?.trim()?.toUpperCase() || null,
+      filing_frequency: settings.filingFrequency || 'monthly',
+      gstr1_due_day: settings.gstr1DueDay || 10,
+      gstr3b_due_day: settings.gstr3bDueDay || 20,
+      reminder_days: settings.reminderDays || [7, 3, 1, 0],
+      is_active: settings.isActive ?? true,
       state_code: settings.stateCode || '33',
       updated_at: new Date().toISOString(),
     };
 
-    if (payload.id) {
-      await supabase.from('gst_settings').upsert(payload);
-    } else {
-      // Check existing row
-      const { data } = await supabase.from('gst_settings').select('id').limit(1);
-      if (data && data.length > 0) {
-        payload.id = data[0].id;
-        await supabase.from('gst_settings').update(payload).eq('id', payload.id);
+    const { error } = await supabase.from('gst_settings').upsert(payload);
+    if (error) {
+      console.warn('Notice upserting gst_settings, attempting fallback update:', error.message);
+      const { data: existingRows } = await supabase.from('gst_settings').select('id').limit(1);
+      if (existingRows && existingRows.length > 0) {
+        await supabase.from('gst_settings').update(payload).eq('id', existingRows[0].id);
       } else {
         await supabase.from('gst_settings').insert(payload);
       }
     }
 
-    // Also sync PAN to credential vault for direct tax access
+    // Also sync PAN to credential vault for direct tax access if vault exists
     if (pan) {
       try {
         const { data: vaultRows } = await supabase
@@ -547,6 +584,100 @@ export function saveLocalCustomsDeclarations(items: CustomsDeclaration[]): void 
   }
 }
 
+export async function loadMergedCustomsDeclarations(): Promise<CustomsDeclaration[]> {
+  const local = getLocalCustomsDeclarations();
+  if (!supabase) return local;
+
+  try {
+    const { data, error } = await supabase
+      .from('customs_declarations')
+      .select('*')
+      .order('declaration_date', { ascending: false });
+
+    if (!error && data && data.length > 0) {
+      const items: CustomsDeclaration[] = data.map((d: any) => ({
+        id: d.id,
+        declarationType: d.declaration_type,
+        declarationNumber: d.declaration_number,
+        declarationDate: d.declaration_date,
+        portCode: d.port_code,
+        portName: d.port_name,
+        hsnChapter: d.hsn_chapter,
+        goodsDescription: d.goods_description,
+        invoiceValueInr: Number(d.invoice_value_inr || 0),
+        customsDutyInr: Number(d.customs_duty_inr || 0),
+        igstPaidInr: Number(d.igst_paid_inr || 0),
+        drawbackClaimedInr: Number(d.drawback_claimed_inr || 0),
+        rodtepClaimedInr: Number(d.rodtep_claimed_inr || 0),
+        chaName: d.cha_name || '',
+        currentStage: d.current_stage || 'draft',
+        esanchitIrnList: d.esanchit_irn_list || [],
+        shippingLineOrCarrier: d.shipping_line_or_carrier || undefined,
+        containerOrAwbNumber: d.container_or_awb_number || undefined,
+        createdAt: d.created_at || new Date().toISOString(),
+        updatedAt: d.updated_at || new Date().toISOString(),
+      }));
+      saveLocalCustomsDeclarations(items);
+      return items;
+    }
+
+    if (!error && data && data.length === 0 && local.length > 0) {
+      saveMergedCustomsDeclarations(local);
+    }
+    return local;
+  } catch (err) {
+    console.warn('Notice loading customs declarations from Supabase:', err);
+    return local;
+  }
+}
+
+export async function saveMergedCustomsDeclarations(items: CustomsDeclaration[]): Promise<void> {
+  saveLocalCustomsDeclarations(items);
+  if (!supabase) return;
+
+  try {
+    const payload = items.map((d) => ({
+      id: ensureValidUuid(d.id),
+      declaration_type: d.declarationType,
+      declaration_number: d.declarationNumber,
+      declaration_date: d.declarationDate,
+      port_code: d.portCode,
+      port_name: d.portName,
+      hsn_chapter: d.hsnChapter,
+      goods_description: d.goodsDescription,
+      invoice_value_inr: d.invoiceValueInr,
+      customs_duty_inr: d.customsDutyInr,
+      igst_paid_inr: d.igstPaidInr,
+      drawback_claimed_inr: d.drawbackClaimedInr,
+      rodtep_claimed_inr: d.rodtepClaimedInr,
+      cha_name: d.chaName,
+      current_stage: d.currentStage,
+      esanchit_irn_list: d.esanchitIrnList || [],
+      shipping_line_or_carrier: d.shippingLineOrCarrier || null,
+      container_or_awb_number: d.containerOrAwbNumber || null,
+      updated_at: new Date().toISOString(),
+    }));
+
+    await supabase.from('customs_declarations').upsert(payload);
+  } catch (err) {
+    console.error('Notice persisting customs declarations to Supabase:', err);
+  }
+}
+
+export async function deleteMergedCustomsDeclaration(id: string): Promise<void> {
+  const local = getLocalCustomsDeclarations().filter((d) => d.id !== id);
+  saveLocalCustomsDeclarations(local);
+
+  if (!supabase) return;
+  try {
+    if (isValidUuid(id)) {
+      await supabase.from('customs_declarations').delete().eq('id', id);
+    }
+  } catch (err) {
+    console.error('Notice deleting customs declaration from Supabase:', err);
+  }
+}
+
 export function getLocalDscRegistry(): DscRegistryItem[] {
   if (typeof window === 'undefined') return INITIAL_DSC_REGISTRY;
   try {
@@ -570,6 +701,84 @@ export function saveLocalDscRegistry(items: DscRegistryItem[]): void {
   }
 }
 
+export async function loadMergedDscRegistry(): Promise<DscRegistryItem[]> {
+  const local = getLocalDscRegistry();
+  if (!supabase) return local;
+
+  try {
+    const { data, error } = await supabase
+      .from('dsc_registry')
+      .select('*')
+      .order('expiry_date', { ascending: true });
+
+    if (!error && data && data.length > 0) {
+      const items: DscRegistryItem[] = data.map((d: any) => ({
+        id: d.id,
+        tokenLabel: d.token_label,
+        holderName: d.holder_name,
+        designation: d.designation,
+        certAuthority: d.cert_authority,
+        serialNumber: d.serial_number,
+        issuedDate: d.issued_date,
+        expiryDate: d.expiry_date,
+        tokenLocation: d.token_location || '',
+        status: d.status || 'active',
+        portalsBound: d.portals_bound || ['GSTN', 'ICEGATE', 'Income Tax', 'MCA'],
+      }));
+      saveLocalDscRegistry(items);
+      return items;
+    }
+
+    if (!error && data && data.length === 0 && local.length > 0) {
+      saveMergedDscRegistry(local);
+    }
+    return local;
+  } catch (err) {
+    console.warn('Notice loading DSC registry from Supabase:', err);
+    return local;
+  }
+}
+
+export async function saveMergedDscRegistry(items: DscRegistryItem[]): Promise<void> {
+  saveLocalDscRegistry(items);
+  if (!supabase) return;
+
+  try {
+    const payload = items.map((d) => ({
+      id: ensureValidUuid(d.id),
+      token_label: d.tokenLabel,
+      holder_name: d.holderName,
+      designation: d.designation,
+      cert_authority: d.certAuthority,
+      serial_number: d.serialNumber,
+      issued_date: d.issuedDate,
+      expiry_date: d.expiryDate,
+      token_location: d.tokenLocation || null,
+      status: d.status,
+      portals_bound: d.portalsBound || [],
+      updated_at: new Date().toISOString(),
+    }));
+
+    await supabase.from('dsc_registry').upsert(payload);
+  } catch (err) {
+    console.error('Notice persisting DSC registry to Supabase:', err);
+  }
+}
+
+export async function deleteMergedDscItem(id: string): Promise<void> {
+  const local = getLocalDscRegistry().filter((d) => d.id !== id);
+  saveLocalDscRegistry(local);
+
+  if (!supabase) return;
+  try {
+    if (isValidUuid(id)) {
+      await supabase.from('dsc_registry').delete().eq('id', id);
+    }
+  } catch (err) {
+    console.error('Notice deleting DSC item from Supabase:', err);
+  }
+}
+
 export function getLocalCredentialVault(): CredentialVaultItem[] {
   if (typeof window === 'undefined') return INITIAL_CREDENTIAL_VAULT;
   try {
@@ -590,6 +799,79 @@ export function saveLocalCredentialVault(items: CredentialVaultItem[]): void {
     localStorage.setItem(STORAGE_KEY_VAULT, JSON.stringify(items));
   } catch (err) {
     console.error('Error saving credential vault:', err);
+  }
+}
+
+export async function loadMergedCredentialVault(): Promise<CredentialVaultItem[]> {
+  const local = getLocalCredentialVault();
+  if (!supabase) return local;
+
+  try {
+    const { data, error } = await supabase
+      .from('credential_vault')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (!error && data && data.length > 0) {
+      const items: CredentialVaultItem[] = data.map((d: any) => ({
+        id: d.id,
+        title: d.title,
+        serviceType: d.service_type,
+        identifier: d.identifier,
+        secret: d.secret,
+        portalUrl: d.portal_url || undefined,
+        notes: d.notes || undefined,
+        lastVerifiedAt: d.last_verified_at || undefined,
+        updatedAt: d.updated_at || new Date().toISOString(),
+      }));
+      saveLocalCredentialVault(items);
+      return items;
+    }
+
+    if (!error && data && data.length === 0 && local.length > 0) {
+      saveMergedCredentialVault(local);
+    }
+    return local;
+  } catch (err) {
+    console.warn('Notice loading credential vault from Supabase:', err);
+    return local;
+  }
+}
+
+export async function saveMergedCredentialVault(items: CredentialVaultItem[]): Promise<void> {
+  saveLocalCredentialVault(items);
+  if (!supabase) return;
+
+  try {
+    const payload = items.map((d) => ({
+      id: ensureValidUuid(d.id),
+      title: d.title,
+      service_type: d.serviceType,
+      identifier: d.identifier,
+      secret: d.secret,
+      portal_url: d.portalUrl || null,
+      notes: d.notes || null,
+      last_verified_at: d.lastVerifiedAt || null,
+      updated_at: new Date().toISOString(),
+    }));
+
+    await supabase.from('credential_vault').upsert(payload);
+  } catch (err) {
+    console.error('Notice persisting credential vault to Supabase:', err);
+  }
+}
+
+export async function deleteMergedVaultItem(id: string): Promise<void> {
+  const local = getLocalCredentialVault().filter((d) => d.id !== id);
+  saveLocalCredentialVault(local);
+
+  if (!supabase) return;
+  try {
+    if (isValidUuid(id)) {
+      await supabase.from('credential_vault').delete().eq('id', id);
+    }
+  } catch (err) {
+    console.error('Notice deleting credential from Supabase:', err);
   }
 }
 
@@ -840,6 +1122,62 @@ export function saveLocalAdvanceTaxRecords(records: AdvanceTaxRecord[]): void {
   }
 }
 
+export async function loadMergedAdvanceTaxRecords(): Promise<AdvanceTaxRecord[]> {
+  const local = getLocalAdvanceTaxRecords();
+  if (!supabase) return local;
+
+  try {
+    const { data, error } = await supabase
+      .from('compliance_workflows')
+      .select('*')
+      .eq('return_type', 'ITR-ADVANCE-TAX-SET')
+      .limit(1);
+
+    if (!error && data && data.length > 0 && data[0].notes) {
+      try {
+        const parsed = JSON.parse(data[0].notes);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          saveLocalAdvanceTaxRecords(parsed);
+          return parsed;
+        }
+      } catch (_) {}
+    }
+
+    if (!error && (!data || data.length === 0) && local.length > 0) {
+      saveMergedAdvanceTaxRecords(local);
+    }
+    return local;
+  } catch (err) {
+    console.warn('Notice loading advance tax from Supabase:', err);
+    return local;
+  }
+}
+
+export async function saveMergedAdvanceTaxRecords(records: AdvanceTaxRecord[]): Promise<void> {
+  saveLocalAdvanceTaxRecords(records);
+  if (!supabase) return;
+
+  try {
+    const payload: any = {
+      id: '50000000-0000-0000-0000-000000000001',
+      title: 'Advance Tax Statutory 4-Tranche Assessment Ledger',
+      category: 'itr',
+      entity_name: 'Direct Tax Assessment',
+      return_type: 'ITR-ADVANCE-TAX-SET',
+      tax_period: 'FY 2026-27',
+      due_date: '2027-03-15',
+      statutory_deadline: '2027-03-15',
+      status: 'in_progress',
+      notes: JSON.stringify(records),
+      updated_at: new Date().toISOString(),
+    };
+
+    await supabase.from('compliance_workflows').upsert(payload);
+  } catch (err) {
+    console.error('Notice persisting advance tax to Supabase:', err);
+  }
+}
+
 export const INITIAL_TDS_RECORDS: TdsReturnRecord[] = [
   {
     id: 'tds-24q-q2',
@@ -895,6 +1233,62 @@ export function saveLocalTdsRecords(records: TdsReturnRecord[]): void {
     localStorage.setItem(STORAGE_KEY_TDS_RECORDS, JSON.stringify(records));
   } catch (err) {
     console.error('Error saving TDS records:', err);
+  }
+}
+
+export async function loadMergedTdsRecords(): Promise<TdsReturnRecord[]> {
+  const local = getLocalTdsRecords();
+  if (!supabase) return local;
+
+  try {
+    const { data, error } = await supabase
+      .from('compliance_workflows')
+      .select('*')
+      .eq('return_type', 'ITR-TDS-RECORD-SET')
+      .limit(1);
+
+    if (!error && data && data.length > 0 && data[0].notes) {
+      try {
+        const parsed = JSON.parse(data[0].notes);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          saveLocalTdsRecords(parsed);
+          return parsed;
+        }
+      } catch (_) {}
+    }
+
+    if (!error && (!data || data.length === 0) && local.length > 0) {
+      saveMergedTdsRecords(local);
+    }
+    return local;
+  } catch (err) {
+    console.warn('Notice loading TDS records from Supabase:', err);
+    return local;
+  }
+}
+
+export async function saveMergedTdsRecords(records: TdsReturnRecord[]): Promise<void> {
+  saveLocalTdsRecords(records);
+  if (!supabase) return;
+
+  try {
+    const payload: any = {
+      id: '50000000-0000-0000-0000-000000000002',
+      title: 'Quarterly TDS Returns (Form 24Q & 26Q) Ledger',
+      category: 'tds',
+      entity_name: 'Tax Deducted at Source',
+      return_type: 'ITR-TDS-RECORD-SET',
+      tax_period: 'FY 2026-27',
+      due_date: '2027-01-31',
+      statutory_deadline: '2027-01-31',
+      status: 'in_progress',
+      notes: JSON.stringify(records),
+      updated_at: new Date().toISOString(),
+    };
+
+    await supabase.from('compliance_workflows').upsert(payload);
+  } catch (err) {
+    console.error('Notice persisting TDS records to Supabase:', err);
   }
 }
 
@@ -1048,7 +1442,7 @@ export async function saveMergedComplianceWorkflows(items: ComplianceWorkflowIte
 
   try {
     const records = items.map((w) => ({
-      id: w.id && w.id.length === 36 && w.id.includes('-') ? w.id : undefined,
+      id: ensureValidUuid(w.id),
       title: w.title,
       category: w.category,
       entity_name: w.entityName,
@@ -1067,13 +1461,22 @@ export async function saveMergedComplianceWorkflows(items: ComplianceWorkflowIte
     }));
 
     for (const r of records) {
-      if (r.id) {
-        await supabase.from('compliance_workflows').upsert(r);
-      } else {
-        await supabase.from('compliance_workflows').insert(r);
-      }
+      await supabase.from('compliance_workflows').upsert(r);
     }
   } catch (err) {
     console.error('Notice persisting compliance workflows to Supabase:', err);
+  }
+}
+
+export async function deleteMergedComplianceWorkflow(id: string): Promise<void> {
+  const current = getLocalComplianceWorkflows();
+  saveLocalComplianceWorkflows(current.filter((item) => item.id !== id));
+  if (!supabase) return;
+
+  try {
+    const validId = isValidUuid(id) ? id : ensureValidUuid(id);
+    await supabase.from('compliance_workflows').delete().eq('id', validId);
+  } catch (err) {
+    console.error('Notice deleting compliance workflow from Supabase:', err);
   }
 }
