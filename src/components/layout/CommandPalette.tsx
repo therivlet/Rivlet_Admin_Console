@@ -13,7 +13,12 @@ import {
   X,
   Factory,
   GitBranch,
-  KanbanSquare
+  KanbanSquare,
+  Users,
+  Flame,
+  Building2,
+  Contact,
+  ExternalLink
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import ModalPortal from '@/components/ui/ModalPortal';
@@ -99,6 +104,20 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
       w.tags.some((t) => t.toLowerCase().includes(q))
   );
 
+  const crmOptions = [
+    { title: 'Rivlet CRM: Athletes & Seeding', sub: 'Creator gifting pipeline & athlete fit profiles (rivlet-crm.vercel.app)', path: '/crm', tags: ['crm', 'athletes', 'seeding', 'creators', 'growth', 'gifting', 'ambassadors'] },
+    { title: 'Rivlet CRM: Wholesale Studios', sub: 'Pilates studios, luxury gyms, premium stockists', path: '/crm', tags: ['crm', 'wholesale', 'studios', 'gyms', 'stockists', 'b2b', 'bulk'] },
+    { title: 'Rivlet CRM: VIP & Press List', sub: 'Fashion editors, stylists, brand angels, press contacts', path: '/crm', tags: ['crm', 'vip', 'press', 'contacts', 'pr', 'editors', 'media'] },
+  ];
+
+  const filteredCrm = crmOptions.filter((c) =>
+    q.length > 0 && (
+      c.title.toLowerCase().includes(q) ||
+      c.sub.toLowerCase().includes(q) ||
+      c.tags.some((t) => t.includes(q))
+    )
+  );
+
   const navigateTo = (path: string) => {
     onClose();
     router.push(path);
@@ -136,6 +155,43 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
 
         {/* Results Body */}
         <div className="max-h-[60vh] overflow-y-auto p-3 space-y-4">
+          {/* Rivlet CRM Modules */}
+          {filteredCrm.length > 0 && (
+            <div>
+              <div className="px-3 py-1 text-[10px] font-semibold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Users className="w-3 h-3 text-emerald-400" />
+                Rivlet CRM Companion ({filteredCrm.length})
+              </div>
+              <div className="space-y-1 mt-1">
+                {filteredCrm.map((crm) => (
+                  <div
+                    key={crm.title}
+                    onClick={() => navigateTo(crm.path)}
+                    className="flex items-center justify-between p-2.5 rounded-lg hover:bg-[#181d2a] cursor-pointer group text-xs transition-colors border border-transparent hover:border-emerald-500/30"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-1.5 rounded bg-emerald-500/10 text-emerald-400">
+                        <Users className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <div className="text-white font-medium group-hover:text-emerald-300 transition-colors flex items-center gap-2">
+                          <span>{crm.title}</span>
+                          <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-400 border border-emerald-800/50">
+                            rivlet-crm.vercel.app
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-[#747c91]">
+                          {crm.sub}
+                        </div>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-[#555d71] group-hover:text-emerald-400 transition-colors" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Promoted / Artifacts */}
           {filteredArtifacts.length > 0 && (
             <div>
@@ -354,7 +410,8 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
             filteredArticles.length === 0 &&
             filteredVendors.length === 0 &&
             filteredPipeline.length === 0 &&
-            filteredWorkItems.length === 0 && (
+            filteredWorkItems.length === 0 &&
+            filteredCrm.length === 0 && (
               <div className="p-8 text-center text-[#687084] text-xs">
                 No matching records found for "{query}".
               </div>

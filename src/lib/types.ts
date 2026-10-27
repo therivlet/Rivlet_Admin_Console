@@ -572,6 +572,7 @@ export type AppModule =
   | 'budget'
   | 'knowledge'
   | 'artifacts'
+  | 'crm'
   | 'profile'
   | 'access'
   | 'audit'

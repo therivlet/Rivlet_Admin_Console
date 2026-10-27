@@ -26,6 +26,7 @@ function getModuleFromPathname(pathname: string): AppModule | null {
   if (pathname.startsWith('/documents')) return 'documents';
   if (pathname.startsWith('/knowledge-base')) return 'knowledge';
   if (pathname.startsWith('/artifacts')) return 'artifacts';
+  if (pathname.startsWith('/crm')) return 'crm';
   if (pathname.startsWith('/profile')) return 'profile';
   if (pathname.startsWith('/access')) return 'access';
   if (pathname.startsWith('/audit')) return 'audit';

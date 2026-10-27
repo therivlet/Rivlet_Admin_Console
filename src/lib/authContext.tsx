@@ -198,6 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const canView = useCallback((module: AppModule): boolean => {
     if (!user || user.status !== 'active') return false;
     if (user.role === 'owner') return true;
+    if (module === 'crm') return user.permissions?.['crm']?.view !== false;
     return Boolean(user.permissions?.[module]?.view);
   }, [user]);
 

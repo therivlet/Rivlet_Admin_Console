@@ -29,6 +29,7 @@ import {
   Shield,
   BadgePercent,
   Scale,
+  Users,
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { useAuth } from '@/lib/authContext';
@@ -359,6 +360,52 @@ export default function DashboardOverviewPage() {
           </div>
         </Link>
       </div>
+
+      {/* Rivlet CRM Companion Banner / Card */}
+      {canView('crm') && (
+        <div className="bg-[#0e121b] border border-[#1e2638] hover:border-emerald-500/40 rounded-xl p-5 shadow-lg relative overflow-hidden group transition-all">
+          <div className="absolute top-0 right-0 w-80 h-32 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
+            <div className="flex items-center gap-3.5">
+              <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 group-hover:scale-105 transition-transform flex-shrink-0">
+                <Users className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors">
+                    Rivlet CRM — Activewear Operations & Growth
+                  </h3>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950/70 text-emerald-400 border border-emerald-800/40 font-mono font-semibold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    LIVE COMPANION
+                  </span>
+                </div>
+                <p className="text-xs text-[#94a3b8] mt-0.5 max-w-2xl">
+                  Creator gifting pipelines, athlete ambassador fit profiles, wholesale fitness studio stockists, and VIP press outreach.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap self-stretch md:self-auto justify-end">
+              <Link
+                href="/crm"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#141a27] border border-[#242f45] hover:border-emerald-500/40 text-xs text-white font-medium hover:bg-[#1a2233] transition-colors"
+              >
+                <span>Open in Console</span>
+              </Link>
+              <a
+                href="https://rivlet-crm.vercel.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 text-black font-semibold text-xs hover:brightness-110 shadow-sm transition-all"
+              >
+                <span>Launch rivlet-crm.vercel.app</span>
+                <ArrowUpRight className="w-3.5 h-3.5 stroke-[2.5]" />
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Promoted Claude Tools Quick Launcher */}
       {canView('artifacts') && (

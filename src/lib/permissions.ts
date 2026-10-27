@@ -19,6 +19,7 @@ export const ALL_MODULES: AppModule[] = [
   'budget',
   'knowledge',
   'artifacts',
+  'crm',
   'profile',
   'access',
   'audit',
@@ -93,6 +94,11 @@ export const MODULE_CONFIG: Record<
     name: 'Claude Interactive Artifacts',
     description: 'Sandboxed micro-tools, executive dashboards, and calculators',
     path: '/artifacts',
+  },
+  crm: {
+    name: 'Rivlet CRM & Growth Engine',
+    description: 'Athletes & seeding, wholesale studios, and VIP contact pipelines',
+    path: '/crm',
   },
   profile: {
     name: 'Profile & Brand Settings',
@@ -216,6 +222,7 @@ export function getRoleTemplateDefaults(role: AppRole): UserPermissionMap {
         case 'documents':
         case 'calculator':
         case 'knowledge':
+        case 'crm':
         case 'notifications':
         case 'profile':
           map[mod] = {
@@ -258,6 +265,7 @@ export function getRoleTemplateDefaults(role: AppRole): UserPermissionMap {
       case 'calendar':
       case 'documents':
       case 'knowledge':
+      case 'crm':
       case 'notifications':
       case 'profile':
         map[mod] = {
