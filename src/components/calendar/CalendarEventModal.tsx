@@ -13,6 +13,8 @@ import {
   Trash2,
   Download,
   X,
+  Repeat,
+  Edit3,
 } from 'lucide-react';
 import Link from 'next/link';
 import { downloadIcsFile } from '@/lib/calendarStorage';
@@ -22,6 +24,7 @@ interface CalendarEventModalProps {
   onClose: () => void;
   onUpdateStatus: (id: string, status: CalendarEventStatus) => void;
   onDeleteEvent: (id: string) => void;
+  onEditEvent?: (event: CalendarEventItem) => void;
 }
 
 export default function CalendarEventModal({
@@ -29,6 +32,7 @@ export default function CalendarEventModal({
   onClose,
   onUpdateStatus,
   onDeleteEvent,
+  onEditEvent,
 }: CalendarEventModalProps) {
   if (!event) return null;
 
@@ -40,15 +44,42 @@ export default function CalendarEventModal({
     downloadIcsFile([event], `Rivlet_Event_${event.id}.ics`);
   };
 
+  const getRecurrenceLabel = () => {
+    if (!event.recurrence || event.recurrence === 'none') return null;
+    if (event.recurrenceRule) return event.recurrenceRule;
+    switch (event.recurrence) {
+      case 'monthly':
+        return `Every month on the ${startDate.getDate()}`;
+      case 'yearly':
+        return `Every year on ${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+      case 'weekly':
+        return `Every week on ${startDate.toLocaleDateString('en-US', { weekday: 'long' })}`;
+      case 'custom':
+        return 'Custom recurrence schedule';
+      default:
+        return 'Recurring event';
+    }
+  };
+
+  const recurrenceLabel = getRecurrenceLabel();
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
       <div className="bg-white dark:bg-[#0e121b] w-full max-w-lg rounded-2xl border border-slate-200 dark:border-[#1e2638] p-5 sm:p-6 shadow-2xl">
         {/* Header */}
         <div className="flex items-start justify-between pb-3 border-b border-slate-200 dark:border-[#1e2638] mb-4">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#cda052]/10 text-[#cda052] border border-[#cda052]/20">
-              {event.category.toUpperCase()}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#cda052]/10 text-[#cda052] border border-[#cda052]/20">
+                {event.category.toUpperCase()}
+              </span>
+              {recurrenceLabel && (
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-[#f7d88c] border border-amber-500/20 flex items-center gap-1 font-mono">
+                  <Repeat className="w-2.5 h-2.5" />
+                  <span>Recurring</span>
+                </span>
+              )}
+            </div>
             <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mt-1.5">
               {event.title}
             </h3>
@@ -85,6 +116,21 @@ export default function CalendarEventModal({
               </div>
             </div>
           </div>
+
+          {/* Recurrence Rule Banner */}
+          {recurrenceLabel && (
+            <div className="p-3 rounded-xl bg-amber-500/10 dark:bg-[rgba(205,160,82,0.08)] border border-amber-500/30 dark:border-[#cda052]/40 text-amber-800 dark:text-[#f7d88c] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Repeat className="w-4 h-4 text-[#cda052] flex-shrink-0" />
+                <div>
+                  <span className="font-semibold block text-xs">Recurrence Schedule</span>
+                  <span className="text-[11px] text-slate-600 dark:text-slate-300 font-mono">
+                    {recurrenceLabel}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Description */}
           {event.description && (
@@ -130,6 +176,19 @@ export default function CalendarEventModal({
         {/* Actions Footer */}
         <div className="flex items-center justify-between gap-2 pt-4 mt-4 border-t border-slate-200 dark:border-[#1e2638]">
           <div className="flex items-center gap-1.5">
+            {onEditEvent && (
+              <button
+                onClick={() => {
+                  onEditEvent(event);
+                  onClose();
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#cda052]/10 hover:bg-[#cda052]/20 text-[#cda052] border border-[#cda052]/30 text-xs font-semibold transition-colors"
+                title="Edit Event"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>Edit</span>
+              </button>
+            )}
             <button
               onClick={handleDownloadSingleIcs}
               className="p-2 rounded-xl bg-slate-100 dark:bg-black/40 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-[#8a96ae] hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-white/10 transition-colors"

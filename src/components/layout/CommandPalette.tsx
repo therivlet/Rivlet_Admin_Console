@@ -166,7 +166,10 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
                 {filteredCrm.map((crm) => (
                   <div
                     key={crm.title}
-                    onClick={() => navigateTo(crm.path)}
+                    onClick={() => {
+                      window.open('https://rivlet-crm.vercel.app', '_blank', 'noopener,noreferrer');
+                      onClose();
+                    }}
                     className="flex items-center justify-between p-2.5 rounded-lg hover:bg-[#181d2a] cursor-pointer group text-xs transition-colors border border-transparent hover:border-emerald-500/30"
                   >
                     <div className="flex items-center gap-2.5">

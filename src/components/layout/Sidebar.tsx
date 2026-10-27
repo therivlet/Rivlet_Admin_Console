@@ -33,7 +33,8 @@ import {
   UserCheck,
   X,
   Lock,
-  FileSearch
+  FileSearch,
+  ExternalLink
 } from 'lucide-react';
 import { useAdminStore } from '@/lib/store';
 import { useAuth } from '@/lib/authContext';
@@ -635,18 +636,16 @@ export default function Sidebar({
           {/* Rivlet CRM & Growth */}
           {canView('crm') && (
             <div className="relative group w-full">
-              <Link
-                href="/crm"
+              <a
+                href="https://rivlet-crm.vercel.app"
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={handleLinkClick}
-                className={`sidebar-nav-item group/link flex items-center rounded-xl text-xs transition-colors duration-200 border flex-shrink ${
-                  pathname === '/crm'
-                    ? 'bg-[rgba(205,160,82,0.25)] text-[#f7d88c] font-semibold border-[#cda052]/60 shadow-sm'
-                    : 'border-transparent text-slate-400 dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08]'
-                } ${collapsed ? 'w-10 h-10 mx-auto justify-center p-0' : 'w-full h-9 px-2.5 justify-between'}`}
+                className="sidebar-nav-item group/link flex items-center rounded-xl text-xs transition-colors duration-200 border flex-shrink border-transparent text-slate-400 dark:text-[#cbd5e1] hover:text-white hover:bg-white/[0.08] w-full h-9 px-2.5 justify-between"
               >
                 <div className="flex items-center min-w-0">
                   <div className={`flex items-center justify-center flex-shrink-0 ${collapsed ? 'w-full h-full' : 'w-7 h-7'}`}>
-                    <Users className={`w-4 h-4 flex-shrink-0 transition-transform group-hover/link:scale-110 ${pathname === '/crm' ? 'text-[#cda052]' : 'text-slate-400 dark:text-[#8895ad] group-hover/link:text-white'}`} />
+                    <Users className="w-4 h-4 flex-shrink-0 transition-transform group-hover/link:scale-110 text-emerald-400 group-hover/link:text-white" />
                   </div>
                   <span className={`text-xs whitespace-nowrap overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
                     collapsed ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none hidden' : 'max-w-[130px] opacity-100 translate-x-0 ml-1.5'
@@ -655,11 +654,12 @@ export default function Sidebar({
                   </span>
                 </div>
                 {!collapsed && (
-                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-950/70 text-emerald-400 border border-emerald-800/40 font-semibold tracking-wider uppercase flex-shrink-0 mr-1">
-                    Live
+                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-950/70 text-emerald-400 border border-emerald-800/40 font-semibold tracking-wider uppercase flex-shrink-0 mr-1 flex items-center gap-1">
+                    <span>Live</span>
+                    <ExternalLink className="w-2.5 h-2.5 opacity-70" />
                   </span>
                 )}
-              </Link>
+              </a>
 
               {collapsed && (
                 <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#0e121b] border border-[#1e2638] rounded-lg shadow-2xl text-xs text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-[90]">

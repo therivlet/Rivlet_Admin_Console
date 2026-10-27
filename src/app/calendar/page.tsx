@@ -17,28 +17,37 @@ import {
   getLocalCalendarEvents,
   saveLocalCalendarEvents,
   loadMergedCalendarEvents,
+  saveMergedCalendarEvents,
+  deleteMergedCalendarEvent,
+  expandRecurringEvents,
   downloadIcsFile,
 } from '@/lib/calendarStorage';
 
 function CalendarPageInner() {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<CalendarViewMode>('month');
-  const [events, setEvents] = useState<CalendarEventItem[]>([]);
+  const [rawEvents, setRawEvents] = useState<CalendarEventItem[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<Set<CalendarEventCategory>>(
     new Set(['gst', 'customs', 'itr', 'dsc', 'sprint', 'general'])
   );
 
   // Modals state
   const [selectedEvent, setSelectedEvent] = useState<CalendarEventItem | null>(null);
+  const [editingEvent, setEditingEvent] = useState<CalendarEventItem | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedCellDate, setSelectedCellDate] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
-    setEvents(getLocalCalendarEvents());
+    setRawEvents(getLocalCalendarEvents());
     loadMergedCalendarEvents().then((merged) => {
-      if (merged && merged.length > 0) setEvents(merged);
+      if (merged && merged.length > 0) setRawEvents(merged);
     });
   }, []);
+
+  // Compute active expanded view events (with recurring instances rendered across calendar dates)
+  const events = React.useMemo(() => {
+    return expandRecurringEvents(rawEvents, 6);
+  }, [rawEvents]);
 
   const handleToggleCategory = (cat: CalendarEventCategory) => {
     setSelectedCategories((prev) => {
@@ -54,25 +63,46 @@ function CalendarPageInner() {
 
   const handleSelectDate = (date: Date) => {
     setSelectedCellDate(date);
+    setEditingEvent(null);
     setIsCreateModalOpen(true);
   };
 
-  const handleSaveEvent = (newEvent: CalendarEventItem) => {
-    const updated = [newEvent, ...events];
-    setEvents(updated);
-    saveLocalCalendarEvents(updated);
+  const handleOpenCreate = () => {
+    setSelectedCellDate(new Date());
+    setEditingEvent(null);
+    setIsCreateModalOpen(true);
+  };
+
+  const handleOpenEdit = (evt: CalendarEventItem) => {
+    // If user clicked a virtual occurrence, find the root parent
+    const targetId = evt.groupId || (evt.id.includes('-rec-') ? evt.id.split('-rec-')[0] : evt.id);
+    const root = rawEvents.find((e) => e.id === targetId) || evt;
+    setEditingEvent(root);
+    setIsCreateModalOpen(true);
+  };
+
+  const handleSaveEvent = (savedEvent: CalendarEventItem) => {
+    const exists = rawEvents.some((e) => e.id === savedEvent.id);
+    const updated = exists
+      ? rawEvents.map((e) => (e.id === savedEvent.id ? savedEvent : e))
+      : [savedEvent, ...rawEvents];
+
+    setRawEvents(updated);
+    saveMergedCalendarEvents(updated);
   };
 
   const handleUpdateStatus = (id: string, status: CalendarEventStatus) => {
-    const updated = events.map((e) => (e.id === id ? { ...e, status } : e));
-    setEvents(updated);
-    saveLocalCalendarEvents(updated);
+    const targetId = id.includes('-rec-') ? id.split('-rec-')[0] : id;
+    const updated = rawEvents.map((e) => (e.id === targetId || e.id === id ? { ...e, status } : e));
+    setRawEvents(updated);
+    saveMergedCalendarEvents(updated);
   };
 
   const handleDeleteEvent = (id: string) => {
-    const updated = events.filter((e) => e.id !== id);
-    setEvents(updated);
-    saveLocalCalendarEvents(updated);
+    const targetId = id.includes('-rec-') ? id.split('-rec-')[0] : id;
+    const updated = rawEvents.filter((e) => e.id !== targetId && e.id !== id && e.groupId !== targetId);
+    setRawEvents(updated);
+    deleteMergedCalendarEvent(targetId);
   };
 
   const handleExportIcs = () => {
@@ -90,10 +120,7 @@ function CalendarPageInner() {
         onViewModeChange={setViewMode}
         selectedCategories={selectedCategories}
         onToggleCategory={handleToggleCategory}
-        onOpenCreateModal={() => {
-          setSelectedCellDate(new Date());
-          setIsCreateModalOpen(true);
-        }}
+        onOpenCreateModal={handleOpenCreate}
         onExportIcs={handleExportIcs}
         events={events}
       />
@@ -146,13 +173,18 @@ function CalendarPageInner() {
         onClose={() => setSelectedEvent(null)}
         onUpdateStatus={handleUpdateStatus}
         onDeleteEvent={handleDeleteEvent}
+        onEditEvent={handleOpenEdit}
       />
 
-      {/* Create Event Modal */}
+      {/* Create / Edit Event Modal */}
       {isCreateModalOpen && (
         <CreateEventModal
           initialDate={selectedCellDate}
-          onClose={() => setIsCreateModalOpen(false)}
+          initialEvent={editingEvent}
+          onClose={() => {
+            setIsCreateModalOpen(false);
+            setEditingEvent(null);
+          }}
           onSaveEvent={handleSaveEvent}
         />
       )}

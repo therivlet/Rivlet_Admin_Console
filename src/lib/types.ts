@@ -826,6 +826,8 @@ export type CalendarEventCategory = 'gst' | 'customs' | 'itr' | 'dsc' | 'sprint'
 export type CalendarEventPriority = 'low' | 'medium' | 'high' | 'critical';
 export type CalendarEventStatus = 'pending' | 'in_progress' | 'completed' | 'overdue';
 
+export type CalendarEventRecurrence = 'none' | 'weekly' | 'monthly' | 'yearly' | 'custom';
+
 export interface CalendarEventItem {
   id: string;
   title: string;
@@ -838,7 +840,11 @@ export interface CalendarEventItem {
   relatedEntityId?: string;
   relatedLink?: string;
   status: CalendarEventStatus;
+  recurrence?: CalendarEventRecurrence;
+  recurrenceRule?: string; // Optional custom description (e.g., 'Every Monday', 'Every 15th', etc.)
+  groupId?: string; // Links recurring event instances together
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface AdvanceTaxRecord {

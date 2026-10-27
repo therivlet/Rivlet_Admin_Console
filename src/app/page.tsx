@@ -387,20 +387,14 @@ export default function DashboardOverviewPage() {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap self-stretch md:self-auto justify-end">
-              <Link
-                href="/crm"
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#141a27] border border-[#242f45] hover:border-emerald-500/40 text-xs text-white font-medium hover:bg-[#1a2233] transition-colors"
-              >
-                <span>Open in Console</span>
-              </Link>
               <a
                 href="https://rivlet-crm.vercel.app"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 text-black font-semibold text-xs hover:brightness-110 shadow-sm transition-all"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-black font-semibold text-xs hover:brightness-110 shadow-md transition-all group/btn"
               >
-                <span>Launch rivlet-crm.vercel.app</span>
-                <ArrowUpRight className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span>Open Rivlet CRM (New Tab)</span>
+                <ArrowUpRight className="w-4 h-4 stroke-[2.5] group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
               </a>
             </div>
           </div>

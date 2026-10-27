@@ -1,59 +1,42 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { 
   Users, 
+  ArrowUpRight, 
   ExternalLink, 
-  RotateCw, 
-  Maximize2, 
-  Minimize2, 
-  Copy, 
-  Check, 
-  Sparkles, 
+  Flame, 
   Building2, 
   Contact, 
-  Flame, 
-  Globe, 
+  Check,
+  Copy,
   ShieldCheck,
-  ChevronRight,
-  ArrowUpRight,
-  Smartphone,
-  Monitor
+  ArrowRight
 } from 'lucide-react';
-import { useAuth } from '@/lib/authContext';
 
 const CRM_BASE_URL = 'https://rivlet-crm.vercel.app';
 
-interface CrmTab {
-  id: string;
-  label: string;
-  subpath: string;
-  description: string;
-  icon: React.ElementType;
-  badge: string;
-}
-
-const CRM_TABS: CrmTab[] = [
+const CRM_PIPELINES = [
   {
     id: 'athletes',
-    label: 'Athletes & Seeding',
-    subpath: '/',
+    title: 'Athletes & Seeding',
+    url: 'https://rivlet-crm.vercel.app/',
     description: 'Creator gifting pipeline, athlete ambassadors, fit profiles, and sizing logs',
     icon: Flame,
     badge: 'Core Pipeline'
   },
   {
     id: 'wholesale',
-    label: 'Wholesale Studios',
-    subpath: '/wholesale',
+    title: 'Wholesale Studios',
+    url: 'https://rivlet-crm.vercel.app/wholesale',
     description: 'Pilates studios, luxury gyms, premium stockists, and B2B wholesale orders',
     icon: Building2,
     badge: 'Commercial B2B'
   },
   {
     id: 'contacts',
-    label: 'VIP & Press List',
-    subpath: '/contacts',
+    title: 'VIP & Press List',
+    url: 'https://rivlet-crm.vercel.app/contacts',
     description: 'Fashion editors, Tier-1 stylists, brand angels, and press contact registry',
     icon: Contact,
     badge: 'Editorial & PR'
@@ -61,219 +44,110 @@ const CRM_TABS: CrmTab[] = [
 ];
 
 export default function CrmPage() {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<string>('athletes');
-  const [iframeKey, setIframeKey] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isCopied, setIsCopied] = useState<boolean>(false);
-  const [isExpanded, setIsExpanded] = useState<boolean>(false);
-  const [deviceMode, setDeviceMode] = useState<'desktop' | 'mobile'>('desktop');
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [copied, setCopied] = React.useState(false);
 
-  const selectedTab = CRM_TABS.find(t => t.id === activeTab) || CRM_TABS[0];
-  const currentUrl = `${CRM_BASE_URL}${selectedTab.subpath}`;
-
-  const handleTabChange = (tabId: string) => {
-    if (tabId !== activeTab) {
-      setActiveTab(tabId);
-      setIsLoading(true);
-    }
-  };
-
-  const handleReload = () => {
-    setIsLoading(true);
-    setIframeKey(k => k + 1);
-  };
+  useEffect(() => {
+    // Automatically launch CRM in a new tab when visiting /crm directly
+    const timer = setTimeout(() => {
+      window.open(CRM_BASE_URL, '_blank', 'noopener,noreferrer');
+    }, 150);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(currentUrl);
-    setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000);
+    navigator.clipboard.writeText(CRM_BASE_URL);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div className={`p-3 sm:p-6 space-y-4 max-w-[1600px] mx-auto animate-fade-in ${isExpanded ? 'fixed inset-0 z-50 bg-[#07090e] p-2 sm:p-4 overflow-y-auto max-w-none' : ''}`}>
-      {/* Top Header Card */}
-      <div className="bg-[#0e121b] border border-[#1e2638] rounded-2xl p-4 sm:p-6 shadow-xl relative overflow-hidden">
-        {/* Subtle decorative gold glow */}
-        <div className="absolute top-0 right-0 w-96 h-48 bg-[#cda052]/5 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
+    <div className="p-4 sm:p-8 max-w-4xl mx-auto space-y-6 animate-fade-in">
+      {/* Hero Redirect Card */}
+      <div className="bg-[#0e121b] border border-[#1e2638] rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden text-center sm:text-left">
+        <div className="absolute top-0 right-0 w-96 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
           <div>
-            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                Live Linked Application
-              </span>
-              <span className="text-xs font-mono text-[#94a3b8] px-2 py-0.5 rounded bg-black/40 border border-white/5">
-                rivlet-crm.vercel.app
-              </span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 mb-3">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>External Companion Platform</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
-              <Users className="w-6 h-6 text-[#cda052]" />
-              Rivlet CRM — Activewear Operations & Growth
+            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center justify-center sm:justify-start gap-3">
+              <Users className="w-7 h-7 text-[#cda052]" />
+              <span>Rivlet CRM Application</span>
             </h1>
-            <p className="text-xs sm:text-sm text-[#94a3b8] mt-1 max-w-3xl">
-              Connected commercial platform for creator gifting, athlete ambassador rosters, wholesale fitness studio stockists, and VIP editorial press contacts.
+            <p className="text-sm text-[#94a3b8] mt-2 max-w-xl">
+              Rivlet CRM runs as an independent high-performance growth application for creator gifting, athlete ambassadors, and wholesale B2B accounts.
             </p>
           </div>
 
-          {/* Action buttons */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-col sm:flex-row items-center gap-3 justify-center sm:justify-end">
             <button
               onClick={handleCopyLink}
-              title="Copy CRM link"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#141a27] border border-[#242f45] text-xs font-medium text-[#cbd5e1] hover:text-white hover:border-[#cda052]/50 transition-colors"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#141a27] border border-[#242f45] text-xs font-medium text-slate-300 hover:text-white hover:border-[#cda052]/50 transition-colors flex items-center justify-center gap-2"
             >
-              {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-[#94a3b8]" />}
-              <span>{isCopied ? 'Link Copied' : 'Copy URL'}</span>
+              {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-slate-400" />}
+              <span>{copied ? 'Copied' : 'Copy Link'}</span>
             </button>
-
-            <button
-              onClick={handleReload}
-              title="Refresh CRM frame"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#141a27] border border-[#242f45] text-xs font-medium text-[#cbd5e1] hover:text-white hover:border-[#cda052]/50 transition-colors"
-            >
-              <RotateCw className="w-3.5 h-3.5 text-[#94a3b8]" />
-              <span>Reload</span>
-            </button>
-
-            <button
-              onClick={() => setIsExpanded(prev => !prev)}
-              title={isExpanded ? 'Exit expanded view' : 'Expand full canvas'}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#141a27] border border-[#242f45] text-xs font-medium text-[#cbd5e1] hover:text-white hover:border-[#cda052]/50 transition-colors"
-            >
-              {isExpanded ? (
-                <>
-                  <Minimize2 className="w-3.5 h-3.5 text-[#cda052]" />
-                  <span>Collapse</span>
-                </>
-              ) : (
-                <>
-                  <Maximize2 className="w-3.5 h-3.5 text-[#cda052]" />
-                  <span>Maximize</span>
-                </>
-              )}
-            </button>
-
             <a
-              href={currentUrl}
+              href={CRM_BASE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-gradient-to-r from-[#cda052] to-[#b38536] text-black font-semibold text-xs hover:brightness-110 shadow-glow transition-all"
+              className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black font-bold text-xs shadow-lg shadow-emerald-950/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              <span>Launch New Tab</span>
-              <ArrowUpRight className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>Open Rivlet CRM (New Tab)</span>
+              <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
             </a>
           </div>
         </div>
+      </div>
 
-        {/* 3 Quick Navigation Tabs */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-5 pt-4 border-t border-[#1e2638]">
-          {CRM_TABS.map((tab) => {
-            const Icon = tab.icon;
-            const isSelected = activeTab === tab.id;
+      {/* Direct Module Launchers */}
+      <div className="space-y-3">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 px-1">
+          Direct Pipeline Launchers (Opens in New Tab)
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {CRM_PIPELINES.map((pipeline) => {
+            const Icon = pipeline.icon;
             return (
-              <button
-                key={tab.id}
-                onClick={() => handleTabChange(tab.id)}
-                className={`text-left p-3.5 rounded-xl border transition-all cursor-pointer relative group ${
-                  isSelected
-                    ? 'bg-[rgba(205,160,82,0.12)] border-[#cda052] shadow-sm'
-                    : 'bg-[#080b12] border-[#1e2638] hover:border-slate-600 hover:bg-[#121622]'
-                }`}
+              <a
+                key={pipeline.id}
+                href={pipeline.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-[#0e121b] border border-[#1e2638] hover:border-emerald-500/40 rounded-xl p-4 transition-all hover:bg-[#121622] group text-left block"
               >
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-2">
-                    <div className={`p-1.5 rounded-lg ${isSelected ? 'bg-[#cda052] text-black' : 'bg-[#182030] text-[#94a3b8] group-hover:text-white'}`}>
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <span className={`text-xs font-semibold ${isSelected ? 'text-[#f7d88c]' : 'text-white'}`}>
-                      {tab.label}
-                    </span>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 group-hover:scale-110 transition-transform">
+                    <Icon className="w-4 h-4" />
                   </div>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-black/40 text-[#94a3b8] font-mono border border-white/5">
-                    {tab.badge}
+                  <ArrowUpRight className="w-4 h-4 text-slate-500 group-hover:text-emerald-400 transition-colors" />
+                </div>
+                <div className="text-sm font-semibold text-white group-hover:text-emerald-300 transition-colors">
+                  {pipeline.title}
+                </div>
+                <p className="text-xs text-slate-400 mt-1 line-clamp-2">
+                  {pipeline.description}
+                </p>
+                <div className="mt-3 pt-2.5 border-t border-[#1e2638] flex items-center justify-between text-[10px] text-slate-500 font-mono">
+                  <span>{pipeline.badge}</span>
+                  <span className="text-emerald-400 flex items-center gap-0.5">
+                    Launch <ArrowRight className="w-2.5 h-2.5" />
                   </span>
                 </div>
-                <p className="text-[11px] text-[#94a3b8] line-clamp-1">
-                  {tab.description}
-                </p>
-              </button>
+              </a>
             );
           })}
         </div>
       </div>
 
-      {/* Frame Control Strip */}
-      <div className="flex items-center justify-between text-xs px-2 text-[#94a3b8]">
-        <div className="flex items-center gap-2">
-          <Globe className="w-3.5 h-3.5 text-[#cda052]" />
-          <span className="font-mono text-[11px] text-[#cbd5e1]">{currentUrl}</span>
-          {isLoading && (
-            <span className="text-[10px] text-amber-400 animate-pulse flex items-center gap-1">
-              • Loading CRM...
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setDeviceMode('desktop')}
-            className={`p-1.5 rounded ${deviceMode === 'desktop' ? 'bg-[#1e2638] text-white' : 'text-[#64748b] hover:text-white'}`}
-            title="Desktop view"
-          >
-            <Monitor className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => setDeviceMode('mobile')}
-            className={`p-1.5 rounded ${deviceMode === 'mobile' ? 'bg-[#1e2638] text-white' : 'text-[#64748b] hover:text-white'}`}
-            title="Mobile device simulator"
-          >
-            <Smartphone className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
-
-      {/* Embedded Live CRM Viewport */}
-      <div className={`w-full flex justify-center transition-all ${isExpanded ? 'h-[calc(100vh-180px)]' : 'h-[750px]'}`}>
-        <div className={`h-full bg-[#0a0d14] border border-[#1e2638] rounded-2xl overflow-hidden shadow-2xl relative transition-all duration-300 ${deviceMode === 'mobile' ? 'w-[420px] ring-8 ring-[#141a27]' : 'w-full'}`}>
-          {isLoading && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0d14] z-20 space-y-3">
-              <div className="w-8 h-8 border-2 border-[#cda052] border-t-transparent rounded-full animate-spin" />
-              <div className="text-xs text-[#94a3b8] font-medium">Connecting to Rivlet CRM...</div>
-              <div className="text-[11px] font-mono text-[#64748b]">{currentUrl}</div>
-            </div>
-          )}
-
-          <iframe
-            key={`${currentUrl}-${iframeKey}`}
-            ref={iframeRef}
-            src={currentUrl}
-            title="Rivlet CRM"
-            onLoad={() => setIsLoading(false)}
-            className="w-full h-full border-none bg-white dark:bg-[#07090e]"
-            allow="clipboard-write; clipboard-read"
-          />
-        </div>
-      </div>
-
-      {/* Bottom Ecosystem Card */}
-      <div className="bg-[#0e121b]/80 border border-[#1e2638] rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-[#94a3b8]">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-          <span>
-            Rivlet Admin Console & Rivlet CRM share unified brand telemetry and operational sourcing profiles.
-          </span>
-        </div>
-        <a
-          href="https://rivlet-crm.vercel.app"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-[#cda052] hover:text-[#f7d88c] font-medium flex items-center gap-1 group whitespace-nowrap"
-        >
-          <span>Open rivlet-crm.vercel.app directly</span>
-          <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-        </a>
+      {/* Notice info */}
+      <div className="bg-[#0e121b]/60 border border-[#1e2638] rounded-xl p-4 flex items-center gap-3 text-xs text-slate-400">
+        <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+        <span>
+          Rivlet Admin and Rivlet CRM operate seamlessly across browser sessions with cloud persistence.
+        </span>
       </div>
     </div>
   );

@@ -122,6 +122,68 @@ export function saveLocalCalendarEvents(events: CalendarEventItem[]): void {
   }
 }
 
+export function expandRecurringEvents(
+  baseEvents: CalendarEventItem[],
+  horizonMonths: number = 6
+): CalendarEventItem[] {
+  const result: CalendarEventItem[] = [];
+
+  baseEvents.forEach((evt) => {
+    // Always include the base event instance
+    result.push(evt);
+
+    // If it's not recurring, nothing more to expand
+    if (!evt.recurrence || evt.recurrence === 'none') {
+      return;
+    }
+
+    const start = new Date(evt.startTime);
+    const end = new Date(evt.endTime);
+    const durationMs = Math.max(0, end.getTime() - start.getTime());
+    const eventGroupId = evt.groupId || evt.id;
+
+    let occurrencesCount = 0;
+    const maxOccurrences = 12; // safe ceiling
+
+    let currentStart = new Date(start);
+
+    for (let i = 1; i <= maxOccurrences; i++) {
+      if (evt.recurrence === 'weekly') {
+        currentStart = new Date(currentStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+      } else if (evt.recurrence === 'monthly') {
+        currentStart = new Date(currentStart);
+        currentStart.setMonth(currentStart.getMonth() + 1);
+      } else if (evt.recurrence === 'yearly') {
+        currentStart = new Date(currentStart);
+        currentStart.setFullYear(currentStart.getFullYear() + 1);
+      } else if (evt.recurrence === 'custom') {
+        // Bi-weekly fallback for custom schedule
+        currentStart = new Date(currentStart.getTime() + 14 * 24 * 60 * 60 * 1000);
+      }
+
+      // Check horizon (don't generate further than horizonMonths)
+      const monthsDiff =
+        (currentStart.getFullYear() - start.getFullYear()) * 12 +
+        (currentStart.getMonth() - start.getMonth());
+      if (monthsDiff > horizonMonths) break;
+
+      const currentEnd = new Date(currentStart.getTime() + durationMs);
+
+      result.push({
+        ...evt,
+        id: `${eventGroupId}-rec-${i}`,
+        groupId: eventGroupId,
+        startTime: currentStart.toISOString(),
+        endTime: currentEnd.toISOString(),
+        status: 'pending', // generated future instances start as pending
+      });
+      occurrencesCount++;
+    }
+  });
+
+  return result;
+}
+
 export async function loadMergedCalendarEvents(): Promise<CalendarEventItem[]> {
   const localList = getLocalCalendarEvents();
   if (!supabase) return localList;
@@ -134,25 +196,112 @@ export async function loadMergedCalendarEvents(): Promise<CalendarEventItem[]> {
 
     if (error || !data || data.length === 0) return localList;
 
-    const remoteItems: CalendarEventItem[] = data.map((d: any) => ({
-      id: d.id,
-      title: d.title,
-      description: d.description,
-      startTime: d.start_time,
-      endTime: d.end_time,
-      allDay: Boolean(d.all_day),
-      category: d.event_category,
-      priority: d.priority,
-      relatedEntityId: d.related_entity_id,
-      relatedLink: d.related_link,
-      status: d.status,
-      createdAt: d.created_at,
-    }));
+    const remoteItems: CalendarEventItem[] = data.map((d: any) => {
+      let recurrence: CalendarEventItem['recurrence'] = 'none';
+      let recurrenceRule: string | undefined = undefined;
+      let groupId: string | undefined = undefined;
 
+      // Extract recurrence metadata if stored in description JSON or standard field
+      if (d.description && d.description.includes('__REC_META__:')) {
+        try {
+          const parts = d.description.split('__REC_META__:');
+          const meta = JSON.parse(parts[1]);
+          recurrence = meta.recurrence;
+          recurrenceRule = meta.recurrenceRule;
+          groupId = meta.groupId;
+        } catch {
+          // ignore parsing error
+        }
+      }
+
+      return {
+        id: d.id,
+        title: d.title,
+        description: d.description ? d.description.split('__REC_META__:')[0].trim() : '',
+        startTime: d.start_time,
+        endTime: d.end_time,
+        allDay: Boolean(d.all_day),
+        category: d.event_category,
+        priority: d.priority,
+        relatedEntityId: d.related_entity_id,
+        relatedLink: d.related_link,
+        status: d.status,
+        recurrence,
+        recurrenceRule,
+        groupId,
+        createdAt: d.created_at,
+        updatedAt: d.updated_at,
+      };
+    });
+
+    saveLocalCalendarEvents(remoteItems);
     return remoteItems;
   } catch (err) {
     console.warn('Notice loading calendar events from Supabase:', err);
     return localList;
+  }
+}
+
+export async function saveMergedCalendarEvents(events: CalendarEventItem[]): Promise<void> {
+  saveLocalCalendarEvents(events);
+  if (!supabase) return;
+
+  try {
+    // Only persist root events or non-virtual instances
+    const nonVirtual = events.filter((e) => !e.id.includes('-rec-'));
+
+    for (const evt of nonVirtual) {
+      const isUuid = evt.id.length === 36 && evt.id.includes('-');
+      
+      // Embed recurrence metadata in description if recurring
+      let finalDescription = evt.description || '';
+      if (evt.recurrence && evt.recurrence !== 'none') {
+        const meta = JSON.stringify({
+          recurrence: evt.recurrence,
+          recurrenceRule: evt.recurrenceRule,
+          groupId: evt.groupId || evt.id,
+        });
+        finalDescription = `${finalDescription}\n\n__REC_META__:${meta}`;
+      }
+
+      const payload: any = {
+        title: evt.title,
+        description: finalDescription,
+        start_time: evt.startTime,
+        end_time: evt.endTime,
+        all_day: evt.allDay,
+        event_category: evt.category,
+        priority: evt.priority,
+        related_link: evt.relatedLink || null,
+        status: evt.status,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (isUuid) {
+        payload.id = evt.id;
+        await supabase.from('calendar_events').upsert(payload);
+      } else {
+        await supabase.from('calendar_events').insert(payload);
+      }
+    }
+  } catch (err) {
+    console.error('Notice persisting calendar events to Supabase:', err);
+  }
+}
+
+export async function deleteMergedCalendarEvent(id: string): Promise<void> {
+  const current = getLocalCalendarEvents();
+  const updated = current.filter((e) => e.id !== id && e.groupId !== id);
+  saveLocalCalendarEvents(updated);
+  if (!supabase) return;
+
+  try {
+    const isUuid = id.length === 36 && id.includes('-');
+    if (isUuid) {
+      await supabase.from('calendar_events').delete().eq('id', id);
+    }
+  } catch (err) {
+    console.error('Notice deleting calendar event from Supabase:', err);
   }
 }
 

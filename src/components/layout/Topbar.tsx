@@ -18,7 +18,8 @@ import {
   Lock,
   FileSearch,
   CloudUpload,
-  Users
+  Users,
+  ExternalLink
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/authContext';
@@ -206,16 +207,19 @@ export default function Topbar({
           </div>
 
           {/* Rivlet CRM Quick Companion Launcher */}
-          <Link
-            href="/crm"
-            title="Open Rivlet CRM (rivlet-crm.vercel.app)"
+          <a
+            href="https://rivlet-crm.vercel.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Open Rivlet CRM in new tab (rivlet-crm.vercel.app)"
             aria-label="Open Rivlet CRM"
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500 text-xs text-emerald-600 dark:text-emerald-400 font-medium transition-all shadow-sm cursor-pointer group"
           >
             <Users className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform flex-shrink-0" />
             <span className="hidden sm:inline font-semibold">CRM</span>
+            <ExternalLink className="w-3 h-3 opacity-70 group-hover:opacity-100 transition-opacity" />
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse hidden xs:inline" />
-          </Link>
+          </a>
 
             {/* Theme Toggle Button */}
           <button
