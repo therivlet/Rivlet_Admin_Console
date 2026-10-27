@@ -54,29 +54,29 @@ export default function CalendarWeekView({
       case 'sprint':
         return 'bg-indigo-500/18 text-indigo-800 dark:text-indigo-200 border-indigo-500/40';
       default:
-        return 'bg-black/5 dark:bg-white/10 text-[#241812] dark:text-white border-black/10 dark:border-white/20';
+        return 'bg-black/5 dark:bg-white/10 text-slate-900 dark:text-white border-black/10 dark:border-white/20';
     }
   };
 
   return (
-    <div className="bg-white dark:bg-[#18100b] rounded-2xl border border-[#e8ded3] dark:border-[#3d2b20] overflow-hidden shadow-sm">
+    <div className="bg-white dark:bg-[#0e121b] rounded-2xl border border-slate-200 dark:border-[#1e2638] overflow-hidden shadow-sm">
       {/* Week Header Row */}
-      <div className="grid grid-cols-8 bg-[#f5efe6] dark:bg-black/40 border-b border-[#e8ded3] dark:border-white/10 text-xs py-3">
-        <div className="text-center text-[#604f41] dark:text-[#8895ad] font-mono text-[11px] self-center">
+      <div className="grid grid-cols-8 bg-slate-50 dark:bg-black/40 border-b border-slate-200 dark:border-white/10 text-xs py-3">
+        <div className="text-center text-slate-600 dark:text-[#8895ad] font-mono text-[11px] self-center">
           Time
         </div>
         {weekDays.map((date, idx) => {
           const isToday = isSameDay(date, now);
           return (
             <div key={idx} className="text-center">
-              <div className="text-[10px] uppercase font-semibold text-[#7d6b5d] dark:text-[#8895ad]">
+              <div className="text-[10px] uppercase font-semibold text-slate-500 dark:text-[#8895ad]">
                 {dayNames[idx]}
               </div>
               <div
                 className={`text-sm font-bold font-mono inline-block px-2 py-0.5 rounded-full mt-0.5 ${
                   isToday
-                    ? 'bg-[#cda052] text-[#241812]'
-                    : 'text-[#241812] dark:text-white'
+                    ? 'bg-[#cda052] text-slate-950'
+                    : 'text-slate-900 dark:text-white'
                 }`}
               >
                 {date.getDate()}
@@ -87,11 +87,11 @@ export default function CalendarWeekView({
       </div>
 
       {/* Hourly Grid Rows */}
-      <div className="divide-y divide-[#e8ded3] dark:divide-white/5 bg-[#fcfaf7] dark:bg-[#07090e] max-h-[650px] overflow-y-auto">
+      <div className="divide-y divide-slate-200 dark:divide-white/5 bg-white dark:bg-[#07090e] max-h-[650px] overflow-y-auto">
         {hours.map((hour) => (
-          <div key={hour} className="grid grid-cols-8 divide-x divide-[#e8ded3] dark:divide-white/5 min-h-[60px]">
+          <div key={hour} className="grid grid-cols-8 divide-x divide-slate-200 dark:divide-white/5 min-h-[60px]">
             {/* Hour Label */}
-            <div className="p-2 text-right text-[11px] font-mono text-[#7d6b5d] dark:text-[#8895ad] select-none">
+            <div className="p-2 text-right text-[11px] font-mono text-slate-500 dark:text-[#8895ad] select-none">
               {hour.toString().padStart(2, '0')}:00
             </div>
 

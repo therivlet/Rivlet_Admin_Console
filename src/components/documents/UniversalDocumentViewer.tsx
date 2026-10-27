@@ -489,14 +489,14 @@ export default function UniversalDocumentViewer({
             </div>
 
             <div className="flex items-center gap-1.5 sm:gap-2">
-              {/* Edit Expiry Date */}
+              {/* Edit Document */}
               <button
                 onClick={() => onEditExpiry(doc)}
                 className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-[#141824] border border-[#263147] text-[#e6c875] hover:text-white hover:border-[#cda052] text-xs font-semibold flex items-center gap-1.5 transition-colors"
-                title="Edit compliance expiry date"
+                title="Edit document metadata & compliance expiry"
               >
                 <Pencil className="w-3.5 h-3.5" />
-                <span className="hidden md:inline">Edit Expiry</span>
+                <span className="hidden md:inline">Edit Document</span>
               </button>
 
               {/* Download */}

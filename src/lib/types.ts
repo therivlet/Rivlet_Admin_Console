@@ -830,3 +830,26 @@ export interface CalendarEventItem {
   createdAt: string;
 }
 
+export interface AdvanceTaxRecord {
+  id: string;
+  quarter: string; // e.g. 'Installment 1 (15%)'
+  dueDate: string; // e.g. '15 June'
+  statutoryDate: string; // YYYY-MM-DD
+  estimatedAmount: number;
+  status: 'filed' | 'upcoming' | 'overdue';
+  challanNo: string;
+  notes?: string;
+}
+
+export interface TdsReturnRecord {
+  id: string;
+  form: string; // e.g. 'Form 24Q (Salary TDS)'
+  period: string; // e.g. 'Q2 (Jul - Sep)'
+  dueDate: string; // e.g. '2026-10-31'
+  status: 'filed' | 'in_progress' | 'upcoming' | 'overdue';
+  lead: string; // e.g. 'Finance Lead'
+  deductionAmount?: number;
+  tokenNumber?: string;
+  notes?: string;
+}
+

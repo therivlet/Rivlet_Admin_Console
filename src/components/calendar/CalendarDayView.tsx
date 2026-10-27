@@ -52,27 +52,27 @@ export default function CalendarDayView({
       case 'sprint':
         return 'bg-indigo-500/15 text-indigo-800 dark:text-indigo-300 border-indigo-500/30';
       default:
-        return 'bg-black/5 dark:bg-white/10 text-[#241812] dark:text-white border-black/10 dark:border-white/20';
+        return 'bg-black/5 dark:bg-white/10 text-slate-900 dark:text-white border-black/10 dark:border-white/20';
     }
   };
 
   return (
-    <div className="bg-white dark:bg-[#18100b] rounded-2xl border border-[#e8ded3] dark:border-[#3d2b20] overflow-hidden shadow-sm">
+    <div className="bg-white dark:bg-[#0e121b] rounded-2xl border border-slate-200 dark:border-[#1e2638] overflow-hidden shadow-sm">
       {/* Day Header Banner */}
-      <div className="p-4 bg-[#f5efe6] dark:bg-black/40 border-b border-[#e8ded3] dark:border-white/10 flex items-center justify-between">
+      <div className="p-4 bg-slate-50 dark:bg-black/40 border-b border-slate-200 dark:border-[#1e2638] flex items-center justify-between">
         <div>
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-[#604f41] dark:text-[#a99a8b]">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#8a96ae]">
             Single Day Timeline
           </span>
-          <h2 className="text-base sm:text-lg font-bold text-[#241812] dark:text-white">{formattedDay}</h2>
+          <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">{formattedDay}</h2>
         </div>
-        <span className="text-xs text-[#7c5b1b] dark:text-[#f7d88c] font-semibold bg-[rgba(205,160,82,0.12)] px-3 py-1 rounded-full border border-[#cda052]/30">
+        <span className="text-xs text-[#cda052] font-semibold bg-[#cda052]/10 px-3 py-1 rounded-full border border-[#cda052]/20">
           {dayEvents.length} {dayEvents.length === 1 ? 'Scheduled Item' : 'Scheduled Items'}
         </span>
       </div>
 
       {/* Hourly Schedule */}
-      <div className="divide-y divide-[#e8ded3] dark:divide-white/5 bg-[#fcfaf7] dark:bg-[#07090e] max-h-[650px] overflow-y-auto">
+      <div className="divide-y divide-slate-100 dark:divide-white/5 bg-white dark:bg-[#080b12] max-h-[650px] overflow-y-auto">
         {hours.map((hour) => {
           const matchingEvents = dayEvents.filter((evt) => {
             const evtDate = new Date(evt.startTime);
@@ -80,8 +80,8 @@ export default function CalendarDayView({
           });
 
           return (
-            <div key={hour} className="flex items-start min-h-[70px] hover:bg-[#faf6f0] dark:hover:bg-white/[0.01] transition-colors">
-              <div className="w-20 p-3 text-right text-xs font-mono text-[#7d6b5d] dark:text-[#8895ad] select-none border-r border-[#e8ded3] dark:border-white/5">
+            <div key={hour} className="flex items-start min-h-[70px] hover:bg-slate-50 dark:hover:bg-white/[0.01] transition-colors">
+              <div className="w-20 p-3 text-right text-xs font-mono text-slate-400 dark:text-slate-500 select-none border-r border-slate-100 dark:border-white/5">
                 {hour.toString().padStart(2, '0')}:00
               </div>
 
@@ -95,26 +95,26 @@ export default function CalendarDayView({
                     )}`}
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-bold text-sm text-[#241812] dark:text-white">{evt.title}</span>
+                      <span className="font-bold text-sm text-slate-900 dark:text-white">{evt.title}</span>
                       <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-black/5 dark:bg-black/40 border border-black/10 dark:border-white/10">
                         {evt.category.toUpperCase()}
                       </span>
                     </div>
 
                     {evt.description && (
-                      <p className="text-xs text-[#4a3b30] dark:text-[#cbd5e1] mt-1 leading-relaxed">
+                      <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
                         {evt.description}
                       </p>
                     )}
 
-                    <div className="mt-2 pt-2 border-t border-black/5 dark:border-white/10 flex items-center justify-between text-xs text-[#7d6b5d] dark:text-[#a99a8b]">
+                    <div className="mt-2 pt-2 border-t border-black/5 dark:border-white/10 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                       <span className="flex items-center gap-1 font-mono">
                         <Clock className="w-3.5 h-3.5 text-[#cda052]" />
                         {new Date(evt.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(evt.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
 
                       {evt.relatedLink && (
-                        <span className="text-[#8c6b2d] dark:text-[#f7d88c] hover:underline flex items-center gap-1 font-medium">
+                        <span className="text-[#cda052] hover:underline flex items-center gap-1 font-medium">
                           <span>View Associated Module</span>
                           <ExternalLink className="w-3 h-3" />
                         </span>

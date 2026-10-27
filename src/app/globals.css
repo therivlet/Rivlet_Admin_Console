@@ -243,35 +243,35 @@ body {
 .kb-markdown tbody tr:nth-child(even) { background: #0a0c12; }
 
 /* ==========================================================================
-   RIVLET WARM LIGHT THEME SYSTEM
+   RIVLET CLEAN SLATE LIGHT THEME SYSTEM
    ========================================================================== */
 
 html.light {
-  --background: #f7f5f0;
-  --foreground: #1c1917;
+  --background: #f8fafc;
+  --foreground: #0f172a;
   --card-bg: #ffffff;
-  --card-border: #dfd9cd;
-  --gold: #8c6016;
-  --gold-glow: rgba(140, 96, 22, 0.18);
+  --card-border: #e2e8f0;
+  --gold: #b48126;
+  --gold-glow: rgba(180, 129, 38, 0.15);
 }
 
 html.light body {
-  background-color: #f7f5f0 !important;
-  color: #1c1917 !important;
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
 }
 
-/* Warm Light Mode Selection */
+/* Crisp Clean Light Mode Selection */
 html.light ::selection {
-  background-color: #e8d9be !important;
-  color: #1c1917 !important;
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
 }
 
-/* Scrollbar in Warm Light Mode */
+/* Scrollbar in Light Mode */
 html.light ::-webkit-scrollbar-track {
-  background: #f1ede4;
+  background: #f1f5f9;
 }
 html.light ::-webkit-scrollbar-thumb {
-  background: #d5cebf;
+  background: #cbd5e1;
   border-radius: 6px;
 }
 html.light ::-webkit-scrollbar-thumb:hover {
@@ -282,7 +282,7 @@ html.light ::-webkit-scrollbar-thumb:hover {
    1. UNIVERSAL SURFACES & CONTAINERS (Eliminates 100% of Pitch-Black Cards)
    -------------------------------------------------------------------------- */
 
-/* All dark hex cards become crisp elevated warm white surfaces (excluding aside, header, and notification cards) */
+/* All dark hex cards become crisp elevated white surfaces in light mode (excluding aside, header, and notification cards) */
 html.light [class*="bg-[#0"]:not(aside):not(aside *):not(header):not(header *):not(.notification-card):not(.notification-card *),
 html.light [class*="bg-[#1"]:not(aside):not(aside *):not(header):not(header *):not(.notification-card):not(.notification-card *),
 html.light [class*="bg-[#2"]:not([class*="bg-[#22c55e]"]):not(aside):not(aside *):not(header):not(header *):not(.notification-card):not(.notification-card *) {
@@ -301,10 +301,10 @@ html.light .bg-\[\#07090f\],
 html.light [class*="bg-[#07090f]"],
 html.light .bg-\[\#090b12\],
 html.light [class*="bg-[#090b12]"] {
-  background-color: #f7f5f0 !important;
+  background-color: #f8fafc !important;
 }
 
-/* Nested Sub-Cards, Inner Rows & Secondary Sections (Today's Focus cards, Costing Rows, Compliance Rows, Sidebar Footer) */
+/* Nested Sub-Cards, Inner Rows & Secondary Sections */
 html.light .bg-\[\#080b12\],
 html.light [class*="bg-[#080b12]"],
 html.light .bg-\[\#07080d\],
@@ -331,57 +331,57 @@ html.light .bg-\[\#141724\],
 html.light [class*="bg-[#141724]"],
 html.light .bg-\[\#181d2a\],
 html.light [class*="bg-[#181d2a]"] {
-  background-color: #faf8f5 !important;
+  background-color: #f1f5f9 !important;
 }
 
 /* Kanban Columns & Recessed Container Lanes */
 html.light .bg-\[\#07090e\]\/60,
 html.light [class*="bg-[#07090e]/60"] {
-  background-color: #f0ebe1 !important;
+  background-color: #e2e8f0 !important;
 }
 
 /* ==========================================================================
-   NAVIGATION ASIDE & HEADER: WARM ESPRESSO BROWN THEME IN LIGHT MODE
-   Warm brown tones, gold accents, crisp hovers, zero blackness, zero glare
+   NAVIGATION ASIDE & HEADER: CLEAN MODERN SLATE THEME IN LIGHT MODE
+   Clean white header, obsidian dark sidebar, crisp slate borders, zero brown
    ========================================================================== */
 
 html.light aside,
 html.light aside[class*="bg-[#"] {
-  background-color: #241812 !important;
-  border-right-color: #3d2b20 !important;
-  color: #d7cbbe !important;
-  box-shadow: 4px 0 25px rgba(28, 17, 12, 0.3) !important;
+  background-color: #0b0f19 !important;
+  border-right-color: #1e2638 !important;
+  color: #94a3b8 !important;
+  box-shadow: 4px 0 25px rgba(0, 0, 0, 0.15) !important;
 }
 
 html.light header,
 html.light header[class*="bg-[#"] {
-  background-color: #241812 !important;
-  color: #f5ece3 !important;
-  border-bottom: 1px solid #3d2b20 !important;
-  box-shadow: 0 4px 20px rgba(28, 17, 12, 0.35) !important;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
 }
 
 /* Header search button in light mode */
 html.light header button[title*="Search"],
 html.light header button[aria-label*="Search"] {
-  background-color: #1b120d !important;
-  border-color: #3d2b20 !important;
-  color: #f5ece3 !important;
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
 }
 html.light header button[title*="Search"]:hover,
 html.light header button[aria-label*="Search"]:hover {
-  background-color: #281c15 !important;
-  border-color: #cda052 !important;
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
 }
 html.light header button[title*="Search"] span,
 html.light header button[aria-label*="Search"] span {
-  color: #a99a8b !important;
+  color: #64748b !important;
 }
 html.light header button[title*="Search"] kbd,
 html.light header button[aria-label*="Search"] kbd {
-  background-color: #2e2018 !important;
-  border-color: #4a3528 !important;
-  color: #d7cbbe !important;
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+  color: #64748b !important;
 }
 
 /* Header Season, Theme & Notification buttons */
@@ -391,16 +391,16 @@ html.light header button[title*="Theme"],
 html.light header button[aria-label*="Theme"],
 html.light header button[title*="Notification"],
 html.light header button[aria-label*="Notification"] {
-  background-color: #1b120d !important;
-  border-color: #3d2b20 !important;
-  color: #f5d58d !important;
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #334155 !important;
 }
 html.light header button[title*="merchandising"] svg,
 html.light header button[aria-label*="merchandising"] svg,
 html.light header button[title*="Theme"] svg,
 html.light header button[aria-label*="Theme"] svg,
 html.light header button[title*="Notification"] svg {
-  color: #f5d58d !important;
+  color: #475569 !important;
 }
 html.light header button[title*="merchandising"]:hover,
 html.light header button[aria-label*="merchandising"]:hover,
@@ -408,27 +408,27 @@ html.light header button[title*="Theme"]:hover,
 html.light header button[aria-label*="Theme"]:hover,
 html.light header button[title*="Notification"]:hover,
 html.light header button[aria-label*="Notification"]:hover {
-  background-color: #281c15 !important;
-  border-color: #cda052 !important;
-  color: #f7dda0 !important;
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
 }
 html.light header button[title*="merchandising"]:hover *,
 html.light header button[aria-label*="merchandising"]:hover *,
 html.light header button[title*="Theme"]:hover *,
 html.light header button[aria-label*="Theme"]:hover *,
 html.light header button[title*="Notification"]:hover * {
-  color: #f7dda0 !important;
+  color: #0f172a !important;
 }
 
 /* Header Navigation Menu button in light mode */
 html.light header button[title*="Navigation"],
 html.light header button[aria-label*="Navigation"] {
-  color: #d7cbbe !important;
+  color: #475569 !important;
 }
 html.light header button[title*="Navigation"]:hover,
 html.light header button[aria-label*="Navigation"]:hover {
-  background-color: rgba(255, 255, 255, 0.08) !important;
-  color: #f7dda0 !important;
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
 }
 
 /* Header User Menu Avatar Button */
@@ -442,21 +442,21 @@ html.light header button[title*="Account"]:hover,
 html.light header button[aria-label*="User"]:hover,
 html.light header button[title*="Account"]:focus,
 html.light header button[aria-label*="User"]:focus {
-  background-color: rgba(255, 255, 255, 0.08) !important;
-  border-color: #3d2b20 !important;
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
 }
 
-/* Header Dropdowns in Light Mode (Warm espresso styling matching navigation) */
+/* Header Dropdowns in Light Mode (Clean Slate White) */
 html.light header div[class*="bg-[#0d101a]"],
 html.light header div[class*="bg-[#1f140e]"] {
-  background-color: #1f140e !important;
-  border-color: #3d2b20 !important;
-  color: #f5ece3 !important;
-  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.5) !important;
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.12) !important;
 }
 html.light header div[class*="bg-[#0d101a]"] *,
 html.light header div[class*="bg-[#1f140e]"] * {
-  color: #d7cbbe !important;
+  color: #475569 !important;
 }
 html.light header div[class*="bg-[#0d101a]"] .text-white,
 html.light header div[class*="bg-[#0d101a]"] span.font-bold,
@@ -464,26 +464,26 @@ html.light header div[class*="bg-[#0d101a]"] div.font-bold,
 html.light header div[class*="bg-[#1f140e]"] .text-white,
 html.light header div[class*="bg-[#1f140e]"] span.font-bold,
 html.light header div[class*="bg-[#1f140e]"] div.font-bold {
-  color: #f5ece3 !important;
+  color: #0f172a !important;
 }
 html.light header div[class*="bg-[#0d101a]"] .text-\[\#cda052\],
 html.light header div[class*="bg-[#1f140e]"] .text-\[\#cda052\] {
-  color: #e6c875 !important;
+  color: #b48126 !important;
 }
 html.light header div[class*="bg-[#0d101a]"] [class*="bg-[#121623]"],
 html.light header div[class*="bg-[#0d101a]"] [class*="bg-[#07090e]"],
 html.light header div[class*="bg-[#0d101a]"] [class*="bg-[#07090f]"],
 html.light header div[class*="bg-[#0d101a]"] [class*="bg-[#080a11]"],
 html.light header div[class*="bg-[#1f140e]"] [class*="bg-[#180f0a]"] {
-  background-color: #180f0a !important;
-  border-color: #2e2018 !important;
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
 }
 
 /* Header Dropdown Links Hover in Light Mode */
 html.light header div[class*="bg-[#0d101a]"] a:hover,
 html.light header div[class*="bg-[#1f140e]"] a:hover {
-  background-color: rgba(255, 255, 255, 0.08) !important;
-  color: #ffffff !important;
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
 }
 
 /* Sign Out in Header Profile Dropdown in Light Mode */
@@ -491,39 +491,39 @@ html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"],
 html.light header div[class*="bg-[#0d101a]"] button[aria-label*="Sign out"],
 html.light header div[class*="bg-[#0d101a]"] button.text-rose-400 {
   background-color: transparent !important;
-  color: #fb7185 !important;
+  color: #e11d48 !important;
   border: 1px solid transparent !important;
 }
 html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"]:hover,
 html.light header div[class*="bg-[#0d101a]"] button[aria-label*="Sign out"]:hover,
 html.light header div[class*="bg-[#0d101a]"] button.text-rose-400:hover {
-  background-color: rgba(244, 63, 94, 0.15) !important;
-  border-color: rgba(244, 63, 94, 0.3) !important;
-  color: #fda4af !important;
+  background-color: rgba(244, 63, 94, 0.1) !important;
+  border-color: rgba(244, 63, 94, 0.25) !important;
+  color: #be123c !important;
 }
 html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"] svg,
 html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"] span,
 html.light header div[class*="bg-[#0d101a]"] button.text-rose-400 svg,
 html.light header div[class*="bg-[#0d101a]"] button.text-rose-400 span {
-  color: #fb7185 !important;
+  color: #e11d48 !important;
 }
 html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"]:hover svg,
 html.light header div[class*="bg-[#0d101a]"] button[title*="Sign out"]:hover span,
 html.light header div[class*="bg-[#0d101a]"] button.text-rose-400:hover svg,
 html.light header div[class*="bg-[#0d101a]"] button.text-rose-400:hover span {
-  color: #fda4af !important;
+  color: #be123c !important;
 }
 
 /* Inactive links, buttons and labels inside aside */
 html.light aside a:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]):not(.brand-logo-link):not(.profile-settings-link),
 html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):not(.sign-out-btn):not([data-signout-btn]):not(.account-popover *):not([data-account-popover] *) {
   background-color: transparent !important;
-  color: #d7cbbe !important;
+  color: #94a3b8 !important;
 }
 
 html.light aside a:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]):not(.brand-logo-link):not(.profile-settings-link) span,
 html.light aside a:not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]):not(.brand-logo-link):not(.profile-settings-link) svg {
-  color: #a99a8b !important;
+  color: #8895ad !important;
 }
 
 /* Sidebar User Account Name in Navigation - High-Contrast Crisp White in All Modes */
@@ -608,8 +608,7 @@ html:not(.light) aside a.brand-logo-link:hover {
   outline: none !important;
 }
 
-/* Inner elements of expandable rows (Business Calculations & Documentation & Vault):
-   The outer .nav-expandable-row gets the tile highlight, NEVER the inner link or button! */
+/* Inner elements of expandable rows (Business Calculations & Documentation & Vault) */
 aside .nav-expandable-row a,
 aside .nav-expandable-row a:hover,
 aside .nav-expandable-row button,
@@ -635,7 +634,7 @@ html:not(.light) aside .nav-expandable-row button:hover {
   outline: none !important;
 }
 
-/* Sub-item links in expanded trees: subtle clean highlight, no chunky transforms */
+/* Sub-item links in expanded trees */
 aside .nav-sub-link:hover,
 html.light aside .nav-sub-link:hover,
 html.dark aside .nav-sub-link:hover,
@@ -653,11 +652,11 @@ aside .nav-sub-link:hover span {
   color: #ffffff !important;
 }
 
-/* Hover on ANY Nav Link or Button or Expandable Row inside aside in Light Mode - Prominent warm cognac highlight tile */
+/* Hover on ANY Nav Link or Button or Expandable Row inside aside in Light Mode */
 html.light aside a:hover:not(.brand-logo-link):not(.nav-sub-link):not(.nav-expandable-row a):not([class*="bg-[rgba(205,160,82"]):not([class*="from-[rgba(205,160,82"]),
 html.light aside button:not([title*="sidebar"]):not([aria-label*="sidebar"]):not([title*="Close"]):not([title*="Sign Out"]):not([title*="Sign out"]):not([aria-label*="Sign Out"]):not(.nav-expandable-row button):hover,
 html.light aside .nav-expandable-row:hover:not([class*="from-[rgba"]):not([class*="bg-[rgba(205,160,82"]) {
-  background-color: #3e2b20 !important;
+  background-color: #151b2a !important;
   border: 1px solid rgba(205, 160, 82, 0.45) !important;
   color: #ffffff !important;
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.35), 0 0 10px rgba(205, 160, 82, 0.15) !important;
@@ -730,75 +729,75 @@ html.light aside [class*="bg-[rgba(205,160,82"] svg {
 
 /* Navigation Section Headers in Light Mode (Work Tracking, Operations & Planning, etc.) */
 html.light aside .uppercase {
-  color: #a89487 !important;
+  color: #8895ad !important;
 }
 
-/* Aside Flyouts & Popovers in Light Mode */
+/* Aside Flyouts & Popovers in Light Mode (Clean Slate White) */
 html.light aside [class*="bg-[#1e140e]"],
 html.light aside [class*="bg-[#0d101a]"],
 html.light aside div[class*="bg-[#0d101a]"] {
-  background-color: #241812 !important;
-  border-color: #443023 !important;
-  box-shadow: 0 20px 45px -8px rgba(0, 0, 0, 0.8) !important;
-  color: #eeddd0 !important;
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 20px 45px -8px rgba(0, 0, 0, 0.15) !important;
+  color: #0f172a !important;
 }
 html.light aside [class*="bg-[#1e140e]"] *,
 html.light aside [class*="bg-[#0d101a]"] * {
-  color: #d7cbbe !important;
+  color: #475569 !important;
 }
 html.light aside [class*="bg-[#1e140e]"] .font-semibold,
 html.light aside [class*="bg-[#1e140e]"] .font-bold,
 html.light aside [class*="bg-[#0d101a]"] .font-semibold,
 html.light aside [class*="bg-[#0d101a]"] .font-bold {
-  color: #ffffff !important;
+  color: #0f172a !important;
 }
 html.light aside [class*="bg-[#1e140e]"] .text-\[\#f7d88c\],
 html.light aside [class*="bg-[#0d101a]"] .text-\[\#e6c875\] {
-  color: #f7d88c !important;
+  color: #b48126 !important;
 }
 html.light aside [class*="bg-[#1e140e]"] a:hover,
 html.light aside [class*="bg-[#0d101a]"] a:hover {
-  background-color: #36251b !important;
-  color: #ffffff !important;
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
 }
 
 /* Aside Footer */
 html.light aside [class*="bg-black/25"],
 html.light aside [class*="bg-[#07080d]"] {
-  background-color: rgba(26, 17, 12, 0.85) !important;
-  border-top-color: #3d2b20 !important;
+  background-color: rgba(11, 15, 25, 0.85) !important;
+  border-top-color: #1e2638 !important;
 }
 
-/* Modern Edge Seam Toggle Button in Light Mode: Soft, duller muted tone */
+/* Modern Edge Seam Toggle Button in Light Mode */
 html.light aside button[title*="sidebar"],
 html.light aside button[aria-label*="sidebar"] {
-  background-color: #ede7dd !important;
-  border-color: #d2c7b5 !important;
-  color: #8a7b6e !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #64748b !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
 }
 html.light aside button[title*="sidebar"]:hover,
 html.light aside button[aria-label*="sidebar"]:hover {
-  background-color: #e5ded3 !important;
+  background-color: #f8fafc !important;
   border-color: #cda052 !important;
   color: #cda052 !important;
 }
 
 /* Header search input */
 html.light header input {
-  background-color: #1f140e !important;
-  border-color: #443023 !important;
-  color: #f1f5f9 !important;
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
 }
 html.light header input::placeholder {
-  color: #a49182 !important;
+  color: #94a3b8 !important;
 }
 
 /* Glassmorphism in Light Mode */
 html.light .glass-panel {
   background: rgba(255, 255, 255, 0.95) !important;
-  border-color: #dfd9cd !important;
-  box-shadow: 0 4px 16px -2px rgba(35, 25, 15, 0.06) !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.05) !important;
 }
 
 html.light .glass-panel-gold {
@@ -811,30 +810,30 @@ html.light .glass-panel-gold {
    2. UNIVERSAL GRADIENTS (Bulk Creation Banner, KPI Hero, & Accent Cards)
    -------------------------------------------------------------------------- */
 
-/* Bulk Creation & Other Dark Gradients -> Clean Warm Executive Banner */
+/* Bulk Creation & Other Dark Gradients -> Clean Modern Slate Banner */
 html.light [class*="from-[#0"],
 html.light [class*="from-[#1"]:not([class*="from-[#1c1810]"]):not([class*="from-[#cda052]"]) {
   --tw-gradient-from: #ffffff var(--tw-gradient-from-position) !important;
-  --tw-gradient-to: #f3ede2 var(--tw-gradient-to-position) !important;
-  --tw-gradient-stops: var(--tw-gradient-from), #faf7f2 var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+  --tw-gradient-to: #f1f5f9 var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), #f8fafc var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
 }
 
-/* Contribution Profit KPI Card (Garment Costing Suite Major Highlight) */
+/* Contribution Profit KPI Card */
 html.light [class*="from-[#1c1810]"],
 html.light .from-\[\#1c1810\] {
-  background: linear-gradient(135deg, #fffcf5 0%, #fef7eb 100%) !important;
+  background: linear-gradient(135deg, #ffffff 0%, #fefce8 100%) !important;
   border-color: #cda052 !important;
   box-shadow: 0 4px 16px -2px rgba(205, 160, 82, 0.22) !important;
 }
 
 /* --------------------------------------------------------------------------
-   3. UNIVERSAL BORDERS (Crisp Architectural Warm Linen Borders)
+   3. UNIVERSAL BORDERS (Crisp Architectural Slate Borders)
    -------------------------------------------------------------------------- */
 
 html.light [class*="border-[#1"],
 html.light [class*="border-[#2"],
 html.light [class*="border-[#3"] {
-  border-color: #dfd9cd !important;
+  border-color: #e2e8f0 !important;
 }
 
 /* --------------------------------------------------------------------------

@@ -79,41 +79,41 @@ export default function CalendarAgendaView({
       case 'sprint':
         return 'text-indigo-800 dark:text-indigo-300 bg-indigo-500/15 border-indigo-500/40';
       default:
-        return 'text-[#241812] dark:text-white bg-black/5 dark:bg-white/10 border-black/10 dark:border-white/20';
+        return 'text-slate-900 dark:text-white bg-black/5 dark:bg-white/10 border-black/10 dark:border-white/20';
     }
   };
 
   return (
-    <div className="bg-white dark:bg-[#18100b] rounded-2xl border border-[#e8ded3] dark:border-[#3d2b20] p-5 shadow-sm space-y-4">
+    <div className="bg-white dark:bg-[#0e121b] rounded-2xl border border-slate-200 dark:border-[#1e2638] p-5 shadow-sm space-y-4">
       {/* Search Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#e8ded3] dark:border-white/10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-[#1e2638]">
         <div>
-          <h3 className="text-base font-bold text-[#241812] dark:text-white flex items-center gap-2">
+          <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Calendar className="w-4 h-4 text-[#cda052]" />
             <span>Operational Deadlines & Agenda List</span>
           </h3>
-          <p className="text-xs text-[#7d6b5d] dark:text-[#a99a8b]">
+          <p className="text-xs text-slate-500 dark:text-[#8a96ae]">
             Chronological master schedule of statutory filing cutoffs, customs duty gates, and team milestones
           </p>
         </div>
 
         <div className="relative min-w-[220px]">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#7d6b5d] dark:text-[#a99a8b]" />
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#8a96ae]" />
           <input
             type="text"
             placeholder="Search agenda schedule..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-xs text-[#241812] dark:text-white placeholder-[#9c8979] dark:placeholder-[#8895ad] border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
+            className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-slate-50 dark:bg-black/40 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 border border-slate-200 dark:border-[#1e2638] focus:border-[#cda052] outline-none"
           />
         </div>
       </div>
 
       {/* Agenda Table */}
-      <div className="overflow-x-auto rounded-xl border border-[#e8ded3] dark:border-white/5">
+      <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#1e2638]">
         <table className="w-full text-left text-xs">
           <thead>
-            <tr className="bg-[#f5efe6] dark:bg-black/40 text-[#604f41] dark:text-[#a99a8b] uppercase text-[10px] border-b border-[#e8ded3] dark:border-white/5">
+            <tr className="bg-slate-50 dark:bg-[#080b12] text-slate-600 dark:text-[#8a96ae] uppercase text-[10px] border-b border-slate-200 dark:border-[#1e2638]">
               <th className="py-2.5 px-3 font-semibold">Scheduled Date & Time</th>
               <th className="py-2.5 px-3 font-semibold">Category</th>
               <th className="py-2.5 px-3 font-semibold">Event Title & Scope</th>
@@ -122,10 +122,10 @@ export default function CalendarAgendaView({
               <th className="py-2.5 px-3 font-semibold text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#e8ded3] dark:divide-white/5">
+          <tbody className="divide-y divide-slate-100 dark:divide-white/5">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-8 text-center text-[#7d6b5d] dark:text-[#a99a8b]">
+                <td colSpan={6} className="py-8 text-center text-slate-500 dark:text-[#8a96ae]">
                   No upcoming agenda items match your filter.
                 </td>
               </tr>
@@ -138,18 +138,18 @@ export default function CalendarAgendaView({
                   <tr
                     key={evt.id}
                     onClick={() => onSelectEvent(evt)}
-                    className="hover:bg-[#faf6f0] dark:hover:bg-white/[0.02] transition-colors cursor-pointer group"
+                    className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors cursor-pointer group"
                   >
                     {/* Date */}
                     <td className="py-3 px-3 whitespace-nowrap">
-                      <div className="font-mono font-bold text-[#241812] dark:text-white">
+                      <div className="font-mono font-bold text-slate-900 dark:text-white">
                         {startDate.toLocaleDateString('en-US', {
                           month: 'short',
                           day: 'numeric',
                           year: 'numeric',
                         })}
                       </div>
-                      <div className="text-[10px] text-[#7d6b5d] dark:text-[#8895ad] flex items-center gap-1">
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
                         <Clock className="w-2.5 h-2.5" />
                         <span>
                           {evt.allDay
@@ -172,11 +172,11 @@ export default function CalendarAgendaView({
 
                     {/* Title & Desc */}
                     <td className="py-3 px-3 max-w-[320px]">
-                      <div className="font-semibold text-[#241812] dark:text-white group-hover:text-[#cda052] dark:group-hover:text-[#f7d88c] transition-colors">
+                      <div className="font-semibold text-slate-900 dark:text-white group-hover:text-[#cda052] transition-colors">
                         {evt.title}
                       </div>
                       {evt.description && (
-                        <div className="text-[11px] text-[#7d6b5d] dark:text-[#8895ad] truncate mt-0.5">
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
                           {evt.description}
                         </div>
                       )}
@@ -211,7 +211,7 @@ export default function CalendarAgendaView({
                           }
                           className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-colors ${
                             isCompleted
-                              ? 'bg-[#f5efe6] dark:bg-black/40 text-[#604f41] dark:text-[#a99a8b] border-[#d8c8b8] dark:border-white/10 hover:text-[#241812]'
+                              ? 'bg-slate-100 dark:bg-black/40 text-slate-600 dark:text-[#8a96ae] border-slate-200 dark:border-white/10 hover:text-slate-900'
                               : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25'
                           }`}
                         >
@@ -220,7 +220,7 @@ export default function CalendarAgendaView({
                         {evt.relatedLink && (
                           <Link
                             href={evt.relatedLink}
-                            className="p-1.5 rounded-lg text-[#7d6b5d] dark:text-[#a99a8b] hover:text-[#cda052] hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                            className="p-1.5 rounded-lg text-slate-400 dark:text-[#8a96ae] hover:text-[#cda052] hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                             title="Jump to Module"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />

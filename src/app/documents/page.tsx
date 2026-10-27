@@ -377,16 +377,16 @@ export default function DocumentsPage() {
           </button>
         </div>
       ) : (
-        <div className="bg-white dark:bg-[#0e121b] border border-[#e2d9ce] dark:border-[#1b2234] rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-[#0e121b] border border-slate-200 dark:border-[#1e2638] rounded-2xl shadow-sm overflow-hidden">
           {/* MOBILE CARDS VIEW (Phones & Small Tablets < 1024px) */}
-          <div className="lg:hidden divide-y divide-[#ede5da] dark:divide-[#1a2233]">
+          <div className="lg:hidden divide-y divide-slate-100 dark:divide-slate-800">
             {filtered.map((doc) => {
               const linkedVendor = doc.vendorId ? vendors.find((v) => v.id === doc.vendorId) : null;
               const linkedStyle = doc.pipelineItemId ? pipelineItems.find((p) => p.id === doc.pipelineItemId) : null;
               const isExpired = doc.expiryDate && new Date(doc.expiryDate) < new Date();
 
               return (
-                <div key={doc.id} className="p-3.5 sm:p-4 space-y-3 hover:bg-[#faf7f2] dark:hover:bg-[#121624]/60 transition-colors">
+                <div key={doc.id} className="p-3.5 sm:p-4 space-y-3 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
                   {/* Card Header: Format Badge + Title + Status Pill */}
                   <div className="flex items-start justify-between gap-2.5">
                     <div className="flex items-start gap-2.5 min-w-0">
@@ -396,12 +396,12 @@ export default function DocumentsPage() {
                       <div className="min-w-0">
                         <h3 
                           onClick={() => { setPreviewDoc(doc); setPreviewMode('preview'); }}
-                          className="text-xs sm:text-sm font-bold text-[#1c1917] dark:text-white hover:text-[#8c672b] dark:hover:text-[#cda052] cursor-pointer line-clamp-1 transition-colors"
+                          className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white hover:text-amber-600 dark:hover:text-[#cda052] cursor-pointer line-clamp-1 transition-colors"
                           title={doc.title}
                         >
                           {doc.title}
                         </h3>
-                        <div className="text-[11px] text-[#78716c] dark:text-[#7c869d] truncate flex items-center gap-1.5 mt-0.5">
+                        <div className="text-[11px] text-slate-500 dark:text-[#8a96ae] truncate flex items-center gap-1.5 mt-0.5">
                           <span className="truncate">{doc.fileName}</span>
                           {doc.fileSizeBytes ? (
                             <>
@@ -419,7 +419,7 @@ export default function DocumentsPage() {
                         ? 'bg-rose-950/60 text-rose-300 border border-rose-800/40'
                         : doc.status === 'Active'
                         ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-800/40'
-                        : 'bg-[#faf7f2] dark:bg-[#182030] text-[#78716c] dark:text-[#94a3b8] border border-[#ede5da] dark:border-[#263148]'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
                     }`}>
                       {doc.status}
                     </span>
@@ -449,26 +449,26 @@ export default function DocumentsPage() {
                       </Link>
                     ) : null}
 
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-black/[0.03] dark:bg-white/[0.03] text-[#78716c] dark:text-[#8895ad] font-mono border border-black/[0.05] dark:border-white/[0.06]">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-[#8a96ae] font-mono border border-slate-200 dark:border-white/[0.06]">
                       <Calendar className="w-3 h-3 flex-shrink-0" />
                       <span>{doc.expiryDate ? doc.expiryDate : 'Permanent'}</span>
                     </span>
                   </div>
 
                   {/* Action Buttons Row */}
-                  <div className="flex items-center gap-2 pt-1 border-t border-black/[0.04] dark:border-white/[0.04]">
+                  <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
                     <button
                       onClick={() => { setPreviewDoc(doc); setPreviewMode('preview'); }}
-                      className="flex-1 py-1.5 px-3 rounded-lg bg-[rgba(205,160,82,0.12)] hover:bg-[rgba(205,160,82,0.2)] border border-[rgba(205,160,82,0.3)] text-[#8c672b] dark:text-[#cda052] font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      className="flex-1 py-1.5 px-3 rounded-lg bg-[rgba(205,160,82,0.12)] hover:bg-[rgba(205,160,82,0.2)] border border-[rgba(205,160,82,0.3)] text-amber-800 dark:text-[#cda052] font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <Eye className="w-3.5 h-3.5" />
                       <span>Preview</span>
                     </button>
                     <button
                       onClick={() => handleOpenEdit(doc)}
-                      className="py-1.5 px-3 rounded-lg bg-black/[0.04] dark:bg-[#141824] hover:bg-black/[0.08] dark:hover:bg-[#1a2133] border border-black/[0.08] dark:border-[#242e44] text-[#44403c] dark:text-[#cbd5e1] hover:text-[#8c672b] dark:hover:text-[#cda052] text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer"
+                      className="py-1.5 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:text-amber-700 dark:hover:text-[#cda052] text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer"
                     >
-                      <Pencil className="w-3.5 h-3.5" />
+                      <Pencil className="w-3.5 h-3.5 text-[#cda052]" />
                       <span>Edit</span>
                     </button>
                     <button
@@ -487,7 +487,7 @@ export default function DocumentsPage() {
           {/* DESKTOP TABLE VIEW (Laptops & Desktops >= 1024px) */}
           <div className="hidden lg:block">
             {/* Table Header */}
-            <div className="grid grid-cols-12 gap-3 px-5 py-3 bg-[#faf7f2] dark:bg-[#080a10] border-b border-[#e2d9ce] dark:border-[#1b2234] text-[11px] font-semibold text-[#78716c] dark:text-[#828ea6] uppercase tracking-wider">
+            <div className="grid grid-cols-12 gap-3 px-5 py-3 bg-slate-50 dark:bg-[#080b12] border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-600 dark:text-[#8a96ae] uppercase tracking-wider">
               <div className="col-span-4">Document Title & File</div>
               <div className="col-span-2">Category</div>
               <div className="col-span-2">Linked Partner / Style</div>
@@ -496,7 +496,7 @@ export default function DocumentsPage() {
             </div>
 
             {/* Table Rows */}
-            <div className="divide-y divide-[#ede5da] dark:divide-[#161c2a]">
+            <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
               {filtered.map((doc) => {
                 const linkedVendor = doc.vendorId ? vendors.find((v) => v.id === doc.vendorId) : null;
                 const linkedStyle = doc.pipelineItemId ? pipelineItems.find((p) => p.id === doc.pipelineItemId) : null;
@@ -505,7 +505,7 @@ export default function DocumentsPage() {
                 return (
                   <div
                     key={doc.id}
-                    className="px-5 py-3.5 grid grid-cols-12 gap-3 items-center hover:bg-[#faf7f2] dark:hover:bg-[#121624] transition-colors"
+                    className="px-5 py-3.5 grid grid-cols-12 gap-3 items-center hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors"
                   >
                     {/* Col 1: Document Title, Format & Filename (col-span-4) */}
                     <div className="col-span-4 min-w-0 flex items-center gap-3 w-full">
@@ -518,12 +518,12 @@ export default function DocumentsPage() {
                             setPreviewDoc(doc);
                             setPreviewMode('preview');
                           }}
-                          className="text-xs font-semibold text-[#1c1917] dark:text-white hover:text-[#8c672b] dark:hover:text-[#cda052] cursor-pointer truncate transition-colors"
+                          className="text-xs font-semibold text-slate-900 dark:text-white hover:text-amber-600 dark:hover:text-[#cda052] cursor-pointer truncate transition-colors"
                           title={doc.title}
                         >
                           {doc.title}
                         </div>
-                        <div className="text-[11px] text-[#78716c] dark:text-[#7c869d] truncate flex items-center gap-1.5 mt-0.5">
+                        <div className="text-[11px] text-slate-500 dark:text-[#8a96ae] truncate flex items-center gap-1.5 mt-0.5">
                           <span className="truncate">{doc.fileName}</span>
                           {doc.fileSizeBytes ? (
                             <>
@@ -543,12 +543,12 @@ export default function DocumentsPage() {
                       {doc.tags && doc.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1">
                           {doc.tags.slice(0, 2).map((t, idx) => (
-                            <span key={idx} className="text-[10px] text-stone-700 dark:text-[#7c869d] font-mono font-medium">
+                            <span key={idx} className="text-[10px] text-slate-600 dark:text-[#8a96ae] font-mono font-medium">
                               #{t}
                             </span>
                           ))}
                           {doc.tags.length > 2 && (
-                            <span className="text-[10px] text-stone-500 dark:text-[#556075] font-mono">+{doc.tags.length - 2}</span>
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">+{doc.tags.length - 2}</span>
                           )}
                         </div>
                       )}
@@ -575,7 +575,7 @@ export default function DocumentsPage() {
                           <span className="truncate">{linkedStyle.styleName}</span>
                         </Link>
                       ) : (
-                        <span className="text-[11px] text-[#a8a29e] dark:text-[#64748b]">Global Brand Asset</span>
+                        <span className="text-[11px] text-slate-400 dark:text-slate-500">Global Brand Asset</span>
                       )}
                     </div>
 
@@ -587,12 +587,12 @@ export default function DocumentsPage() {
                             ? 'bg-rose-950/60 text-rose-300 border border-rose-800/40'
                             : doc.status === 'Active'
                             ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-800/40'
-                            : 'bg-[#faf7f2] dark:bg-[#182030] text-[#78716c] dark:text-[#94a3b8] border border-[#ede5da] dark:border-[#263148]'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
                         }`}
                       >
                         {doc.status}
                       </span>
-                      <span className="text-[11px] text-[#78716c] dark:text-[#8895ad] font-mono truncate">
+                      <span className="text-[11px] text-slate-500 dark:text-[#8a96ae] font-mono truncate">
                         {doc.expiryDate ? doc.expiryDate : 'Permanent'}
                       </span>
                     </div>
@@ -604,7 +604,7 @@ export default function DocumentsPage() {
                           setPreviewDoc(doc);
                           setPreviewMode('preview');
                         }}
-                        className="p-1.5 rounded-lg bg-black/[0.04] dark:bg-[#141824] hover:bg-black/[0.08] dark:hover:bg-[#1a2133] border border-black/[0.08] dark:border-[#242e44] text-[#44403c] dark:text-[#cbd5e1] hover:text-[#8c672b] dark:hover:text-[#cda052] transition-colors cursor-pointer"
+                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
                         title="Preview Document in Universal Viewer"
                         aria-label="Preview document"
                       >
@@ -612,15 +612,15 @@ export default function DocumentsPage() {
                       </button>
                       <button
                         onClick={() => handleOpenEdit(doc)}
-                        className="p-1.5 rounded-lg bg-black/[0.04] dark:bg-[#141824] hover:bg-black/[0.08] dark:hover:bg-[#1a2133] border border-black/[0.08] dark:border-[#242e44] text-[#44403c] dark:text-[#cbd5e1] hover:text-[#8c672b] dark:hover:text-[#cda052] transition-colors cursor-pointer"
+                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
                         title="Edit metadata & expiry date"
                         aria-label="Edit document metadata"
                       >
-                        <Pencil className="w-3.5 h-3.5" />
+                        <Pencil className="w-3.5 h-3.5 text-[#cda052]" />
                       </button>
                       <button
                         onClick={() => handleDelete(doc)}
-                        className="p-1.5 rounded-lg bg-black/[0.04] dark:bg-[#141824] hover:bg-rose-500/10 border border-black/[0.08] dark:border-[#242e44] text-[#44403c] dark:text-[#cbd5e1] hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-500/30 transition-colors cursor-pointer"
+                        className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-colors cursor-pointer"
                         title="Delete document"
                         aria-label="Delete document"
                       >
@@ -813,7 +813,7 @@ export default function DocumentsPage() {
       {editingDoc && (
         <ModalPortal isOpen={Boolean(editingDoc)}>
           <div 
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in"
+            className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in"
             onClick={() => setEditingDoc(null)}
           >
             <div 

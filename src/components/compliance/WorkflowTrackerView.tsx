@@ -267,17 +267,17 @@ export default function WorkflowTrackerView({
   return (
     <div className="space-y-4">
       {/* Top Search, Filters, and New Workflow Button */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-[#1e140e] p-4 rounded-2xl border border-[#e8ded3] dark:border-[#3d2b20] shadow-sm">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-[#0e121b] p-4 rounded-2xl border border-slate-200 dark:border-[#1e2638] shadow-sm">
         <div className="flex flex-wrap items-center gap-2.5 flex-1">
           {/* Search Box */}
           <div className="relative min-w-[220px] flex-1 sm:max-w-xs">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#7d6b5d] dark:text-[#a99a8b]" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#8a96ae]" />
             <input
               type="text"
               placeholder="Search workflows, entities, return types, ARN..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-xs text-[#241812] dark:text-white placeholder-[#9c8979] dark:placeholder-[#8895ad] border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none transition-colors"
+              className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-white dark:bg-[#080b12] text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 border border-slate-200 dark:border-[#1e2638] focus:border-[#cda052] outline-none transition-colors"
             />
           </div>
 
@@ -285,7 +285,7 @@ export default function WorkflowTrackerView({
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-3 py-1.5 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-xs text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
+            className="px-3 py-1.5 rounded-xl bg-white dark:bg-[#080b12] text-xs text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] focus:border-[#cda052] outline-none"
           >
             <option value="all">All Categories</option>
             <option value="gst">GST (GSTR-1 / 3B)</option>
@@ -299,7 +299,7 @@ export default function WorkflowTrackerView({
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-1.5 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-xs text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
+            className="px-3 py-1.5 rounded-xl bg-white dark:bg-[#080b12] text-xs text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] focus:border-[#cda052] outline-none"
           >
             <option value="all">All Statuses</option>
             <option value="upcoming">Upcoming</option>
@@ -311,7 +311,7 @@ export default function WorkflowTrackerView({
 
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#cda052] hover:bg-[#dfb56c] text-[#241812] font-semibold text-xs transition-colors shadow-sm"
+          className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#cda052] hover:bg-[#dfb56c] text-slate-950 font-semibold text-xs transition-colors shadow-sm"
         >
           <Plus className="w-4 h-4" />
           <span>New Workflow</span>
@@ -319,7 +319,7 @@ export default function WorkflowTrackerView({
       </div>
 
       {/* Primary Compliance Data Table with Fixed Column Widths */}
-      <div className="bg-white dark:bg-[#18100b] rounded-2xl border border-[#e8ded3] dark:border-[#3d2b20] overflow-hidden shadow-sm">
+      <div className="bg-white dark:bg-[#0e121b] rounded-2xl border border-slate-200 dark:border-[#1e2638] overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs table-fixed">
             <colgroup>
@@ -333,7 +333,7 @@ export default function WorkflowTrackerView({
               <col className="w-[70px]" />
             </colgroup>
             <thead>
-              <tr className="bg-[#f5efe6] dark:bg-black/40 text-[#604f41] dark:text-[#a99a8b] uppercase tracking-wider text-[10px] border-b border-[#e8ded3] dark:border-white/10 select-none">
+              <tr className="bg-slate-50 dark:bg-[#080b12] text-slate-600 dark:text-[#8a96ae] uppercase tracking-wider text-[10px] border-b border-slate-200 dark:border-[#1e2638] select-none">
                 {/* 1. Workflow */}
                 <th className="py-3 px-4 font-semibold">
                   <button
@@ -415,10 +415,10 @@ export default function WorkflowTrackerView({
                 <th className="py-3 px-4 font-semibold text-center">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#e8ded3] dark:divide-white/5">
+            <tbody className="divide-y divide-slate-100 dark:divide-white/5">
               {sortedWorkflows.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-[#7d6b5d] dark:text-[#a99a8b]">
+                  <td colSpan={8} className="py-12 text-center text-slate-400 dark:text-[#8a96ae]">
                     No compliance workflows match your criteria.
                   </td>
                 </tr>
@@ -426,20 +426,20 @@ export default function WorkflowTrackerView({
                 sortedWorkflows.map((item) => (
                   <tr
                     key={item.id}
-                    className="hover:bg-[#faf6f0] dark:hover:bg-white/[0.03] transition-colors group"
+                    className="hover:bg-slate-50/80 dark:hover:bg-white/[0.03] transition-colors group"
                   >
                     {/* 1. Workflow Title */}
-                    <td className="py-3.5 px-4 font-medium text-[#241812] dark:text-white">
+                    <td className="py-3.5 px-4 font-medium text-slate-900 dark:text-white">
                       <div className="flex items-start gap-2">
-                        <span className="p-1 rounded bg-[#f5efe6] dark:bg-black/40 text-[#cda052] border border-[#d8c8b8] dark:border-white/10 mt-0.5 flex-shrink-0">
+                        <span className="p-1 rounded bg-slate-100 dark:bg-white/5 text-[#cda052] border border-slate-200 dark:border-[#1e2638] mt-0.5 flex-shrink-0">
                           <FileText className="w-3.5 h-3.5" />
                         </span>
                         <div className="min-w-0">
-                          <div className="font-semibold text-[#241812] dark:text-white group-hover:text-[#cda052] dark:group-hover:text-[#f7d88c] transition-colors truncate">
+                          <div className="font-semibold text-slate-900 dark:text-white group-hover:text-[#cda052] dark:group-hover:text-[#f7d88c] transition-colors truncate">
                             {item.title}
                           </div>
                           {item.notes && (
-                            <div className="text-[11px] text-[#7d6b5d] dark:text-[#8895ad] truncate">
+                            <div className="text-[11px] text-slate-500 dark:text-[#8895ad] truncate">
                               {item.notes}
                             </div>
                           )}
@@ -448,30 +448,30 @@ export default function WorkflowTrackerView({
                     </td>
 
                     {/* 2. Client / Entity */}
-                    <td className="py-3.5 px-4 text-[#4a3b30] dark:text-[#cbd5e1] truncate">
+                    <td className="py-3.5 px-4 text-slate-600 dark:text-[#cbd5e1] truncate">
                       <div className="flex items-center gap-1.5 truncate">
-                        <Building className="w-3.5 h-3.5 text-[#7d6b5d] dark:text-[#a99a8b] flex-shrink-0" />
+                        <Building className="w-3.5 h-3.5 text-slate-400 dark:text-[#8a96ae] flex-shrink-0" />
                         <span className="truncate">{item.entityName}</span>
                       </div>
                     </td>
 
                     {/* 3. Return Type & Period */}
                     <td className="py-3.5 px-4">
-                      <div className="font-semibold text-[#241812] dark:text-white truncate">
+                      <div className="font-semibold text-slate-900 dark:text-white truncate">
                         {item.returnType}
                       </div>
-                      <div className="text-[11px] text-[#7d6b5d] dark:text-[#a99a8b] truncate">
+                      <div className="text-[11px] text-slate-500 dark:text-[#8a96ae] truncate">
                         {item.taxPeriod}
                       </div>
                     </td>
 
                     {/* 4. Due Date */}
                     <td className="py-3.5 px-4 whitespace-nowrap">
-                      <div className="flex items-center gap-1.5 font-mono text-[#241812] dark:text-white font-medium">
+                      <div className="flex items-center gap-1.5 font-mono text-slate-900 dark:text-white font-medium">
                         <Calendar className="w-3.5 h-3.5 text-[#cda052]" />
                         <span>{item.dueDate}</span>
                       </div>
-                      <div className="text-[10px] text-[#7d6b5d] dark:text-[#8895ad]">
+                      <div className="text-[10px] text-slate-500 dark:text-[#8895ad]">
                         Cutoff: {item.statutoryDeadline}
                       </div>
                     </td>
@@ -482,7 +482,7 @@ export default function WorkflowTrackerView({
                     </td>
 
                     {/* 6. Assignee */}
-                    <td className="py-3.5 px-4 text-[#4a3b30] dark:text-[#cbd5e1] truncate">
+                    <td className="py-3.5 px-4 text-slate-600 dark:text-[#cbd5e1] truncate">
                       <div className="flex items-center gap-1.5 truncate">
                         <User className="w-3.5 h-3.5 text-[#cda052] flex-shrink-0" />
                         <span className="truncate">{item.assignedTo}</span>
@@ -496,7 +496,7 @@ export default function WorkflowTrackerView({
                           {item.arnNumber}
                         </span>
                       ) : (
-                        <span className="text-[#8895ad] italic">Pending Filing</span>
+                        <span className="text-slate-400 dark:text-[#8895ad] italic">Pending Filing</span>
                       )}
                     </td>
 
@@ -506,7 +506,7 @@ export default function WorkflowTrackerView({
                         <button
                           type="button"
                           onClick={() => setOpenMenuId((curr) => (curr === item.id ? null : item.id))}
-                          className="p-1.5 rounded-lg text-[#7d6b5d] dark:text-[#a99a8b] hover:text-[#241812] dark:hover:text-white hover:bg-[#f5efe6] dark:hover:bg-white/10 transition-colors"
+                          className="p-1.5 rounded-lg text-slate-400 dark:text-[#8a96ae] hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
                           title="Workflow Actions"
                           aria-label="Actions"
                         >
@@ -515,7 +515,7 @@ export default function WorkflowTrackerView({
 
                         {/* Floating Action Dropdown Menu */}
                         {openMenuId === item.id && (
-                          <div className="absolute right-4 top-10 w-44 bg-white dark:bg-[#1e140e] border border-[#e8ded3] dark:border-[#3d2b20] rounded-xl shadow-xl z-30 py-1 text-left animate-fade-in divide-y divide-[#f5efe6] dark:divide-white/5">
+                          <div className="absolute right-4 top-10 w-44 bg-white dark:bg-[#0e121b] border border-slate-200 dark:border-[#1e2638] rounded-xl shadow-xl z-30 py-1 text-left animate-fade-in divide-y divide-slate-100 dark:divide-white/5">
                             <div className="py-1">
                               {/* 1. Mark as Filed */}
                               {item.status !== 'filed' && (
@@ -537,7 +537,7 @@ export default function WorkflowTrackerView({
                               <button
                                 type="button"
                                 onClick={() => handleSendReminder(item)}
-                                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-[#241812] dark:text-[#cbd5e1] hover:bg-[#f5efe6] dark:hover:bg-white/10 transition-colors"
+                                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
                               >
                                 <BellRing className="w-3.5 h-3.5 text-[#cda052]" />
                                 <span>Set Alarm / Remind</span>
@@ -550,7 +550,7 @@ export default function WorkflowTrackerView({
                                   setEditingWorkflow({ ...item });
                                   setOpenMenuId(null);
                                 }}
-                                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-[#241812] dark:text-[#cbd5e1] hover:bg-[#f5efe6] dark:hover:bg-white/10 transition-colors"
+                                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 dark:text-[#cbd5e1] hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
                               >
                                 <Edit3 className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
                                 <span>Edit Workflow</span>
@@ -583,15 +583,15 @@ export default function WorkflowTrackerView({
       {/* Modal 1: Create New Workflow */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-[#1e140e] w-full max-w-xl rounded-2xl border border-[#e8ded3] dark:border-[#3d2b20] shadow-2xl p-5 sm:p-6 overflow-hidden">
-            <div className="flex items-center justify-between pb-3 border-b border-[#e8ded3] dark:border-white/10 mb-4">
-              <h2 className="text-base font-bold text-[#241812] dark:text-white flex items-center gap-2">
+          <div className="bg-white dark:bg-[#0e121b] w-full max-w-xl rounded-2xl border border-slate-200 dark:border-[#1e2638] shadow-2xl p-5 sm:p-6 overflow-hidden">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-[#1e2638] mb-4">
+              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Plus className="w-4 h-4 text-[#cda052]" />
                 <span>Create Statutory Compliance Workflow</span>
               </h2>
               <button
                 onClick={() => setIsCreateModalOpen(false)}
-                className="p-1 rounded-lg text-[#7d6b5d] dark:text-[#a99a8b] hover:text-[#241812] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10"
+                className="p-1 rounded-lg text-slate-400 dark:text-[#8a96ae] hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -599,24 +599,24 @@ export default function WorkflowTrackerView({
 
             <form onSubmit={handleCreateWorkflow} className="space-y-3.5 text-xs">
               <div>
-                <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">Workflow Title *</label>
+                <label className="block text-slate-600 dark:text-[#8a96ae] mb-1 font-medium">Workflow Title *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. GSTR-1 Outward Supplies Filing"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] focus:border-[#cda052] outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">Category</label>
+                  <label className="block text-slate-600 dark:text-[#8a96ae] mb-1 font-medium">Category</label>
                   <select
                     value={newCategory}
                     onChange={(e) => setNewCategory(e.target.value as ComplianceCategory)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] focus:border-[#cda052] outline-none"
                   >
                     <option value="gst">GST (Goods & Services Tax)</option>
                     <option value="icegate">ICEGATE Customs</option>
@@ -628,99 +628,99 @@ export default function WorkflowTrackerView({
                 </div>
 
                 <div>
-                  <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">Client / Legal Entity</label>
+                  <label className="block text-slate-600 dark:text-[#8a96ae] mb-1 font-medium">Client / Legal Entity</label>
                   <input
                     type="text"
                     required
                     value={newEntity}
                     onChange={(e) => setNewEntity(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] focus:border-[#cda052] outline-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">Return Type</label>
+                  <label className="block text-slate-600 dark:text-[#8a96ae] mb-1 font-medium">Return Type</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. GSTR-1, GSTR-3B, Form 26Q"
                     value={newReturnType}
                     onChange={(e) => setNewReturnType(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] focus:border-[#cda052] outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">Tax Period</label>
+                  <label className="block text-slate-600 dark:text-[#8a96ae] mb-1 font-medium">Tax Period</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. November 2026 / Q3 FY26"
                     value={newPeriod}
                     onChange={(e) => setNewPeriod(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] focus:border-[#cda052] outline-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">Due Date *</label>
+                  <label className="block text-slate-600 dark:text-[#8a96ae] mb-1 font-medium">Due Date *</label>
                   <input
                     type="date"
                     required
                     value={newDueDate}
                     onChange={(e) => setNewDueDate(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] focus:border-[#cda052] outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">Statutory Cutoff Deadline</label>
+                  <label className="block text-slate-600 dark:text-[#8a96ae] mb-1 font-medium">Statutory Cutoff Deadline</label>
                   <input
                     type="date"
                     value={newDeadline}
                     onChange={(e) => setNewDeadline(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] focus:border-[#cda052] outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">Assignee / CA Lead</label>
+                <label className="block text-slate-600 dark:text-[#8a96ae] mb-1 font-medium">Assignee / CA Lead</label>
                 <input
                   type="text"
                   required
                   value={newAssignee}
                   onChange={(e) => setNewAssignee(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] focus:border-[#cda052] outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">Operational Notes</label>
+                <label className="block text-slate-600 dark:text-[#8a96ae] mb-1 font-medium">Operational Notes</label>
                 <textarea
                   rows={2}
                   placeholder="Supporting instructions, e-Invoice checks, portal details..."
                   value={newNotes}
                   onChange={(e) => setNewNotes(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] focus:border-[#cda052] outline-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#e8ded3] dark:border-white/10">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-[#1e2638]">
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-[#f5efe6] dark:bg-black/40 text-[#604f41] dark:text-[#a99a8b] hover:text-[#241812] dark:hover:text-white border border-[#d8c8b8] dark:border-white/10"
+                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-[#cbd5e1] hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-[#1e2638]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#cda052] text-[#241812] font-semibold hover:bg-[#dfb56c]"
+                  className="px-5 py-2 rounded-xl bg-[#cda052] text-slate-950 font-semibold hover:bg-[#dfb56c]"
                 >
                   Create Workflow
                 </button>
@@ -733,15 +733,15 @@ export default function WorkflowTrackerView({
       {/* Modal 2: Edit Workflow */}
       {editingWorkflow && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-[#1e140e] w-full max-w-xl rounded-2xl border border-[#e8ded3] dark:border-[#3d2b20] shadow-2xl p-5 sm:p-6 overflow-hidden">
-            <div className="flex items-center justify-between pb-3 border-b border-[#e8ded3] dark:border-white/10 mb-4">
-              <h2 className="text-base font-bold text-[#241812] dark:text-white flex items-center gap-2">
+          <div className="bg-white dark:bg-[#0e121b] w-full max-w-xl rounded-2xl border border-slate-200 dark:border-[#1e2638] shadow-2xl p-5 sm:p-6 overflow-hidden">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-[#1e2638] mb-4">
+              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Edit3 className="w-4 h-4 text-sky-600 dark:text-sky-400" />
                 <span>Edit Compliance Workflow</span>
               </h2>
               <button
                 onClick={() => setEditingWorkflow(null)}
-                className="p-1 rounded-lg text-[#7d6b5d] dark:text-[#a99a8b] hover:text-[#241812] dark:hover:text-white"
+                className="p-1 rounded-lg text-slate-400 dark:text-[#8a96ae] hover:text-slate-900 dark:hover:text-white"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -749,19 +749,19 @@ export default function WorkflowTrackerView({
 
             <form onSubmit={handleEditWorkflowSubmit} className="space-y-3.5 text-xs">
               <div>
-                <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">Workflow Title *</label>
+                <label className="block text-slate-600 dark:text-[#8a96ae] mb-1 font-medium">Workflow Title *</label>
                 <input
                   type="text"
                   required
                   value={editingWorkflow.title}
                   onChange={(e) => setEditingWorkflow({ ...editingWorkflow, title: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] focus:border-[#cda052] outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">Category</label>
+                  <label className="block text-slate-600 dark:text-[#8a96ae] mb-1 font-medium">Category</label>
                   <select
                     value={editingWorkflow.category}
                     onChange={(e) =>
@@ -770,7 +770,7 @@ export default function WorkflowTrackerView({
                         category: e.target.value as ComplianceCategory,
                       })
                     }
-                    className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] focus:border-[#cda052] outline-none"
                   >
                     <option value="gst">GST (Goods & Services Tax)</option>
                     <option value="icegate">ICEGATE Customs</option>
@@ -782,7 +782,7 @@ export default function WorkflowTrackerView({
                 </div>
 
                 <div>
-                  <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">Client / Legal Entity</label>
+                  <label className="block text-slate-600 dark:text-[#8a96ae] mb-1 font-medium">Client / Legal Entity</label>
                   <input
                     type="text"
                     required
@@ -790,14 +790,14 @@ export default function WorkflowTrackerView({
                     onChange={(e) =>
                       setEditingWorkflow({ ...editingWorkflow, entityName: e.target.value })
                     }
-                    className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] focus:border-[#cda052] outline-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">Return Type</label>
+                  <label className="block text-slate-600 dark:text-[#8a96ae] mb-1 font-medium">Return Type</label>
                   <input
                     type="text"
                     required
@@ -805,12 +805,12 @@ export default function WorkflowTrackerView({
                     onChange={(e) =>
                       setEditingWorkflow({ ...editingWorkflow, returnType: e.target.value })
                     }
-                    className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] focus:border-[#cda052] outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">Tax Period</label>
+                  <label className="block text-slate-600 dark:text-[#8a96ae] mb-1 font-medium">Tax Period</label>
                   <input
                     type="text"
                     required
@@ -818,14 +818,14 @@ export default function WorkflowTrackerView({
                     onChange={(e) =>
                       setEditingWorkflow({ ...editingWorkflow, taxPeriod: e.target.value })
                     }
-                    className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] focus:border-[#cda052] outline-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">Due Date</label>
+                  <label className="block text-slate-600 dark:text-[#8a96ae] mb-1 font-medium">Due Date</label>
                   <input
                     type="date"
                     required
@@ -833,12 +833,12 @@ export default function WorkflowTrackerView({
                     onChange={(e) =>
                       setEditingWorkflow({ ...editingWorkflow, dueDate: e.target.value })
                     }
-                    className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] focus:border-[#cda052] outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">Statutory Cutoff</label>
+                  <label className="block text-slate-600 dark:text-[#8a96ae] mb-1 font-medium">Statutory Cutoff</label>
                   <input
                     type="date"
                     value={editingWorkflow.statutoryDeadline}
@@ -848,12 +848,12 @@ export default function WorkflowTrackerView({
                         statutoryDeadline: e.target.value,
                       })
                     }
-                    className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] focus:border-[#cda052] outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">Status</label>
+                  <label className="block text-slate-600 dark:text-[#8a96ae] mb-1 font-medium">Status</label>
                   <select
                     value={editingWorkflow.status}
                     onChange={(e) =>
@@ -862,7 +862,7 @@ export default function WorkflowTrackerView({
                         status: e.target.value as ComplianceStatus,
                       })
                     }
-                    className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] focus:border-[#cda052] outline-none"
                   >
                     <option value="upcoming">Upcoming</option>
                     <option value="in_progress">In Progress</option>
@@ -875,7 +875,7 @@ export default function WorkflowTrackerView({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">Assignee</label>
+                  <label className="block text-slate-600 dark:text-[#8a96ae] mb-1 font-medium">Assignee</label>
                   <input
                     type="text"
                     required
@@ -883,12 +883,12 @@ export default function WorkflowTrackerView({
                     onChange={(e) =>
                       setEditingWorkflow({ ...editingWorkflow, assignedTo: e.target.value })
                     }
-                    className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] focus:border-[#cda052] outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">ARN / Challan No</label>
+                  <label className="block text-slate-600 dark:text-[#8a96ae] mb-1 font-medium">ARN / Challan No</label>
                   <input
                     type="text"
                     placeholder="e.g. AA331026001928K"
@@ -896,34 +896,34 @@ export default function WorkflowTrackerView({
                     onChange={(e) =>
                       setEditingWorkflow({ ...editingWorkflow, arnNumber: e.target.value })
                     }
-                    className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white font-mono border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#080b12] text-slate-900 dark:text-white font-mono border border-slate-200 dark:border-[#1e2638] focus:border-[#cda052] outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">Operational Notes</label>
+                <label className="block text-slate-600 dark:text-[#8a96ae] mb-1 font-medium">Operational Notes</label>
                 <textarea
                   rows={2}
                   value={editingWorkflow.notes || ''}
                   onChange={(e) =>
                     setEditingWorkflow({ ...editingWorkflow, notes: e.target.value })
                   }
-                  className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white border border-[#d8c8b8] dark:border-white/10 focus:border-[#cda052] outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#080b12] text-slate-900 dark:text-white border border-slate-200 dark:border-[#1e2638] focus:border-[#cda052] outline-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#e8ded3] dark:border-white/10">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-[#1e2638]">
                 <button
                   type="button"
                   onClick={() => setEditingWorkflow(null)}
-                  className="px-4 py-2 rounded-xl bg-[#f5efe6] dark:bg-black/40 text-[#604f41] dark:text-[#a99a8b] hover:text-[#241812] dark:hover:text-white border border-[#d8c8b8] dark:border-white/10"
+                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-[#cbd5e1] hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-[#1e2638]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#cda052] text-[#241812] font-semibold hover:bg-[#dfb56c]"
+                  className="px-5 py-2 rounded-xl bg-[#cda052] text-slate-950 font-semibold hover:bg-[#dfb56c]"
                 >
                   Save Changes
                 </button>
@@ -936,18 +936,18 @@ export default function WorkflowTrackerView({
       {/* Modal 3: Mark Filed & Enter ARN */}
       {filingModalItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-[#1e140e] w-full max-w-md rounded-2xl border border-[#e8ded3] dark:border-[#3d2b20] shadow-2xl p-5">
-            <h3 className="text-base font-bold text-[#241812] dark:text-white mb-2 flex items-center gap-2">
+          <div className="bg-white dark:bg-[#0e121b] w-full max-w-md rounded-2xl border border-slate-200 dark:border-[#1e2638] shadow-2xl p-5">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>Record Statutory Filing Completion</span>
             </h3>
-            <p className="text-xs text-[#7d6b5d] dark:text-[#a99a8b] mb-4">
+            <p className="text-xs text-slate-500 dark:text-[#8a96ae] mb-4">
               {filingModalItem.title} ({filingModalItem.taxPeriod})
             </p>
 
             <form onSubmit={handleMarkFiled} className="space-y-3 text-xs">
               <div>
-                <label className="block text-[#604f41] dark:text-[#a99a8b] mb-1 font-medium">
+                <label className="block text-slate-600 dark:text-[#8a96ae] mb-1 font-medium">
                   Acknowledgment Reference Number (ARN) / Challan No *
                 </label>
                 <input
@@ -956,7 +956,7 @@ export default function WorkflowTrackerView({
                   placeholder="e.g. AA331026001928K"
                   value={arnInput}
                   onChange={(e) => setArnInput(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-[#fcfaf7] dark:bg-black/40 text-[#241812] dark:text-white font-mono border border-[#d8c8b8] dark:border-white/10 focus:border-emerald-500 outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#080b12] text-slate-900 dark:text-white font-mono border border-slate-200 dark:border-[#1e2638] focus:border-emerald-500 outline-none"
                 />
               </div>
 
@@ -964,7 +964,7 @@ export default function WorkflowTrackerView({
                 <button
                   type="button"
                   onClick={() => setFilingModalItem(null)}
-                  className="px-4 py-2 rounded-xl bg-[#f5efe6] dark:bg-black/40 text-[#604f41] dark:text-[#a99a8b] hover:text-[#241812] dark:hover:text-white border border-[#d8c8b8] dark:border-white/10"
+                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-[#cbd5e1] hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-[#1e2638]"
                 >
                   Cancel
                 </button>

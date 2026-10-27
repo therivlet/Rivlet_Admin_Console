@@ -7,6 +7,8 @@ import {
   CustomsDeclaration,
   DscRegistryItem,
   CredentialVaultItem,
+  AdvanceTaxRecord,
+  TdsReturnRecord,
 } from '@/lib/types';
 
 export const STORAGE_KEY_WORKFLOWS = 'rivlet_compliance_workflows';
@@ -15,6 +17,9 @@ export const STORAGE_KEY_CUSTOMS = 'rivlet_customs_declarations';
 export const STORAGE_KEY_DSC = 'rivlet_dsc_registry';
 export const STORAGE_KEY_VAULT = 'rivlet_credential_vault';
 export const STORAGE_KEY_RECON_INVOICES = 'rivlet_gst_recon_invoices';
+export const STORAGE_KEY_ADVANCE_TAX = 'rivlet_advance_tax_records';
+export const STORAGE_KEY_TDS_RECORDS = 'rivlet_tds_return_records';
+export const STORAGE_KEY_GST_TAX_INPUTS = 'rivlet_gst_tax_inputs';
 
 // --- Production Initial Statutory Datasets (Clean Indian Apparel Compliance) ---
 
@@ -572,5 +577,174 @@ export function saveLocalReconInvoices(invoices: GstReconciliationInvoice[]): vo
     localStorage.setItem(STORAGE_KEY_RECON_INVOICES, JSON.stringify(invoices));
   } catch (err) {
     console.error('Error saving recon invoices:', err);
+  }
+}
+
+export const INITIAL_ADVANCE_TAX_RECORDS: AdvanceTaxRecord[] = [
+  {
+    id: 'adv-tax-q1',
+    quarter: 'Installment 1 (15%)',
+    dueDate: '15 June',
+    statutoryDate: '2026-06-15',
+    estimatedAmount: 375000,
+    status: 'filed',
+    challanNo: 'BSR-0021940-280',
+    notes: 'Q1 Advance Tax payment settled on time via Challan 280.',
+  },
+  {
+    id: 'adv-tax-q2',
+    quarter: 'Installment 2 (45% Cumulative)',
+    dueDate: '15 September',
+    statutoryDate: '2026-09-15',
+    estimatedAmount: 750000,
+    status: 'filed',
+    challanNo: 'BSR-0099412-280',
+    notes: 'Q2 45% cumulative threshold settled.',
+  },
+  {
+    id: 'adv-tax-q3',
+    quarter: 'Installment 3 (75% Cumulative)',
+    dueDate: '15 December',
+    statutoryDate: '2026-12-15',
+    estimatedAmount: 750000,
+    status: 'upcoming',
+    challanNo: 'Pending Challan 280',
+    notes: 'Due by 15 December. Section 208/211 corporate assessment.',
+  },
+  {
+    id: 'adv-tax-q4',
+    quarter: 'Installment 4 (100% Final)',
+    dueDate: '15 March',
+    statutoryDate: '2027-03-15',
+    estimatedAmount: 625000,
+    status: 'upcoming',
+    challanNo: 'Pending Challan 280',
+    notes: 'Final fiscal year corporate tax balance settlement.',
+  },
+];
+
+export function getLocalAdvanceTaxRecords(): AdvanceTaxRecord[] {
+  if (typeof window === 'undefined') return INITIAL_ADVANCE_TAX_RECORDS;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_ADVANCE_TAX);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEY_ADVANCE_TAX, JSON.stringify(INITIAL_ADVANCE_TAX_RECORDS));
+      return INITIAL_ADVANCE_TAX_RECORDS;
+    }
+    return JSON.parse(raw);
+  } catch (err) {
+    return INITIAL_ADVANCE_TAX_RECORDS;
+  }
+}
+
+export function saveLocalAdvanceTaxRecords(records: AdvanceTaxRecord[]): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(STORAGE_KEY_ADVANCE_TAX, JSON.stringify(records));
+  } catch (err) {
+    console.error('Error saving advance tax records:', err);
+  }
+}
+
+export const INITIAL_TDS_RECORDS: TdsReturnRecord[] = [
+  {
+    id: 'tds-24q-q2',
+    form: 'Form 24Q (Salary TDS)',
+    period: 'Q2 (Jul - Sep)',
+    dueDate: '2026-10-31',
+    status: 'in_progress',
+    lead: 'Finance Lead',
+    deductionAmount: 142000,
+    tokenNumber: 'ACK-24Q-OCT26-01',
+    notes: 'Payroll TDS deduction under section 192.',
+  },
+  {
+    id: 'tds-26q-q2',
+    form: 'Form 26Q (Vendor / Job-work TDS)',
+    period: 'Q2 (Jul - Sep)',
+    dueDate: '2026-10-31',
+    status: 'in_progress',
+    lead: 'Tax Consultant',
+    deductionAmount: 185600,
+    tokenNumber: 'ACK-26Q-OCT26-89',
+    notes: 'Fabric mill job-work (194C) and contractual fees.',
+  },
+  {
+    id: 'tds-26q-q3',
+    form: 'Form 26Q (Vendor / Job-work TDS)',
+    period: 'Q3 (Oct - Dec)',
+    dueDate: '2027-01-31',
+    status: 'upcoming',
+    lead: 'Tax Consultant',
+    deductionAmount: 210000,
+    notes: 'Winter manufacturing & processing TDS returns.',
+  },
+];
+
+export function getLocalTdsRecords(): TdsReturnRecord[] {
+  if (typeof window === 'undefined') return INITIAL_TDS_RECORDS;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_TDS_RECORDS);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEY_TDS_RECORDS, JSON.stringify(INITIAL_TDS_RECORDS));
+      return INITIAL_TDS_RECORDS;
+    }
+    return JSON.parse(raw);
+  } catch (err) {
+    return INITIAL_TDS_RECORDS;
+  }
+}
+
+export function saveLocalTdsRecords(records: TdsReturnRecord[]): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(STORAGE_KEY_TDS_RECORDS, JSON.stringify(records));
+  } catch (err) {
+    console.error('Error saving TDS records:', err);
+  }
+}
+
+export interface GstTaxInputs {
+  taxPeriod: string;
+  outputIgst: number;
+  outputCgst: number;
+  outputSgst: number;
+  inputIgst: number;
+  inputCgst: number;
+  inputSgst: number;
+  ineligibleItc: number;
+}
+
+export const DEFAULT_GST_TAX_INPUTS: GstTaxInputs = {
+  taxPeriod: 'October 2026',
+  outputIgst: 420000,
+  outputCgst: 180000,
+  outputSgst: 180000,
+  inputIgst: 380000,
+  inputCgst: 140000,
+  inputSgst: 140000,
+  ineligibleItc: 9000,
+};
+
+export function getLocalGstTaxInputs(): GstTaxInputs {
+  if (typeof window === 'undefined') return DEFAULT_GST_TAX_INPUTS;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_GST_TAX_INPUTS);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEY_GST_TAX_INPUTS, JSON.stringify(DEFAULT_GST_TAX_INPUTS));
+      return DEFAULT_GST_TAX_INPUTS;
+    }
+    return JSON.parse(raw);
+  } catch (err) {
+    return DEFAULT_GST_TAX_INPUTS;
+  }
+}
+
+export function saveLocalGstTaxInputs(inputs: GstTaxInputs): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(STORAGE_KEY_GST_TAX_INPUTS, JSON.stringify(inputs));
+  } catch (err) {
+    console.error('Error saving GST tax inputs:', err);
   }
 }
