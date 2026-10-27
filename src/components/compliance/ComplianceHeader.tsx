@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Scale,
   Calendar,
@@ -11,8 +11,10 @@ import {
   TrendingUp,
   Ship,
   FileCheck2,
+  Sparkles,
 } from 'lucide-react';
 import { ComplianceWorkflowItem, DscRegistryItem, CustomsDeclaration } from '@/lib/types';
+import ComplianceAiAdvisorModal from './ComplianceAiAdvisorModal';
 
 interface ComplianceHeaderProps {
   workflows: ComplianceWorkflowItem[];
@@ -29,6 +31,7 @@ export default function ComplianceHeader({
   activeTab,
   onTabSelect,
 }: ComplianceHeaderProps) {
+  const [isAiAdvisorOpen, setIsAiAdvisorOpen] = useState(false);
   const now = new Date();
   const next7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   const next30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -86,6 +89,15 @@ export default function ComplianceHeader({
 
         <div className="flex items-center gap-2 flex-wrap">
           <button
+            onClick={() => setIsAiAdvisorOpen(true)}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-[#cda052]/10 hover:bg-[#cda052]/20 text-[#cda052] border border-[#cda052]/30 flex items-center gap-1.5 shadow-sm"
+            title="Open Gemini AI Statutory & Compliance Co-Pilot"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>✨ AI Advisor</span>
+          </button>
+
+          <button
             onClick={() => onTabSelect('workflows')}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
               activeTab === 'workflows'
@@ -117,6 +129,23 @@ export default function ComplianceHeader({
           </button>
         </div>
       </div>
+
+      {/* AI Compliance Advisor Modal */}
+      <ComplianceAiAdvisorModal
+        isOpen={isAiAdvisorOpen}
+        onClose={() => setIsAiAdvisorOpen(false)}
+        context={{
+          activeTab,
+          totalWorkflows,
+          filedCount,
+          overdueCount,
+          upcoming7DaysCount: upcoming7Days.length,
+          totalItcClaimed,
+          activeDscCount,
+          expiringDscCount,
+          pendingCustomsClearances,
+        }}
+      />
 
       {/* Real Executive KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

@@ -8,8 +8,10 @@ import {
   Plus,
   Download,
   Filter,
+  Sparkles,
 } from 'lucide-react';
-import { CalendarEventCategory } from '@/lib/types';
+import { CalendarEventCategory, CalendarEventItem } from '@/lib/types';
+import CalendarAiAdvisorModal from './CalendarAiAdvisorModal';
 
 export type CalendarViewMode = 'month' | 'week' | 'day' | 'agenda';
 
@@ -22,6 +24,7 @@ interface CalendarHeaderProps {
   onToggleCategory: (cat: CalendarEventCategory) => void;
   onOpenCreateModal: () => void;
   onExportIcs: () => void;
+  events?: CalendarEventItem[];
 }
 
 export default function CalendarHeader({
@@ -33,7 +36,9 @@ export default function CalendarHeader({
   onToggleCategory,
   onOpenCreateModal,
   onExportIcs,
+  events = [],
 }: CalendarHeaderProps) {
+  const [isAiModalOpen, setIsAiModalOpen] = React.useState(false);
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
@@ -143,6 +148,16 @@ export default function CalendarHeader({
             ))}
           </div>
 
+          {/* AI Cadence Scanner button */}
+          <button
+            onClick={() => setIsAiModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#cda052]/10 hover:bg-[#cda052]/20 text-[#cda052] border border-[#cda052]/30 text-xs font-bold transition-colors shadow-sm"
+            title="Scan monthly schedule for statutory collisions and pressure peaks"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">AI Scanner</span>
+          </button>
+
           {/* Export to ICS button */}
           <button
             onClick={onExportIcs}
@@ -163,6 +178,14 @@ export default function CalendarHeader({
           </button>
         </div>
       </div>
+
+      {/* AI Schedule Cadence Modal */}
+      <CalendarAiAdvisorModal
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+        events={events}
+        currentDate={currentDate}
+      />
 
       {/* Category Filter Pills */}
       <div className="flex items-center gap-2 flex-wrap text-xs">

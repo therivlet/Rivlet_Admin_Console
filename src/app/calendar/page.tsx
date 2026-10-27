@@ -95,6 +95,7 @@ function CalendarPageInner() {
           setIsCreateModalOpen(true);
         }}
         onExportIcs={handleExportIcs}
+        events={events}
       />
 
       {/* Main View Area */}

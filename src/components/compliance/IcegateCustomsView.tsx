@@ -19,8 +19,10 @@ import {
   ExternalLink,
   Pencil,
   Trash2,
+  Sparkles,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import ComplianceAiAdvisorModal from './ComplianceAiAdvisorModal';
 import {
   CustomsDeclaration,
   CustomsDeclarationType,
@@ -40,6 +42,7 @@ export default function IcegateCustomsView({
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'import_boe' | 'export_sb'>('all');
   const [stageFilter, setStageFilter] = useState<string>('all');
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
   // Modal State (Add & Edit)
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -341,6 +344,14 @@ export default function IcegateCustomsView({
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsAiModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#cda052]/10 hover:bg-[#cda052]/20 text-[#cda052] border border-[#cda052]/30 text-xs font-bold transition-colors shadow-sm"
+              title="Audit port clearance gates and calculate duty optimization"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>AI Customs Advisor</span>
+            </button>
             <button
               onClick={handleExportPlanner}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-colors"
@@ -761,6 +772,22 @@ export default function IcegateCustomsView({
           </div>
         </div>
       )}
+
+      {/* AI Customs Advisor Modal */}
+      <ComplianceAiAdvisorModal
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+        context={{
+          activeTab: 'customs',
+          consignmentsSummary: {
+            total: declarations.length,
+            pendingCustomsDuty: declarations
+              .filter(d => d.currentStage !== 'cleared_ooc_leo' && d.currentStage !== 'rejected')
+              .reduce((acc, curr) => acc + (curr.customsDutyInr || 0), 0),
+            activePorts: Array.from(new Set(declarations.map(d => `${d.portCode} (${d.portName})`))),
+          },
+        }}
+      />
     </div>
   );
 }

@@ -23,8 +23,11 @@ import {
   Save,
   CreditCard,
   FileText,
+  Sparkles,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import VendorNoticeModal from './VendorNoticeModal';
+import ComplianceAiAdvisorModal from './ComplianceAiAdvisorModal';
 import {
   GstSettings,
   GstTaxCalculation,
@@ -75,6 +78,10 @@ export default function GstEngineView({
   const [ineligibleItc, setIneligibleItc] = useState(9000);
   const [hasUnsavedTaxChanges, setHasUnsavedTaxChanges] = useState(false);
   const [taxSavedBanner, setTaxSavedBanner] = useState(false);
+
+  // AI Modal States
+  const [isAiAuditOpen, setIsAiAuditOpen] = useState(false);
+  const [vendorNoticeInvoice, setVendorNoticeInvoice] = useState<any>(null);
 
   useEffect(() => {
     const saved = getLocalGstTaxInputs();
@@ -669,6 +676,14 @@ export default function GstEngineView({
 
           <div className="flex items-center gap-2">
             <button
+              onClick={() => setIsAiAuditOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#cda052]/10 hover:bg-[#cda052]/20 text-[#cda052] border border-[#cda052]/30 text-xs font-bold transition-colors shadow-sm"
+              title="Run AI GSTR-2B Mismatch & Tax Liability Audit"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>AI 2B Audit</span>
+            </button>
+            <button
               onClick={handleOpenAddInvoice}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#cda052] hover:bg-[#dfb56c] text-black text-xs font-semibold transition-colors shadow-sm"
             >
@@ -821,6 +836,26 @@ export default function GstEngineView({
                     </td>
                     <td className="py-2.5 px-3 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => setVendorNoticeInvoice({
+                            id: inv.id,
+                            supplierName: inv.vendorName,
+                            gstin: inv.vendorGstin,
+                            invoiceNumber: inv.invoiceNumber,
+                            invoiceDate: inv.invoiceDate,
+                            taxableValue: inv.taxableValue,
+                            igst: inv.taxAmount,
+                            cgst: 0,
+                            sgst: 0,
+                            matchStatus: inv.matchStatus as any,
+                            itcEligibility: inv.itcEligibility as any,
+                          })}
+                          className="p-1.5 rounded-lg bg-[#cda052]/10 hover:bg-[#cda052]/20 text-[#cda052] transition-colors"
+                          title="Draft AI Vendor Notice (Section 16(2)(aa))"
+                          aria-label={`Draft AI Vendor Notice for ${inv.invoiceNumber}`}
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                        </button>
                         <button
                           onClick={() => handleOpenEditInvoice(inv)}
                           className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors"
@@ -1089,6 +1124,37 @@ export default function GstEngineView({
           </div>
         </div>
       )}
+
+      {/* AI Vendor Notice Modal */}
+      <VendorNoticeModal
+        invoice={vendorNoticeInvoice}
+        onClose={() => setVendorNoticeInvoice(null)}
+      />
+
+      {/* AI Compliance Advisor Modal */}
+      <ComplianceAiAdvisorModal
+        isOpen={isAiAuditOpen}
+        onClose={() => setIsAiAuditOpen(false)}
+        context={{
+          activeTab: 'gst',
+          outwardTax: { igst: outputIgst, cgst: outputCgst, sgst: outputSgst },
+          inputTaxCredit: { igst: inputIgst, cgst: inputCgst, sgst: inputSgst },
+          netCashPayable: taxCalculation.netTotalPayable,
+          invoicesSummary: {
+            total: reconInvoices.length,
+            matched: reconInvoices.filter(i => i.matchStatus === 'matched').length,
+            mismatched: reconInvoices.filter(i => i.matchStatus === 'value_mismatch').length,
+            pending: reconInvoices.filter(i => i.matchStatus === 'missing_in_2b').length,
+          },
+          mismatchedVendors: reconInvoices.filter(i => i.matchStatus !== 'matched').map(i => ({
+            vendor: i.vendorName,
+            gstin: i.vendorGstin,
+            inv: i.invoiceNumber,
+            taxAmount: i.taxAmount,
+            status: i.matchStatus,
+          })),
+        }}
+      />
     </div>
   );
 }
